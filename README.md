@@ -2,6 +2,10 @@
 
 # 1. 使用说明
 
+java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](https://github.com/gousiosg/java-callgraph)。
+
+后来进行了优化和增强，差别已比较大，不容易合并回原始项目中，且仅提供静态分析的功能，因此创建了该项目。
+
 ## 1.1. 编译命令：
 
 ```
@@ -28,7 +32,7 @@ build/libs/a.jar build/libs/b.jar
 
 # 2. 输出格式
 
-增强后的java-callgraph输出的方法调用关系的格式如下所示：
+java-callgraph2输出的方法调用关系的格式如下所示：
 
 ```
 M:call_id class1:<method1>(arg_types) (typeofcall)class2:<method2>(arg_types) line_number jar_number
@@ -38,17 +42,19 @@ M:call_id class1:<method1>(arg_types) (typeofcall)class2:<method2>(arg_types) li
 
 代表当前方法调用的ID
 
-- arg_types
+- typeofcall
 
-原始java-callgraph支持的调用类型arg_types如下：
+原始java-callgraph支持的调用类型typeofcall如下：
 
- * `M` for `invokevirtual` calls
- * `I` for `invokeinterface` calls
- * `O` for `invokespecial` calls
- * `S` for `invokestatic` calls
- * `D` for `invokedynamic` calls
+|typeofcall|含义|
+|---|---|
+|M|invokevirtual|
+|I|invokeinterface|
+|O|invokespecial|
+|S|invokestatic|
+|D|invokedynamic|
 
-增强后的java-callgraph增加的调用类型arg_types如下：
+java-callgraph2增加的调用类型typeofcall如下：
 
 |typeofcall|含义|
 |---|---|
@@ -57,6 +63,7 @@ M:call_id class1:<method1>(arg_types) (typeofcall)class2:<method2>(arg_types) li
 |CIC|Callable实现类线程调用|
 |TSR|Thread子类线程调用|
 |LM|lambda表达式（含线程调用等）|
+|ST|Stream调用|
 |SCC|父类调用子类的实现方法|
 |CCS|子类调用父类的实现方法|
 
@@ -70,7 +77,7 @@ jar包序号，从1开始
 
 # 3. 增加jar包文件路径
 
-增强后的java-callgraph会输出当前jar包文件路径，如下所示：
+java-callgraph2会输出当前jar包文件路径，如下所示：
 
 ```
 J:jar_number jar_file_path
@@ -121,7 +128,7 @@ private void f1() {
 
 与Runnable实现类线程调用情况类似，略。
 
-- lambda表达式（含线程调用、Stream等）
+- lambda表达式（含线程调用等）
 
 假如f1()方法中使用lambda表达式的形式在线程中执行操作，在线程中执行了f2()方法，如下所示：
 
@@ -135,6 +142,15 @@ private void f1() {
 
 对于其他使用lambda表达式的情况，存在相同的问题，原方法调用lambda表达式中执行的方法，及继续向下的调用关系会缺失。
 
+- Stream调用
+
+在使用Stream时，通过xxx::func方式调用方法，原始java-callgraph生成的方法调用关系中会缺失。如以下示例中，当前方法调用当前类的map2()、filter2()，及TestDto1类的getStr()方法的调用关系会缺失。
+
+```java
+list.stream().map(this::map2).filter(this::filter2).collect(Collectors.toList());
+list.stream().map(TestDto1::getStr).collect(Collectors.toList());
+```
+
 - 父类调用子类的实现方法
 
 假如存在抽象父类Abstract1，及其非抽象子类ChildImpl1，若在某个类Class1中引入了抽象父类Abstract1，实际为子类ChildImpl1的实例（使用Spring时的常见场景），在其方法Class1.func1()中调用了Abstract1.fa()方法；
@@ -147,8 +163,8 @@ private void f1() {
 
 原始java-callgraph生成的方法调用关系中，ChildImpl1.fc1()调用Abstract1.fi()的关系会缺失。
 
-针对以上问题，增强后的java-callgraph都进行了优化，能够生成缺失的调用关系。
+针对以上问题，java-callgraph2都进行了优化，能够生成缺失的调用关系。
 
-增强后的java-callgraph地址为#github#
+java-callgraph2地址为[https://github.com/Adrninistrator/java-callgraph2](https://github.com/Adrninistrator/java-callgraph2)。
 
 对于更复杂的情况，例如存在接口Interface1，及其抽象实现类Abstract1，及其子类ChildImpl1，若在某个类中引入了抽象实现类Abstract1并调用其方法的情况，生成的方法调用关系中也不会出现缺失。
