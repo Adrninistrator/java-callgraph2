@@ -29,10 +29,7 @@ public class CommonUtil {
             return false;
         }
 
-        if (!isNumStr(array[1])) {
-            return false;
-        }
-        return true;
+        return isNumStr(array[1]);
     }
 
     public static boolean isNumStr(String str) {
@@ -198,7 +195,7 @@ public class CommonUtil {
         String methodName = constantPool.constantToString(constantNameAndType.getNameIndex(), Const.CONSTANT_Utf8);
         String methodArgs = constantPool.constantToString(constantNameAndType.getSignatureIndex(), Const.CONSTANT_Utf8);
 
-        if (className != null && methodName != null && methodArgs != null) {
+        if (methodName != null && methodArgs != null) {
             MethodInfo methodInfo = new MethodInfo();
             methodInfo.setClassName(className);
             methodInfo.setMethodName(methodName);

@@ -3,7 +3,7 @@ package com.adrninistrator.javacg.stat;
 import com.adrninistrator.javacg.common.Constants;
 import com.adrninistrator.javacg.dto.CallIdCounter;
 import com.adrninistrator.javacg.dto.MethodCallDto;
-import com.adrninistrator.javacg.extension.CustomHandlerInterface;
+import com.adrninistrator.javacg.extension.interfaces.CustomHandlerInterface;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.ConstantPoolGen;
@@ -48,8 +48,9 @@ public class ClassVisitor extends EmptyVisitor {
     public void visitConstantPool(ConstantPool constantPool) {
         for (int i = 0; i < constantPool.getLength(); i++) {
             Constant constant = constantPool.getConstant(i);
-            if (constant == null)
+            if (constant == null) {
                 continue;
+            }
             if (constant.getTag() == Const.CONSTANT_Class) {
                 String referencedClass = constantPool.constantToString(constant);
 

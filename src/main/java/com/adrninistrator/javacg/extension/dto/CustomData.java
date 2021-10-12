@@ -1,4 +1,4 @@
-package com.adrninistrator.javacg.extension;
+package com.adrninistrator.javacg.extension.dto;
 
 /**
  * @author Adrninistrator

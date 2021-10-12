@@ -1,4 +1,7 @@
-package com.adrninistrator.javacg.extension;
+package com.adrninistrator.javacg.extension.handler;
+
+import com.adrninistrator.javacg.extension.dto.CustomData;
+import com.adrninistrator.javacg.extension.interfaces.CustomHandlerInterface;
 
 import java.util.List;
 

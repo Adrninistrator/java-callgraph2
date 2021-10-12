@@ -1,11 +1,14 @@
-package com.adrninistrator.javacg.extension;
+package com.adrninistrator.javacg.extension.interfaces;
 
+import com.adrninistrator.javacg.extension.dto.CustomData;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
 
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * @author Adrninistrator
@@ -24,21 +27,33 @@ public interface CustomHandlerInterface {
      *
      * @param jarFilePath
      */
-    void handleJar(String jarFilePath);
+    default void handleJar(String jarFilePath) {
+    }
+
+    /**
+     * 处理一个jar包中的文件
+     *
+     * @param jarFile
+     * @param jarEntry
+     */
+    default void handleJarEntryFile(JarFile jarFile, JarEntry jarEntry) {
+    }
 
     /**
      * 对一个Class进行预处理
      *
      * @param javaClass
      */
-    void preHandleClass(JavaClass javaClass);
+    default void preHandleClass(JavaClass javaClass) {
+    }
 
     /**
      * 对一个Class进行处理
      *
      * @param javaClass
      */
-    void handleClass(JavaClass javaClass);
+    default void handleClass(JavaClass javaClass) {
+    }
 
     /**
      * 对一个方法调用进行预处理
@@ -50,7 +65,8 @@ public interface CustomHandlerInterface {
      * @param mcIh
      * @param methodGen
      */
-    void handleMethodCall(int callId, String calleeClassName, String calleeMethodName, Type[] arguments, InstructionHandle mcIh, MethodGen methodGen);
+    default void handleMethodCall(int callId, String calleeClassName, String calleeMethodName, Type[] arguments, InstructionHandle mcIh, MethodGen methodGen) {
+    }
 
     /**
      * 返回已获得的自定义数据

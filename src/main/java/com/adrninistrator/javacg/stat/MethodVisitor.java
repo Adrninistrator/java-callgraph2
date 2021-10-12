@@ -5,7 +5,7 @@ import com.adrninistrator.javacg.dto.CallIdCounter;
 import com.adrninistrator.javacg.dto.MethodCallDto;
 import com.adrninistrator.javacg.dto.MethodInfo;
 import com.adrninistrator.javacg.enums.CallTypeEnum;
-import com.adrninistrator.javacg.extension.CustomHandlerInterface;
+import com.adrninistrator.javacg.extension.interfaces.CustomHandlerInterface;
 import com.adrninistrator.javacg.util.CommonUtil;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.EmptyVisitor;
@@ -105,14 +105,16 @@ public class MethodVisitor extends EmptyVisitor {
     }
 
     public List<MethodCallDto> start() {
-        if (mg.isAbstract() || mg.isNative())
+        if (mg.isAbstract() || mg.isNative()) {
             return Collections.emptyList();
+        }
 
         for (ih = mg.getInstructionList().getStart(); ih != null; ih = ih.getNext()) {
             Instruction i = ih.getInstruction();
 
-            if (!visitInstruction(i))
+            if (!visitInstruction(i)) {
                 i.accept(this);
+            }
         }
         return methodCalls;
     }
@@ -174,11 +176,6 @@ public class MethodVisitor extends EmptyVisitor {
     }
 
     private void addMethodCalls(String type, String calleeClassName, String calleeMethodName, Type[] arguments) {
-        // 调用自定义接口实现类的方法
-        for (CustomHandlerInterface customHandler : customHandlerList) {
-            customHandler.handleMethodCall(callIdCounter.getCurrentCallId(), calleeClassName, calleeMethodName, arguments, ih, mg);
-        }
-
         // 添加被调用方法信息
         String calleeMethodArgs = CommonUtil.argumentList(arguments);
 
@@ -251,16 +248,23 @@ public class MethodVisitor extends EmptyVisitor {
             return;
         }
 
-        String methodCall = String.format(format, callIdCounter.addAndGet(), type, calleeClassName, calleeMethodName, calleeMethodArgs);
+        int callId = callIdCounter.addAndGet();
+        String methodCall = String.format(format, callId, type, calleeClassName, calleeMethodName, calleeMethodArgs);
         MethodCallDto methodCallDto = MethodCallDto.genInstance(methodCall, getSourceLine());
         methodCalls.add(methodCallDto);
+
+        // 调用自定义接口实现类的方法
+        for (CustomHandlerInterface customHandler : customHandlerList) {
+            customHandler.handleMethodCall(callId, calleeClassName, calleeMethodName, arguments, ih, mg);
+        }
     }
 
+    // 获取源代码行号
     private int getSourceLine() {
         if (lineNumberTable == null) {
             return Constants.DEFAULT_LINE_NUMBER;
         }
         int sourceLine = lineNumberTable.getSourceLine(ih.getPosition());
-        return sourceLine >= 0 ? sourceLine : 0;
+        return Math.max(sourceLine, 0);
     }
 }
