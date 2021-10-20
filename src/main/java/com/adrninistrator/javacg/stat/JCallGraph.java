@@ -1,9 +1,9 @@
 package com.adrninistrator.javacg.stat;
 
-import com.adrninistrator.javacg.common.Constants;
+import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.*;
 import com.adrninistrator.javacg.enums.CallTypeEnum;
-import com.adrninistrator.javacg.extension.interfaces.CustomHandlerInterface;
+import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
 import com.adrninistrator.javacg.util.CommonUtil;
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
@@ -38,7 +38,7 @@ public class JCallGraph {
     private Map<String, ExtendsClassMethodInfo> extendsClassMethodInfoMap;
     private Map<String, List<String>> childrenClassInfoMap;
     private CallIdCounter callIdCounter = CallIdCounter.newInstance();
-    private List<CustomHandlerInterface> customHandlerList = new ArrayList<>();
+    private List<CustomCodeParserInterface> customCodeParserList = new ArrayList<>();
 
     private int jarNum = 0;
 
@@ -47,8 +47,8 @@ public class JCallGraph {
         jCallGraph.run(args);
     }
 
-    public void addCustomHandler(CustomHandlerInterface customHandler) {
-        customHandlerList.add(customHandler);
+    public void addCustomCodeParser(CustomCodeParserInterface customCodeParser) {
+        customCodeParserList.add(customCodeParser);
     }
 
     public boolean run(String[] args) {
@@ -91,8 +91,8 @@ public class JCallGraph {
                 }
 
                 // 调用自定义接口实现类的方法
-                for (CustomHandlerInterface customHandler : customHandlerList) {
-                    customHandler.handleJar(jarFilePath);
+                for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
+                    customCodeParser.handleJar(jarFilePath);
                 }
 
                 // 处理一个jar包
@@ -125,7 +125,7 @@ public class JCallGraph {
     private boolean handleOneJar(File jarFile, String jarFilePath, BufferedWriter resultWriter, BufferedWriter annotationOut) throws IOException {
         try (JarFile jar = new JarFile(jarFile)) {
             writeResult(resultWriter, "J:" + jarNum + " " + jarFilePath);
-            writeResult(resultWriter, Constants.NEW_LINE);
+            writeResult(resultWriter, JavaCGConstants.NEW_LINE);
 
             // 初始化
             init();
@@ -184,22 +184,22 @@ public class JCallGraph {
         classVisitor.setThreadChildClassMap(threadChildClassMap);
         classVisitor.setMethodAnnotationMap(methodAnnotationMap);
         classVisitor.setCallIdCounter(callIdCounter);
-        classVisitor.setCustomInterfaceList(customHandlerList);
+        classVisitor.setCustomCodeParserList(customCodeParserList);
         classVisitor.start();
 
         List<MethodCallDto> methodCalls = classVisitor.methodCalls();
         for (MethodCallDto methodCallDto : methodCalls) {
             writeResult(resultWriter, methodCallDto.getMethodCall());
-            if (methodCallDto.getSourceLine() != Constants.NONE_LINE_NUMBER) {
+            if (methodCallDto.getSourceLine() != JavaCGConstants.NONE_LINE_NUMBER) {
                 writeResult(resultWriter, " " + methodCallDto.getSourceLine());
                 writeResult(resultWriter, " " + jarNum);
             }
-            writeResult(resultWriter, Constants.NEW_LINE);
+            writeResult(resultWriter, JavaCGConstants.NEW_LINE);
         }
 
         // 调用自定义接口实现类的方法
-        for (CustomHandlerInterface customHandler : customHandlerList) {
-            customHandler.handleClass(javaClass);
+        for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
+            customCodeParser.handleClass(javaClass);
         }
     }
 
@@ -351,10 +351,10 @@ public class JCallGraph {
                 childMethodAttributeMap.putIfAbsent(superMethodWithArgs, superMethodAttribute);
                 // 添加父类调用子类的方法调用
                 String superCallChildClassMethod = String.format("M:%d %s:%s (%s)%s:%s %d", callIdCounter.addAndGet(), superClassName, superMethodWithArgs,
-                        CallTypeEnum.CTE_SCC.getType(), childClassName, superMethodWithArgs, Constants.DEFAULT_LINE_NUMBER);
+                        CallTypeEnum.CTE_SCC.getType(), childClassName, superMethodWithArgs, JavaCGConstants.DEFAULT_LINE_NUMBER);
                 writeResult(resultWriter, superCallChildClassMethod);
                 writeResult(resultWriter, " " + jarNum);
-                writeResult(resultWriter, Constants.NEW_LINE);
+                writeResult(resultWriter, JavaCGConstants.NEW_LINE);
                 continue;
             }
             if (superMethodAttribute.isPublicMethod() || superMethodAttribute.isProtectedMethod()) {
@@ -372,10 +372,10 @@ public class JCallGraph {
 
                 // 添加子类调用父类方法
                 String childCallSuperClassMethod = String.format("M:%d %s:%s (%s)%s:%s %d", callIdCounter.addAndGet(), childClassName, superMethodWithArgs,
-                        CallTypeEnum.CTE_CCS.getType(), superClassName, superMethodWithArgs, Constants.DEFAULT_LINE_NUMBER);
+                        CallTypeEnum.CTE_CCS.getType(), superClassName, superMethodWithArgs, JavaCGConstants.DEFAULT_LINE_NUMBER);
                 writeResult(resultWriter, childCallSuperClassMethod);
                 writeResult(resultWriter, " " + jarNum);
-                writeResult(resultWriter, Constants.NEW_LINE);
+                writeResult(resultWriter, JavaCGConstants.NEW_LINE);
             }
         }
         return true;
@@ -411,10 +411,10 @@ public class JCallGraph {
                     }
 
                     String interfaceCallClassMethod = String.format("M:%d %s:%s (%s)%s:%s %d", callIdCounter.addAndGet(), interfaceName, classMethodWithArgs,
-                            CallTypeEnum.CTE_ITF.getType(), className, classMethodWithArgs, Constants.DEFAULT_LINE_NUMBER);
+                            CallTypeEnum.CTE_ITF.getType(), className, classMethodWithArgs, JavaCGConstants.DEFAULT_LINE_NUMBER);
                     writeResult(resultWriter, interfaceCallClassMethod);
                     writeResult(resultWriter, " " + jarNum);
-                    writeResult(resultWriter, Constants.NEW_LINE);
+                    writeResult(resultWriter, JavaCGConstants.NEW_LINE);
                 }
             }
         }
@@ -432,8 +432,8 @@ public class JCallGraph {
                     }
 
                     // 调用自定义接口实现类的方法
-                    for (CustomHandlerInterface customHandler : customHandlerList) {
-                        customHandler.handleJarEntryFile(jar, jarEntry);
+                    for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
+                        customCodeParser.handleJarEntryFile(jar, jarEntry);
                     }
                 }
             }
@@ -475,8 +475,8 @@ public class JCallGraph {
         }
 
         // 调用自定义接口实现类的方法
-        for (CustomHandlerInterface customHandler : customHandlerList) {
-            customHandler.preHandleClass(javaClass);
+        for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
+            customCodeParser.preHandleClass(javaClass);
         }
     }
 
@@ -567,7 +567,7 @@ public class JCallGraph {
             String fullMethod = entry.getKey();
             Set<String> annotationSet = entry.getValue();
             for (String annotation : annotationSet) {
-                String methodWithAnnotation = fullMethod + " " + annotation + Constants.NEW_LINE;
+                String methodWithAnnotation = fullMethod + " " + annotation + JavaCGConstants.NEW_LINE;
                 out.write(methodWithAnnotation);
             }
         }

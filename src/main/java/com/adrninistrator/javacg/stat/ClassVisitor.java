@@ -1,9 +1,9 @@
 package com.adrninistrator.javacg.stat;
 
-import com.adrninistrator.javacg.common.Constants;
+import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.CallIdCounter;
 import com.adrninistrator.javacg.dto.MethodCallDto;
-import com.adrninistrator.javacg.extension.interfaces.CustomHandlerInterface;
+import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.ConstantPoolGen;
@@ -28,7 +28,7 @@ public class ClassVisitor extends EmptyVisitor {
     private Map<String, Boolean> threadChildClassMap;
     private Map<String, Set<String>> methodAnnotationMap;
     private CallIdCounter callIdCounter;
-    private List<CustomHandlerInterface> customHandlerList;
+    private List<CustomCodeParserInterface> customCodeParserList;
 
     public ClassVisitor(JavaClass jc) {
         clazz = jc;
@@ -55,7 +55,7 @@ public class ClassVisitor extends EmptyVisitor {
                 String referencedClass = constantPool.constantToString(constant);
 
                 MethodCallDto methodCallDto = MethodCallDto.genInstance(String.format(classReferenceFormat, referencedClass),
-                        Constants.NONE_LINE_NUMBER);
+                        JavaCGConstants.NONE_LINE_NUMBER);
                 methodCalls.add(methodCallDto);
             }
         }
@@ -71,7 +71,7 @@ public class ClassVisitor extends EmptyVisitor {
         visitor.setThreadChildClassMap(threadChildClassMap);
         visitor.setMethodAnnotationMap(methodAnnotationMap);
         visitor.setCallIdCounter(callIdCounter);
-        visitor.setCustomInterfaceList(customHandlerList);
+        visitor.setCustomCodeParserList(customCodeParserList);
         visitor.beforeStart();
         List<MethodCallDto> methodCallDtos = visitor.start();
         methodCalls.addAll(methodCallDtos);
@@ -110,7 +110,7 @@ public class ClassVisitor extends EmptyVisitor {
         this.callIdCounter = callIdCounter;
     }
 
-    public void setCustomInterfaceList(List<CustomHandlerInterface> customHandlerList) {
-        this.customHandlerList = customHandlerList;
+    public void setCustomCodeParserList(List<CustomCodeParserInterface> customCodeParserList) {
+        this.customCodeParserList = customCodeParserList;
     }
 }

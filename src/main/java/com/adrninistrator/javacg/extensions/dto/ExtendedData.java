@@ -1,23 +1,23 @@
-package com.adrninistrator.javacg.extension.dto;
+package com.adrninistrator.javacg.extensions.dto;
 
 /**
  * @author Adrninistrator
  * @date 2021/8/10
  * @description:
  */
-public class CustomData {
+public class ExtendedData {
     private int callId;
 
     private String dataType;
 
     private String dataValue;
 
-    public static CustomData genCustomData(int callId, String dataType, String dataValue) {
-        CustomData customData = new CustomData();
-        customData.setCallId(callId);
-        customData.setDataType(dataType);
-        customData.setDataValue(dataValue);
-        return customData;
+    public static ExtendedData genExtendedData(int callId, String dataType, String dataValue) {
+        ExtendedData extendedData = new ExtendedData();
+        extendedData.setCallId(callId);
+        extendedData.setDataType(dataType);
+        extendedData.setDataValue(dataValue);
+        return extendedData;
     }
 
     //

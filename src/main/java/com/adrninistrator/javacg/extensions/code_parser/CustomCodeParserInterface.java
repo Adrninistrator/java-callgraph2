@@ -1,6 +1,6 @@
-package com.adrninistrator.javacg.extension.interfaces;
+package com.adrninistrator.javacg.extensions.code_parser;
 
-import com.adrninistrator.javacg.extension.dto.CustomData;
+import com.adrninistrator.javacg.extensions.dto.ExtendedData;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.MethodGen;
@@ -15,7 +15,7 @@ import java.util.jar.JarFile;
  * @date 2021/8/10
  * @description:
  */
-public interface CustomHandlerInterface {
+public interface CustomCodeParserInterface {
 
     /**
      * 初始化
@@ -73,7 +73,7 @@ public interface CustomHandlerInterface {
      *
      * @return
      */
-    List<CustomData> getCustomDataList();
+    List<ExtendedData> getExtendedDataList();
 
     /**
      * 返回当前的自定义数据类型

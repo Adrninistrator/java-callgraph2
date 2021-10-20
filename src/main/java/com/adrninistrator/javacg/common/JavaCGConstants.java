@@ -6,7 +6,7 @@ package com.adrninistrator.javacg.common;
  * @description:
  */
 
-public class Constants {
+public class JavaCGConstants {
 
     public static final String FLAG_LAMBDA = "lambda$";
 
@@ -21,7 +21,7 @@ public class Constants {
 
     public static final String NEW_LINE = "\n";
 
-    private Constants() {
+    private JavaCGConstants() {
         throw new IllegalStateException("illegal");
     }
 }

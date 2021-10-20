@@ -1,11 +1,11 @@
 package com.adrninistrator.javacg.stat;
 
-import com.adrninistrator.javacg.common.Constants;
+import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.CallIdCounter;
 import com.adrninistrator.javacg.dto.MethodCallDto;
 import com.adrninistrator.javacg.dto.MethodInfo;
 import com.adrninistrator.javacg.enums.CallTypeEnum;
-import com.adrninistrator.javacg.extension.interfaces.CustomHandlerInterface;
+import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
 import com.adrninistrator.javacg.util.CommonUtil;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.EmptyVisitor;
@@ -29,7 +29,7 @@ public class MethodVisitor extends EmptyVisitor {
     private Map<String, Boolean> threadChildClassMap;
     private Map<String, Set<String>> methodAnnotationMap;
     private CallIdCounter callIdCounter;
-    private List<CustomHandlerInterface> customHandlerList;
+    private List<CustomCodeParserInterface> customCodeParserList;
 
     public MethodVisitor(MethodGen m, JavaClass jc) {
         visitedClass = jc;
@@ -63,8 +63,8 @@ public class MethodVisitor extends EmptyVisitor {
         this.callIdCounter = callIdCounter;
     }
 
-    public void setCustomInterfaceList(List<CustomHandlerInterface> customHandlerList) {
-        this.customHandlerList = customHandlerList;
+    public void setCustomCodeParserList(List<CustomCodeParserInterface> customCodeParserList) {
+        this.customCodeParserList = customCodeParserList;
     }
 
     public void beforeStart() {
@@ -171,7 +171,7 @@ public class MethodVisitor extends EmptyVisitor {
             return;
         }
 
-        String callType = bootstrapMethodMethod.getMethodName().startsWith(Constants.FLAG_LAMBDA) ? CallTypeEnum.CTE_LM.getType() : CallTypeEnum.CTE_ST.getType();
+        String callType = bootstrapMethodMethod.getMethodName().startsWith(JavaCGConstants.FLAG_LAMBDA) ? CallTypeEnum.CTE_LM.getType() : CallTypeEnum.CTE_ST.getType();
         addMethodCalls(callType, bootstrapMethodMethod.getClassName(), bootstrapMethodMethod.getMethodName(), bootstrapMethodMethod.getMethodArgumentTypes());
     }
 
@@ -188,7 +188,7 @@ public class MethodVisitor extends EmptyVisitor {
 
         boolean skipRawMethodCall = false;
 
-        if (Constants.METHOD_NAME_INIT.equals(calleeMethodName)) {
+        if (JavaCGConstants.METHOD_NAME_INIT.equals(calleeMethodName)) {
             // 处理Runnable实现类
             Boolean recordedRunnable = runnableImplClassMap.get(calleeClassName);
             if (recordedRunnable != null) {
@@ -203,7 +203,7 @@ public class MethodVisitor extends EmptyVisitor {
                     // Runnable实现类的<init>方法调用Runnable实现类的run方法
                     String runnableImplClassMethod = String.format("M:%d %s:%s%s (%s)%s:run()", callIdCounter.addAndGet(), calleeClassName, calleeMethodName, calleeMethodArgs,
                             CallTypeEnum.CTE_RIR.getType(), calleeClassName);
-                    MethodCallDto methodCallDto2 = MethodCallDto.genInstance(runnableImplClassMethod, Constants.DEFAULT_LINE_NUMBER);
+                    MethodCallDto methodCallDto2 = MethodCallDto.genInstance(runnableImplClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER);
                     methodCalls.add(methodCallDto2);
 
                     runnableImplClassMap.put(calleeClassName, Boolean.TRUE);
@@ -225,19 +225,19 @@ public class MethodVisitor extends EmptyVisitor {
                     // Callable实现类的<init>方法调用Callable实现类的call方法
                     String callableImplClassMethod = String.format("M:%d %s:%s%s (%s)%s:call()", callIdCounter.addAndGet(), calleeClassName, calleeMethodName, calleeMethodArgs,
                             CallTypeEnum.CTE_CIC.getType(), calleeClassName);
-                    MethodCallDto methodCallDto2 = MethodCallDto.genInstance(callableImplClassMethod, Constants.DEFAULT_LINE_NUMBER);
+                    MethodCallDto methodCallDto2 = MethodCallDto.genInstance(callableImplClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER);
                     methodCalls.add(methodCallDto2);
 
                     callableImplClassMap.put(calleeClassName, Boolean.TRUE);
                 }
             }
-        } else if (Constants.METHOD_NAME_START.equals(calleeMethodName) && "()".equals(calleeMethodArgs)) {
+        } else if (JavaCGConstants.METHOD_NAME_START.equals(calleeMethodName) && "()".equals(calleeMethodArgs)) {
             // 处理Thread子类
             if (Boolean.FALSE.equals(threadChildClassMap.get(calleeClassName))) {
                 // Thread子类的start方法调用run方法
                 String threadChildClassMethod = String.format("M:%d %s:%s%s (%s)%s:run()", callIdCounter.addAndGet(), calleeClassName, calleeMethodName, calleeMethodArgs,
                         CallTypeEnum.CTE_TSR.getType(), calleeClassName);
-                MethodCallDto methodCallDto2 = MethodCallDto.genInstance(threadChildClassMethod, Constants.DEFAULT_LINE_NUMBER);
+                MethodCallDto methodCallDto2 = MethodCallDto.genInstance(threadChildClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER);
                 methodCalls.add(methodCallDto2);
 
                 threadChildClassMap.put(calleeClassName, Boolean.TRUE);
@@ -254,15 +254,15 @@ public class MethodVisitor extends EmptyVisitor {
         methodCalls.add(methodCallDto);
 
         // 调用自定义接口实现类的方法
-        for (CustomHandlerInterface customHandler : customHandlerList) {
-            customHandler.handleMethodCall(callId, calleeClassName, calleeMethodName, arguments, ih, mg);
+        for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
+            customCodeParser.handleMethodCall(callId, calleeClassName, calleeMethodName, arguments, ih, mg);
         }
     }
 
     // 获取源代码行号
     private int getSourceLine() {
         if (lineNumberTable == null) {
-            return Constants.DEFAULT_LINE_NUMBER;
+            return JavaCGConstants.DEFAULT_LINE_NUMBER;
         }
         int sourceLine = lineNumberTable.getSourceLine(ih.getPosition());
         return Math.max(sourceLine, 0);

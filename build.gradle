@@ -4,7 +4,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 group 'com.github.adrninistrator'
-version = "0.0.2"
+version = "0.0.3"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
@@ -45,7 +45,7 @@ sourceSets {
 List bcel = ['org.apache.bcel:bcel:6.5.0']
 
 dependencies {
-    implementation bcel
+    compile bcel
 }
 
 compileJava.options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"

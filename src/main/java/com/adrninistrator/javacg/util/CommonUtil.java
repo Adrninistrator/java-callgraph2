@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg.util;
 
-import com.adrninistrator.javacg.common.Constants;
+import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.MethodInfo;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.*;
@@ -81,8 +81,8 @@ public class CommonUtil {
     }
 
     public static String getLambdaOrigMethod(String lambdaMethod) {
-        int indexLastLambda = lambdaMethod.lastIndexOf(Constants.FLAG_LAMBDA);
-        String tmpString = lambdaMethod.substring(indexLastLambda + Constants.FLAG_LAMBDA_LENGTH);
+        int indexLastLambda = lambdaMethod.lastIndexOf(JavaCGConstants.FLAG_LAMBDA);
+        String tmpString = lambdaMethod.substring(indexLastLambda + JavaCGConstants.FLAG_LAMBDA_LENGTH);
         int indexDollar = tmpString.indexOf('$');
         return tmpString.substring(0, indexDollar);
     }
@@ -90,7 +90,7 @@ public class CommonUtil {
     public static int getFuncStartSourceLine(Method method) {
         LineNumberTable lineNumberTable = method.getLineNumberTable();
         if (lineNumberTable == null || lineNumberTable.getLineNumberTable() == null) {
-            return Constants.DEFAULT_LINE_NUMBER;
+            return JavaCGConstants.DEFAULT_LINE_NUMBER;
         }
 
         return lineNumberTable.getLineNumberTable()[0].getLineNumber();
@@ -99,16 +99,16 @@ public class CommonUtil {
     private static int getInitFuncStartSourceLine(JavaClass javaClass) {
         Method[] methods = javaClass.getMethods();
         if (methods == null) {
-            return Constants.DEFAULT_LINE_NUMBER;
+            return JavaCGConstants.DEFAULT_LINE_NUMBER;
         }
 
         for (Method method : methods) {
-            if (Constants.METHOD_NAME_INIT.equals(method.getName())) {
+            if (JavaCGConstants.METHOD_NAME_INIT.equals(method.getName())) {
                 return CommonUtil.getFuncStartSourceLine(method);
             }
         }
 
-        return Constants.DEFAULT_LINE_NUMBER;
+        return JavaCGConstants.DEFAULT_LINE_NUMBER;
     }
 
     public static String getCanonicalPath(String filePath) {
