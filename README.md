@@ -6,6 +6,8 @@ java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](h
 
 后来进行了优化和增强，差别已比较大，不容易合并回原始项目中，且仅提供静态分析的功能，因此创建了该项目。
 
+`当前项目提供了插件功能，可用于为Java代码自动生成UML时序图`，可参考[https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram](https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram)。
+
 ## 1.1. 编译命令：
 
 ```
