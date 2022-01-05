@@ -17,6 +17,11 @@ def defaultEncoding = 'UTF-8'
 project.buildDir = 'build'
 
 repositories {
+    // 使用 maven 本地仓库
+    mavenLocal()
+    // 使用阿里云代理的中央仓库
+    maven { name "aliyun" ; url 'https://maven.aliyun.com/repository/public' }
+    // 使用 maven 中央仓库
     mavenCentral()
 }
 
@@ -111,7 +116,13 @@ publishing {
         }
     }
     repositories {
-        maven {
+        // 使用 maven 本地仓库
+        mavenLocal()
+        // 使用阿里云代理的中央仓库
+        maven { name "aliyun" ; url 'https://maven.aliyun.com/repository/public' }
+        // 使用 maven 中央仓库
+        mavenCentral()
+        /*maven {
             name 'sonatypeRepository'
             url 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
             credentials {
@@ -126,7 +137,7 @@ publishing {
                 username = "${NEXUS_USERNAME}"
                 password = "${NEXUS_PASSWORD}"
             }
-        }
+        }*/
     }
 }
 
