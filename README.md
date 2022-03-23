@@ -8,21 +8,25 @@ java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](h
 
 `当前项目提供了插件功能，可用于为Java代码自动生成UML时序图`，可参考[https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram](https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram)。
 
-## 1.1. 编译命令：
+# 2. 更新说明
+
+- 0.0.4
+
+支持对目录中的class文件进行处理
+
+支持将指定的一个或多个jar包或目录进行合并后再处理
+
+提供用于生成Java方法UML时序图的插件功能
+
+不再通过JVM参数“-Doutput.file=”指定输出文件路径，默认将输出文件生成在指定的第一个jar包所在目录中（若指定的是目录则在该目录中）
+
+## 2.1. 编译命令：
 
 ```
 gradlew jar
 ```
 
-## 1.2. 执行参数
-
-- VM options:
-
-用于指定输出文件路径
-
-```
--Doutput.file=a.txt
-```
+## 2.2. 执行参数
 
 - Program arguments
 
@@ -32,7 +36,7 @@ gradlew jar
 build/libs/a.jar build/libs/b.jar
 ```
 
-# 2. 输出格式
+# 3. 输出格式
 
 java-callgraph2输出的方法调用关系的格式如下所示：
 
@@ -77,7 +81,7 @@ java-callgraph2增加的调用类型typeofcall如下：
 
 jar包序号，从1开始
 
-# 3. 增加jar包文件路径
+# 4. 增加jar包文件路径
 
 java-callgraph2会输出当前jar包文件路径，如下所示：
 
@@ -93,7 +97,7 @@ jar包序号，从1开始
 
 jar包文件路径
 
-# 4. 原始java-callgraph调用关系缺失的场景
+# 5. 原始java-callgraph调用关系缺失的场景
 
 原始java-callgraph在多数场景下能够获取到Java方法调用关系，但以下场景的调用关系会缺失：
 

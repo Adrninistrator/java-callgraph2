@@ -3,8 +3,10 @@ package com.adrninistrator.javacg.stat;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.*;
 import com.adrninistrator.javacg.enums.CallTypeEnum;
+import com.adrninistrator.javacg.enums.HandleJarResultEnum;
 import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
-import com.adrninistrator.javacg.util.CommonUtil;
+import com.adrninistrator.javacg.util.HandleJarUtil;
+import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
@@ -27,6 +29,8 @@ public class JCallGraph {
     private static final String CALLABLE_CLASS_NAME = Callable.class.getName();
     private static final String THREAD_CLASS_NAME = Thread.class.getName();
 
+    private static final String METHOD_CALL_FORMAT = JavaCGConstants.FILE_KEY_METHOD_PREFIX + "%d %s:%s (%s)%s:%s %d";
+
     private Map<String, Set<String>> calleeMethodMapGlobal;
     private Map<String, ClassInterfaceMethodInfo> classInterfaceMethodInfoMap;
     private Map<String, List<String>> interfaceMethodWithArgsMap;
@@ -40,65 +44,81 @@ public class JCallGraph {
     private CallIdCounter callIdCounter = CallIdCounter.newInstance();
     private List<CustomCodeParserInterface> customCodeParserList = new ArrayList<>();
 
-    private int jarNum = 0;
+    /*
+        是否需要记录所有的接口调用实现类，及子类调用父类方法
+        默认不需要，即接口调用实现类，及子类调用父类方法，仅当调用方法有被其他方法调用时，才记录
+        若为true，则不再需要使用calleeMethodMapGlobal；若为false，则需要使用calleeMethodMapGlobal
+        需要保留该选项，因为有可能需要根据接口或父类展示所有的实现类或子类的操作
+     */
+    private boolean recordAll = false;
+
+    // 保存当前的输出文件路径
+    private String outputFilePath;
+
+    // 保存当前输出的注解信息的文件路径
+    private String annotationOutputFilePath;
+
+    // 处理class文件时，缓存当前处理的文件的第一层目录名及对应jar包信息
+    private String lastFirstDirName;
+    private JarInfo lastJarInfo;
 
     public static void main(String[] args) {
         JCallGraph jCallGraph = new JCallGraph();
         jCallGraph.run(args);
     }
 
+    public static void setRecordAll() {
+        System.setProperty(JavaCGConstants.KEY_RECORD_ALL, "1");
+    }
+
     public void addCustomCodeParser(CustomCodeParserInterface customCodeParser) {
         customCodeParserList.add(customCodeParser);
+    }
+
+    public String getOutputFilePath() {
+        return outputFilePath;
+    }
+
+    public String getAnnotationOutputFilePath() {
+        return annotationOutputFilePath;
     }
 
     public boolean run(String[] args) {
         // calleeMethodMapGlobal在处理所有的jar包时都需要使用，只初始化一次
         calleeMethodMapGlobal = new HashMap<>(INIT_SIZE_1000);
 
-        String outputFilePath = System.getProperty("output.file");
-        if (outputFilePath == null || outputFilePath.isEmpty()) {
-            System.err.println("### 请使用\"-Doutput.file=xxx\"指定输出文件路径");
+        if (System.getProperty(JavaCGConstants.KEY_RECORD_ALL) != null) {
+            System.out.println("指定了需要记录所有的接口调用实现类，及子类调用父类方法");
+            recordAll = true;
+        }
+
+        // 保存需要处理的jar包文件名及对应的序号
+        Map<String, JarInfo> jarInfoMap = new HashMap<>(args.length);
+
+        // 对指定的jar包进行处理
+        String newJarFilePath = HandleJarUtil.handleJar(args, jarInfoMap);
+        if (newJarFilePath == null) {
             return false;
         }
 
-        Map<String, Integer> filePathSet = new HashMap<>(args.length);
+        outputFilePath = newJarFilePath + JavaCGConstants.EXT_TXT;
+        annotationOutputFilePath = newJarFilePath + JavaCGConstants.FILE_FLAG_ANNOTATION + JavaCGConstants.EXT_TXT;
+        System.out.println("写入文件: " + outputFilePath + " " + annotationOutputFilePath);
 
-        String annotationOutputFilePath = outputFilePath + "-annotation.txt";
-        System.out.println("将方法注解信息写入文件: " + annotationOutputFilePath);
-
-        try (BufferedWriter resultWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFilePath)));
+        try (BufferedWriter resultWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(newJarFilePath + JavaCGConstants.EXT_TXT)));
              BufferedWriter annotationOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(annotationOutputFilePath),
                      StandardCharsets.UTF_8))) {
-            for (String arg : args) {
-                String jarFilePath = CommonUtil.getCanonicalPath(arg);
-                if (jarFilePath == null) {
-                    System.err.println("### getCanonicalPath失败: " + arg);
-                    return false;
-                }
+            System.out.println("处理jar文件: " + newJarFilePath);
+            File jarFile = new File(newJarFilePath);
 
-                if (filePathSet.get(jarFilePath) != null) {
-                    System.out.println(arg + " 跳过jar文件: " + jarFilePath);
-                    continue;
-                }
+            // 调用自定义接口实现类的方法
+            for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
+                customCodeParser.handleJar(newJarFilePath);
+            }
 
-                filePathSet.put(jarFilePath, ++jarNum);
-
-                System.out.println(arg + " 处理jar文件: " + jarFilePath);
-                File jarFile = new File(jarFilePath);
-
-                if (!jarFile.exists()) {
-                    System.err.println("### jar文件 " + jarFilePath + " 不存在");
-                }
-
-                // 调用自定义接口实现类的方法
-                for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
-                    customCodeParser.handleJar(jarFilePath);
-                }
-
-                // 处理一个jar包
-                if (!handleOneJar(jarFile, jarFilePath, resultWriter, annotationOut)) {
-                    return false;
-                }
+            // 处理一个jar包
+            if (!handleOneJar(jarFile, newJarFilePath, resultWriter, annotationOut, jarInfoMap)) {
+                return false;
             }
 
             return true;
@@ -119,14 +139,14 @@ public class JCallGraph {
         extendsClassesSet = new HashSet<>(INIT_SIZE_500);
         extendsClassMethodInfoMap = new HashMap<>(INIT_SIZE_500);
         childrenClassInfoMap = new HashMap<>(INIT_SIZE_500);
+
+        lastFirstDirName = null;
+        lastJarInfo = null;
     }
 
     // 处理一个jar包
-    private boolean handleOneJar(File jarFile, String jarFilePath, BufferedWriter resultWriter, BufferedWriter annotationOut) throws IOException {
+    private boolean handleOneJar(File jarFile, String jarFilePath, BufferedWriter resultWriter, BufferedWriter annotationOut, Map<String, JarInfo> jarInfoMap) throws IOException {
         try (JarFile jar = new JarFile(jarFile)) {
-            writeResult(resultWriter, "J:" + jarNum + " " + jarFilePath);
-            writeResult(resultWriter, JavaCGConstants.NEW_LINE);
-
             // 初始化
             init();
 
@@ -135,20 +155,23 @@ public class JCallGraph {
                 return false;
             }
 
-            for (Enumeration<JarEntry> enumeration = jar.entries(); enumeration.hasMoreElements(); ) {
+            // 对Class进行第二次预处理
+            if (!preHandleClasses2(jarFilePath, jarFile)) {
+                return false;
+            }
+
+            // 处理当前jar包中的class文件
+            Enumeration<JarEntry> enumeration = jar.entries();
+            while (enumeration.hasMoreElements()) {
                 JarEntry jarEntry = enumeration.nextElement();
-                if (!jarEntry.isDirectory()) {
-                    if (jarEntry.getName().endsWith(".class")) {
-                        // 处理一个class文件
-                        handleOneClass(jarFilePath, jarEntry, resultWriter);
-                    }
+                if (!jarEntry.isDirectory() && jarEntry.getName().endsWith(".class")) {
+                    // 处理一个class文件
+                    handleOneClass(jarFilePath, jarEntry, resultWriter, jarInfoMap);
                 }
             }
 
-            // 将接口中的抽象方法加到抽象父类中
-            if (!addInterfaceMethod4SuperClass()) {
-                return false;
-            }
+            // 将接口中的抽象方法添加到抽象父类中
+            addInterfaceMethod4SuperClass();
 
             // 记录父类调用子类方法，及子类调用父类方法
             if (!recordExtendsClassMethod(resultWriter)) {
@@ -166,35 +189,48 @@ public class JCallGraph {
     }
 
     // 处理一个class文件
-    private void handleOneClass(String jarFilePath, JarEntry jarEntry, BufferedWriter resultWriter) throws IOException {
-        ClassParser cp = new ClassParser(jarFilePath, jarEntry.getName());
-        JavaClass javaClass = cp.parse();
+    private void handleOneClass(String jarFilePath, JarEntry jarEntry, BufferedWriter resultWriter, Map<String, JarInfo> jarInfoMap) throws IOException {
+        String jarEntryName = jarEntry.getName();
 
-        System.out.println("处理Class: " + javaClass.getClassName());
-
-        if (javaClass.isClass() && extendsClassesSet.contains(javaClass.getClassName())) {
-            // 查找涉及继承的类的信息
-            findExtendsClassesInfo(javaClass);
+        // 获取当前处理的jar包信息
+        HandleJarResultEnum handleJarResultEnum = handleCurrentJarInfo(jarInfoMap, jarEntryName);
+        if (handleJarResultEnum == HandleJarResultEnum.HJRE_FAIL) {
+            return;
         }
 
+        if (handleJarResultEnum == HandleJarResultEnum.HJRE_FIRST) {
+            /*
+                第一次处理某个jar包
+                向文件写入数据，内容为jar包信息
+                格式为“J:[jar包序号] jar包文件路径]，或”D:[jar包序号] 目录路径“
+             */
+            writeResult(resultWriter, lastJarInfo.getJarType() + lastJarInfo.getJarNum() + " " + lastJarInfo.getJarPath());
+        }
+
+        ClassParser cp = new ClassParser(jarFilePath, jarEntryName);
+        JavaClass javaClass = cp.parse();
+
+        JavaCGUtil.debugPrint("处理Class: " + javaClass.getClassName());
+
         ClassVisitor classVisitor = new ClassVisitor(javaClass);
-        classVisitor.setCalleeMethodMap(calleeMethodMapGlobal);
+        classVisitor.setCalleeMethodMapGlobal(calleeMethodMapGlobal);
         classVisitor.setRunnableImplClassMap(runnableImplClassMap);
         classVisitor.setCallableImplClassMap(callableImplClassMap);
         classVisitor.setThreadChildClassMap(threadChildClassMap);
         classVisitor.setMethodAnnotationMap(methodAnnotationMap);
         classVisitor.setCallIdCounter(callIdCounter);
         classVisitor.setCustomCodeParserList(customCodeParserList);
+        classVisitor.setRecordAll(recordAll);
+
         classVisitor.start();
 
         List<MethodCallDto> methodCalls = classVisitor.methodCalls();
         for (MethodCallDto methodCallDto : methodCalls) {
-            writeResult(resultWriter, methodCallDto.getMethodCall());
+            String data = methodCallDto.getMethodCall();
             if (methodCallDto.getSourceLine() != JavaCGConstants.NONE_LINE_NUMBER) {
-                writeResult(resultWriter, " " + methodCallDto.getSourceLine());
-                writeResult(resultWriter, " " + jarNum);
+                data = data + " " + methodCallDto.getSourceLine() + " " + lastJarInfo.getJarNum();
             }
-            writeResult(resultWriter, JavaCGConstants.NEW_LINE);
+            writeResult(resultWriter, data);
         }
 
         // 调用自定义接口实现类的方法
@@ -203,17 +239,49 @@ public class JCallGraph {
         }
     }
 
+    // 获取当前处理的jar包信息
+    private HandleJarResultEnum handleCurrentJarInfo(Map<String, JarInfo> jarInfoMap, String jarEntryName) {
+        if (jarInfoMap.size() == 1) {
+            // 只有一个jar包，从Map取值时使用默认key
+            if (lastJarInfo == null) {
+                // 第一次处理当前jar包
+                lastJarInfo = jarInfoMap.get(JavaCGConstants.ONE_JAR_INFO_KEY);
+                return HandleJarResultEnum.HJRE_FIRST;
+            }
+            // 不是第一次处理当前jar包
+            return HandleJarResultEnum.HJRE_NOT_FIRST;
+        }
+
+        // jar包数量大于1个，从Map取值时使用当前JarEntry的第一层目录名称
+        int index = jarEntryName.indexOf("/");
+        if (index == -1) {
+            System.err.println("JarEntry名称中不包含/ " + jarEntryName);
+            return HandleJarResultEnum.HJRE_FAIL;
+        }
+
+        String firstDirName = jarEntryName.substring(0, index);
+        if (lastFirstDirName != null && lastFirstDirName.equals(firstDirName)) {
+            // 第一层目录名未变化时，使用缓存数据
+            return HandleJarResultEnum.HJRE_NOT_FIRST;
+        }
+        lastFirstDirName = firstDirName;
+
+        // 首次处理，或第一层目录名变化时，需要从Map获取
+        lastJarInfo = jarInfoMap.get(firstDirName);
+        if (lastJarInfo == null) {
+            System.err.println("合并后的jar包中出现的名称未记录过: " + jarEntryName);
+        }
+        return HandleJarResultEnum.HJRE_FIRST;
+    }
+
     // 将接口中的抽象方法加到抽象父类中
-    private boolean addInterfaceMethod4SuperClass() {
+    private void addInterfaceMethod4SuperClass() {
         for (Map.Entry<String, List<String>> childrenClassInfoEntry : childrenClassInfoMap.entrySet()) {
             String superClassName = childrenClassInfoEntry.getKey();
             ExtendsClassMethodInfo extendsClassMethodInfo = extendsClassMethodInfoMap.get(superClassName);
-            if (extendsClassMethodInfo == null) {
-                // 其他jar包中的Class可以找到，但是找不到它们的方法，是正常的情况
-                continue;
-            }
-
-            if (!extendsClassMethodInfo.isAbstractClass()) {
+            if (extendsClassMethodInfo == null || !extendsClassMethodInfo.isAbstractClass()) {
+                // 为空的情况，对应其他jar包中的Class可以找到，但是找不到它们的方法，是正常的，不处理
+                // 若不是抽象类则不处理
                 continue;
             }
 
@@ -240,8 +308,6 @@ public class JCallGraph {
                 }
             }
         }
-
-        return true;
     }
 
     // 记录父类调用子类方法，及子类调用父类方法
@@ -269,7 +335,7 @@ public class JCallGraph {
 
     // 处理一个顶层父类
     private boolean handleOneTopSuperClass(String topSuperClassName, BufferedWriter resultWriter) throws IOException {
-        System.out.println("处理一个顶层父类: " + topSuperClassName);
+        JavaCGUtil.debugPrint("处理一个顶层父类: " + topSuperClassName);
         List<TmpNode4ExtendsClassMethod> tmpNodeList = new ArrayList<>();
         int currentLevel = 0;
 
@@ -350,32 +416,30 @@ public class JCallGraph {
                 // 处理父类抽象方法
                 childMethodAttributeMap.putIfAbsent(superMethodWithArgs, superMethodAttribute);
                 // 添加父类调用子类的方法调用
-                String superCallChildClassMethod = String.format("M:%d %s:%s (%s)%s:%s %d", callIdCounter.addAndGet(), superClassName, superMethodWithArgs,
+                String superCallChildClassMethod = String.format(METHOD_CALL_FORMAT, callIdCounter.addAndGet(), superClassName, superMethodWithArgs,
                         CallTypeEnum.CTE_SCC.getType(), childClassName, superMethodWithArgs, JavaCGConstants.DEFAULT_LINE_NUMBER);
-                writeResult(resultWriter, superCallChildClassMethod);
-                writeResult(resultWriter, " " + jarNum);
-                writeResult(resultWriter, JavaCGConstants.NEW_LINE);
-                continue;
-            }
-            if (superMethodAttribute.isPublicMethod() || superMethodAttribute.isProtectedMethod()) {
+                writeResult(resultWriter, superCallChildClassMethod + " " + JavaCGConstants.DEFAULT_JAR_NUM);
+            } else if (superMethodAttribute.isPublicMethod() || superMethodAttribute.isProtectedMethod()) {
                 // 父类的public/protected且非抽象方法
                 if (childMethodAttributeMap.get(superMethodWithArgs) != null) {
                     continue;
                 }
-                Set<String> childCalleeMethodWithArgsSet = calleeMethodMapGlobal.get(childClassName);
-                if (!childClassMethodInfo.isAbstractClass() &&
-                        (childCalleeMethodWithArgsSet == null || !childCalleeMethodWithArgsSet.contains(superMethodWithArgs))) {
-                    continue;
+
+                if (!childClassMethodInfo.isAbstractClass() && !recordAll) {
+                    // 子类非抽象类，判断是否有被调用
+                    Set<String> childCalleeMethodWithArgsSet = calleeMethodMapGlobal.get(childClassName);
+                    if (childCalleeMethodWithArgsSet == null || !childCalleeMethodWithArgsSet.contains(superMethodWithArgs)) {
+                        // 子类未被调用，不添加
+                        continue;
+                    }
                 }
 
                 childMethodAttributeMap.put(superMethodWithArgs, superMethodAttribute);
 
                 // 添加子类调用父类方法
-                String childCallSuperClassMethod = String.format("M:%d %s:%s (%s)%s:%s %d", callIdCounter.addAndGet(), childClassName, superMethodWithArgs,
+                String childCallSuperClassMethod = String.format(METHOD_CALL_FORMAT, callIdCounter.addAndGet(), childClassName, superMethodWithArgs,
                         CallTypeEnum.CTE_CCS.getType(), superClassName, superMethodWithArgs, JavaCGConstants.DEFAULT_LINE_NUMBER);
-                writeResult(resultWriter, childCallSuperClassMethod);
-                writeResult(resultWriter, " " + jarNum);
-                writeResult(resultWriter, JavaCGConstants.NEW_LINE);
+                writeResult(resultWriter, childCallSuperClassMethod + " " + JavaCGConstants.DEFAULT_JAR_NUM);
             }
         }
         return true;
@@ -395,7 +459,8 @@ public class JCallGraph {
             // 找到在接口和实现类中都存在的，且有被调用的方法
             for (String interfaceName : interfaceNameList) {
                 Set<String> calleeMethodWithArgsSet = calleeMethodMapGlobal.get(interfaceName);
-                if (calleeMethodWithArgsSet == null) {
+                if (!recordAll && calleeMethodWithArgsSet == null) {
+                    // 接口未被调用，不添加
                     continue;
                 }
 
@@ -406,15 +471,19 @@ public class JCallGraph {
 
                 List<String> classMethodWithArgsList = classInterfaceMethodInfo.getMethodWithArgsList();
                 for (String classMethodWithArgs : classMethodWithArgsList) {
-                    if (!interfaceMethodWithArgsList.contains(classMethodWithArgs) || !calleeMethodWithArgsSet.contains(classMethodWithArgs)) {
+                    if (!interfaceMethodWithArgsList.contains(classMethodWithArgs)) {
+                        // 接口中不包含的方法，跳过
                         continue;
                     }
 
-                    String interfaceCallClassMethod = String.format("M:%d %s:%s (%s)%s:%s %d", callIdCounter.addAndGet(), interfaceName, classMethodWithArgs,
+                    if (!recordAll && !calleeMethodWithArgsSet.contains(classMethodWithArgs)) {
+                        // 方法未被调用，不添加
+                        continue;
+                    }
+
+                    String interfaceCallClassMethod = String.format(METHOD_CALL_FORMAT, callIdCounter.addAndGet(), interfaceName, classMethodWithArgs,
                             CallTypeEnum.CTE_ITF.getType(), className, classMethodWithArgs, JavaCGConstants.DEFAULT_LINE_NUMBER);
-                    writeResult(resultWriter, interfaceCallClassMethod);
-                    writeResult(resultWriter, " " + jarNum);
-                    writeResult(resultWriter, JavaCGConstants.NEW_LINE);
+                    writeResult(resultWriter, interfaceCallClassMethod + " " + JavaCGConstants.DEFAULT_JAR_NUM);
                 }
             }
         }
@@ -423,8 +492,10 @@ public class JCallGraph {
     // 对Class进行预处理
     private boolean preHandleClasses(String jarFilePath, File jarFile) {
         try (JarFile jar = new JarFile(jarFile)) {
-            for (Enumeration<JarEntry> enumeration = jar.entries(); enumeration.hasMoreElements(); ) {
+            Enumeration<JarEntry> enumeration = jar.entries();
+            while (enumeration.hasMoreElements()) {
                 JarEntry jarEntry = enumeration.nextElement();
+
                 if (!jarEntry.isDirectory()) {
                     if (jarEntry.getName().endsWith(".class")) {
                         // 对一个类文件进行预处理
@@ -437,6 +508,41 @@ public class JCallGraph {
                     }
                 }
             }
+
+            // 调用自定义接口实现类的方法
+            for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
+                customCodeParser.setClassInterfaceMethodInfoMap(classInterfaceMethodInfoMap);
+            }
+
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // 对Class进行第二次预处理
+    private boolean preHandleClasses2(String jarFilePath, File jarFile) {
+        try (JarFile jar = new JarFile(jarFile)) {
+            Enumeration<JarEntry> enumeration = jar.entries();
+            while (enumeration.hasMoreElements()) {
+                JarEntry jarEntry = enumeration.nextElement();
+                if (!jarEntry.isDirectory() && jarEntry.getName().endsWith(".class")) {
+                    ClassParser cp = new ClassParser(jarFilePath, jarEntry.getName());
+                    JavaClass javaClass = cp.parse();
+
+                    if (javaClass.isClass() && extendsClassesSet.contains(javaClass.getClassName())) {
+                        // 查找涉及继承的类的信息，需要提前执行，使后续处理方法调用时，extendsClassMethodInfoMap的数据是完整的
+                        findExtendsClassesInfo(javaClass);
+                    }
+                }
+            }
+
+            // 调用自定义接口实现类的方法
+            for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
+                customCodeParser.setExtendsClassMethodInfoMap(extendsClassMethodInfoMap);
+            }
+
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -457,7 +563,7 @@ public class JCallGraph {
             Method[] methods = javaClass.getMethods();
             if (methods != null && methods.length > 0 &&
                     interfaceMethodWithArgsMap.get(className) == null) {
-                List<String> interfaceMethodWithArgsList = CommonUtil.genInterfaceAbstractMethodWithArgs(methods);
+                List<String> interfaceMethodWithArgsList = JavaCGUtil.genInterfaceAbstractMethodWithArgs(methods);
                 interfaceMethodWithArgsMap.put(className, interfaceMethodWithArgsList);
             }
         }
@@ -494,7 +600,7 @@ public class JCallGraph {
             List<String> interfaceNameList = new ArrayList<>(interfaceNames.length);
             interfaceNameList.addAll(Arrays.asList(interfaceNames));
 
-            List<String> implClassMethodWithArgsList = CommonUtil.genImplClassMethodWithArgs(methods);
+            List<String> implClassMethodWithArgsList = JavaCGUtil.genImplClassMethodWithArgs(methods);
             classInterfaceMethodInfo.setInterfaceNameList(interfaceNameList);
             classInterfaceMethodInfo.setMethodWithArgsList(implClassMethodWithArgsList);
 
@@ -523,14 +629,8 @@ public class JCallGraph {
         String superClassName = javaClass.getSuperclassName();
         if (!superClassName.startsWith("java.")) {
             // 将父类及其子类进行缓存，忽略以"java."开头的父类
-            List<String> childrenClassInfoList = childrenClassInfoMap.get(superClassName);
-            if (childrenClassInfoList == null) {
-                List<String> newChildrenClassInfoList = new ArrayList<>();
-                newChildrenClassInfoList.add(className);
-                childrenClassInfoMap.put(superClassName, newChildrenClassInfoList);
-            } else {
-                childrenClassInfoList.add(className);
-            }
+            List<String> childrenClassInfoList = childrenClassInfoMap.computeIfAbsent(superClassName, k -> new ArrayList<>());
+            childrenClassInfoList.add(className);
         }
 
         // 将当前类的方法信息缓存
@@ -552,7 +652,7 @@ public class JCallGraph {
                     methodAttribute.setPublicMethod(method.isPublic());
                     methodAttribute.setProtectedMethod(method.isProtected());
 
-                    String methodWithArgs = methodName + CommonUtil.argumentList(method.getArgumentTypes());
+                    String methodWithArgs = methodName + JavaCGUtil.getArgListStr(method.getArgumentTypes());
                     methodAttributeMap.put(methodWithArgs, methodAttribute);
                 }
             }
@@ -575,6 +675,6 @@ public class JCallGraph {
 
     // 将结果写到文件中
     private void writeResult(BufferedWriter resultWriter, String data) throws IOException {
-        resultWriter.write(data);
+        resultWriter.write(data + JavaCGConstants.NEW_LINE);
     }
 }

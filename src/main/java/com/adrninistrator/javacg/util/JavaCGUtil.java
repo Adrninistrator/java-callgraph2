@@ -1,15 +1,16 @@
 package com.adrninistrator.javacg.util;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.dto.ClassInterfaceMethodInfo;
+import com.adrninistrator.javacg.dto.ExtendsClassMethodInfo;
 import com.adrninistrator.javacg.dto.MethodInfo;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.Type;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author adrninistrator
@@ -17,7 +18,9 @@ import java.util.List;
  * @description:
  */
 
-public class CommonUtil {
+public class JavaCGUtil {
+
+    private static boolean debugPrintFlag = System.getProperty(JavaCGConstants.KEY_DEBUG_PRINT) != null;
 
     public static boolean isInnerAnonymousClass(String className) {
         if (!className.contains("$")) {
@@ -46,7 +49,7 @@ public class CommonUtil {
         return true;
     }
 
-    public static String argumentList(Type[] arguments) {
+    public static String getArgListStr(Type[] arguments) {
         StringBuilder sb = new StringBuilder("(");
         for (int i = 0; i < arguments.length; i++) {
             if (i != 0) {
@@ -64,7 +67,7 @@ public class CommonUtil {
             String methodName = method.getName();
             // 忽略"<init>"和"<clinit>"方法
             if (!methodName.startsWith("<") && method.isPublic() && !method.isAbstract() && !method.isStatic()) {
-                methodInfoList.add(methodName + CommonUtil.argumentList(method.getArgumentTypes()));
+                methodInfoList.add(methodName + JavaCGUtil.getArgListStr(method.getArgumentTypes()));
             }
         }
         return methodInfoList;
@@ -74,7 +77,7 @@ public class CommonUtil {
         List<String> methodInfoList = new ArrayList<>(methods.length);
         for (Method method : methods) {
             if (method.isAbstract()) {
-                methodInfoList.add(method.getName() + CommonUtil.argumentList(method.getArgumentTypes()));
+                methodInfoList.add(method.getName() + JavaCGUtil.getArgListStr(method.getArgumentTypes()));
             }
         }
         return methodInfoList;
@@ -82,7 +85,7 @@ public class CommonUtil {
 
     public static String getLambdaOrigMethod(String lambdaMethod) {
         int indexLastLambda = lambdaMethod.lastIndexOf(JavaCGConstants.FLAG_LAMBDA);
-        String tmpString = lambdaMethod.substring(indexLastLambda + JavaCGConstants.FLAG_LAMBDA_LENGTH);
+        String tmpString = lambdaMethod.substring(indexLastLambda + JavaCGConstants.FLAG_LAMBDA.length());
         int indexDollar = tmpString.indexOf('$');
         return tmpString.substring(0, indexDollar);
     }
@@ -104,20 +107,11 @@ public class CommonUtil {
 
         for (Method method : methods) {
             if (JavaCGConstants.METHOD_NAME_INIT.equals(method.getName())) {
-                return CommonUtil.getFuncStartSourceLine(method);
+                return JavaCGUtil.getFuncStartSourceLine(method);
             }
         }
 
         return JavaCGConstants.DEFAULT_LINE_NUMBER;
-    }
-
-    public static String getCanonicalPath(String filePath) {
-        try {
-            return new File(filePath).getCanonicalPath();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     /**
@@ -149,7 +143,7 @@ public class CommonUtil {
      * @param javaClass
      * @return
      */
-    public static MethodInfo getBootstrapMethodMethod(BootstrapMethod bootstrapMethod, JavaClass javaClass) {
+    public static MethodInfo getBootstrapMethodInfo(BootstrapMethod bootstrapMethod, JavaClass javaClass) {
         for (int argIndex : bootstrapMethod.getBootstrapArguments()) {
             Constant constantArg = javaClass.getConstantPool().getConstant(argIndex);
             if (!(constantArg instanceof ConstantMethodHandle)) {
@@ -208,7 +202,102 @@ public class CommonUtil {
         return null;
     }
 
-    private CommonUtil() {
+    /**
+     * 判断childClassName是否直接或间接继承自superClassName
+     *
+     * @param childClassName
+     * @param superClassName
+     * @param extendsClassMethodInfoMap
+     * @return
+     */
+    public static boolean isChildOf(String childClassName, String superClassName, Map<String, ExtendsClassMethodInfo> extendsClassMethodInfoMap) {
+        if (childClassName == null || superClassName == null || extendsClassMethodInfoMap == null) {
+            return false;
+        }
+
+        String currentClassName = childClassName;
+        while (true) {
+            ExtendsClassMethodInfo extendsClassMethodInfo = extendsClassMethodInfoMap.get(currentClassName);
+            if (extendsClassMethodInfo == null) {
+                return false;
+            }
+
+            if (superClassName.equals(extendsClassMethodInfo.getSuperClassName())) {
+                return true;
+            }
+
+            currentClassName = extendsClassMethodInfo.getSuperClassName();
+        }
+    }
+
+    /**
+     * 判断childClassName是否直接或间接实现了interfaceName
+     *
+     * @param className
+     * @param interfaceName
+     * @param extendsClassMethodInfoMap
+     * @param classInterfaceMethodInfoMap
+     * @return
+     */
+    public static boolean isImplementationOf(String className, String interfaceName, Map<String, ExtendsClassMethodInfo> extendsClassMethodInfoMap, Map<String,
+            ClassInterfaceMethodInfo> classInterfaceMethodInfoMap) {
+        if (className == null || interfaceName == null || extendsClassMethodInfoMap == null || classInterfaceMethodInfoMap == null) {
+            return false;
+        }
+
+        String currentClassName = className;
+        while (true) {
+            ClassInterfaceMethodInfo classInterfaceMethodInfo = classInterfaceMethodInfoMap.get(currentClassName);
+            if (classInterfaceMethodInfo != null && classInterfaceMethodInfo.getInterfaceNameList() != null && classInterfaceMethodInfo.getInterfaceNameList().contains(interfaceName)) {
+                return true;
+            }
+
+            ExtendsClassMethodInfo extendsClassMethodInfo = extendsClassMethodInfoMap.get(currentClassName);
+            if (extendsClassMethodInfo == null) {
+                return false;
+            }
+
+            currentClassName = extendsClassMethodInfo.getSuperClassName();
+        }
+    }
+
+    /**
+     * 获取指定类className的所有父类及当前类名，排除Object类
+     *
+     * @param className
+     * @param extendsClassMethodInfoMap
+     * @return
+     */
+    public static List<String> getAllClassNameList(String className, Map<String, ExtendsClassMethodInfo> extendsClassMethodInfoMap) {
+        List<String> classNameList = new ArrayList<>();
+        if (className == null || extendsClassMethodInfoMap == null) {
+            return classNameList;
+        }
+
+        String currentClassName = className;
+        while (true) {
+            classNameList.add(currentClassName);
+
+            ExtendsClassMethodInfo extendsClassMethodInfo = extendsClassMethodInfoMap.get(currentClassName);
+            if (extendsClassMethodInfo == null || JavaCGConstants.OBJECT_CLASS_NAME.equals(extendsClassMethodInfo.getSuperClassName())) {
+                break;
+            }
+
+            currentClassName = extendsClassMethodInfo.getSuperClassName();
+        }
+
+        return classNameList;
+    }
+
+    public static void debugPrint(String data) {
+        if (!debugPrintFlag) {
+            return;
+        }
+
+        System.out.println(data);
+    }
+
+    private JavaCGUtil() {
         throw new IllegalStateException("illegal");
     }
 }

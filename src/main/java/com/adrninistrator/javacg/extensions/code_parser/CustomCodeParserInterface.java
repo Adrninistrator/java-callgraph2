@@ -1,5 +1,7 @@
 package com.adrninistrator.javacg.extensions.code_parser;
 
+import com.adrninistrator.javacg.dto.ClassInterfaceMethodInfo;
+import com.adrninistrator.javacg.dto.ExtendsClassMethodInfo;
 import com.adrninistrator.javacg.extensions.dto.ExtendedData;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.generic.InstructionHandle;
@@ -7,6 +9,7 @@ import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
 
 import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -18,7 +21,7 @@ import java.util.jar.JarFile;
 public interface CustomCodeParserInterface {
 
     /**
-     * 初始化
+     * 初始化，整个执行过程中只执行一次
      */
     void init();
 
@@ -69,7 +72,7 @@ public interface CustomCodeParserInterface {
     }
 
     /**
-     * 返回已获得的自定义数据
+     * 返回已获得的自定义数据，整个执行过程中只执行一次
      *
      * @return
      */
@@ -81,4 +84,20 @@ public interface CustomCodeParserInterface {
      * @return
      */
     String getDataType();
+
+    /**
+     * 接收保存涉及继承类的Map信息
+     *
+     * @param extendsClassMethodInfoMap
+     */
+    default void setExtendsClassMethodInfoMap(Map<String, ExtendsClassMethodInfo> extendsClassMethodInfoMap) {
+    }
+
+    /**
+     * 接收保存类实现接口的Map信息
+     *
+     * @param classInterfaceMethodInfoMap
+     */
+    default void setClassInterfaceMethodInfoMap(Map<String, ClassInterfaceMethodInfo> classInterfaceMethodInfoMap) {
+    }
 }
