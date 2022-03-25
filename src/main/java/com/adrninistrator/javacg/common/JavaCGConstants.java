@@ -39,7 +39,7 @@ public class JavaCGConstants {
     // 默认的jar包序号，使用0，因为实际的jar包序号从1开始
     public static final int DEFAULT_JAR_NUM = 0;
 
-    public static final String ONE_JAR_INFO_KEY = "key";
+    public static final String ONE_JAR_INFO_KEY = "only_one_jar_key";
 
     private JavaCGConstants() {
         throw new IllegalStateException("illegal");

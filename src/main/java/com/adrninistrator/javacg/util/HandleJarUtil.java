@@ -124,6 +124,11 @@ public class HandleJarUtil {
             jarFileList.add(jarFile);
 
             String jarType = jarFile.isFile() ? JavaCGConstants.FILE_KEY_JAR_INFO_PREFIX : JavaCGConstants.FILE_KEY_DIR_INFO_PREFIX;
+
+            if (jarPathArray.length == 1) {
+                // 只有一个目录时，map中的key也需要使用该固定值
+                jarName = JavaCGConstants.ONE_JAR_INFO_KEY;
+            }
             jarInfoMap.put(jarName, JarInfo.genJarInfo(++jarNum, jarType, jarCanonicalPath));
         }
         return jarFileList;

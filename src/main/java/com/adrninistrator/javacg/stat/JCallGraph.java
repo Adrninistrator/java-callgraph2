@@ -84,6 +84,16 @@ public class JCallGraph {
     }
 
     public boolean run(String[] args) {
+        if (args == null || args.length == 0) {
+            System.err.println("请在执行参数中指定需要处理的jar包或目录列表，使用空格分隔");
+            return false;
+        }
+
+        System.out.println("需要处理的jar包或目录:");
+        for (String arg : args) {
+            System.out.println(arg);
+        }
+
         // calleeMethodMapGlobal在处理所有的jar包时都需要使用，只初始化一次
         calleeMethodMapGlobal = new HashMap<>(INIT_SIZE_1000);
 
@@ -100,6 +110,8 @@ public class JCallGraph {
         if (newJarFilePath == null) {
             return false;
         }
+
+        System.out.println("实际处理的jar包: " + newJarFilePath);
 
         outputFilePath = newJarFilePath + JavaCGConstants.EXT_TXT;
         annotationOutputFilePath = newJarFilePath + JavaCGConstants.FILE_FLAG_ANNOTATION + JavaCGConstants.EXT_TXT;

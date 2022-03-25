@@ -10,7 +10,7 @@ java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](h
 
 # 2. 更新说明
 
-- 0.0.4
+- 0.1.0
 
 支持对目录中的class文件进行处理
 
