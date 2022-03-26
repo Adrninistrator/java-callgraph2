@@ -111,7 +111,7 @@ public class JCallGraph {
             return false;
         }
 
-        System.out.println("实际处理的jar包: " + newJarFilePath);
+        System.out.println("实际处理的jar文件: " + newJarFilePath);
 
         outputFilePath = newJarFilePath + JavaCGConstants.EXT_TXT;
         annotationOutputFilePath = newJarFilePath + JavaCGConstants.FILE_FLAG_ANNOTATION + JavaCGConstants.EXT_TXT;
@@ -120,7 +120,6 @@ public class JCallGraph {
         try (BufferedWriter resultWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(newJarFilePath + JavaCGConstants.EXT_TXT)));
              BufferedWriter annotationOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(annotationOutputFilePath),
                      StandardCharsets.UTF_8))) {
-            System.out.println("处理jar文件: " + newJarFilePath);
             File jarFile = new File(newJarFilePath);
 
             // 调用自定义接口实现类的方法
@@ -133,6 +132,7 @@ public class JCallGraph {
                 return false;
             }
 
+            System.out.println("执行完毕");
             return true;
         } catch (IOException e) {
             System.err.println("### 出现异常: " + e.getMessage());
@@ -257,7 +257,10 @@ public class JCallGraph {
             // 只有一个jar包，从Map取值时使用默认key
             if (lastJarInfo == null) {
                 // 第一次处理当前jar包
-                lastJarInfo = jarInfoMap.get(JavaCGConstants.ONE_JAR_INFO_KEY);
+                for (Map.Entry<String, JarInfo> entry : jarInfoMap.entrySet()) {
+                    lastJarInfo = entry.getValue();
+                    break;
+                }
                 return HandleJarResultEnum.HJRE_FIRST;
             }
             // 不是第一次处理当前jar包

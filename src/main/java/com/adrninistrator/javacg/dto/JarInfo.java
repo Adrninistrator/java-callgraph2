@@ -7,15 +7,17 @@ package com.adrninistrator.javacg.dto;
  */
 public class JarInfo {
 
+    private static int staticJarNum = 0;
+
     private int jarNum;
 
     private String jarType;
 
     private String jarPath;
 
-    public static JarInfo genJarInfo(int jarNum, String jarType, String jarPath) {
+    public static JarInfo genJarInfo(String jarType, String jarPath) {
         JarInfo jarInfo = new JarInfo();
-        jarInfo.setJarNum(jarNum);
+        jarInfo.setJarNum(++staticJarNum);
         jarInfo.setJarType(jarType);
         jarInfo.setJarPath(jarPath);
 
@@ -23,7 +25,6 @@ public class JarInfo {
     }
 
     //
-
     public int getJarNum() {
         return jarNum;
     }

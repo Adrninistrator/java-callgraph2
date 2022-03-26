@@ -3,7 +3,6 @@ package com.adrninistrator.javacg.util;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.List;
 
 /**
  * @author adrninistrator
@@ -37,36 +36,6 @@ public class FileUtil {
         } catch (IOException e) {
             e.printStackTrace();
             return false;
-        }
-    }
-
-    /**
-     * 查找指定目录下，排除指定类型文件的文件列表
-     *
-     * @param dirFile
-     * @param dirPath
-     * @param excludeFileExt
-     * @param resultFileList         记录查找到的文件列表
-     * @param fileRelativelyPathList 记录查找到的文件相对路径列表
-     */
-    public static void findFileInSubDirExclude(File dirFile, String dirPath, String excludeFileExt, List<File> resultFileList, List<String> fileRelativelyPathList) {
-        File[] files = dirFile.listFiles();
-        if (files == null) {
-            return;
-        }
-
-        String dirPathHeader = (dirPath == null ? dirFile.getName() : dirPath + "/" + dirFile.getName());
-
-        for (File file : files) {
-            if (file.isDirectory()) {
-                findFileInSubDirExclude(file, dirPathHeader, excludeFileExt, resultFileList, fileRelativelyPathList);
-            } else {
-                String currentFileName = file.getName();
-                if (!currentFileName.toLowerCase().endsWith(excludeFileExt)) {
-                    resultFileList.add(file);
-                    fileRelativelyPathList.add(dirPathHeader + "/" + currentFileName);
-                }
-            }
         }
     }
 

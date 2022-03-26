@@ -10,33 +10,66 @@ java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](h
 
 # 2. 更新说明
 
-- 0.1.0
+## 2.1. (0.1.1)
 
-支持对目录中的class文件进行处理
+- 支持对目录进行处理
 
-支持将指定的一个或多个jar包或目录进行合并后再处理
+支持对目录中的class、jar文件进行处理
+
+支持在启动参数中指定一个或多个jar包或目录
+
+在处理时，会将指定的jar包及指定目录中的class、jar文件合并为一个新的jar包后再处理
+
+合并产生的新jar包保存在指定的第一个jar包所在目录中（若第一个是目录则在该目录中）
+
+- 支持插件功能
 
 提供用于生成Java方法UML时序图的插件功能
 
-不再通过JVM参数“-Doutput.file=”指定输出文件路径，默认将输出文件生成在指定的第一个jar包所在目录中（若指定的是目录则在该目录中）
+- 输出文件路径指定方式变化
 
-## 2.1. 编译命令：
+不再通过JVM参数“-Doutput.file=”指定输出文件路径，默认将输出文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中）
+
+## 2.2. 编译命令：
 
 ```
 gradlew jar
 ```
 
-## 2.2. 执行参数
+## 2.3. 执行参数
 
 - Program arguments
 
-用于指定需要解析的jar包路径列表
+用于指定需要解析的jar包或目录路径列表
+
+示例如下
 
 ```
+out
+build/libs/a.jar
 build/libs/a.jar build/libs/b.jar
+out build/libs/a.jar build/libs/b.jar
 ```
 
 # 3. 输出格式
+
+## 3.1. jar包/目录信息
+
+java-callgraph2输出的jar包信息格式如下所示：
+
+```
+J:n jar包文件绝对路径
+```
+
+java-callgraph2输出的目录信息格式如下所示：
+
+```
+D:n 目录绝对路径
+```
+
+以上n代表当前jar包或目录的唯一序号，由于可能存在重复文件不会处理，因此该序号不一定连续
+
+## 3.2. 方法调用关系
 
 java-callgraph2输出的方法调用关系的格式如下所示：
 
