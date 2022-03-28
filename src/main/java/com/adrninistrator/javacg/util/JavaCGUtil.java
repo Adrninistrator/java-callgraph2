@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class JavaCGUtil {
 
-    private static boolean debugPrintFlag = System.getProperty(JavaCGConstants.KEY_DEBUG_PRINT) != null;
+    private static boolean debugPrintFlag = System.getProperty(JavaCGConstants.PROPERTY_DEBUG_PRINT) != null;
 
     public static boolean isInnerAnonymousClass(String className) {
         if (!className.contains("$")) {

@@ -17,8 +17,8 @@ import java.util.*;
 // 处理Class对象
 public class ClassVisitor {
 
-    private JavaClass clazz;
-    private ConstantPoolGen constants;
+    private JavaClass javaClass;
+    private ConstantPoolGen cpg;
     private String classReferenceFormat;
     private List<MethodCallDto> methodCalls = new ArrayList<>();
 
@@ -33,13 +33,13 @@ public class ClassVisitor {
     private boolean recordAll = false;
 
     public ClassVisitor(JavaClass jc) {
-        clazz = jc;
-        constants = new ConstantPoolGen(clazz.getConstantPool());
-        classReferenceFormat = JavaCGConstants.FILE_KEY_CLASS_PREFIX + clazz.getClassName() + " %s";
+        javaClass = jc;
+        cpg = new ConstantPoolGen(javaClass.getConstantPool());
+        classReferenceFormat = JavaCGConstants.FILE_KEY_CLASS_PREFIX + javaClass.getClassName() + " %s";
     }
 
     public void visitConstantPool() {
-        ConstantPool constantPool = clazz.getConstantPool();
+        ConstantPool constantPool = javaClass.getConstantPool();
 
         Set<String> referencedClassSet = new HashSet<>();
 
@@ -51,7 +51,7 @@ public class ClassVisitor {
 
             String referencedClass = constantPool.constantToString(constant);
             // 对当前类自身的引用不处理
-            if (!clazz.getClassName().equals(referencedClass) && !JavaCGConstants.OBJECT_CLASS_NAME.equals(referencedClass)) {
+            if (!javaClass.getClassName().equals(referencedClass) && !JavaCGConstants.OBJECT_CLASS_NAME.equals(referencedClass)) {
                 referencedClassSet.add(referencedClass);
             }
         }
@@ -67,26 +67,31 @@ public class ClassVisitor {
     }
 
     public void visitMethod(Method method) {
-        MethodGen mg = new MethodGen(method, clazz.getClassName(), constants);
-        MethodVisitor visitor = new MethodVisitor(mg, clazz);
-        visitor.setCalleeMethodMapGlobal(calleeMethodMapGlobal);
-        visitor.setRunnableImplClassMap(runnableImplClassMap);
-        visitor.setCallableImplClassMap(callableImplClassMap);
-        visitor.setThreadChildClassMap(threadChildClassMap);
-        visitor.setMethodAnnotationMap(methodAnnotationMap);
-        visitor.setCallIdCounter(callIdCounter);
-        visitor.setCustomCodeParserList(customCodeParserList);
-        visitor.setRecordAll(recordAll);
+        try {
+            MethodGen mg = new MethodGen(method, javaClass.getClassName(), cpg);
+            MethodVisitor visitor = new MethodVisitor(mg, javaClass);
+            visitor.setCalleeMethodMapGlobal(calleeMethodMapGlobal);
+            visitor.setRunnableImplClassMap(runnableImplClassMap);
+            visitor.setCallableImplClassMap(callableImplClassMap);
+            visitor.setThreadChildClassMap(threadChildClassMap);
+            visitor.setMethodAnnotationMap(methodAnnotationMap);
+            visitor.setCallIdCounter(callIdCounter);
+            visitor.setCustomCodeParserList(customCodeParserList);
+            visitor.setRecordAll(recordAll);
 
-        visitor.beforeStart();
-        List<MethodCallDto> methodCallDtos = visitor.start();
-        methodCalls.addAll(methodCallDtos);
+            visitor.beforeStart();
+            List<MethodCallDto> methodCallDtos = visitor.start();
+            methodCalls.addAll(methodCallDtos);
+        } catch (Exception e) {
+            System.err.println("处理方法出现异常 " + javaClass.getClassName() + " " + method.getName());
+            e.printStackTrace();
+        }
     }
 
     public void start() {
         visitConstantPool();
 
-        for (Method method : clazz.getMethods()) {
+        for (Method method : javaClass.getMethods()) {
             visitMethod(method);
         }
     }

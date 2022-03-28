@@ -17,6 +17,47 @@ import java.util.zip.ZipOutputStream;
  */
 public class HandleJarUtil {
 
+    // 获取合并jar/war包中的class文件时，需要合并的特定包名
+    private static List<String> getMergeClassInJarPackageList() {
+        List<String> mergeClassInJarPackageList = new ArrayList<>();
+        String mergeClassInJarPackageProperty = System.getProperty(JavaCGConstants.PROPERTY_MERGE_CLASS_IN_JAR_PACKAGE);
+        if (mergeClassInJarPackageProperty == null || mergeClassInJarPackageProperty.trim().isEmpty()) {
+            System.out.println("合并jar/war包中的class文件时，全部都进行合并，不区分包名");
+            return mergeClassInJarPackageList;
+        }
+
+        String[] mergeClassInJarPackageArray = mergeClassInJarPackageProperty.split(JavaCGConstants.FLAG_VERTICAL_BAR);
+        System.out.println("合并jar/war包中的class文件时，需要合并的包名");
+        for (String mergeClassInJarPackage : mergeClassInJarPackageArray) {
+            if (mergeClassInJarPackage.isEmpty()) {
+                continue;
+            }
+
+            String newMergeClassInJarPackage = mergeClassInJarPackage.replace(".", "/");
+
+            /*
+                使包名替换为路径后，满足以下要求
+                不以/开头
+                以/结尾
+             */
+            if (newMergeClassInJarPackage.startsWith("/")) {
+                newMergeClassInJarPackage = newMergeClassInJarPackage.substring(1);
+                if (newMergeClassInJarPackage.isEmpty()) {
+                    continue;
+                }
+            }
+            if (!newMergeClassInJarPackage.endsWith("/")) {
+                newMergeClassInJarPackage += "/";
+            }
+
+            System.out.println(newMergeClassInJarPackage);
+
+            mergeClassInJarPackageList.add(newMergeClassInJarPackage);
+        }
+
+        return mergeClassInJarPackageList;
+    }
+
     /**
      * 对指定的jar包进行处理
      * 若指定的数组只有一个元素，且为jar包，则直接返回
@@ -86,19 +127,22 @@ public class HandleJarUtil {
         // 目录中的jar包文件对象列表
         List<File> jarFileInDirList = new ArrayList<>();
 
+        // 获取合并jar/war包中的class文件时，需要合并的特定包名
+        List<String> mergeClassInJarPackageList = getMergeClassInJarPackageList();
+
         try (ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(newJarFile))) {
-            // 合并参数中指定的jar包，目录中的后缀非.jar文件
+            // 合并参数中指定的jar包，以及目录中的后缀非.jar/.war文件
             for (File jarFileOrDir : jarFileOrDirList) {
                 String jarFileOrDirName = jarFileOrDir.getName();
                 if (destJarDirNameSet.contains(jarFileOrDirName)) {
-                    System.err.println("指定的jar包或目录存在同名，不处理: " + jarFileOrDirName + " " + FileUtil.getCanonicalPath(jarFileOrDir));
+                    System.err.println("指定的jar/war包或目录存在同名，不处理: " + jarFileOrDirName + " " + FileUtil.getCanonicalPath(jarFileOrDir));
                     continue;
                 }
                 destJarDirNameSet.add(jarFileOrDirName);
 
                 if (jarFileOrDir.isFile()) {
-                    // 将jar包添加到jar包中
-                    addJar2Jar(jarFileOrDir, zos);
+                    // 将jar/war包添加到jar包中
+                    addJar2Jar(jarFileOrDir, zos, mergeClassInJarPackageList);
                     continue;
                 }
 
@@ -106,7 +150,7 @@ public class HandleJarUtil {
                 addDir2Jar(jarFileOrDir, jarFileInDirList, zos);
             }
 
-            // 合并目录中的后缀为.jar文件
+            // 合并目录中的后缀为.jar/.war文件
             for (File jarFileInDir : jarFileInDirList) {
                 String jarFileName = jarFileInDir.getName();
                 String jarCanonicalPath = FileUtil.getCanonicalPath(jarFileInDir);
@@ -119,9 +163,9 @@ public class HandleJarUtil {
                 }
                 destJarDirNameSet.add(jarFileName);
 
-                System.out.println("添加目录中的jar包: " + jarCanonicalPath);
-                // 将jar包添加到jar包中
-                addJar2Jar(jarFileInDir, zos);
+                System.out.println("添加目录中的jar/war包: " + jarCanonicalPath);
+                // 将jar/war包添加到jar包中
+                addJar2Jar(jarFileInDir, zos, mergeClassInJarPackageList);
             }
 
             return FileUtil.getCanonicalPath(newJarFile);
@@ -170,21 +214,47 @@ public class HandleJarUtil {
         return new File(firstJarPath + File.separator + firstJarFile.getName() + JavaCGConstants.MERGED_JAR_FLAG);
     }
 
-    // 将jar包添加到jar包中
-    private static void addJar2Jar(File sourceJarFile, ZipOutputStream targetZos) throws IOException {
+    // 将jar/war包添加到jar包中
+    private static void addJar2Jar(File sourceJarFile, ZipOutputStream targetZos, List<String> mergeClassInJarPackageList) throws IOException {
         String sourceJarName = sourceJarFile.getName();
 
         try (JarFile jar = new JarFile(sourceJarFile)) {
             Enumeration<JarEntry> enumeration = jar.entries();
             while (enumeration.hasMoreElements()) {
                 JarEntry jarEntry = enumeration.nextElement();
-                if (jarEntry.isDirectory() || jarEntry.getName().toLowerCase().endsWith(JavaCGConstants.EXT_JAR)) {
-                    // 跳过目录，或jar文件
+                if (jarEntry.isDirectory()) {
+                    // 跳过目录
                     continue;
                 }
 
+                String jarEntryName = jarEntry.getName();
+                String jarEntryNameLower = jarEntryName.toLowerCase();
+                if (!jarEntryNameLower.endsWith(JavaCGConstants.EXT_CLASS)) {
+                    // 跳过非.class文件
+                    continue;
+                }
+
+                if (!mergeClassInJarPackageList.isEmpty()) {
+                    // 根据class文件包名进行处理
+                    boolean classPackageMatches = false;
+
+                    for (String mergeClassInJarPackage : mergeClassInJarPackageList) {
+                        if (jarEntryName.startsWith(mergeClassInJarPackage) || jarEntryName.startsWith("WEB-INF/classes/" + mergeClassInJarPackage)) {
+                            classPackageMatches = true;
+                            JavaCGUtil.debugPrint("当前class文件包名匹配，需要合并 " + jarEntryName + " " + mergeClassInJarPackage);
+                            break;
+                        }
+                    }
+
+                    if (!classPackageMatches) {
+                        // 跳过包名不满足要求的class文件
+                        JavaCGUtil.debugPrint("当前class文件包名不匹配，不合并 " + jarEntryName);
+                        continue;
+                    }
+                }
+
                 // 处理jar包中的一个非jar文件
-                ZipEntry newZipEntry = new ZipEntry(sourceJarName + "/" + jarEntry.getName());
+                ZipEntry newZipEntry = new ZipEntry(sourceJarName + "/" + jarEntryName);
                 targetZos.putNextEntry(newZipEntry);
 
                 try (InputStream inputStream = jar.getInputStream(jarEntry)) {
@@ -237,15 +307,19 @@ public class HandleJarUtil {
 
             // 处理文件
             String currentFileName = file.getName();
-            if (!currentFileName.toLowerCase().endsWith(JavaCGConstants.EXT_JAR)) {
-                // 目录中的当前文件后缀不是.jar，需要合并到最终的jar包中
+            String currentFileNameLower = currentFileName.toLowerCase();
+            if (currentFileNameLower.endsWith(JavaCGConstants.EXT_JAR) || currentFileNameLower.endsWith(JavaCGConstants.EXT_WAR)) {
+                // 目录中的当前文件后缀是.jar/.war
+                if (!currentFileName.endsWith(JavaCGConstants.MERGED_JAR_FLAG)) {
+                    // 不是合并产生的文件
+                    // 记录后缀为.jar/.war文件对象
+                    jarFileInDirList.add(file);
+                }
+            } else if (!currentFileName.contains(JavaCGConstants.MERGED_JAR_FLAG)) {
+                // 目录中的当前文件后缀不是.jar/.war，且不包含合并产生的文件标记（对合并文件执行生成的.txt结果文件不需要再合并），需要合并到最终的jar包中
                 // 记录后缀非.jar文件的文件对象及相对路径
                 nonJarFileList.add(file);
-                fileRelativelyPathList.add(dirPathHeader + "/" + currentFileName);
-            } else if (!currentFileName.endsWith(JavaCGConstants.MERGED_JAR_FLAG)) {
-                // 目录中的当前文件后缀是.jar，且不是合并产生的文件
-                // 记录后缀为.jar文件对象
-                jarFileInDirList.add(file);
+                fileRelativelyPathList.add(dirPathHeader + "/" + currentFileNameLower);
             }
         }
     }

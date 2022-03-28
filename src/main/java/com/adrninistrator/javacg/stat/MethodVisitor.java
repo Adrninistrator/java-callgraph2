@@ -20,7 +20,7 @@ public class MethodVisitor extends EmptyVisitor {
 
     private JavaClass visitedClass;
     private MethodGen mg;
-    private ConstantPoolGen cp;
+    private ConstantPoolGen cpg;
     private String format;
     private List<MethodCallDto> methodCalls = new ArrayList<>();
     private LineNumberTable lineNumberTable;
@@ -38,9 +38,9 @@ public class MethodVisitor extends EmptyVisitor {
     public MethodVisitor(MethodGen m, JavaClass jc) {
         visitedClass = jc;
         mg = m;
-        cp = mg.getConstantPool();
+        cpg = mg.getConstantPool();
 
-        lineNumberTable = mg.getLineNumberTable(cp);
+        lineNumberTable = mg.getLineNumberTable(cpg);
     }
 
     public void setCalleeMethodMapGlobal(Map<String, Set<String>> calleeMethodMapGlobal) {
@@ -129,29 +129,29 @@ public class MethodVisitor extends EmptyVisitor {
 
     @Override
     public void visitINVOKEVIRTUAL(INVOKEVIRTUAL i) {
-        addMethodCalls("M", i.getReferenceType(cp).toString(), i.getMethodName(cp), i.getArgumentTypes(cp));
+        addMethodCalls("M", i.getReferenceType(cpg).toString(), i.getMethodName(cpg), i.getArgumentTypes(cpg));
     }
 
     @Override
     public void visitINVOKEINTERFACE(INVOKEINTERFACE i) {
-        addMethodCalls("I", i.getReferenceType(cp).toString(), i.getMethodName(cp), i.getArgumentTypes(cp));
+        addMethodCalls("I", i.getReferenceType(cpg).toString(), i.getMethodName(cpg), i.getArgumentTypes(cpg));
     }
 
     @Override
     public void visitINVOKESPECIAL(INVOKESPECIAL i) {
-        addMethodCalls("O", i.getReferenceType(cp).toString(), i.getMethodName(cp), i.getArgumentTypes(cp));
+        addMethodCalls("O", i.getReferenceType(cpg).toString(), i.getMethodName(cpg), i.getArgumentTypes(cpg));
     }
 
     @Override
     public void visitINVOKESTATIC(INVOKESTATIC i) {
-        addMethodCalls("S", i.getReferenceType(cp).toString(), i.getMethodName(cp), i.getArgumentTypes(cp));
+        addMethodCalls("S", i.getReferenceType(cpg).toString(), i.getMethodName(cpg), i.getArgumentTypes(cpg));
     }
 
     @Override
     public void visitINVOKEDYNAMIC(INVOKEDYNAMIC i) {
-        addMethodCalls("D", i.getType(cp).toString(), i.getMethodName(cp), i.getArgumentTypes(cp));
+        addMethodCalls("D", i.getType(cpg).toString(), i.getMethodName(cpg), i.getArgumentTypes(cpg));
 
-        Constant constant = cp.getConstant(i.getIndex());
+        Constant constant = cpg.getConstant(i.getIndex());
         if (!(constant instanceof ConstantInvokeDynamic)) {
             return;
         }
@@ -161,7 +161,7 @@ public class MethodVisitor extends EmptyVisitor {
         // 获得JavaClass中指定下标的BootstrapMethod
         BootstrapMethod bootstrapMethod = JavaCGUtil.getBootstrapMethod(visitedClass, cid.getBootstrapMethodAttrIndex());
         if (bootstrapMethod == null) {
-            System.err.println("### 无法找到bootstrapMethod " + cid.getBootstrapMethodAttrIndex());
+            System.err.println("### 无法找到bootstrapMethod " + visitedClass.getClassName() + " " + cid.getBootstrapMethodAttrIndex());
             return;
         }
 

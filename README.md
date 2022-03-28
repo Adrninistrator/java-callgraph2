@@ -4,23 +4,35 @@
 
 java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](https://github.com/gousiosg/java-callgraph)。
 
-后来进行了优化和增强，差别已比较大，不容易合并回原始项目中，且仅提供静态分析的功能，因此创建了该项目。
+后来进行了优化和增强，差别已比较大，不容易合并回原始项目中，且仅提供通过静态分析获取Java方法调用关系的功能，因此创建了该项目。
 
 `当前项目提供了插件功能，可用于为Java代码自动生成UML时序图`，可参考[https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram](https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram)。
 
 # 2. 更新说明
 
-## 2.1. (0.1.1)
+## 2.1. (0.1.2)
 
 - 支持对目录进行处理
 
-支持对目录中的class、jar文件进行处理
+支持对目录中的class、jar/war文件进行处理
 
-支持在启动参数中指定一个或多个jar包或目录
+支持在启动参数中指定一个或多个jar/war包或目录
 
-在处理时，会将指定的jar包及指定目录中的class、jar文件合并为一个新的jar包后再处理
+在处理时，会将指定的jar/war包及指定目录合并为一个新的jar包后再处理：
 
-合并产生的新jar包保存在指定的第一个jar包所在目录中（若第一个是目录则在该目录中）
+a. 对于指定的jar/war包及指定目录中的后缀为.jar/.war的文件，将其中的class文件进行合并
+
+b. 对于指定目录中的后缀非.jar/.war的文件进行合并
+
+合并jar/war包中的class文件时，支持仅将指定包名的class文件合并到新的jar包中
+
+合并产生的新jar包信息如下：
+
+保存在指定的第一个jar/war包所在目录中（若第一个是目录则在该目录中）
+
+文件名为第一个jar/war包加上“-javacg_merged.jar”
+
+第一层目录为每个被合并的.jar/.war文件或目录的名称
 
 - 支持插件功能
 
@@ -28,7 +40,9 @@ java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](h
 
 - 输出文件路径指定方式变化
 
-不再通过JVM参数“-Doutput.file=”指定输出文件路径，默认将输出文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中）
+不再通过JVM选项“-Doutput.file=”指定输出文件路径，默认将输出文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中）
+
+文件名为第一个jar包或合并后的jar包加上“.txt”
 
 ## 2.2. 编译命令：
 
@@ -38,17 +52,34 @@ gradlew jar
 
 ## 2.3. 执行参数
 
-- Program arguments
+### 2.3.1. 程序参数（Program arguments）
 
-用于指定需要解析的jar包或目录路径列表
+用于指定需要解析的jar/war包或目录路径列表
 
-示例如下
+示例如下：
 
 ```
 out
 build/libs/a.jar
 build/libs/a.jar build/libs/b.jar
 out build/libs/a.jar build/libs/b.jar
+```
+
+### 2.3.2. JVM选项（VM options）
+
+- merge.class.in.jar.package
+
+当前参数用于指定合并jar/war包中的class文件时，需要合并的包名
+
+假如未指定当前参数，或当前参数值为空，则合并jar/war包中的class文件时，对所有的class文件都进行合并
+
+假如当前参数值非空，则合并jar/war包中的class文件时，仅对包名满足该参数值的class文件进行合并（即包名不满足该参数值的class文件不合并到新的jar包中）
+
+当前参数值支持指定一个或多个需要合并的包名，多个包名之间使用“|”分隔
+
+```
+-Dmerge.class.in.jar.package=aa.bb.cc
+-Dmerge.class.in.jar.package=aa.bb.cc|tt.cc.ss|cc.mm.
 ```
 
 # 3. 输出格式
@@ -112,7 +143,7 @@ java-callgraph2增加的调用类型typeofcall如下：
 
 - jar_number
 
-jar包序号，从1开始
+jar包唯一序号，从1开始
 
 # 4. 增加jar包文件路径
 
