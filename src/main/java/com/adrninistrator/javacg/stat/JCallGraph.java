@@ -37,7 +37,6 @@ public class JCallGraph {
     private Map<String, Boolean> runnableImplClassMap;
     private Map<String, Boolean> callableImplClassMap;
     private Map<String, Boolean> threadChildClassMap;
-    private Map<String, Set<String>> methodAnnotationMap;
     private Set<String> extendsClassesSet;
     private Map<String, ExtendsClassMethodInfo> extendsClassMethodInfoMap;
     private Map<String, List<String>> childrenClassInfoMap;
@@ -127,8 +126,9 @@ public class JCallGraph {
         annotationOutputFilePath = newJarFilePath + JavaCGConstants.FILE_FLAG_ANNOTATION + JavaCGConstants.EXT_TXT;
         System.out.println("写入文件: " + outputFilePath + " " + annotationOutputFilePath);
 
-        try (BufferedWriter resultWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(newJarFilePath + JavaCGConstants.EXT_TXT)));
-             BufferedWriter annotationOut = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(annotationOutputFilePath),
+        try (BufferedWriter resultWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(newJarFilePath + JavaCGConstants.EXT_TXT),
+                StandardCharsets.UTF_8));
+             BufferedWriter annotationWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(annotationOutputFilePath),
                      StandardCharsets.UTF_8))) {
             File jarFile = new File(newJarFilePath);
 
@@ -138,7 +138,7 @@ public class JCallGraph {
             }
 
             // 处理一个jar包
-            if (!handleOneJar(jarFile, newJarFilePath, resultWriter, annotationOut, jarInfoMap)) {
+            if (!handleOneJar(jarFile, newJarFilePath, resultWriter, annotationWriter, jarInfoMap)) {
                 return false;
             }
 
@@ -158,7 +158,6 @@ public class JCallGraph {
         runnableImplClassMap = new HashMap<>(INIT_SIZE_100);
         callableImplClassMap = new HashMap<>(INIT_SIZE_100);
         threadChildClassMap = new HashMap<>(INIT_SIZE_100);
-        methodAnnotationMap = new HashMap<>(INIT_SIZE_100);
         extendsClassesSet = new HashSet<>(INIT_SIZE_500);
         extendsClassMethodInfoMap = new HashMap<>(INIT_SIZE_500);
         childrenClassInfoMap = new HashMap<>(INIT_SIZE_500);
@@ -168,7 +167,7 @@ public class JCallGraph {
     }
 
     // 处理一个jar包
-    private boolean handleOneJar(File jarFile, String jarFilePath, BufferedWriter resultWriter, BufferedWriter annotationOut, Map<String, JarInfo> jarInfoMap) {
+    private boolean handleOneJar(File jarFile, String jarFilePath, BufferedWriter resultWriter, BufferedWriter annotationWriter, Map<String, JarInfo> jarInfoMap) {
         try (JarFile jar = new JarFile(jarFile)) {
             // 初始化
             init();
@@ -189,7 +188,7 @@ public class JCallGraph {
                 JarEntry jarEntry = enumeration.nextElement();
                 if (!jarEntry.isDirectory() && jarEntry.getName().toLowerCase().endsWith(JavaCGConstants.EXT_CLASS)) {
                     // 处理一个class文件
-                    handleOneClass(jarFilePath, jarEntry, resultWriter, jarInfoMap);
+                    handleOneClass(jarFilePath, jarEntry, resultWriter, annotationWriter, jarInfoMap);
                 }
             }
 
@@ -204,9 +203,6 @@ public class JCallGraph {
             // 记录接口调用实现类方法
             recordInterfaceCallClassMethod(resultWriter);
 
-            // 记录方法注解信息
-            recordMethodAnnotationInfo(annotationOut);
-
             return true;
         } catch (Exception e) {
             System.err.println("处理jar包出现异常 " + jarFilePath);
@@ -216,7 +212,7 @@ public class JCallGraph {
     }
 
     // 处理一个class文件
-    private void handleOneClass(String jarFilePath, JarEntry jarEntry, BufferedWriter resultWriter, Map<String, JarInfo> jarInfoMap) {
+    private void handleOneClass(String jarFilePath, JarEntry jarEntry, BufferedWriter resultWriter, BufferedWriter annotationWriter, Map<String, JarInfo> jarInfoMap) {
         String jarEntryName = jarEntry.getName();
         try {
 
@@ -245,10 +241,10 @@ public class JCallGraph {
             classVisitor.setRunnableImplClassMap(runnableImplClassMap);
             classVisitor.setCallableImplClassMap(callableImplClassMap);
             classVisitor.setThreadChildClassMap(threadChildClassMap);
-            classVisitor.setMethodAnnotationMap(methodAnnotationMap);
             classVisitor.setCallIdCounter(callIdCounter);
             classVisitor.setCustomCodeParserList(customCodeParserList);
             classVisitor.setRecordAll(recordAll);
+            classVisitor.setAnnotationWriter(annotationWriter);
 
             classVisitor.start();
 
@@ -694,18 +690,6 @@ public class JCallGraph {
         }
         extendsClassMethodInfo.setMethodAttributeMap(methodAttributeMap);
         extendsClassMethodInfoMap.put(className, extendsClassMethodInfo);
-    }
-
-    // 记录方法注解信息
-    private void recordMethodAnnotationInfo(BufferedWriter out) throws IOException {
-        for (Map.Entry<String, Set<String>> entry : methodAnnotationMap.entrySet()) {
-            String fullMethod = entry.getKey();
-            Set<String> annotationSet = entry.getValue();
-            for (String annotation : annotationSet) {
-                String methodWithAnnotation = fullMethod + " " + annotation + JavaCGConstants.NEW_LINE;
-                out.write(methodWithAnnotation);
-            }
-        }
     }
 
     // 将结果写到文件中

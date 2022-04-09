@@ -22,6 +22,7 @@ public class JavaCGConstants {
 
     public static final String FLAG_LAMBDA = "lambda$";
     public static final String FLAG_VERTICAL_BAR = "\\|";
+    public static final String FLAG_ARRAY = "[]";
 
     public static final int DEFAULT_LINE_NUMBER = 0;
     public static final int NONE_LINE_NUMBER = -1;
@@ -44,6 +45,14 @@ public class JavaCGConstants {
 
     // 默认的jar包序号，使用0，因为实际的jar包序号从1开始
     public static final int DEFAULT_JAR_NUM = 0;
+
+    // 输出的注解信息文件，包含属性时的列数
+    public static final int ANNOTATION_COLUMN_NUM_WITH_ATTRIBUTE = 5;
+    // 输出的注解信息文件，不包含属性时的列数
+    public static final int ANNOTATION_COLUMN_NUM_WITHOUT_ATTRIBUTE = 3;
+
+    // 将注解属性值写入文件时，空格替换后的字符
+    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE = 0x01;
 
     private JavaCGConstants() {
         throw new IllegalStateException("illegal");

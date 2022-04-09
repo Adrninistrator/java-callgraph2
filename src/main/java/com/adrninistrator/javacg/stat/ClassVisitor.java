@@ -4,6 +4,7 @@ import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.CallIdCounter;
 import com.adrninistrator.javacg.dto.MethodCallDto;
 import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
+import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantPool;
@@ -12,6 +13,7 @@ import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.MethodGen;
 
+import java.io.BufferedWriter;
 import java.util.*;
 
 // 处理Class对象
@@ -26,14 +28,13 @@ public class ClassVisitor {
     private Map<String, Boolean> runnableImplClassMap;
     private Map<String, Boolean> callableImplClassMap;
     private Map<String, Boolean> threadChildClassMap;
-    private Map<String, Set<String>> methodAnnotationMap;
     private CallIdCounter callIdCounter;
     private List<CustomCodeParserInterface> customCodeParserList;
-
     private boolean recordAll = false;
+    private BufferedWriter annotationWriter;
 
-    public ClassVisitor(JavaClass jc) {
-        javaClass = jc;
+    public ClassVisitor(JavaClass javaClass) {
+        this.javaClass = javaClass;
         cpg = new ConstantPoolGen(javaClass.getConstantPool());
         classReferenceFormat = JavaCGConstants.FILE_KEY_CLASS_PREFIX + javaClass.getClassName() + " %s";
     }
@@ -52,6 +53,8 @@ public class ClassVisitor {
             String referencedClass = constantPool.constantToString(constant);
             // 对当前类自身的引用不处理
             if (!javaClass.getClassName().equals(referencedClass) && !JavaCGConstants.OBJECT_CLASS_NAME.equals(referencedClass)) {
+                referencedClass = JavaCGUtil.handleClassNameWithArray(referencedClass);
+
                 referencedClassSet.add(referencedClass);
             }
         }
@@ -74,10 +77,10 @@ public class ClassVisitor {
             visitor.setRunnableImplClassMap(runnableImplClassMap);
             visitor.setCallableImplClassMap(callableImplClassMap);
             visitor.setThreadChildClassMap(threadChildClassMap);
-            visitor.setMethodAnnotationMap(methodAnnotationMap);
             visitor.setCallIdCounter(callIdCounter);
             visitor.setCustomCodeParserList(customCodeParserList);
             visitor.setRecordAll(recordAll);
+            visitor.setAnnotationWriter(annotationWriter);
 
             visitor.beforeStart();
             List<MethodCallDto> methodCallDtos = visitor.start();
@@ -90,6 +93,9 @@ public class ClassVisitor {
 
     public void start() {
         visitConstantPool();
+
+        // 记录方法上的注解信息
+        JavaCGUtil.writeAnnotationInfo(JavaCGConstants.FILE_KEY_CLASS_PREFIX, javaClass.getClassName(), javaClass.getAnnotationEntries(), annotationWriter);
 
         for (Method method : javaClass.getMethods()) {
             visitMethod(method);
@@ -116,10 +122,6 @@ public class ClassVisitor {
         this.threadChildClassMap = threadChildClassMap;
     }
 
-    public void setMethodAnnotationMap(Map<String, Set<String>> methodAnnotationMap) {
-        this.methodAnnotationMap = methodAnnotationMap;
-    }
-
     public void setCallIdCounter(CallIdCounter callIdCounter) {
         this.callIdCounter = callIdCounter;
     }
@@ -130,5 +132,9 @@ public class ClassVisitor {
 
     public void setRecordAll(boolean recordAll) {
         this.recordAll = recordAll;
+    }
+
+    public void setAnnotationWriter(BufferedWriter annotationWriter) {
+        this.annotationWriter = annotationWriter;
     }
 }

@@ -11,6 +11,7 @@ import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.EmptyVisitor;
 import org.apache.bcel.generic.*;
 
+import java.io.BufferedWriter;
 import java.util.*;
 
 // 处理Method对象
@@ -18,7 +19,7 @@ public class MethodVisitor extends EmptyVisitor {
 
     private static final String OTHER_METHOD_CALL_FORMAT = JavaCGConstants.FILE_KEY_METHOD_PREFIX + "%d %s:%s%s (%s)%s:%s";
 
-    private JavaClass visitedClass;
+    private JavaClass javaClass;
     private MethodGen mg;
     private ConstantPoolGen cpg;
     private String format;
@@ -29,15 +30,14 @@ public class MethodVisitor extends EmptyVisitor {
     private Map<String, Boolean> runnableImplClassMap;
     private Map<String, Boolean> callableImplClassMap;
     private Map<String, Boolean> threadChildClassMap;
-    private Map<String, Set<String>> methodAnnotationMap;
     private CallIdCounter callIdCounter;
     private List<CustomCodeParserInterface> customCodeParserList;
-
     private boolean recordAll = false;
+    private BufferedWriter annotationWriter;
 
-    public MethodVisitor(MethodGen m, JavaClass jc) {
-        visitedClass = jc;
-        mg = m;
+    public MethodVisitor(MethodGen mg, JavaClass javaClass) {
+        this.javaClass = javaClass;
+        this.mg = mg;
         cpg = mg.getConstantPool();
 
         lineNumberTable = mg.getLineNumberTable(cpg);
@@ -59,10 +59,6 @@ public class MethodVisitor extends EmptyVisitor {
         this.threadChildClassMap = threadChildClassMap;
     }
 
-    public void setMethodAnnotationMap(Map<String, Set<String>> methodAnnotationMap) {
-        this.methodAnnotationMap = methodAnnotationMap;
-    }
-
     public void setCallIdCounter(CallIdCounter callIdCounter) {
         this.callIdCounter = callIdCounter;
     }
@@ -75,41 +71,17 @@ public class MethodVisitor extends EmptyVisitor {
         this.recordAll = recordAll;
     }
 
-    public void beforeStart() {
-        String fullMethod = visitedClass.getClassName() + ":" + mg.getName() + JavaCGUtil.getArgListStr(mg.getArgumentTypes());
+    public void setAnnotationWriter(BufferedWriter annotationWriter) {
+        this.annotationWriter = annotationWriter;
+    }
 
-        handleAnnotationName(fullMethod);
+    public void beforeStart() {
+        String fullMethod = javaClass.getClassName() + ":" + mg.getName() + JavaCGUtil.getArgListStr(mg.getArgumentTypes());
+
+        // 记录方法上的注解信息
+        JavaCGUtil.writeAnnotationInfo(JavaCGConstants.FILE_KEY_METHOD_PREFIX, fullMethod, mg.getMethod().getAnnotationEntries(), annotationWriter);
 
         format = JavaCGConstants.FILE_KEY_METHOD_PREFIX + "%d " + fullMethod + " " + "(%s)%s:%s%s";
-    }
-
-    private void handleAnnotationName(String fullMethod) {
-        AnnotationEntryGen[] annotationEntryGens = mg.getAnnotationEntries();
-        if (annotationEntryGens == null || annotationEntryGens.length == 0) {
-            return;
-        }
-
-        Set<String> annotationNameSet = methodAnnotationMap.get(fullMethod);
-        if (annotationNameSet != null) {
-            return;
-        }
-
-        annotationNameSet = new HashSet<>();
-        for (AnnotationEntryGen annotationEntryGen : annotationEntryGens) {
-            String annotationName = getAnnotationName(annotationEntryGen.getTypeName());
-            annotationNameSet.add(annotationName);
-        }
-        methodAnnotationMap.put(fullMethod, annotationNameSet);
-    }
-
-    private String getAnnotationName(String origName) {
-        String tmpName;
-        if (origName.startsWith("L") && origName.endsWith(";")) {
-            tmpName = origName.substring(1, origName.length() - 1);
-        } else {
-            tmpName = origName;
-        }
-        return tmpName.replace("/", ".");
     }
 
     public List<MethodCallDto> start() {
@@ -159,16 +131,16 @@ public class MethodVisitor extends EmptyVisitor {
         // 处理Lambda表达式
         ConstantInvokeDynamic cid = (ConstantInvokeDynamic) constant;
         // 获得JavaClass中指定下标的BootstrapMethod
-        BootstrapMethod bootstrapMethod = JavaCGUtil.getBootstrapMethod(visitedClass, cid.getBootstrapMethodAttrIndex());
+        BootstrapMethod bootstrapMethod = JavaCGUtil.getBootstrapMethod(javaClass, cid.getBootstrapMethodAttrIndex());
         if (bootstrapMethod == null) {
-            System.err.println("### 无法找到bootstrapMethod " + visitedClass.getClassName() + " " + cid.getBootstrapMethodAttrIndex());
+            System.err.println("### 无法找到bootstrapMethod " + javaClass.getClassName() + " " + cid.getBootstrapMethodAttrIndex());
             return;
         }
 
         // 获得BootstrapMethod的方法信息
-        MethodInfo bootstrapMethodInfo = JavaCGUtil.getBootstrapMethodInfo(bootstrapMethod, visitedClass);
+        MethodInfo bootstrapMethodInfo = JavaCGUtil.getBootstrapMethodInfo(bootstrapMethod, javaClass);
         if (bootstrapMethodInfo == null) {
-            System.err.println("### 无法找到bootstrapMethod的方法信息 " + visitedClass.getClassName() + " " + bootstrapMethod);
+            System.err.println("### 无法找到bootstrapMethod的方法信息 " + javaClass.getClassName() + " " + bootstrapMethod);
             return;
         }
 

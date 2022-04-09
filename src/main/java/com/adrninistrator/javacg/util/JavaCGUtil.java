@@ -8,6 +8,7 @@ import org.apache.bcel.Const;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.Type;
 
+import java.io.BufferedWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -150,8 +151,7 @@ public class JavaCGUtil {
                 continue;
             }
 
-            ConstantMethodHandle constantMethodHandle = (ConstantMethodHandle) constantArg;
-            MethodInfo methodInfo = getMethodFromConstantMethodHandle(constantMethodHandle, javaClass);
+            MethodInfo methodInfo = getMethodFromConstantMethodHandle((ConstantMethodHandle) constantArg, javaClass);
             if (methodInfo != null) {
                 return methodInfo;
             }
@@ -295,6 +295,70 @@ public class JavaCGUtil {
         }
 
         System.out.println(data);
+    }
+
+    /**
+     * 处理类名中的数组形式
+     *
+     * @param className
+     * @return
+     */
+    public static String handleClassNameWithArray(String className) {
+        if (!className.startsWith("[")) {
+            return className;
+        }
+
+        // 处理数组格式
+        String tmpClassName = Utility.typeSignatureToString(className, false);
+        if (!tmpClassName.endsWith(JavaCGConstants.FLAG_ARRAY)) {
+            System.err.println("handleClassNameWithArray " + tmpClassName);
+            return tmpClassName;
+        }
+
+        return tmpClassName.substring(0, tmpClassName.length() - JavaCGConstants.FLAG_ARRAY.length());
+    }
+
+    /**
+     * 将注解信息写入文件
+     *
+     * @param type
+     * @param classOrMethod
+     * @param annotationEntries
+     * @param writer
+     */
+    public static void writeAnnotationInfo(String type, String classOrMethod, AnnotationEntry[] annotationEntries, BufferedWriter writer) {
+        if (annotationEntries == null || annotationEntries.length == 0) {
+            return;
+        }
+
+        try {
+            for (AnnotationEntry annotationEntry : annotationEntries) {
+                String annotationClassName = Utility.typeSignatureToString(annotationEntry.getAnnotationType(), false);
+                String data = type + " " + classOrMethod + " " + annotationClassName;
+
+                if (annotationEntry.getElementValuePairs() == null || annotationEntry.getElementValuePairs().length == 0) {
+                    writer.write(data + JavaCGConstants.NEW_LINE);
+                }
+
+                for (ElementValuePair elementValuePair : annotationEntry.getElementValuePairs()) {
+                    String key = elementValuePair.getNameString();
+                    String value = elementValuePair.getValue().toString();
+                    value = encodeAnnotationValue(value);
+
+                    writer.write(data + " " + key + " " + value + JavaCGConstants.NEW_LINE);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static String encodeAnnotationValue(String value) {
+        return value.replace(' ', JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE);
+    }
+
+    public static String decodeAnnotationValue(String value) {
+        return value.replace(JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE, ' ');
     }
 
     private JavaCGUtil() {

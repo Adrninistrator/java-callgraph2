@@ -1,6 +1,6 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.adrninistrator/java-callgraph2.svg)](https://search.maven.org/artifact/com.github.adrninistrator/java-callgraph2/)
 
-# 1. 使用说明
+# 1. 说明
 
 java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](https://github.com/gousiosg/java-callgraph)。
 
@@ -42,19 +42,30 @@ b. 对于指定目录中的后缀非.jar/.war的文件进行合并
 
 不再通过JVM选项“-Doutput.file=”指定输出文件路径，默认将输出文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中）
 
-文件名为第一个jar包或合并后的jar包加上“.txt”
+方法调用关系文件名为第一个jar包或合并后的jar包加上“.txt”
 
-## 2.2. 编译命令：
+注解信息文件名为第一个jar包或合并后的jar包加上“-annotation.txt”
+
+## 2.2. (0.1.3)
+
+生成的注解信息文件中增加类上的注解信息，包含注解名称、注解属性名称及属性值；增加方法上的注解的注解属性名称及属性值
+
+# 3. 使用说明
+
+## 3.1. 编译命令：
 
 ```
 gradlew jar
 ```
 
-## 2.3. 执行参数
+## 3.2. 执行参数
 
-### 2.3.1. 程序参数（Program arguments）
+### 3.2.1. 程序参数（Program arguments）
 
-用于指定需要解析的jar/war包或目录路径列表
+用于指定需要解析的jar/war包或目录路径列表，支持指定一个或多个jar包或目录的路径（指定目录时，会处理其中的class或jar文件）
+
+当指定目录时，或指定多个jar文件时，会合并成一个jar包后再处理，文件名为第一个jar/war包加上“-javacg_merged.jar”
+
 
 示例如下：
 
@@ -65,7 +76,7 @@ build/libs/a.jar build/libs/b.jar
 out build/libs/a.jar build/libs/b.jar
 ```
 
-### 2.3.2. JVM选项（VM options）
+### 3.2.2. JVM选项（VM options）
 
 - merge.class.in.jar.package
 
@@ -82,27 +93,51 @@ out build/libs/a.jar build/libs/b.jar
 -Dmerge.class.in.jar.package=aa.bb.cc|tt.cc.ss|cc.mm.
 ```
 
-# 3. 输出格式
+# 4. 输出文件格式
 
-## 3.1. jar包/目录信息
+## 4.1. 方法调用关系文件
 
-java-callgraph2输出的jar包信息格式如下所示：
+方法调用关系文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中），文件名为第一个jar包或合并后的jar包加上“.txt”
+
+文件各字段之间使用空格作为分隔符
+
+### 4.1.1. jar包/目录信息
+
+jar包/目录信息以“J:”或“D:”开头，格式如下所示：
 
 ```
-J:n jar包文件绝对路径
+J:jar_number jar包文件绝对路径
 ```
 
 java-callgraph2输出的目录信息格式如下所示：
 
 ```
-D:n 目录绝对路径
+D:jar_number 目录绝对路径
 ```
 
-以上n代表当前jar包或目录的唯一序号，由于可能存在重复文件不会处理，因此该序号不一定连续
+以上jar_number代表当前jar包或目录的唯一序号，由于可能存在重复文件不会处理，因此该序号不一定连续
 
-## 3.2. 方法调用关系
+`某个jar包/目录信息到下一个jar包/目录信息或文件结尾之间的类引用关系及方法调用关系，代表存在于当前的jar包或目录中`
 
-java-callgraph2输出的方法调用关系的格式如下所示：
+### 4.1.2. 类引用关系
+
+类引用关系以“C:”开头，格式如下所示：
+
+```
+C:caller_class callee_class
+```
+
+- caller_class
+
+代表当前类的完整类名
+
+- callee_class
+
+代表被当前类引用的类的完整类名
+
+### 4.1.3. 方法调用关系
+
+方法调用关系以“M:”开头，格式如下所示：
 
 ```
 M:call_id class1:<method1>(arg_types) (typeofcall)class2:<method2>(arg_types) line_number jar_number
@@ -145,23 +180,59 @@ java-callgraph2增加的调用类型typeofcall如下：
 
 jar包唯一序号，从1开始
 
-# 4. 增加jar包文件路径
+## 4.2. 注解信息文件
 
-java-callgraph2会输出当前jar包文件路径，如下所示：
+注解信息文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中），文件名为第一个jar包或合并后的jar包加上“-annotation.txt”
+
+文件各字段之间使用空格作为分隔符
+
+文件格式如下：
 
 ```
-J:jar_number jar_file_path
+type class_or_method_name annotation_name annotation_attribute_name annotation_attribute_value
 ```
 
-- jar_number
+- type
 
-jar包序号，从1开始
+“C:”代表为类上的注解信息
 
-- jar_file_path
+“M:”代表为方法上的注解信息
 
-jar包文件路径
+- class_or_method_name
 
-若为包含class文件的目录，则以上“J:”使用“D:”
+当前行为类上的注解信息时，该字段值为完整类名
+
+当前行为方法上的注解信息时，该字段值为完整方法名（完整类名+方法名+方法参数）
+
+- annotation_name
+
+注解的完整类名
+
+- annotation_attribute_name
+
+注解属性的名称，可能为空
+
+- annotation_attribute_value
+
+注解属性的值，可能为空
+
+属性值中的空格会被替换为0x01
+
+假如属性值类型为数组，则属性值会被大括号包含，如“{test}”
+
+若注解没有属性值，则只有以上前三个字段，占一行
+
+若注解有属性值，则有以上五个字段，每个属性占一行
+
+示例如下：
+
+```
+C: com.test.controller.TestLoaderController org.springframework.stereotype.Controller
+C: com.test.controller.TestLoaderController org.springframework.web.bind.annotation.RequestMapping value {test}
+M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) org.springframework.web.bind.annotation.GetMapping value {get}
+M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) com.test.common.annotation.TestAttributeAnnotation value abc
+M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) com.test.common.annotation.TestAttributeAnnotation value2 123
+```
 
 # 5. 原始java-callgraph调用关系缺失的场景
 
