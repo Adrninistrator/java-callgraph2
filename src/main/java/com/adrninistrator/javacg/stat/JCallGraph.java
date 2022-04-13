@@ -196,9 +196,7 @@ public class JCallGraph {
             addInterfaceMethod4SuperClass();
 
             // 记录父类调用子类方法，及子类调用父类方法
-            if (!recordExtendsClassMethod(resultWriter)) {
-                return false;
-            }
+            recordExtendsClassMethod(resultWriter);
 
             // 记录接口调用实现类方法
             recordInterfaceCallClassMethod(resultWriter);
@@ -342,7 +340,7 @@ public class JCallGraph {
     }
 
     // 记录父类调用子类方法，及子类调用父类方法
-    private boolean recordExtendsClassMethod(BufferedWriter resultWriter) throws IOException {
+    private void recordExtendsClassMethod(BufferedWriter resultWriter) throws IOException {
         Set<String> topSuperClassNameSet = new HashSet<>();
 
         // 得到最顶层父类名称
@@ -357,15 +355,12 @@ public class JCallGraph {
 
         for (String topSuperClassName : topSuperClassNameSet) {
             // 处理一个顶层父类
-            if (!handleOneTopSuperClass(topSuperClassName, resultWriter)) {
-                return false;
-            }
+            handleOneTopSuperClass(topSuperClassName, resultWriter);
         }
-        return true;
     }
 
     // 处理一个顶层父类
-    private boolean handleOneTopSuperClass(String topSuperClassName, BufferedWriter resultWriter) throws IOException {
+    private void handleOneTopSuperClass(String topSuperClassName, BufferedWriter resultWriter) throws IOException {
         JavaCGUtil.debugPrint("处理一个顶层父类: " + topSuperClassName);
         List<TmpNode4ExtendsClassMethod> tmpNodeList = new ArrayList<>();
         int currentLevel = 0;
@@ -380,13 +375,13 @@ public class JCallGraph {
             List<String> childrenClassInfoList = childrenClassInfoMap.get(currentNode.getSuperClassName());
             if (childrenClassInfoList == null) {
                 System.err.println("### 未找到顶层父类: " + currentNode.getSuperClassName());
-                return false;
+                return;
             }
 
             int currentChildClassIndex = currentNode.getChildClassIndex() + 1;
             if (currentChildClassIndex >= childrenClassInfoList.size()) {
                 if (currentLevel == 0) {
-                    return true;
+                    return;
                 }
                 currentLevel--;
                 continue;
@@ -396,9 +391,7 @@ public class JCallGraph {
             String childClassName = childrenClassInfoList.get(currentChildClassIndex);
 
             // 处理父类和子类的方法调用
-            if (!handleSuperAndChildClass(currentNode.getSuperClassName(), childClassName, resultWriter)) {
-                return false;
-            }
+            handleSuperAndChildClass(currentNode.getSuperClassName(), childClassName, resultWriter);
 
             // 处理下一个子类
             currentNode.setChildClassIndex(currentChildClassIndex);
@@ -424,17 +417,17 @@ public class JCallGraph {
     }
 
     // 处理父类和子类的方法调用
-    private boolean handleSuperAndChildClass(String superClassName, String childClassName, BufferedWriter resultWriter) throws IOException {
+    private void handleSuperAndChildClass(String superClassName, String childClassName, BufferedWriter resultWriter) throws IOException {
         ExtendsClassMethodInfo superClassMethodInfo = extendsClassMethodInfoMap.get(superClassName);
         if (superClassMethodInfo == null) {
             System.err.println("### 未找到父类信息: " + superClassName);
-            return false;
+            return;
         }
 
         ExtendsClassMethodInfo childClassMethodInfo = extendsClassMethodInfoMap.get(childClassName);
         if (childClassMethodInfo == null) {
             System.err.println("### 未找到子类信息: " + childClassName);
-            return false;
+            return;
         }
 
         Map<String, MethodAttribute> superMethodAttributeMap = superClassMethodInfo.getMethodAttributeMap();
@@ -473,7 +466,6 @@ public class JCallGraph {
                 writeResult(resultWriter, childCallSuperClassMethod + " " + JavaCGConstants.DEFAULT_JAR_NUM);
             }
         }
-        return true;
     }
 
     // 记录接口调用实现类方法
