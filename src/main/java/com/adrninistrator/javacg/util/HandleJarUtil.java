@@ -26,7 +26,7 @@ public class HandleJarUtil {
             return mergeClassInJarPackageList;
         }
 
-        String[] mergeClassInJarPackageArray = mergeClassInJarPackageProperty.split(JavaCGConstants.FLAG_VERTICAL_BAR);
+        String[] mergeClassInJarPackageArray = mergeClassInJarPackageProperty.split(JavaCGConstants.FLAG_HASHTAG);
         System.out.println("合并jar/war包中的class文件时，需要合并的包名");
         for (String mergeClassInJarPackage : mergeClassInJarPackageArray) {
             if (mergeClassInJarPackage.isEmpty()) {

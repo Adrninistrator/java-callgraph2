@@ -21,7 +21,7 @@ public class JavaCGConstants {
     public static final String FILE_KEY_DIR_INFO_PREFIX = "D:";
 
     public static final String FLAG_LAMBDA = "lambda$";
-    public static final String FLAG_VERTICAL_BAR = "\\|";
+    public static final String FLAG_HASHTAG = "#";
     public static final String FLAG_ARRAY = "[]";
 
     public static final int DEFAULT_LINE_NUMBER = 0;
@@ -53,6 +53,10 @@ public class JavaCGConstants {
 
     // 将注解属性值写入文件时，空格替换后的字符
     public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE = 0x01;
+    // 将注解属性值写入文件时，\r替换后的字符
+    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN = 0x02;
+    // 将注解属性值写入文件时，\n替换后的字符
+    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED  = 0x03;
 
     private JavaCGConstants() {
         throw new IllegalStateException("illegal");

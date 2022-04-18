@@ -15,6 +15,7 @@ public enum CallTypeEnum {
     CTE_TSR("TSR", "THREAD_START_RUN"),
     CTE_SCC("SCC", "SUPER_CALL_CHILD"),
     CTE_CCS("CCS", "CHILD_CALL_SUPER"),
+    CTE_MA("MA", "MANUAL_ADD"),
     CTE_ILLEGAL("ILLEGAL", "ILLEGAL"),
     ;
 

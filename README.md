@@ -90,11 +90,11 @@ out build/libs/a.jar build/libs/b.jar
 
 假如当前参数值非空，则合并jar/war包中的class文件时，仅对包名满足该参数值的class文件进行合并（即包名不满足该参数值的class文件不合并到新的jar包中）
 
-当前参数值支持指定一个或多个需要合并的包名，多个包名之间使用“|”分隔
+当前参数值支持指定一个或多个需要合并的包名，多个包名之间使用“#”分隔
 
 ```
 -Dmerge.class.in.jar.package=aa.bb.cc
--Dmerge.class.in.jar.package=aa.bb.cc|tt.cc.ss|cc.mm.
+-Dmerge.class.in.jar.package=aa.bb.cc#tt.cc.ss#cc.mm.
 ```
 
 # 4. 输出文件格式
@@ -220,7 +220,13 @@ type class_or_method_name annotation_name annotation_attribute_name annotation_a
 
 注解属性的值，可能为空
 
-属性值中的空格会被替换为0x01
+注解属性值中可能会出现影响文件格式的字符，会进行以下替换处理：
+
+|替换前的字符|替换后的字符|
+|---|---|
+|空格|0x01|
+|\r|0x02|
+|\n|0x03|
 
 假如属性值类型为数组，则属性值会被大括号包含，如“{test}”
 

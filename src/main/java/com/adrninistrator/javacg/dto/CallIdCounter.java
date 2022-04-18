@@ -3,7 +3,7 @@ package com.adrninistrator.javacg.dto;
 /**
  * @author Adrninistrator
  * @date 2021/8/10
- * @description: 记录当前方法启用的ID
+ * @description: 记录当前方法调用的ID
  */
 public class CallIdCounter {
 
@@ -15,6 +15,7 @@ public class CallIdCounter {
         return callIdCounter;
     }
 
+    // 方法调用ID加1后返回
     public int addAndGet() {
         return ++currentCallId;
     }

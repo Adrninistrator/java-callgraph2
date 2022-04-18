@@ -1,7 +1,9 @@
 package com.adrninistrator.javacg.extensions.code_parser;
 
+import com.adrninistrator.javacg.dto.CallIdCounter;
 import com.adrninistrator.javacg.dto.ClassInterfaceMethodInfo;
 import com.adrninistrator.javacg.dto.ExtendsClassMethodInfo;
+import com.adrninistrator.javacg.dto.MethodCallDto;
 import com.adrninistrator.javacg.extensions.dto.ExtendedData;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.generic.InstructionHandle;
@@ -61,14 +63,16 @@ public interface CustomCodeParserInterface {
     /**
      * 对一个方法调用进行预处理
      *
-     * @param callId
+     * @param callIdCounter
      * @param calleeClassName
      * @param calleeMethodName
      * @param arguments
      * @param mcIh
      * @param methodGen
+     * @param methodCalls
      */
-    default void handleMethodCall(int callId, String calleeClassName, String calleeMethodName, Type[] arguments, InstructionHandle mcIh, MethodGen methodGen) {
+    default void handleMethodCall(CallIdCounter callIdCounter, String calleeClassName, String calleeMethodName, Type[] arguments, InstructionHandle mcIh, MethodGen methodGen,
+                                  List<MethodCallDto> methodCalls) {
     }
 
     /**

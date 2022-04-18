@@ -164,14 +164,13 @@ public class MethodVisitor extends EmptyVisitor {
             return;
         }
 
-        int callId = callIdCounter.addAndGet();
-        String methodCall = String.format(format, callId, type, calleeClassName, calleeMethodName, calleeMethodArgs);
+        String methodCall = String.format(format, callIdCounter.addAndGet(), type, calleeClassName, calleeMethodName, calleeMethodArgs);
         MethodCallDto methodCallDto = MethodCallDto.genInstance(methodCall, getSourceLine());
         methodCalls.add(methodCallDto);
 
         // 调用自定义接口实现类的方法
         for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
-            customCodeParser.handleMethodCall(callId, calleeClassName, calleeMethodName, arguments, ih, mg);
+            customCodeParser.handleMethodCall(callIdCounter, calleeClassName, calleeMethodName, arguments, ih, mg, methodCalls);
         }
     }
 

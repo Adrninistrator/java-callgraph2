@@ -354,11 +354,15 @@ public class JavaCGUtil {
     }
 
     public static String encodeAnnotationValue(String value) {
-        return value.replace(' ', JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE);
+        return value.replace(' ', JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE)
+                .replace('\r', JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN)
+                .replace('\n', JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED);
     }
 
     public static String decodeAnnotationValue(String value) {
-        return value.replace(JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE, ' ');
+        return value.replace(JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE, ' ')
+                .replace(JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN, '\r')
+                .replace(JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED, '\n');
     }
 
     private JavaCGUtil() {
