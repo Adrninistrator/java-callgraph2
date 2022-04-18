@@ -42,6 +42,7 @@ public class JCallGraph {
     private Map<String, List<String>> childrenClassInfoMap;
     private CallIdCounter callIdCounter = CallIdCounter.newInstance();
     private List<CustomCodeParserInterface> customCodeParserList = new ArrayList<>();
+    private Set<String> handledClassNameSet = new HashSet<>();
 
     /*
         是否需要记录所有的接口调用实现类，及子类调用父类方法
@@ -213,7 +214,6 @@ public class JCallGraph {
     private void handleOneClass(String jarFilePath, JarEntry jarEntry, BufferedWriter resultWriter, BufferedWriter annotationWriter, Map<String, JarInfo> jarInfoMap) {
         String jarEntryName = jarEntry.getName();
         try {
-
             // 获取当前处理的jar包信息
             HandleJarResultEnum handleJarResultEnum = handleCurrentJarInfo(jarInfoMap, jarEntryName);
             if (handleJarResultEnum == HandleJarResultEnum.HJRE_FAIL) {
@@ -221,17 +221,23 @@ public class JCallGraph {
             }
 
             if (handleJarResultEnum == HandleJarResultEnum.HJRE_FIRST) {
-            /*
-                第一次处理某个jar包
-                向文件写入数据，内容为jar包信息
-                格式为“J:[jar包序号] jar包文件路径]，或”D:[jar包序号] 目录路径“
-             */
+                /*
+                    第一次处理某个jar包
+                    向文件写入数据，内容为jar包信息
+                    格式为“J:[jar包序号] jar包文件路径]，或”D:[jar包序号] 目录路径“
+                 */
                 writeResult(resultWriter, lastJarInfo.getJarType() + lastJarInfo.getJarNum() + " " + lastJarInfo.getJarPath());
             }
 
             ClassParser cp = new ClassParser(jarFilePath, jarEntryName);
             JavaClass javaClass = cp.parse();
 
+            if (handledClassNameSet.contains(javaClass.getClassName())) {
+                JavaCGUtil.debugPrint("跳过处理重复同名Class: " + javaClass.getClassName());
+                return;
+            }
+
+            handledClassNameSet.add(javaClass.getClassName());
             JavaCGUtil.debugPrint("处理Class: " + javaClass.getClassName());
 
             ClassVisitor classVisitor = new ClassVisitor(javaClass);
