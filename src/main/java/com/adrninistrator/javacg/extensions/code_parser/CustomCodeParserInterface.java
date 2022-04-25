@@ -25,7 +25,8 @@ public interface CustomCodeParserInterface {
     /**
      * 初始化，整个执行过程中只执行一次
      */
-    void init();
+    default void init() {
+    }
 
     /**
      * 开始处理一个jar包
@@ -80,14 +81,18 @@ public interface CustomCodeParserInterface {
      *
      * @return
      */
-    List<ExtendedData> getExtendedDataList();
+    default List<ExtendedData> getExtendedDataList() {
+        return null;
+    }
 
     /**
      * 返回当前的自定义数据类型
      *
      * @return
      */
-    String getDataType();
+    default String getDataType() {
+        return null;
+    }
 
     /**
      * 接收保存涉及继承类的Map信息
@@ -103,5 +108,14 @@ public interface CustomCodeParserInterface {
      * @param classInterfaceMethodInfoMap
      */
     default void setClassInterfaceMethodInfoMap(Map<String, ClassInterfaceMethodInfo> classInterfaceMethodInfoMap) {
+    }
+
+    /**
+     * 指定不需要补充子类调用父类方法/父类调用子类方法的顶层父类完整类名
+     *
+     * @return
+     */
+    default String chooseSkipTopSuperClassFullName() {
+        return null;
     }
 }

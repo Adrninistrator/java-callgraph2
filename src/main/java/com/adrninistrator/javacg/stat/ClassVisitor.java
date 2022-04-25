@@ -94,7 +94,7 @@ public class ClassVisitor {
     public void start() {
         visitConstantPool();
 
-        // 记录方法上的注解信息
+        // 记录类上的注解信息
         JavaCGUtil.writeAnnotationInfo(JavaCGConstants.FILE_KEY_CLASS_PREFIX, javaClass.getClassName(), javaClass.getAnnotationEntries(), annotationWriter);
 
         for (Method method : javaClass.getMethods()) {
@@ -102,8 +102,8 @@ public class ClassVisitor {
         }
     }
 
-    public List<MethodCallDto> methodCalls() {
-        return this.methodCalls;
+    public List<MethodCallDto> getMethodCalls() {
+        return methodCalls;
     }
 
     public void setCalleeMethodMapGlobal(Map<String, Set<String>> calleeMethodMapGlobal) {

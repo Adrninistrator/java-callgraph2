@@ -365,6 +365,33 @@ public class JavaCGUtil {
                 .replace(JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED, '\n');
     }
 
+    /**
+     * 生成格式化后的完整方法名
+     *
+     * @param fullClassName 完整类名
+     * @param methodName    方法名，不包含()
+     * @param methodArgs    方法参数，包含起始的()，参数类名之间需要使用半角逗号,分隔，不能包含空格，参数类名也需要为完整类名
+     * @return
+     */
+    public static String formatFullMethod(String fullClassName, String methodName, String methodArgs) {
+        return fullClassName + ":" + methodName + methodArgs;
+    }
+
+    /**
+     * 生成格式化后的方法调用关系
+     *
+     * @param callId           方法调用序号
+     * @param callerFullMethod 调用方法完整方法名
+     * @param callType         调用类型
+     * @param calleeClassName  被调用方法
+     * @param calleeMethodName 被调用方法方法名，说明同上
+     * @param calleeMethodArgs 被调用方法方法参数，说明同上
+     * @return
+     */
+    public static String formatMethodCall(int callId, String callerFullMethod, String callType, String calleeClassName, String calleeMethodName, String calleeMethodArgs) {
+        return JavaCGConstants.FILE_KEY_METHOD_PREFIX + String.format("%d %s (%s)%s:%s%s", callId, callerFullMethod, callType, calleeClassName, calleeMethodName, calleeMethodArgs);
+    }
+
     private JavaCGUtil() {
         throw new IllegalStateException("illegal");
     }

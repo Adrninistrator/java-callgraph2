@@ -125,7 +125,8 @@ public class JCallGraph {
 
         outputFilePath = newJarFilePath + JavaCGConstants.EXT_TXT;
         annotationOutputFilePath = newJarFilePath + JavaCGConstants.FILE_FLAG_ANNOTATION + JavaCGConstants.EXT_TXT;
-        System.out.println("写入文件: " + outputFilePath + " " + annotationOutputFilePath);
+        System.out.println("写入文件1:\n" + outputFilePath);
+        System.out.println("写入文件2:\n" + annotationOutputFilePath);
 
         try (BufferedWriter resultWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(newJarFilePath + JavaCGConstants.EXT_TXT),
                 StandardCharsets.UTF_8));
@@ -252,7 +253,7 @@ public class JCallGraph {
 
             classVisitor.start();
 
-            List<MethodCallDto> methodCalls = classVisitor.methodCalls();
+            List<MethodCallDto> methodCalls = classVisitor.getMethodCalls();
             for (MethodCallDto methodCallDto : methodCalls) {
                 String data = methodCallDto.getMethodCall();
                 if (methodCallDto.getSourceLine() != JavaCGConstants.NONE_LINE_NUMBER) {
@@ -345,6 +346,22 @@ public class JCallGraph {
         }
     }
 
+    /**
+     * 根据当前顶层父类完整类名，判断是否不需要补充子类调用父类方法/父类调用子类方法调用关系
+     *
+     * @param topSuperClassName
+     * @return true: 不需要处理 false: 需要处理
+     */
+    private boolean skipTopSuperClassName(String topSuperClassName) {
+        for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
+            if (topSuperClassName.equals(customCodeParser.chooseSkipTopSuperClassFullName())) {
+                System.out.println("当前顶层父类不需要补充子类调用父类方法/父类调用子类方法调用关系 " + topSuperClassName);
+                return true;
+            }
+        }
+        return false;
+    }
+
     // 记录父类调用子类方法，及子类调用父类方法
     private void recordExtendsClassMethod(BufferedWriter resultWriter) throws IOException {
         Set<String> topSuperClassNameSet = new HashSet<>();
@@ -360,6 +377,11 @@ public class JCallGraph {
         }
 
         for (String topSuperClassName : topSuperClassNameSet) {
+            // 根据当前顶层父类或接口完整类名，判断是否不需要补充子类调用父类方法/父类调用子类方法
+            if (skipTopSuperClassName(topSuperClassName)) {
+                continue;
+            }
+
             // 处理一个顶层父类
             handleOneTopSuperClass(topSuperClassName, resultWriter);
         }

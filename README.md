@@ -54,6 +54,12 @@ b. 对于指定目录中的后缀非.jar/.war的文件进行合并
 
 在对类进行处理时，跳过重复同名类
 
+## 2.4. (0.1.7)
+
+支持人工添加缺失的方法调用关系（定制化代码开发）
+
+具体说明可参考[https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md)中的相关内容
+
 # 3. 使用说明
 
 ## 3.1. 编译命令：
@@ -175,6 +181,7 @@ java-callgraph2增加的调用类型typeofcall如下：
 |ST|Stream调用|
 |SCC|父类调用子类的实现方法|
 |CCS|子类调用父类的实现方法|
+|MA|手工添加的方法调用关系|
 
 - line_number
 
@@ -244,7 +251,11 @@ M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletReq
 M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) com.test.common.annotation.TestAttributeAnnotation value2 123
 ```
 
-# 5. 原始java-callgraph调用关系缺失的场景
+# 5. 扩展功能
+
+参考[https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md)中的相关内容
+
+# 6. 原始java-callgraph调用关系缺失的场景
 
 原始java-callgraph在多数场景下能够获取到Java方法调用关系，但以下场景的调用关系会缺失：
 
