@@ -3,6 +3,7 @@ package com.adrninistrator.javacg.stat;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.CallIdCounter;
 import com.adrninistrator.javacg.dto.MethodCallDto;
+import com.adrninistrator.javacg.dto.MethodLineNumberInfo;
 import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.Const;
@@ -13,7 +14,7 @@ import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.MethodGen;
 
-import java.io.BufferedWriter;
+import java.io.Writer;
 import java.util.*;
 
 // 处理Class对象
@@ -22,7 +23,8 @@ public class ClassVisitor {
     private JavaClass javaClass;
     private ConstantPoolGen cpg;
     private String classReferenceFormat;
-    private List<MethodCallDto> methodCalls = new ArrayList<>();
+    private List<MethodCallDto> methodCallList = new ArrayList<>(200);
+    private List<MethodLineNumberInfo> methodLineNumberList = new ArrayList<>(100);
 
     private Map<String, Set<String>> calleeMethodMapGlobal;
     private Map<String, Boolean> runnableImplClassMap;
@@ -31,7 +33,7 @@ public class ClassVisitor {
     private CallIdCounter callIdCounter;
     private List<CustomCodeParserInterface> customCodeParserList;
     private boolean recordAll = false;
-    private BufferedWriter annotationWriter;
+    private Writer annotationWriter;
 
     public ClassVisitor(JavaClass javaClass) {
         this.javaClass = javaClass;
@@ -65,7 +67,7 @@ public class ClassVisitor {
         for (String referencedClass : referencedClassList) {
             MethodCallDto methodCallDto = MethodCallDto.genInstance(String.format(classReferenceFormat, referencedClass),
                     JavaCGConstants.NONE_LINE_NUMBER);
-            methodCalls.add(methodCallDto);
+            methodCallList.add(methodCallDto);
         }
     }
 
@@ -73,6 +75,8 @@ public class ClassVisitor {
         try {
             MethodGen mg = new MethodGen(method, javaClass.getClassName(), cpg);
             MethodVisitor visitor = new MethodVisitor(mg, javaClass);
+            visitor.setMethodCallList(methodCallList);
+            visitor.setMethodLineNumberList(methodLineNumberList);
             visitor.setCalleeMethodMapGlobal(calleeMethodMapGlobal);
             visitor.setRunnableImplClassMap(runnableImplClassMap);
             visitor.setCallableImplClassMap(callableImplClassMap);
@@ -83,8 +87,7 @@ public class ClassVisitor {
             visitor.setAnnotationWriter(annotationWriter);
 
             visitor.beforeStart();
-            List<MethodCallDto> methodCallDtos = visitor.start();
-            methodCalls.addAll(methodCallDtos);
+            visitor.start();
         } catch (Exception e) {
             System.err.println("处理方法出现异常 " + javaClass.getClassName() + " " + method.getName());
             e.printStackTrace();
@@ -102,8 +105,12 @@ public class ClassVisitor {
         }
     }
 
-    public List<MethodCallDto> getMethodCalls() {
-        return methodCalls;
+    public List<MethodCallDto> getMethodCallList() {
+        return methodCallList;
+    }
+
+    public List<MethodLineNumberInfo> getMethodLineNumberList() {
+        return methodLineNumberList;
     }
 
     public void setCalleeMethodMapGlobal(Map<String, Set<String>> calleeMethodMapGlobal) {
@@ -134,7 +141,7 @@ public class ClassVisitor {
         this.recordAll = recordAll;
     }
 
-    public void setAnnotationWriter(BufferedWriter annotationWriter) {
+    public void setAnnotationWriter(Writer annotationWriter) {
         this.annotationWriter = annotationWriter;
     }
 }

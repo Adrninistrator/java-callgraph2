@@ -8,7 +8,7 @@ import org.apache.bcel.Const;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.Type;
 
-import java.io.BufferedWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -326,18 +326,19 @@ public class JavaCGUtil {
      * @param annotationEntries
      * @param writer
      */
-    public static void writeAnnotationInfo(String type, String classOrMethod, AnnotationEntry[] annotationEntries, BufferedWriter writer) {
+    public static void writeAnnotationInfo(String type, String classOrMethod, AnnotationEntry[] annotationEntries, Writer writer) {
         if (annotationEntries == null || annotationEntries.length == 0) {
             return;
         }
 
         try {
+            StringBuilder stringBuilder = new StringBuilder();
             for (AnnotationEntry annotationEntry : annotationEntries) {
                 String annotationClassName = Utility.typeSignatureToString(annotationEntry.getAnnotationType(), false);
                 String data = type + " " + classOrMethod + " " + annotationClassName;
 
                 if (annotationEntry.getElementValuePairs() == null || annotationEntry.getElementValuePairs().length == 0) {
-                    writer.write(data + JavaCGConstants.NEW_LINE);
+                    stringBuilder.append(data).append(JavaCGConstants.NEW_LINE);
                 }
 
                 for (ElementValuePair elementValuePair : annotationEntry.getElementValuePairs()) {
@@ -345,9 +346,11 @@ public class JavaCGUtil {
                     String value = elementValuePair.getValue().toString();
                     value = encodeAnnotationValue(value);
 
-                    writer.write(data + " " + key + " " + value + JavaCGConstants.NEW_LINE);
+                    stringBuilder.append(data).append(" ").append(key).append(" ").append(value).append(JavaCGConstants.NEW_LINE);
                 }
             }
+
+            writer.write(stringBuilder.toString());
         } catch (Exception e) {
             e.printStackTrace();
         }

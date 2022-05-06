@@ -58,6 +58,9 @@ public class JCallGraph {
     // 保存当前输出的注解信息的文件路径
     private String annotationOutputFilePath;
 
+    // 保存当前输出的方法代码行号信息的文件路径
+    private String methodLineNumberOutputFilePath;
+
     // 处理class文件时，缓存当前处理的文件的第一层目录名及对应jar包信息
     private String lastFirstDirName;
     private JarInfo lastJarInfo;
@@ -90,6 +93,11 @@ public class JCallGraph {
     // 获取注解相关信息输出结果文件路径
     public String getAnnotationOutputFilePath() {
         return annotationOutputFilePath;
+    }
+
+    // 获取当前输出的方法代码行号信息的文件路径
+    public String getMethodLineNumberOutputFilePath() {
+        return methodLineNumberOutputFilePath;
     }
 
     public boolean run(String[] args) {
@@ -125,13 +133,15 @@ public class JCallGraph {
 
         outputFilePath = newJarFilePath + JavaCGConstants.EXT_TXT;
         annotationOutputFilePath = newJarFilePath + JavaCGConstants.FILE_FLAG_ANNOTATION + JavaCGConstants.EXT_TXT;
+        methodLineNumberOutputFilePath = newJarFilePath + JavaCGConstants.FILE_FLAG_LINE_NUMBER + JavaCGConstants.EXT_TXT;
         System.out.println("写入文件1:\n" + outputFilePath);
         System.out.println("写入文件2:\n" + annotationOutputFilePath);
+        System.out.println("写入文件3:\n" + methodLineNumberOutputFilePath);
 
-        try (BufferedWriter resultWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(newJarFilePath + JavaCGConstants.EXT_TXT),
-                StandardCharsets.UTF_8));
-             BufferedWriter annotationWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(annotationOutputFilePath),
-                     StandardCharsets.UTF_8))) {
+        try (Writer resultWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(newJarFilePath + JavaCGConstants.EXT_TXT), StandardCharsets.UTF_8));
+             Writer annotationWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(annotationOutputFilePath), StandardCharsets.UTF_8));
+             Writer methodLineNumberWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(methodLineNumberOutputFilePath), StandardCharsets.UTF_8))
+        ) {
             File jarFile = new File(newJarFilePath);
 
             // 调用自定义接口实现类的方法
@@ -140,7 +150,7 @@ public class JCallGraph {
             }
 
             // 处理一个jar包
-            if (!handleOneJar(jarFile, newJarFilePath, resultWriter, annotationWriter, jarInfoMap)) {
+            if (!handleOneJar(jarFile, newJarFilePath, resultWriter, annotationWriter, methodLineNumberWriter, jarInfoMap)) {
                 return false;
             }
 
@@ -169,7 +179,7 @@ public class JCallGraph {
     }
 
     // 处理一个jar包
-    private boolean handleOneJar(File jarFile, String jarFilePath, BufferedWriter resultWriter, BufferedWriter annotationWriter, Map<String, JarInfo> jarInfoMap) {
+    private boolean handleOneJar(File jarFile, String jarFilePath, Writer resultWriter, Writer annotationWriter, Writer methodLineNumberWriter, Map<String, JarInfo> jarInfoMap) {
         try (JarFile jar = new JarFile(jarFile)) {
             // 初始化
             init();
@@ -190,7 +200,7 @@ public class JCallGraph {
                 JarEntry jarEntry = enumeration.nextElement();
                 if (!jarEntry.isDirectory() && jarEntry.getName().toLowerCase().endsWith(JavaCGConstants.EXT_CLASS)) {
                     // 处理一个class文件
-                    handleOneClass(jarFilePath, jarEntry, resultWriter, annotationWriter, jarInfoMap);
+                    handleOneClass(jarFilePath, jarEntry, resultWriter, annotationWriter, methodLineNumberWriter, jarInfoMap);
                 }
             }
 
@@ -212,7 +222,8 @@ public class JCallGraph {
     }
 
     // 处理一个class文件
-    private void handleOneClass(String jarFilePath, JarEntry jarEntry, BufferedWriter resultWriter, BufferedWriter annotationWriter, Map<String, JarInfo> jarInfoMap) {
+    private void handleOneClass(String jarFilePath, JarEntry jarEntry, Writer resultWriter, Writer annotationWriter, Writer methodLineNumberWriter,
+                                Map<String, JarInfo> jarInfoMap) {
         String jarEntryName = jarEntry.getName();
         try {
             // 获取当前处理的jar包信息
@@ -253,13 +264,19 @@ public class JCallGraph {
 
             classVisitor.start();
 
-            List<MethodCallDto> methodCalls = classVisitor.getMethodCalls();
-            for (MethodCallDto methodCallDto : methodCalls) {
+            // 记录方法调用信息
+            for (MethodCallDto methodCallDto : classVisitor.getMethodCallList()) {
                 String data = methodCallDto.getMethodCall();
                 if (methodCallDto.getSourceLine() != JavaCGConstants.NONE_LINE_NUMBER) {
                     data = data + " " + methodCallDto.getSourceLine() + " " + lastJarInfo.getJarNum();
                 }
                 writeResult(resultWriter, data);
+            }
+
+            // 记录方法起始代码行号
+            for (MethodLineNumberInfo methodLineNumberInfo : classVisitor.getMethodLineNumberList()) {
+                writeResult(methodLineNumberWriter, methodLineNumberInfo.getFullMethod() + " " + methodLineNumberInfo.getMinLineNumber()
+                        + " " + methodLineNumberInfo.getMaxLineNumber());
             }
 
             // 调用自定义接口实现类的方法
@@ -363,7 +380,7 @@ public class JCallGraph {
     }
 
     // 记录父类调用子类方法，及子类调用父类方法
-    private void recordExtendsClassMethod(BufferedWriter resultWriter) throws IOException {
+    private void recordExtendsClassMethod(Writer resultWriter) throws IOException {
         Set<String> topSuperClassNameSet = new HashSet<>();
 
         // 得到最顶层父类名称
@@ -388,7 +405,7 @@ public class JCallGraph {
     }
 
     // 处理一个顶层父类
-    private void handleOneTopSuperClass(String topSuperClassName, BufferedWriter resultWriter) throws IOException {
+    private void handleOneTopSuperClass(String topSuperClassName, Writer resultWriter) throws IOException {
         JavaCGUtil.debugPrint("处理一个顶层父类: " + topSuperClassName);
         List<TmpNode4ExtendsClassMethod> tmpNodeList = new ArrayList<>();
         int currentLevel = 0;
@@ -445,7 +462,7 @@ public class JCallGraph {
     }
 
     // 处理父类和子类的方法调用
-    private void handleSuperAndChildClass(String superClassName, String childClassName, BufferedWriter resultWriter) throws IOException {
+    private void handleSuperAndChildClass(String superClassName, String childClassName, Writer resultWriter) throws IOException {
         ExtendsClassMethodInfo superClassMethodInfo = extendsClassMethodInfoMap.get(superClassName);
         if (superClassMethodInfo == null) {
             System.err.println("### 未找到父类信息: " + superClassName);
@@ -497,7 +514,7 @@ public class JCallGraph {
     }
 
     // 记录接口调用实现类方法
-    private void recordInterfaceCallClassMethod(BufferedWriter resultWriter) throws IOException {
+    private void recordInterfaceCallClassMethod(Writer resultWriter) throws IOException {
         if (classInterfaceMethodInfoMap.isEmpty() || interfaceMethodWithArgsMap.isEmpty()) {
             return;
         }
@@ -713,7 +730,7 @@ public class JCallGraph {
     }
 
     // 将结果写到文件中
-    private void writeResult(BufferedWriter resultWriter, String data) throws IOException {
+    private void writeResult(Writer resultWriter, String data) throws IOException {
         resultWriter.write(data + JavaCGConstants.NEW_LINE);
     }
 }

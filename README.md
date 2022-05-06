@@ -60,6 +60,10 @@ b. 对于指定目录中的后缀非.jar/.war的文件进行合并
 
 具体说明可参考[https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md)中的相关内容
 
+## 2.5. (0.1.8)
+
+生成方法代码行号信息文件，文件名以“-line_number.txt”结尾
+
 # 3. 使用说明
 
 ## 3.1. 编译命令：
@@ -181,7 +185,7 @@ java-callgraph2增加的调用类型typeofcall如下：
 |ST|Stream调用|
 |SCC|父类调用子类的实现方法|
 |CCS|子类调用父类的实现方法|
-|MA|手工添加的方法调用关系|
+|MA|人工添加的方法调用关系|
 
 - line_number
 
@@ -193,7 +197,7 @@ jar包唯一序号，从1开始
 
 ## 4.2. 注解信息文件
 
-注解信息文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中），文件名为第一个jar包或合并后的jar包加上“-annotation.txt”
+注解信息文件生成目录与以上文件相同，文件名为第一个jar包或合并后的jar包加上“-annotation.txt”
 
 文件各字段之间使用空格作为分隔符
 
@@ -239,9 +243,9 @@ type class_or_method_name annotation_name annotation_attribute_name annotation_a
 
 若注解没有属性值，则只有以上前三个字段，占一行
 
-若注解有属性值，则有以上五个字段，每个属性占一行
+若注解有属性值，则有以上五个字段（若注解属性值为""则是四个字段），每个属性占一行
 
-示例如下：
+文件示例如下：
 
 ```
 C: com.test.controller.TestLoaderController org.springframework.stereotype.Controller
@@ -249,6 +253,40 @@ C: com.test.controller.TestLoaderController org.springframework.web.bind.annotat
 M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) org.springframework.web.bind.annotation.GetMapping value {get}
 M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) com.test.common.annotation.TestAttributeAnnotation value abc
 M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) com.test.common.annotation.TestAttributeAnnotation value2 123
+```
+
+## 4.2. 方法代码行号信息文件
+
+方法代码行号信息文件生成目录与以上文件相同 ，文件名为第一个jar包或合并后的jar包加上“-line_number.txt”
+
+文件各字段之间使用空格作为分隔符
+
+`对于接口中定义的未实现的方法，或抽象方法等，无法获取到代码行号信息`
+
+文件格式如下：
+
+```
+full_method min_line_number max_line_number
+```
+
+- full_method 
+
+完整方法（类名+方法名+参数）
+
+- min_line_number 
+
+起始代码行号
+
+- max_line_number
+
+结束代码行号
+
+文件示例如下：
+
+```
+com.adrninistrator.javacg.util.HandleJarUtil:<init>() 337 338
+com.adrninistrator.javacg.util.JavaCGUtil:isInnerAnonymousClass(java.lang.String) 28 37
+com.adrninistrator.javacg.util.JavaCGUtil:isNumStr(java.lang.String) 41 51
 ```
 
 # 5. 扩展功能

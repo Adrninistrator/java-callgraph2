@@ -4,6 +4,7 @@ import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.CallIdCounter;
 import com.adrninistrator.javacg.dto.MethodCallDto;
 import com.adrninistrator.javacg.dto.MethodInfo;
+import com.adrninistrator.javacg.dto.MethodLineNumberInfo;
 import com.adrninistrator.javacg.enums.CallTypeEnum;
 import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
 import com.adrninistrator.javacg.util.JavaCGUtil;
@@ -11,8 +12,11 @@ import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.EmptyVisitor;
 import org.apache.bcel.generic.*;
 
-import java.io.BufferedWriter;
-import java.util.*;
+import java.io.Writer;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 // 处理Method对象
 public class MethodVisitor extends EmptyVisitor {
@@ -20,7 +24,8 @@ public class MethodVisitor extends EmptyVisitor {
     private JavaClass javaClass;
     private MethodGen mg;
     private ConstantPoolGen cpg;
-    private List<MethodCallDto> methodCalls = new ArrayList<>();
+    private List<MethodCallDto> methodCallList;
+    private List<MethodLineNumberInfo> methodLineNumberList;
     private LineNumberTable lineNumberTable;
     private InstructionHandle ih;
     private String callerFullMethod;
@@ -31,7 +36,7 @@ public class MethodVisitor extends EmptyVisitor {
     private CallIdCounter callIdCounter;
     private List<CustomCodeParserInterface> customCodeParserList;
     private boolean recordAll = false;
-    private BufferedWriter annotationWriter;
+    private Writer annotationWriter;
 
     public MethodVisitor(MethodGen mg, JavaClass javaClass) {
         this.javaClass = javaClass;
@@ -41,54 +46,45 @@ public class MethodVisitor extends EmptyVisitor {
         lineNumberTable = mg.getLineNumberTable(cpg);
     }
 
-    public void setCalleeMethodMapGlobal(Map<String, Set<String>> calleeMethodMapGlobal) {
-        this.calleeMethodMapGlobal = calleeMethodMapGlobal;
-    }
-
-    public void setRunnableImplClassMap(Map<String, Boolean> runnableImplClassMap) {
-        this.runnableImplClassMap = runnableImplClassMap;
-    }
-
-    public void setCallableImplClassMap(Map<String, Boolean> callableImplClassMap) {
-        this.callableImplClassMap = callableImplClassMap;
-    }
-
-    public void setThreadChildClassMap(Map<String, Boolean> threadChildClassMap) {
-        this.threadChildClassMap = threadChildClassMap;
-    }
-
-    public void setCallIdCounter(CallIdCounter callIdCounter) {
-        this.callIdCounter = callIdCounter;
-    }
-
-    public void setCustomCodeParserList(List<CustomCodeParserInterface> customCodeParserList) {
-        this.customCodeParserList = customCodeParserList;
-    }
-
-    public void setRecordAll(boolean recordAll) {
-        this.recordAll = recordAll;
-    }
-
-    public void setAnnotationWriter(BufferedWriter annotationWriter) {
-        this.annotationWriter = annotationWriter;
-    }
-
     public void beforeStart() {
         // 生成格式化后的完整方法名
         callerFullMethod = JavaCGUtil.formatFullMethod(javaClass.getClassName(), mg.getName(), JavaCGUtil.getArgListStr(mg.getArgumentTypes()));
 
         if (!mg.isSynthetic()) {
             /*
-                记录方法上的注解信息
-                对于有synthetic标记的方法，不进行记录，避免出现方法上的重复注解
+                对于有synthetic标记的方法，不进行以下处理
+                1. 避免出现方法上的重复注解
+                2. 避免出现方法对应行号信息重复记录
              */
+
+            // 记录方法上的注解信息
             JavaCGUtil.writeAnnotationInfo(JavaCGConstants.FILE_KEY_METHOD_PREFIX, callerFullMethod, mg.getMethod().getAnnotationEntries(), annotationWriter);
+
+            // 记录当前方法对应的起止行号
+            if (lineNumberTable != null) {
+                LineNumber[] lineNumbers = lineNumberTable.getLineNumberTable();
+                if (lineNumbers != null && lineNumbers.length > 0) {
+                    int minLineNumber = lineNumbers[0].getLineNumber();
+                    int maxLineNumber;
+                    if (lineNumbers.length == 1) {
+                        maxLineNumber = minLineNumber;
+                    } else {
+                        maxLineNumber = lineNumbers[lineNumbers.length - 1].getLineNumber();
+                    }
+
+                    MethodLineNumberInfo methodLineNumberInfo = new MethodLineNumberInfo();
+                    methodLineNumberInfo.setFullMethod(callerFullMethod);
+                    methodLineNumberInfo.setMinLineNumber(minLineNumber);
+                    methodLineNumberInfo.setMaxLineNumber(maxLineNumber);
+                    methodLineNumberList.add(methodLineNumberInfo);
+                }
+            }
         }
     }
 
-    public List<MethodCallDto> start() {
+    public void start() {
         if (mg.isAbstract() || mg.isNative()) {
-            return Collections.emptyList();
+            return;
         }
 
         for (ih = mg.getInstructionList().getStart(); ih != null; ih = ih.getNext()) {
@@ -98,7 +94,6 @@ public class MethodVisitor extends EmptyVisitor {
                 i.accept(this);
             }
         }
-        return methodCalls;
     }
 
     @Override
@@ -168,11 +163,11 @@ public class MethodVisitor extends EmptyVisitor {
 
         String methodCall = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), callerFullMethod, callType, calleeClassName, calleeMethodName, calleeMethodArgs);
         MethodCallDto methodCallDto = MethodCallDto.genInstance(methodCall, getSourceLine());
-        methodCalls.add(methodCallDto);
+        methodCallList.add(methodCallDto);
 
         // 调用自定义接口实现类的方法
         for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
-            customCodeParser.handleMethodCall(callIdCounter, calleeClassName, calleeMethodName, arguments, ih, mg, methodCalls);
+            customCodeParser.handleMethodCall(callIdCounter, calleeClassName, calleeMethodName, arguments, ih, mg, methodCallList);
         }
     }
 
@@ -197,7 +192,7 @@ public class MethodVisitor extends EmptyVisitor {
                 String methodCall = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), callerFullMethod, CallTypeEnum.CTE_RIR.getType(), calleeClassName, calleeMethodName,
                         calleeMethodArgs);
                 MethodCallDto methodCallDto1 = MethodCallDto.genInstance(methodCall, getSourceLine());
-                methodCalls.add(methodCallDto1);
+                methodCallList.add(methodCallDto1);
 
                 if (Boolean.FALSE.equals(recordedRunnable)) {
                     // Runnable实现类的<init>方法调用Runnable实现类的run方法
@@ -205,7 +200,7 @@ public class MethodVisitor extends EmptyVisitor {
                     String runnableImplClassMethod = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), tmpCallerFullMethod, CallTypeEnum.CTE_RIR.getType(), calleeClassName,
                             "run", "()");
                     MethodCallDto methodCallDto2 = MethodCallDto.genInstance(runnableImplClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER);
-                    methodCalls.add(methodCallDto2);
+                    methodCallList.add(methodCallDto2);
                     // 避免<init>方法调用run()方法被添加多次
                     runnableImplClassMap.put(calleeClassName, Boolean.TRUE);
                 }
@@ -220,7 +215,7 @@ public class MethodVisitor extends EmptyVisitor {
                 String methodCall = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), callerFullMethod, CallTypeEnum.CTE_CIC.getType(), calleeClassName, calleeMethodName,
                         calleeMethodArgs);
                 MethodCallDto methodCallDto1 = MethodCallDto.genInstance(methodCall, getSourceLine());
-                methodCalls.add(methodCallDto1);
+                methodCallList.add(methodCallDto1);
 
                 if (Boolean.FALSE.equals(recordedCallable)) {
                     // Callable实现类的<init>方法调用Callable实现类的call方法
@@ -228,7 +223,7 @@ public class MethodVisitor extends EmptyVisitor {
                     String callableImplClassMethod = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), tmpCallerFullMethod, CallTypeEnum.CTE_CIC.getType(), calleeClassName,
                             "call", "()");
                     MethodCallDto methodCallDto2 = MethodCallDto.genInstance(callableImplClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER);
-                    methodCalls.add(methodCallDto2);
+                    methodCallList.add(methodCallDto2);
                     // 避免<init>方法调用call()方法被添加多次
                     callableImplClassMap.put(calleeClassName, Boolean.TRUE);
                 }
@@ -241,7 +236,7 @@ public class MethodVisitor extends EmptyVisitor {
                 String threadChildClassMethod = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), tmpCallerFullMethod, CallTypeEnum.CTE_TSR.getType(), calleeClassName, "run"
                         , "()");
                 MethodCallDto methodCallDto2 = MethodCallDto.genInstance(threadChildClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER);
-                methodCalls.add(methodCallDto2);
+                methodCallList.add(methodCallDto2);
                 // 避免start()方法调用run()方法被添加多次
                 threadChildClassMap.put(calleeClassName, Boolean.TRUE);
             }
@@ -257,5 +252,45 @@ public class MethodVisitor extends EmptyVisitor {
         }
         int sourceLine = lineNumberTable.getSourceLine(ih.getPosition());
         return Math.max(sourceLine, 0);
+    }
+
+    public void setMethodCallList(List<MethodCallDto> methodCallList) {
+        this.methodCallList = methodCallList;
+    }
+
+    public void setMethodLineNumberList(List<MethodLineNumberInfo> methodLineNumberList) {
+        this.methodLineNumberList = methodLineNumberList;
+    }
+
+    public void setCalleeMethodMapGlobal(Map<String, Set<String>> calleeMethodMapGlobal) {
+        this.calleeMethodMapGlobal = calleeMethodMapGlobal;
+    }
+
+    public void setRunnableImplClassMap(Map<String, Boolean> runnableImplClassMap) {
+        this.runnableImplClassMap = runnableImplClassMap;
+    }
+
+    public void setCallableImplClassMap(Map<String, Boolean> callableImplClassMap) {
+        this.callableImplClassMap = callableImplClassMap;
+    }
+
+    public void setThreadChildClassMap(Map<String, Boolean> threadChildClassMap) {
+        this.threadChildClassMap = threadChildClassMap;
+    }
+
+    public void setCallIdCounter(CallIdCounter callIdCounter) {
+        this.callIdCounter = callIdCounter;
+    }
+
+    public void setCustomCodeParserList(List<CustomCodeParserInterface> customCodeParserList) {
+        this.customCodeParserList = customCodeParserList;
+    }
+
+    public void setRecordAll(boolean recordAll) {
+        this.recordAll = recordAll;
+    }
+
+    public void setAnnotationWriter(Writer annotationWriter) {
+        this.annotationWriter = annotationWriter;
     }
 }

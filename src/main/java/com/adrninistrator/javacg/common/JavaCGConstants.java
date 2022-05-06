@@ -37,6 +37,7 @@ public class JavaCGConstants {
     public static final String MERGED_JAR_FLAG = "-javacg_merged.jar";
 
     public static final String FILE_FLAG_ANNOTATION = "-annotation";
+    public static final String FILE_FLAG_LINE_NUMBER = "-line_number";
 
     public static final String EXT_JAR = ".jar";
     public static final String EXT_WAR = ".war";
@@ -56,7 +57,10 @@ public class JavaCGConstants {
     // 将注解属性值写入文件时，\r替换后的字符
     public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN = 0x02;
     // 将注解属性值写入文件时，\n替换后的字符
-    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED  = 0x03;
+    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED = 0x03;
+
+    // 输出的方法行号信息文件的列数
+    public static final int LINE_NUMBER_COLUMN_NUM = 3;
 
     private JavaCGConstants() {
         throw new IllegalStateException("illegal");
