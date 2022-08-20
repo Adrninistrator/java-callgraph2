@@ -64,6 +64,10 @@ b. 对于指定目录中的后缀非.jar/.war的文件进行合并
 
 生成方法代码行号信息文件，文件名以“-line_number.txt”结尾
 
+## 2.6. (0.1.9)
+
+对于某个类调用自身类的类调用关系，也会生成在输出文件中
+
 # 3. 使用说明
 
 ## 3.1. 编译命令：
@@ -255,7 +259,7 @@ M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletReq
 M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) com.test.common.annotation.TestAttributeAnnotation value2 123
 ```
 
-## 4.2. 方法代码行号信息文件
+## 4.3. 方法代码行号信息文件
 
 方法代码行号信息文件生成目录与以上文件相同 ，文件名为第一个jar包或合并后的jar包加上“-line_number.txt”
 

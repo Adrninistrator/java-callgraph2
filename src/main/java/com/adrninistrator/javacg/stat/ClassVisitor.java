@@ -53,13 +53,16 @@ public class ClassVisitor {
             }
 
             String referencedClass = constantPool.constantToString(constant);
-            // 对当前类自身的引用不处理
-            if (!javaClass.getClassName().equals(referencedClass) && !JavaCGConstants.OBJECT_CLASS_NAME.equals(referencedClass)) {
+            // 对Object类的引用不处理
+            if (!JavaCGConstants.OBJECT_CLASS_NAME.equals(referencedClass)) {
                 referencedClass = JavaCGUtil.handleClassNameWithArray(referencedClass);
 
                 referencedClassSet.add(referencedClass);
             }
         }
+
+        // 将当前类也添加到当前类调用的类列表中，防止没有被其他类调用的类名不被记录（当前类应该会在当前类的CONSTANT_Class常量中，但为了保险起见，再添加一次）
+        referencedClassSet.add(javaClass.getClassName());
 
         List<String> referencedClassList = new ArrayList<>(referencedClassSet);
         Collections.sort(referencedClassList);
