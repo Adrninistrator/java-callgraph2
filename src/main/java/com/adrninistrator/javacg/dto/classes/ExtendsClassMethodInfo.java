@@ -1,4 +1,6 @@
-package com.adrninistrator.javacg.dto;
+package com.adrninistrator.javacg.dto.classes;
+
+import com.adrninistrator.javacg.dto.method.MethodAttribute;
 
 import java.util.Map;
 

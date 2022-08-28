@@ -1,20 +1,42 @@
 package com.adrninistrator.javacg.stat;
 
+import com.adrninistrator.javacg.common.ClassNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
-import com.adrninistrator.javacg.dto.*;
+import com.adrninistrator.javacg.dto.classes.ClassInterfaceMethodInfo;
+import com.adrninistrator.javacg.dto.classes.ExtendsClassMethodInfo;
+import com.adrninistrator.javacg.dto.counter.CallIdCounter;
+import com.adrninistrator.javacg.dto.jar.JarInfo;
+import com.adrninistrator.javacg.dto.method.MethodAttribute;
+import com.adrninistrator.javacg.dto.method.MethodCallDto;
+import com.adrninistrator.javacg.dto.method.MethodLineNumberInfo;
+import com.adrninistrator.javacg.dto.node.TmpNode4ExtendsClassMethod;
 import com.adrninistrator.javacg.enums.CallTypeEnum;
 import com.adrninistrator.javacg.enums.HandleJarResultEnum;
+import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatorInterface;
+import com.adrninistrator.javacg.extensions.annotation_attributes.DefaultAnnotationAttributesFormator;
 import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
 import com.adrninistrator.javacg.util.HandleJarUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
+import com.adrninistrator.javacg.visitor.ClassVisitor;
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -24,10 +46,6 @@ public class JCallGraph {
     public static final int INIT_SIZE_100 = 100;
     public static final int INIT_SIZE_500 = 500;
     public static final int INIT_SIZE_1000 = 1000;
-
-    private static final String RUNNABLE_CLASS_NAME = Runnable.class.getName();
-    private static final String CALLABLE_CLASS_NAME = Callable.class.getName();
-    private static final String THREAD_CLASS_NAME = Thread.class.getName();
 
     private static final String METHOD_CALL_FORMAT = JavaCGConstants.FILE_KEY_METHOD_PREFIX + "%d %s:%s (%s)%s:%s %d";
 
@@ -63,7 +81,10 @@ public class JCallGraph {
 
     // 处理class文件时，缓存当前处理的文件的第一层目录名及对应jar包信息
     private String lastFirstDirName;
+
     private JarInfo lastJarInfo;
+
+    private AnnotationAttributesFormatorInterface annotationAttributesFormator;
 
     public static void main(String[] args) {
         JCallGraph jCallGraph = new JCallGraph();
@@ -98,6 +119,18 @@ public class JCallGraph {
     // 获取当前输出的方法代码行号信息的文件路径
     public String getMethodLineNumberOutputFilePath() {
         return methodLineNumberOutputFilePath;
+    }
+
+    public void setAnnotationAttributesFormator(AnnotationAttributesFormatorInterface annotationAttributesFormator) {
+        this.annotationAttributesFormator = annotationAttributesFormator;
+    }
+
+    private AnnotationAttributesFormatorInterface chooseAnnotationAttributesFormator() {
+        if (annotationAttributesFormator == null) {
+            annotationAttributesFormator = new DefaultAnnotationAttributesFormator();
+        }
+
+        return annotationAttributesFormator;
     }
 
     public boolean run(String[] args) {
@@ -245,12 +278,16 @@ public class JCallGraph {
             JavaClass javaClass = cp.parse();
 
             if (handledClassNameSet.contains(javaClass.getClassName())) {
-                JavaCGUtil.debugPrint("跳过处理重复同名Class: " + javaClass.getClassName());
+                if (JavaCGUtil.enableDebugPrint()) {
+                    JavaCGUtil.debugPrint("跳过处理重复同名Class: " + javaClass.getClassName());
+                }
                 return;
             }
 
             handledClassNameSet.add(javaClass.getClassName());
-            JavaCGUtil.debugPrint("处理Class: " + javaClass.getClassName());
+            if (JavaCGUtil.enableDebugPrint()) {
+                JavaCGUtil.debugPrint("处理Class: " + javaClass.getClassName());
+            }
 
             ClassVisitor classVisitor = new ClassVisitor(javaClass);
             classVisitor.setCalleeMethodMapGlobal(calleeMethodMapGlobal);
@@ -261,6 +298,7 @@ public class JCallGraph {
             classVisitor.setCustomCodeParserList(customCodeParserList);
             classVisitor.setRecordAll(recordAll);
             classVisitor.setAnnotationWriter(annotationWriter);
+            classVisitor.setAnnotationAttributesFormator(chooseAnnotationAttributesFormator());
 
             classVisitor.start();
 
@@ -406,7 +444,9 @@ public class JCallGraph {
 
     // 处理一个顶层父类
     private void handleOneTopSuperClass(String topSuperClassName, Writer resultWriter) throws IOException {
-        JavaCGUtil.debugPrint("处理一个顶层父类: " + topSuperClassName);
+        if (JavaCGUtil.enableDebugPrint()) {
+            JavaCGUtil.debugPrint("处理一个顶层父类: " + topSuperClassName);
+        }
         List<TmpNode4ExtendsClassMethod> tmpNodeList = new ArrayList<>();
         int currentLevel = 0;
 
@@ -638,7 +678,7 @@ public class JCallGraph {
 
         // 获得父类和子类信息
         String superClassName = javaClass.getSuperclassName();
-        if (THREAD_CLASS_NAME.equals(superClassName)) {
+        if (ClassNameConstants.CLASS_NAME_THREAD.equals(superClassName)) {
             // 找到Thread的子类
             threadChildClassMap.put(javaClass.getClassName(), Boolean.FALSE);
         }
@@ -675,11 +715,11 @@ public class JCallGraph {
             classInterfaceMethodInfoMap.put(className, classInterfaceMethodInfo);
 
             if (!javaClass.isAbstract()) {
-                if (interfaceNameList.contains(RUNNABLE_CLASS_NAME)) {
+                if (interfaceNameList.contains(ClassNameConstants.CLASS_NAME_RUNNABLE)) {
                     // 找到Runnable实现类
                     runnableImplClassMap.put(className, Boolean.FALSE);
                 }
-                if (interfaceNameList.contains(CALLABLE_CLASS_NAME)) {
+                if (interfaceNameList.contains(ClassNameConstants.CLASS_NAME_CALLABLE)) {
                     // 找到Callable实现类
                     callableImplClassMap.put(className, Boolean.FALSE);
                 }

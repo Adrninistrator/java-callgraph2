@@ -1,7 +1,7 @@
 package com.adrninistrator.javacg.util;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
-import com.adrninistrator.javacg.dto.JarInfo;
+import com.adrninistrator.javacg.dto.jar.JarInfo;
 
 import java.io.*;
 import java.util.*;
@@ -241,14 +241,18 @@ public class HandleJarUtil {
                     for (String mergeClassInJarPackage : mergeClassInJarPackageList) {
                         if (jarEntryName.startsWith(mergeClassInJarPackage) || jarEntryName.startsWith("WEB-INF/classes/" + mergeClassInJarPackage)) {
                             classPackageMatches = true;
-                            JavaCGUtil.debugPrint("当前class文件包名匹配，需要合并 " + jarEntryName + " " + mergeClassInJarPackage);
+                            if (JavaCGUtil.enableDebugPrint()) {
+                                JavaCGUtil.debugPrint("当前class文件包名匹配，需要合并 " + jarEntryName + " " + mergeClassInJarPackage);
+                            }
                             break;
                         }
                     }
 
                     if (!classPackageMatches) {
                         // 跳过包名不满足要求的class文件
-                        JavaCGUtil.debugPrint("当前class文件包名不匹配，不合并 " + jarEntryName);
+                        if (JavaCGUtil.enableDebugPrint()) {
+                            JavaCGUtil.debugPrint("当前class文件包名不匹配，不合并 " + jarEntryName);
+                        }
                         continue;
                     }
                 }

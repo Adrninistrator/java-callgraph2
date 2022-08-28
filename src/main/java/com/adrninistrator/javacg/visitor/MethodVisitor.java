@@ -1,16 +1,34 @@
-package com.adrninistrator.javacg.stat;
+package com.adrninistrator.javacg.visitor;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
-import com.adrninistrator.javacg.dto.CallIdCounter;
-import com.adrninistrator.javacg.dto.MethodCallDto;
-import com.adrninistrator.javacg.dto.MethodInfo;
-import com.adrninistrator.javacg.dto.MethodLineNumberInfo;
+import com.adrninistrator.javacg.dto.counter.CallIdCounter;
+import com.adrninistrator.javacg.dto.method.MethodCallDto;
+import com.adrninistrator.javacg.dto.method.MethodInfo;
+import com.adrninistrator.javacg.dto.method.MethodLineNumberInfo;
 import com.adrninistrator.javacg.enums.CallTypeEnum;
+import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatorInterface;
+import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesHandler;
 import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
 import com.adrninistrator.javacg.util.JavaCGUtil;
-import org.apache.bcel.classfile.*;
+import org.apache.bcel.classfile.BootstrapMethod;
+import org.apache.bcel.classfile.Constant;
+import org.apache.bcel.classfile.ConstantInvokeDynamic;
+import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.classfile.LineNumber;
+import org.apache.bcel.classfile.LineNumberTable;
+import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.EmptyVisitor;
-import org.apache.bcel.generic.*;
+import org.apache.bcel.generic.INVOKEDYNAMIC;
+import org.apache.bcel.generic.INVOKEINTERFACE;
+import org.apache.bcel.generic.INVOKESPECIAL;
+import org.apache.bcel.generic.INVOKESTATIC;
+import org.apache.bcel.generic.INVOKEVIRTUAL;
+import org.apache.bcel.generic.Instruction;
+import org.apache.bcel.generic.InstructionHandle;
+import org.apache.bcel.generic.InstructionList;
+import org.apache.bcel.generic.InvokeInstruction;
+import org.apache.bcel.generic.MethodGen;
+import org.apache.bcel.generic.Type;
 
 import java.io.Writer;
 import java.util.HashSet;
@@ -22,27 +40,43 @@ import java.util.Set;
 public class MethodVisitor extends EmptyVisitor {
 
     private JavaClass javaClass;
+
     private MethodGen mg;
+
     private ConstantPoolGen cpg;
+
     private List<MethodCallDto> methodCallList;
+
     private List<MethodLineNumberInfo> methodLineNumberList;
+
     private LineNumberTable lineNumberTable;
+
     private InstructionHandle ih;
+
     private String callerFullMethod;
+
     private Map<String, Set<String>> calleeMethodMapGlobal;
+
     private Map<String, Boolean> runnableImplClassMap;
+
     private Map<String, Boolean> callableImplClassMap;
+
     private Map<String, Boolean> threadChildClassMap;
+
     private CallIdCounter callIdCounter;
+
     private List<CustomCodeParserInterface> customCodeParserList;
+
     private boolean recordAll = false;
+
     private Writer annotationWriter;
+
+    private AnnotationAttributesFormatorInterface annotationAttributesFormator;
 
     public MethodVisitor(MethodGen mg, JavaClass javaClass) {
         this.javaClass = javaClass;
         this.mg = mg;
         cpg = mg.getConstantPool();
-
         lineNumberTable = mg.getLineNumberTable(cpg);
     }
 
@@ -58,7 +92,8 @@ public class MethodVisitor extends EmptyVisitor {
              */
 
             // 记录方法上的注解信息
-            JavaCGUtil.writeAnnotationInfo(JavaCGConstants.FILE_KEY_METHOD_PREFIX, callerFullMethod, mg.getMethod().getAnnotationEntries(), annotationWriter);
+            AnnotationAttributesHandler.writeAnnotationInfo(JavaCGConstants.FILE_KEY_METHOD_PREFIX, callerFullMethod, mg.getMethod().getAnnotationEntries(), annotationAttributesFormator,
+                    annotationWriter);
 
             // 记录当前方法对应的起止行号
             if (lineNumberTable != null) {
@@ -87,7 +122,12 @@ public class MethodVisitor extends EmptyVisitor {
             return;
         }
 
-        for (ih = mg.getInstructionList().getStart(); ih != null; ih = ih.getNext()) {
+        InstructionList instructionList = mg.getInstructionList();
+        if (instructionList == null) {
+            return;
+        }
+
+        for (ih = instructionList.getStart(); ih != null; ih = ih.getNext()) {
             Instruction i = ih.getInstruction();
 
             if (i instanceof InvokeInstruction) {
@@ -292,5 +332,9 @@ public class MethodVisitor extends EmptyVisitor {
 
     public void setAnnotationWriter(Writer annotationWriter) {
         this.annotationWriter = annotationWriter;
+    }
+
+    public void setAnnotationAttributesFormator(AnnotationAttributesFormatorInterface annotationAttributesFormator) {
+        this.annotationAttributesFormator = annotationAttributesFormator;
     }
 }

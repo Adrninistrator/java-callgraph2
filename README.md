@@ -68,6 +68,12 @@ b. 对于指定目录中的后缀非.jar/.war的文件进行合并
 
 对于某个类调用自身类的类调用关系，也会生成在输出文件中
 
+## 2.7. (0.2.0)
+
+在处理注解的属性值时，支持使用自定义类处理，自定义类需要实现`com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatorInterface`接口
+
+可使用java-all-call-graph中的`com.adrninistrator.jacg.extensions.annotation_attributes.AllAnnotationAttributesFormator`类
+
 # 3. 使用说明
 
 ## 3.1. 编译命令：
@@ -233,30 +239,30 @@ type class_or_method_name annotation_name annotation_attribute_name annotation_a
 
 - annotation_attribute_value
 
-注解属性的值，可能为空
-
-注解属性值中可能会出现影响文件格式的字符，会进行以下替换处理：
-
-|替换前的字符|替换后的字符|
-|---|---|
-|空格|0x01|
-|\r|0x02|
-|\n|0x03|
-
-假如属性值类型为数组，则属性值会被大括号包含，如“{test}”
+注解属性值，与AnnotationAttributesFormatorInterface实现类的处理方式有关，可能为空
 
 若注解没有属性值，则只有以上前三个字段，占一行
 
-若注解有属性值，则有以上五个字段（若注解属性值为""则是四个字段），每个属性占一行
+若注解有属性值，则有以上五个字段，每个属性占一行
+
+使用java-all-call-graph中的AllAnnotationAttributesFormator类时，注解属性值前缀的含义如下：
+
+|注解属性值前缀|含义|属性值的保存格式|
+|---|---|---|
+|s:|字符串类型，对应简单类型、类、枚举类型|属性值为字符串|
+|b:|字符串类型，对应简单类型、类、枚举类型，进行BASE64编码|属性值为字符串BASE64编码后的结果|
+|m:|Map类型，对应注解类型|属性值为JSON字符串|
+|l:|List类型，对应数组类型|属性值为JSON字符串|
 
 文件示例如下：
 
 ```
-C: com.test.controller.TestLoaderController org.springframework.stereotype.Controller
-C: com.test.controller.TestLoaderController org.springframework.web.bind.annotation.RequestMapping value {test}
-M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) org.springframework.web.bind.annotation.GetMapping value {get}
-M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) com.test.common.annotation.TestAttributeAnnotation value abc
-M: com.test.controller.TestRest2Controller:get(javax.servlet.http.HttpServletRequest) com.test.common.annotation.TestAttributeAnnotation value2 123
+C: test.call_graph.annotation.MethodWithAnnotation test.call_graph.annotation.TestAnnotation strValue b:YWFhDQo=
+C: test.call_graph.annotation.MethodWithAnnotation test.call_graph.annotation.TestAnnotation intValue s:111
+C: test.call_graph.annotation.MethodWithAnnotation test.call_graph.annotation.TestAnnotation intArrayValue l:["1","2","3","4"]
+C: test.call_graph.annotation.MethodWithAnnotation test.call_graph.annotation.TestAnnotation annotation1 m:{"valueB":"Cvb1","valueA":"Cva1"}
+M: test.call_graph.annotation.MethodWithAnnotation:test2() test.call_graph.annotation.TestAnnotationOuter annotations l:[{"valueB":"vb1\r\n","valueA":"va1"},{"valueB":"va2","valueA":"va2"}]
+M: test.call_graph.annotation.MethodWithAnnotation:test3() test.call_graph.annotation.TestAnnotationOuter2 annotations l:[{"value":"aaa","annotations":[{"valueB":"va1","valueA":"va1"},{"valueB":"va2\r\n","valueA":"va2"}]},{"value":"bbb","annotations":[{"valueB":"vb1","valueA":"vb1"},{"valueB":"vb2","valueA":"vb2"}]}]
 ```
 
 ## 4.3. 方法代码行号信息文件

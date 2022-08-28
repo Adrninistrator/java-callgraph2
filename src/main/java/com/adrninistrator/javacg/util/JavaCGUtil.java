@@ -1,9 +1,10 @@
 package com.adrninistrator.javacg.util;
 
+import com.adrninistrator.javacg.common.ClassNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
-import com.adrninistrator.javacg.dto.ClassInterfaceMethodInfo;
-import com.adrninistrator.javacg.dto.ExtendsClassMethodInfo;
-import com.adrninistrator.javacg.dto.MethodInfo;
+import com.adrninistrator.javacg.dto.classes.ClassInterfaceMethodInfo;
+import com.adrninistrator.javacg.dto.classes.ExtendsClassMethodInfo;
+import com.adrninistrator.javacg.dto.method.MethodInfo;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.*;
 import org.apache.bcel.generic.Type;
@@ -279,7 +280,7 @@ public class JavaCGUtil {
             classNameList.add(currentClassName);
 
             ExtendsClassMethodInfo extendsClassMethodInfo = extendsClassMethodInfoMap.get(currentClassName);
-            if (extendsClassMethodInfo == null || JavaCGConstants.OBJECT_CLASS_NAME.equals(extendsClassMethodInfo.getSuperClassName())) {
+            if (extendsClassMethodInfo == null || ClassNameConstants.CLASS_NAME_OBJECT.equals(extendsClassMethodInfo.getSuperClassName())) {
                 break;
             }
 
@@ -287,6 +288,10 @@ public class JavaCGUtil {
         }
 
         return classNameList;
+    }
+
+    public static boolean enableDebugPrint() {
+        return debugPrintFlag;
     }
 
     public static void debugPrint(String data) {
@@ -310,62 +315,16 @@ public class JavaCGUtil {
 
         // 处理数组格式
         String tmpClassName = Utility.typeSignatureToString(className, false);
-        if (!tmpClassName.endsWith(JavaCGConstants.FLAG_ARRAY)) {
-            System.err.println("handleClassNameWithArray " + tmpClassName);
-            return tmpClassName;
-        }
-
-        return tmpClassName.substring(0, tmpClassName.length() - JavaCGConstants.FLAG_ARRAY.length());
+        return removeArrayFlag(tmpClassName);
     }
 
-    /**
-     * 将注解信息写入文件
-     *
-     * @param type
-     * @param classOrMethod
-     * @param annotationEntries
-     * @param writer
-     */
-    public static void writeAnnotationInfo(String type, String classOrMethod, AnnotationEntry[] annotationEntries, Writer writer) {
-        if (annotationEntries == null || annotationEntries.length == 0) {
-            return;
+    public static String removeArrayFlag(String arrayName) {
+        if (!arrayName.endsWith(JavaCGConstants.FLAG_ARRAY)) {
+            System.err.println("类名不是数组形式 " + arrayName);
+            return arrayName;
         }
 
-        try {
-            StringBuilder stringBuilder = new StringBuilder();
-            for (AnnotationEntry annotationEntry : annotationEntries) {
-                String annotationClassName = Utility.typeSignatureToString(annotationEntry.getAnnotationType(), false);
-                String data = type + " " + classOrMethod + " " + annotationClassName;
-
-                if (annotationEntry.getElementValuePairs() == null || annotationEntry.getElementValuePairs().length == 0) {
-                    stringBuilder.append(data).append(JavaCGConstants.NEW_LINE);
-                }
-
-                for (ElementValuePair elementValuePair : annotationEntry.getElementValuePairs()) {
-                    String key = elementValuePair.getNameString();
-                    String value = elementValuePair.getValue().toString();
-                    value = encodeAnnotationValue(value);
-
-                    stringBuilder.append(data).append(" ").append(key).append(" ").append(value).append(JavaCGConstants.NEW_LINE);
-                }
-            }
-
-            writer.write(stringBuilder.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static String encodeAnnotationValue(String value) {
-        return value.replace(' ', JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE)
-                .replace('\r', JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN)
-                .replace('\n', JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED);
-    }
-
-    public static String decodeAnnotationValue(String value) {
-        return value.replace(JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE, ' ')
-                .replace(JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN, '\r')
-                .replace(JavaCGConstants.ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED, '\n');
+        return arrayName.substring(0, arrayName.length() - JavaCGConstants.FLAG_ARRAY.length());
     }
 
     /**

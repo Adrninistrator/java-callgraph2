@@ -1,6 +1,6 @@
 package merge_jar;
 
-import com.adrninistrator.javacg.dto.JarInfo;
+import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.util.HandleJarUtil;
 
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package com.adrninistrator.javacg.dto;
+package com.adrninistrator.javacg.dto.method;
 
 import org.apache.bcel.generic.Type;
 

@@ -15,6 +15,9 @@ public class JavaCGConstants {
     // 合并jar/war包中的class文件时，需要合并的包名
     public static final String PROPERTY_MERGE_CLASS_IN_JAR_PACKAGE = "merge.class.in.jar.package";
 
+    // 文件列的分隔符
+    public static final String FILE_COLUMN_SEPARATOR = "\t";
+
     public static final String FILE_KEY_CLASS_PREFIX = "C:";
     public static final String FILE_KEY_METHOD_PREFIX = "M:";
     public static final String FILE_KEY_JAR_INFO_PREFIX = "J:";
@@ -31,8 +34,6 @@ public class JavaCGConstants {
     public static final String METHOD_NAME_START = "start";
 
     public static final String NEW_LINE = "\n";
-
-    public static final String OBJECT_CLASS_NAME = Object.class.getName();
 
     public static final String MERGED_JAR_FLAG = "-javacg_merged.jar";
 
@@ -52,12 +53,10 @@ public class JavaCGConstants {
     // 输出的注解信息文件，不包含属性时的列数
     public static final int ANNOTATION_COLUMN_NUM_WITHOUT_ATTRIBUTE = 3;
 
-    // 将注解属性值写入文件时，空格替换后的字符
-    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_BACKSPACE = 0x01;
     // 将注解属性值写入文件时，\r替换后的字符
-    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN = 0x02;
+    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN = 0x01;
     // 将注解属性值写入文件时，\n替换后的字符
-    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED = 0x03;
+    public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED = 0x02;
 
     // 输出的方法行号信息文件的列数
     public static final int LINE_NUMBER_COLUMN_NUM = 3;

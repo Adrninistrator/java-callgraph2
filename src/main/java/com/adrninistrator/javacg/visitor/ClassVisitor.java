@@ -1,9 +1,12 @@
-package com.adrninistrator.javacg.stat;
+package com.adrninistrator.javacg.visitor;
 
+import com.adrninistrator.javacg.common.ClassNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
-import com.adrninistrator.javacg.dto.CallIdCounter;
-import com.adrninistrator.javacg.dto.MethodCallDto;
-import com.adrninistrator.javacg.dto.MethodLineNumberInfo;
+import com.adrninistrator.javacg.dto.counter.CallIdCounter;
+import com.adrninistrator.javacg.dto.method.MethodCallDto;
+import com.adrninistrator.javacg.dto.method.MethodLineNumberInfo;
+import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatorInterface;
+import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesHandler;
 import com.adrninistrator.javacg.extensions.code_parser.CustomCodeParserInterface;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.Const;
@@ -15,25 +18,43 @@ import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.MethodGen;
 
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 // 处理Class对象
 public class ClassVisitor {
 
     private JavaClass javaClass;
+
     private ConstantPoolGen cpg;
+
     private String classReferenceFormat;
+
     private List<MethodCallDto> methodCallList = new ArrayList<>(200);
+
     private List<MethodLineNumberInfo> methodLineNumberList = new ArrayList<>(100);
 
     private Map<String, Set<String>> calleeMethodMapGlobal;
+
     private Map<String, Boolean> runnableImplClassMap;
+
     private Map<String, Boolean> callableImplClassMap;
+
     private Map<String, Boolean> threadChildClassMap;
+
     private CallIdCounter callIdCounter;
+
     private List<CustomCodeParserInterface> customCodeParserList;
+
     private boolean recordAll = false;
+
     private Writer annotationWriter;
+
+    private AnnotationAttributesFormatorInterface annotationAttributesFormator;
 
     public ClassVisitor(JavaClass javaClass) {
         this.javaClass = javaClass;
@@ -54,7 +75,7 @@ public class ClassVisitor {
 
             String referencedClass = constantPool.constantToString(constant);
             // 对Object类的引用不处理
-            if (!JavaCGConstants.OBJECT_CLASS_NAME.equals(referencedClass)) {
+            if (!ClassNameConstants.CLASS_NAME_OBJECT.equals(referencedClass)) {
                 referencedClass = JavaCGUtil.handleClassNameWithArray(referencedClass);
 
                 referencedClassSet.add(referencedClass);
@@ -88,6 +109,7 @@ public class ClassVisitor {
             visitor.setCustomCodeParserList(customCodeParserList);
             visitor.setRecordAll(recordAll);
             visitor.setAnnotationWriter(annotationWriter);
+            visitor.setAnnotationAttributesFormator(annotationAttributesFormator);
 
             visitor.beforeStart();
             visitor.start();
@@ -100,8 +122,14 @@ public class ClassVisitor {
     public void start() {
         visitConstantPool();
 
-        // 记录类上的注解信息
-        JavaCGUtil.writeAnnotationInfo(JavaCGConstants.FILE_KEY_CLASS_PREFIX, javaClass.getClassName(), javaClass.getAnnotationEntries(), annotationWriter);
+        if (!javaClass.isAnnotation()) {
+            // 记录类上的注解信息，不处理注解类型的类
+            AnnotationAttributesHandler.writeAnnotationInfo(JavaCGConstants.FILE_KEY_CLASS_PREFIX,
+                    javaClass.getClassName(),
+                    javaClass.getAnnotationEntries(),
+                    annotationAttributesFormator,
+                    annotationWriter);
+        }
 
         for (Method method : javaClass.getMethods()) {
             visitMethod(method);
@@ -146,5 +174,9 @@ public class ClassVisitor {
 
     public void setAnnotationWriter(Writer annotationWriter) {
         this.annotationWriter = annotationWriter;
+    }
+
+    public void setAnnotationAttributesFormator(AnnotationAttributesFormatorInterface annotationAttributesFormator) {
+        this.annotationAttributesFormator = annotationAttributesFormator;
     }
 }

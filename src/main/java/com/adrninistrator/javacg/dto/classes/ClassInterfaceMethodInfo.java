@@ -1,4 +1,4 @@
-package com.adrninistrator.javacg.dto;
+package com.adrninistrator.javacg.dto.classes;
 
 import java.util.List;
 
