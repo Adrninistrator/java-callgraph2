@@ -74,6 +74,10 @@ b. 对于指定目录中的后缀非.jar/.war的文件进行合并
 
 可使用java-all-call-graph中的`com.adrninistrator.jacg.extensions.annotation_attributes.AllAnnotationAttributesFormator`类
 
+## 2.8. (0.2.1)
+
+对于接口之间的继承关系，在内存中进行记录
+
 # 3. 使用说明
 
 ## 3.1. 编译命令：

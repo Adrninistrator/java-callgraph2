@@ -58,9 +58,10 @@ public class JCallGraph {
     private Set<String> extendsClassesSet;
     private Map<String, ExtendsClassMethodInfo> extendsClassMethodInfoMap;
     private Map<String, List<String>> childrenClassInfoMap;
-    private CallIdCounter callIdCounter = CallIdCounter.newInstance();
-    private List<CustomCodeParserInterface> customCodeParserList = new ArrayList<>();
-    private Set<String> handledClassNameSet = new HashSet<>();
+    private Map<String, String> interfaceExtendsMap;
+    private final CallIdCounter callIdCounter = CallIdCounter.newInstance();
+    private final List<CustomCodeParserInterface> customCodeParserList = new ArrayList<>();
+    private final Set<String> handledClassNameSet = new HashSet<>();
 
     /*
         是否需要记录所有的接口调用实现类，及子类调用父类方法
@@ -206,6 +207,7 @@ public class JCallGraph {
         extendsClassesSet = new HashSet<>(INIT_SIZE_500);
         extendsClassMethodInfoMap = new HashMap<>(INIT_SIZE_500);
         childrenClassInfoMap = new HashMap<>(INIT_SIZE_500);
+        interfaceExtendsMap = new HashMap<>(INIT_SIZE_100);
 
         lastFirstDirName = null;
         lastJarInfo = null;
@@ -620,6 +622,7 @@ public class JCallGraph {
             // 调用自定义接口实现类的方法
             for (CustomCodeParserInterface customCodeParser : customCodeParserList) {
                 customCodeParser.setClassInterfaceMethodInfoMap(classInterfaceMethodInfoMap);
+                customCodeParser.setInterfaceExtendsMap(interfaceExtendsMap);
             }
 
             return true;
@@ -668,11 +671,20 @@ public class JCallGraph {
             // 对一个Class进行预处理
             preHandleClass(javaClass);
         } else if (javaClass.isInterface()) {
+            // 处理接口
+
+            // 记录接口的方法
             Method[] methods = javaClass.getMethods();
             if (methods != null && methods.length > 0 &&
                     interfaceMethodWithArgsMap.get(className) == null) {
                 List<String> interfaceMethodWithArgsList = JavaCGUtil.genInterfaceAbstractMethodWithArgs(methods);
                 interfaceMethodWithArgsMap.put(className, interfaceMethodWithArgsList);
+            }
+
+            // 记录接口的继承关系
+            for (String interfaceName : javaClass.getInterfaceNames()) {
+                // 对于未继承其他接口的接口，以上方法返回长度为0的数组
+                interfaceExtendsMap.put(className, interfaceName);
             }
         }
 

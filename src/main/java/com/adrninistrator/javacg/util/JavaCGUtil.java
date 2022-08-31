@@ -6,10 +6,20 @@ import com.adrninistrator.javacg.dto.classes.ClassInterfaceMethodInfo;
 import com.adrninistrator.javacg.dto.classes.ExtendsClassMethodInfo;
 import com.adrninistrator.javacg.dto.method.MethodInfo;
 import org.apache.bcel.Const;
-import org.apache.bcel.classfile.*;
+import org.apache.bcel.classfile.Attribute;
+import org.apache.bcel.classfile.BootstrapMethod;
+import org.apache.bcel.classfile.BootstrapMethods;
+import org.apache.bcel.classfile.Constant;
+import org.apache.bcel.classfile.ConstantCP;
+import org.apache.bcel.classfile.ConstantMethodHandle;
+import org.apache.bcel.classfile.ConstantNameAndType;
+import org.apache.bcel.classfile.ConstantPool;
+import org.apache.bcel.classfile.JavaClass;
+import org.apache.bcel.classfile.LineNumberTable;
+import org.apache.bcel.classfile.Method;
+import org.apache.bcel.classfile.Utility;
 import org.apache.bcel.generic.Type;
 
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +32,7 @@ import java.util.Map;
 
 public class JavaCGUtil {
 
-    private static boolean debugPrintFlag = System.getProperty(JavaCGConstants.PROPERTY_DEBUG_PRINT) != null;
+    private static final boolean debugPrintFlag = System.getProperty(JavaCGConstants.PROPERTY_DEBUG_PRINT) != null;
 
     public static boolean isInnerAnonymousClass(String className) {
         if (!className.contains("$")) {
@@ -259,6 +269,34 @@ public class JavaCGUtil {
             }
 
             currentClassName = extendsClassMethodInfo.getSuperClassName();
+        }
+    }
+
+    /**
+     * 判断childClassName是否直接或间接继承自superClassName
+     *
+     * @param childInterfaceName
+     * @param superInterfaceName
+     * @param interfaceExtendsMap
+     * @return
+     */
+    public static boolean isInterfaceChildOf(String childInterfaceName, String superInterfaceName, Map<String, String> interfaceExtendsMap) {
+        if (childInterfaceName == null || superInterfaceName == null || interfaceExtendsMap == null) {
+            return false;
+        }
+
+        String currentInterfaceName = childInterfaceName;
+        while (true) {
+            String currentSuperInterfaceName = interfaceExtendsMap.get(currentInterfaceName);
+            if (currentSuperInterfaceName == null) {
+                return false;
+            }
+
+            if (superInterfaceName.equals(currentSuperInterfaceName)) {
+                return true;
+            }
+
+            currentInterfaceName = currentSuperInterfaceName;
         }
     }
 

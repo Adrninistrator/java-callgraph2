@@ -1,8 +1,8 @@
 package com.adrninistrator.javacg.extensions.code_parser;
 
-import com.adrninistrator.javacg.dto.counter.CallIdCounter;
 import com.adrninistrator.javacg.dto.classes.ClassInterfaceMethodInfo;
 import com.adrninistrator.javacg.dto.classes.ExtendsClassMethodInfo;
+import com.adrninistrator.javacg.dto.counter.CallIdCounter;
 import com.adrninistrator.javacg.dto.method.MethodCallDto;
 import com.adrninistrator.javacg.extensions.dto.ExtendedData;
 import org.apache.bcel.classfile.JavaClass;
@@ -86,6 +86,12 @@ public interface CustomCodeParserInterface {
     }
 
     /**
+     * 操作完成之前的处理，整个执行过程中只执行一次
+     */
+    default void beforeDone() {
+    }
+
+    /**
      * 返回当前的自定义数据类型
      *
      * @return
@@ -108,6 +114,14 @@ public interface CustomCodeParserInterface {
      * @param classInterfaceMethodInfoMap
      */
     default void setClassInterfaceMethodInfoMap(Map<String, ClassInterfaceMethodInfo> classInterfaceMethodInfoMap) {
+    }
+
+    /**
+     * 接收保存接口之间继承关系的Map信息
+     *
+     * @param interfaceExtendsMap
+     */
+    default void setInterfaceExtendsMap(Map<String, String> interfaceExtendsMap) {
     }
 
     /**
