@@ -378,6 +378,29 @@ public class JavaCGUtil {
     }
 
     /**
+     * 生成格式化后的完整方法名，方法参数不指定括号
+     *
+     * @param fullClassName             完整类名
+     * @param methodName                方法名，不包含()
+     * @param methodArgsWithoutBrackets 方法参数，不包含起始的()，参数类名之间需要使用半角逗号,分隔，不能包含空格，参数类名也需要为完整类名
+     * @return
+     */
+    public static String formatFullMethodWithoutBrackets(String fullClassName, String methodName, String methodArgsWithoutBrackets) {
+        return formatFullMethod(fullClassName, methodName, "(" + methodArgsWithoutBrackets + ")");
+    }
+
+    /**
+     * 生成格式化后的完整方法名，方法参数为空
+     *
+     * @param fullClassName 完整类名
+     * @param methodName    方法名，不包含()
+     * @return
+     */
+    public static String formatFullMethod(String fullClassName, String methodName) {
+        return formatFullMethod(fullClassName, methodName, "()");
+    }
+
+    /**
      * 生成格式化后的方法调用关系
      *
      * @param callId           方法调用序号

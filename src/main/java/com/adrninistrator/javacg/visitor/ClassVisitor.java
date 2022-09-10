@@ -89,7 +89,7 @@ public class ClassVisitor {
         Collections.sort(referencedClassList);
 
         for (String referencedClass : referencedClassList) {
-            MethodCallDto methodCallDto = MethodCallDto.genInstance(String.format(classReferenceFormat, referencedClass),
+            MethodCallDto methodCallDto = MethodCallDto.genInstance4Class(String.format(classReferenceFormat, referencedClass),
                     JavaCGConstants.NONE_LINE_NUMBER);
             methodCallList.add(methodCallDto);
         }

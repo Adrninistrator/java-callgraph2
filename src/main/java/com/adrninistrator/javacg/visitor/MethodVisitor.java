@@ -92,7 +92,10 @@ public class MethodVisitor extends EmptyVisitor {
              */
 
             // 记录方法上的注解信息
-            AnnotationAttributesHandler.writeAnnotationInfo(JavaCGConstants.FILE_KEY_METHOD_PREFIX, callerFullMethod, mg.getMethod().getAnnotationEntries(), annotationAttributesFormator,
+            AnnotationAttributesHandler.writeAnnotationInfo(JavaCGConstants.FILE_KEY_METHOD_PREFIX,
+                    callerFullMethod,
+                    mg.getMethod().getAnnotationEntries(),
+                    annotationAttributesFormator,
                     annotationWriter);
 
             // 记录当前方法对应的起止行号
@@ -202,7 +205,7 @@ public class MethodVisitor extends EmptyVisitor {
         }
 
         String methodCall = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), callerFullMethod, callType, calleeClassName, calleeMethodName, calleeMethodArgs);
-        MethodCallDto methodCallDto = MethodCallDto.genInstance(methodCall, getSourceLine());
+        MethodCallDto methodCallDto = MethodCallDto.genInstance4Method(methodCall, getSourceLine(), callerFullMethod);
         methodCallList.add(methodCallDto);
 
         // 调用自定义接口实现类的方法
@@ -231,7 +234,7 @@ public class MethodVisitor extends EmptyVisitor {
                 // 记录其他方法调用Runnable实现类的<init>方法
                 String methodCall = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), callerFullMethod, CallTypeEnum.CTE_RIR.getType(), calleeClassName, calleeMethodName,
                         calleeMethodArgs);
-                MethodCallDto methodCallDto1 = MethodCallDto.genInstance(methodCall, getSourceLine());
+                MethodCallDto methodCallDto1 = MethodCallDto.genInstance4Method(methodCall, getSourceLine(), callerFullMethod);
                 methodCallList.add(methodCallDto1);
 
                 if (Boolean.FALSE.equals(recordedRunnable)) {
@@ -239,7 +242,7 @@ public class MethodVisitor extends EmptyVisitor {
                     String tmpCallerFullMethod = JavaCGUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgs);
                     String runnableImplClassMethod = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), tmpCallerFullMethod, CallTypeEnum.CTE_RIR.getType(), calleeClassName,
                             "run", "()");
-                    MethodCallDto methodCallDto2 = MethodCallDto.genInstance(runnableImplClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER);
+                    MethodCallDto methodCallDto2 = MethodCallDto.genInstance4Method(runnableImplClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER, tmpCallerFullMethod);
                     methodCallList.add(methodCallDto2);
                     // 避免<init>方法调用run()方法被添加多次
                     runnableImplClassMap.put(calleeClassName, Boolean.TRUE);
@@ -254,7 +257,7 @@ public class MethodVisitor extends EmptyVisitor {
                 // 记录其他方法调用Callable实现类的<init>方法
                 String methodCall = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), callerFullMethod, CallTypeEnum.CTE_CIC.getType(), calleeClassName, calleeMethodName,
                         calleeMethodArgs);
-                MethodCallDto methodCallDto1 = MethodCallDto.genInstance(methodCall, getSourceLine());
+                MethodCallDto methodCallDto1 = MethodCallDto.genInstance4Method(methodCall, getSourceLine(), callerFullMethod);
                 methodCallList.add(methodCallDto1);
 
                 if (Boolean.FALSE.equals(recordedCallable)) {
@@ -262,7 +265,7 @@ public class MethodVisitor extends EmptyVisitor {
                     String tmpCallerFullMethod = JavaCGUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgs);
                     String callableImplClassMethod = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), tmpCallerFullMethod, CallTypeEnum.CTE_CIC.getType(), calleeClassName,
                             "call", "()");
-                    MethodCallDto methodCallDto2 = MethodCallDto.genInstance(callableImplClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER);
+                    MethodCallDto methodCallDto2 = MethodCallDto.genInstance4Method(callableImplClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER, tmpCallerFullMethod);
                     methodCallList.add(methodCallDto2);
                     // 避免<init>方法调用call()方法被添加多次
                     callableImplClassMap.put(calleeClassName, Boolean.TRUE);
@@ -275,7 +278,7 @@ public class MethodVisitor extends EmptyVisitor {
                 String tmpCallerFullMethod = JavaCGUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgs);
                 String threadChildClassMethod = JavaCGUtil.formatMethodCall(callIdCounter.addAndGet(), tmpCallerFullMethod, CallTypeEnum.CTE_TSR.getType(), calleeClassName, "run"
                         , "()");
-                MethodCallDto methodCallDto2 = MethodCallDto.genInstance(threadChildClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER);
+                MethodCallDto methodCallDto2 = MethodCallDto.genInstance4Method(threadChildClassMethod, JavaCGConstants.DEFAULT_LINE_NUMBER, tmpCallerFullMethod);
                 methodCallList.add(methodCallDto2);
                 // 避免start()方法调用run()方法被添加多次
                 threadChildClassMap.put(calleeClassName, Boolean.TRUE);

@@ -8,92 +8,21 @@ java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](h
 
 `当前项目提供了插件功能，可用于为Java代码自动生成UML时序图`，可参考[https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram](https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram)。
 
-# 2. 更新说明
+# 2. 使用说明
 
-## 2.1. (0.1.2)
-
-- 支持对目录进行处理
-
-支持对目录中的class、jar/war文件进行处理
-
-支持在启动参数中指定一个或多个jar/war包或目录
-
-在处理时，会将指定的jar/war包及指定目录合并为一个新的jar包后再处理：
-
-a. 对于指定的jar/war包及指定目录中的后缀为.jar/.war的文件，将其中的class文件进行合并
-
-b. 对于指定目录中的后缀非.jar/.war的文件进行合并
-
-合并jar/war包中的class文件时，支持仅将指定包名的class文件合并到新的jar包中
-
-合并产生的新jar包信息如下：
-
-保存在指定的第一个jar/war包所在目录中（若第一个是目录则在该目录中）
-
-文件名为第一个jar/war包加上“-javacg_merged.jar”
-
-第一层目录为每个被合并的.jar/.war文件或目录的名称
-
-- 支持插件功能
-
-提供用于生成Java方法UML时序图的插件功能
-
-- 输出文件路径指定方式变化
-
-不再通过JVM选项“-Doutput.file=”指定输出文件路径，默认将输出文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中）
-
-方法调用关系文件名为第一个jar包或合并后的jar包加上“.txt”
-
-注解信息文件名为第一个jar包或合并后的jar包加上“-annotation.txt”
-
-## 2.2. (0.1.3)
-
-生成的注解信息文件中增加类上的注解信息，包含注解名称、注解属性名称及属性值；增加方法上的注解的注解属性名称及属性值
-
-## 2.3. (0.1.5)
-
-在对类进行处理时，跳过重复同名类
-
-## 2.4. (0.1.7)
-
-支持人工添加缺失的方法调用关系（定制化代码开发）
-
-具体说明可参考[https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md)中的相关内容
-
-## 2.5. (0.1.8)
-
-生成方法代码行号信息文件，文件名以“-line_number.txt”结尾
-
-## 2.6. (0.1.9)
-
-对于某个类调用自身类的类调用关系，也会生成在输出文件中
-
-## 2.7. (0.2.0)
-
-在处理注解的属性值时，支持使用自定义类处理，自定义类需要实现`com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatorInterface`接口
-
-可使用java-all-call-graph中的`com.adrninistrator.jacg.extensions.annotation_attributes.AllAnnotationAttributesFormator`类
-
-## 2.8. (0.2.1)
-
-对于接口之间的继承关系，在内存中进行记录
-
-# 3. 使用说明
-
-## 3.1. 编译命令：
+## 2.1. 编译命令：
 
 ```
 gradlew jar
 ```
 
-## 3.2. 执行参数
+## 2.2. 执行参数
 
-### 3.2.1. 程序参数（Program arguments）
+### 2.2.1. 程序参数（Program arguments）
 
 用于指定需要解析的jar/war包或目录路径列表，支持指定一个或多个jar包或目录的路径（指定目录时，会处理其中的class或jar文件）
 
 当指定目录时，或指定多个jar文件时，会合并成一个jar包后再处理，文件名为第一个jar/war包加上“-javacg_merged.jar”
-
 
 示例如下：
 
@@ -104,7 +33,7 @@ build/libs/a.jar build/libs/b.jar
 out build/libs/a.jar build/libs/b.jar
 ```
 
-### 3.2.2. JVM选项（VM options）
+### 2.2.2. JVM选项（VM options）
 
 - merge.class.in.jar.package
 
@@ -121,15 +50,15 @@ out build/libs/a.jar build/libs/b.jar
 -Dmerge.class.in.jar.package=aa.bb.cc#tt.cc.ss#cc.mm.
 ```
 
-# 4. 输出文件格式
+# 3. 输出文件格式
 
-## 4.1. 方法调用关系文件
+## 3.1. 方法调用关系文件
 
 方法调用关系文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中），文件名为第一个jar包或合并后的jar包加上“.txt”
 
 文件各字段之间使用空格作为分隔符
 
-### 4.1.1. jar包/目录信息
+### 3.1.1. jar包/目录信息
 
 jar包/目录信息以“J:”或“D:”开头，格式如下所示：
 
@@ -147,7 +76,7 @@ D:jar_number 目录绝对路径
 
 `某个jar包/目录信息到下一个jar包/目录信息或文件结尾之间的类引用关系及方法调用关系，代表存在于当前的jar包或目录中`
 
-### 4.1.2. 类引用关系
+### 3.1.2. 类引用关系
 
 类引用关系以“C:”开头，格式如下所示：
 
@@ -163,7 +92,7 @@ C:caller_class callee_class
 
 代表被当前类引用的类的完整类名
 
-### 4.1.3. 方法调用关系
+### 3.1.3. 方法调用关系
 
 方法调用关系以“M:”开头，格式如下所示：
 
@@ -209,7 +138,7 @@ java-callgraph2增加的调用类型typeofcall如下：
 
 jar包唯一序号，从1开始
 
-## 4.2. 注解信息文件
+## 3.2. 注解信息文件
 
 注解信息文件生成目录与以上文件相同，文件名为第一个jar包或合并后的jar包加上“-annotation.txt”
 
@@ -269,7 +198,7 @@ M: test.call_graph.annotation.MethodWithAnnotation:test2() test.call_graph.annot
 M: test.call_graph.annotation.MethodWithAnnotation:test3() test.call_graph.annotation.TestAnnotationOuter2 annotations l:[{"value":"aaa","annotations":[{"valueB":"va1","valueA":"va1"},{"valueB":"va2\r\n","valueA":"va2"}]},{"value":"bbb","annotations":[{"valueB":"vb1","valueA":"vb1"},{"valueB":"vb2","valueA":"vb2"}]}]
 ```
 
-## 4.3. 方法代码行号信息文件
+## 3.3. 方法代码行号信息文件
 
 方法代码行号信息文件生成目录与以上文件相同 ，文件名为第一个jar包或合并后的jar包加上“-line_number.txt”
 
@@ -303,9 +232,83 @@ com.adrninistrator.javacg.util.JavaCGUtil:isInnerAnonymousClass(java.lang.String
 com.adrninistrator.javacg.util.JavaCGUtil:isNumStr(java.lang.String) 41 51
 ```
 
-# 5. 扩展功能
+# 4. 扩展功能
 
 参考[https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md)中的相关内容
+
+# 5. 更新说明
+
+## 5.1. (0.1.2)
+
+- 支持对目录进行处理
+
+支持对目录中的class、jar/war文件进行处理
+
+支持在启动参数中指定一个或多个jar/war包或目录
+
+在处理时，会将指定的jar/war包及指定目录合并为一个新的jar包后再处理：
+
+a. 对于指定的jar/war包及指定目录中的后缀为.jar/.war的文件，将其中的class文件进行合并
+
+b. 对于指定目录中的后缀非.jar/.war的文件进行合并
+
+合并jar/war包中的class文件时，支持仅将指定包名的class文件合并到新的jar包中
+
+合并产生的新jar包信息如下：
+
+保存在指定的第一个jar/war包所在目录中（若第一个是目录则在该目录中）
+
+文件名为第一个jar/war包加上“-javacg_merged.jar”
+
+第一层目录为每个被合并的.jar/.war文件或目录的名称
+
+- 支持插件功能
+
+提供用于生成Java方法UML时序图的插件功能
+
+- 输出文件路径指定方式变化
+
+不再通过JVM选项“-Doutput.file=”指定输出文件路径，默认将输出文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中）
+
+方法调用关系文件名为第一个jar包或合并后的jar包加上“.txt”
+
+注解信息文件名为第一个jar包或合并后的jar包加上“-annotation.txt”
+
+## 5.2. (0.1.3)
+
+生成的注解信息文件中增加类上的注解信息，包含注解名称、注解属性名称及属性值；增加方法上的注解的注解属性名称及属性值
+
+## 5.3. (0.1.5)
+
+在对类进行处理时，跳过重复同名类
+
+## 5.4. (0.1.7)
+
+支持人工添加缺失的方法调用关系（定制化代码开发）
+
+具体说明可参考[https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md)中的相关内容
+
+## 5.5. (0.1.8)
+
+生成方法代码行号信息文件，文件名以“-line_number.txt”结尾
+
+## 5.6. (0.1.9)
+
+对于某个类调用自身类的类调用关系，也会生成在输出文件中
+
+## 5.7. (0.2.0)
+
+在处理注解的属性值时，支持使用自定义类处理，自定义类需要实现`com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatorInterface`接口
+
+可使用java-all-call-graph中的`com.adrninistrator.jacg.extensions.annotation_attributes.AllAnnotationAttributesFormator`类
+
+## 5.8. (0.2.1)
+
+对于接口之间的继承关系，在内存中进行记录
+
+## 5.9. (0.2.2)
+
+方法调用对象中增加字段
 
 # 6. 原始java-callgraph调用关系缺失的场景
 
