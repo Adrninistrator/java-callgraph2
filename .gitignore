@@ -1,6 +1,5 @@
 /bin/
 /.settings/
-
 /build/
 /.gradle/
 /.classpath
@@ -11,3 +10,4 @@
 /out/
 *.class
 *.iml
+/output_dir

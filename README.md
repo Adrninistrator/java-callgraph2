@@ -10,15 +10,25 @@ java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](h
 
 # 2. 使用说明
 
-## 2.1. 编译命令：
+## 2.1. 编译方式
+
+执行以下命令
 
 ```
 gradlew jar
 ```
 
-## 2.2. 执行参数
+## 2.2. 执行方式
 
-### 2.2.1. 程序参数（Program arguments）
+执行命令可参考脚本文件`run.bat`、`run.sh`
+
+### 2.2.1. 程序主类
+
+```java
+com.adrninistrator.javacg.stat.JCallGraph
+```
+
+### 2.2.2. 程序参数（Program arguments）
 
 用于指定需要解析的jar/war包或目录路径列表，支持指定一个或多个jar包或目录的路径（指定目录时，会处理其中的class或jar文件）
 
@@ -33,7 +43,7 @@ build/libs/a.jar build/libs/b.jar
 out build/libs/a.jar build/libs/b.jar
 ```
 
-### 2.2.2. JVM选项（VM options）
+### 2.2.3. JVM选项（VM options）
 
 - merge.class.in.jar.package
 
@@ -50,15 +60,38 @@ out build/libs/a.jar build/libs/b.jar
 -Dmerge.class.in.jar.package=aa.bb.cc#tt.cc.ss#cc.mm.
 ```
 
-# 3. 输出文件格式
+# 3. 生成可以直接执行的文件
 
-## 3.1. 方法调用关系文件
+## 3.1. 编译方式
+
+执行以下命令
+
+```
+gradlew gen_run_jar
+```
+
+## 3.2. 执行方式
+
+执行以上命令后，会在`output_dir`目录中生成可以直接执行的文件
+
+在Windows/Linux等操作系统中分别执行对应的脚本文件`run.bat`、`run.sh`
+
+通过参数1指定需要处理的jar包文件路径或目录路径，如下所示：
+
+```
+run.bat a.jar
+sh run.sh a.jar
+```
+
+# 4. 输出文件格式
+
+## 4.1. 方法调用关系文件
 
 方法调用关系文件生成在指定的第一个jar包所在目录中（若第一个是目录则在该目录中），文件名为第一个jar包或合并后的jar包加上“.txt”
 
 文件各字段之间使用空格作为分隔符
 
-### 3.1.1. jar包/目录信息
+### 4.1.1. jar包/目录信息
 
 jar包/目录信息以“J:”或“D:”开头，格式如下所示：
 
@@ -76,7 +109,7 @@ D:jar_number 目录绝对路径
 
 `某个jar包/目录信息到下一个jar包/目录信息或文件结尾之间的类引用关系及方法调用关系，代表存在于当前的jar包或目录中`
 
-### 3.1.2. 类引用关系
+### 4.1.2. 类引用关系
 
 类引用关系以“C:”开头，格式如下所示：
 
@@ -92,7 +125,7 @@ C:caller_class callee_class
 
 代表被当前类引用的类的完整类名
 
-### 3.1.3. 方法调用关系
+### 4.1.3. 方法调用关系
 
 方法调用关系以“M:”开头，格式如下所示：
 
@@ -138,7 +171,7 @@ java-callgraph2增加的调用类型typeofcall如下：
 
 jar包唯一序号，从1开始
 
-## 3.2. 注解信息文件
+## 4.2. 注解信息文件
 
 注解信息文件生成目录与以上文件相同，文件名为第一个jar包或合并后的jar包加上“-annotation.txt”
 
@@ -198,7 +231,7 @@ M: test.call_graph.annotation.MethodWithAnnotation:test2() test.call_graph.annot
 M: test.call_graph.annotation.MethodWithAnnotation:test3() test.call_graph.annotation.TestAnnotationOuter2 annotations l:[{"value":"aaa","annotations":[{"valueB":"va1","valueA":"va1"},{"valueB":"va2\r\n","valueA":"va2"}]},{"value":"bbb","annotations":[{"valueB":"vb1","valueA":"vb1"},{"valueB":"vb2","valueA":"vb2"}]}]
 ```
 
-## 3.3. 方法代码行号信息文件
+## 4.3. 方法代码行号信息文件
 
 方法代码行号信息文件生成目录与以上文件相同 ，文件名为第一个jar包或合并后的jar包加上“-line_number.txt”
 
@@ -232,13 +265,13 @@ com.adrninistrator.javacg.util.JavaCGUtil:isInnerAnonymousClass(java.lang.String
 com.adrninistrator.javacg.util.JavaCGUtil:isNumStr(java.lang.String) 41 51
 ```
 
-# 4. 扩展功能
+# 5. 扩展功能
 
 参考[https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md)中的相关内容
 
-# 5. 更新说明
+# 6. 更新说明
 
-## 5.1. (0.1.2)
+## 6.1. (0.1.2)
 
 - 支持对目录进行处理
 
@@ -274,43 +307,43 @@ b. 对于指定目录中的后缀非.jar/.war的文件进行合并
 
 注解信息文件名为第一个jar包或合并后的jar包加上“-annotation.txt”
 
-## 5.2. (0.1.3)
+## 6.2. (0.1.3)
 
 生成的注解信息文件中增加类上的注解信息，包含注解名称、注解属性名称及属性值；增加方法上的注解的注解属性名称及属性值
 
-## 5.3. (0.1.5)
+## 6.3. (0.1.5)
 
 在对类进行处理时，跳过重复同名类
 
-## 5.4. (0.1.7)
+## 6.4. (0.1.7)
 
 支持人工添加缺失的方法调用关系（定制化代码开发）
 
 具体说明可参考[https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md)中的相关内容
 
-## 5.5. (0.1.8)
+## 6.5. (0.1.8)
 
 生成方法代码行号信息文件，文件名以“-line_number.txt”结尾
 
-## 5.6. (0.1.9)
+## 6.6. (0.1.9)
 
 对于某个类调用自身类的类调用关系，也会生成在输出文件中
 
-## 5.7. (0.2.0)
+## 6.7. (0.2.0)
 
 在处理注解的属性值时，支持使用自定义类处理，自定义类需要实现`com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatorInterface`接口
 
 可使用java-all-call-graph中的`com.adrninistrator.jacg.extensions.annotation_attributes.AllAnnotationAttributesFormator`类
 
-## 5.8. (0.2.1)
+## 6.8. (0.2.1)
 
 对于接口之间的继承关系，在内存中进行记录
 
-## 5.9. (0.2.2)
+## 6.9. (0.2.2)
 
 方法调用对象中增加字段
 
-# 6. 原始java-callgraph调用关系缺失的场景
+# 7. 原始java-callgraph调用关系缺失的场景
 
 原始java-callgraph在多数场景下能够获取到Java方法调用关系，但以下场景的调用关系会缺失：
 

@@ -61,6 +61,33 @@ task createProject {
     }
 }
 
+// 生成可以直接执行的jar包，并拷贝相关文件
+task gen_run_jar(type: Jar) {
+    archiveName 'run_javacg2.jar'
+    from(sourceSets.main.output) {
+        into '/'
+    }
+
+    doLast{
+        copy {
+            from 'build/libs/run_javacg2.jar'
+            into 'output_dir/jar/'
+        }
+        copy {
+            from 'run.bat'
+            into 'output_dir/'
+        }
+        copy {
+            from 'run.sh'
+            into 'output_dir/'
+        }
+        copy {
+            from configurations.runtimeClasspath
+            into 'output_dir/lib'
+        }
+    }
+}
+
 task sourcesJar(type: Jar) {
     doFirst {
         archiveClassifier.set('sources')
