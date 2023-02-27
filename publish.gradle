@@ -1,0 +1,77 @@
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+
+apply from: 'build.gradle'
+
+task sourcesJar(type: Jar) {
+    doFirst {
+        archiveClassifier.set('sources')
+        from sourceSets.main.allJava
+    }
+}
+
+task javadocJar(type: Jar) {
+    doFirst {
+        archiveClassifier.set('javadoc')
+        from javadoc.destinationDir
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId project.group
+            artifactId project.name
+            version "${version}"
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+
+            pom {
+                name = "java-callgraph2"
+                description = "Programs for producing static call graphs for Java programs"
+                url = "https://github.com/Adrninistrator/java-callgraph2"
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "Adrninistrator"
+                        name = "zhengyiee"
+                        email = "zhengyiee@qq.com"
+                    }
+                }
+                scm {
+                    connection = "scm:git:https://github.com/Adrninistrator/java-callgraph2.git"
+                    developerConnection = "scm:git:https://github.com/Adrninistrator/java-callgraph2.git"
+                    url = "https://github.com/Adrninistrator/java-callgraph2"
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name 'sonatypeRepository'
+            url 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+            credentials {
+                username = "${NEXUS_USERNAME}"
+                password = "${NEXUS_PASSWORD}"
+            }
+        }
+        maven {
+            name = 'sonatypeSnapshotRepository'
+            url = 'https://oss.sonatype.org/content/repositories/snapshots/'
+            credentials {
+                username = "${NEXUS_USERNAME}"
+                password = "${NEXUS_PASSWORD}"
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}

@@ -45,7 +45,7 @@ out build/libs/a.jar build/libs/b.jar
 
 ### 2.2.3. JVM选项（VM options）
 
-- merge.class.in.jar.package
+- merge.class.in.jar.package（需要合并的包名）
 
 当前参数用于指定合并jar/war包中的class文件时，需要合并的包名
 
@@ -59,6 +59,12 @@ out build/libs/a.jar build/libs/b.jar
 -Dmerge.class.in.jar.package=aa.bb.cc
 -Dmerge.class.in.jar.package=aa.bb.cc#tt.cc.ss#cc.mm.
 ```
+
+通过以上参数指定需要合并的包名时，除了对jar/war包根目录的class文件进行处理外，还会对“WEB-INF/classes/”、“BOOT-INF/classes/”目录中的class文件进行处理，分别对应war包中的class文件，Spring Boot Maven Plugin插件生成的jar包
+
+- input.root.path
+
+指定保存配置文件的根目录
 
 # 3. 生成可以直接执行的文件
 
@@ -157,8 +163,7 @@ java-callgraph2增加的调用类型typeofcall如下：
 |RIR|Runnable实现类线程调用|
 |CIC|Callable实现类线程调用|
 |TSR|Thread子类线程调用|
-|LM|lambda表达式（含线程调用等）|
-|ST|Stream调用|
+|LM|lambda表达式|
 |SCC|父类调用子类的实现方法|
 |CCS|子类调用父类的实现方法|
 |MA|人工添加的方法调用关系|
@@ -342,6 +347,27 @@ b. 对于指定目录中的后缀非.jar/.war的文件进行合并
 ## 6.9. (0.2.2)
 
 方法调用对象中增加字段
+
+## 6.10. (1.0.0)临时说明
+
+- 指定需要合并的包名时增加支持目录
+
+通过`merge.class.in.jar.package`参数指定需要合并的包名时，增加对“BOOT-INF/classes/”目录中的class文件进行处理，对应Spring Boot Maven Plugin插件生成的jar包
+参数换了
+
+- 支持TimeTask构造函数调用run方法
+
+- 增加配置文件及参数
+
+```
+config.properties
+jar_dir.properties
+packages.properties
+```
+
+- 支持通过代码指定配置参数
+
+- 支持获取方法调用中使用的参数值、被调用对象类型等
 
 # 7. 原始java-callgraph调用关系缺失的场景
 

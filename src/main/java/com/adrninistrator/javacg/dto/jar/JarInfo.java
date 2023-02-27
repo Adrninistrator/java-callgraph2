@@ -6,22 +6,18 @@ package com.adrninistrator.javacg.dto.jar;
  * @description:
  */
 public class JarInfo {
-
     private static int staticJarNum = 0;
 
-    private int jarNum;
+    private final int jarNum;
 
-    private String jarType;
+    private final String jarType;
 
-    private String jarPath;
+    private final String jarPath;
 
-    public static JarInfo genJarInfo(String jarType, String jarPath) {
-        JarInfo jarInfo = new JarInfo();
-        jarInfo.setJarNum(++staticJarNum);
-        jarInfo.setJarType(jarType);
-        jarInfo.setJarPath(jarPath);
-
-        return jarInfo;
+    public JarInfo(String jarType, String jarPath) {
+        this.jarNum = ++staticJarNum;
+        this.jarType = jarType;
+        this.jarPath = jarPath;
     }
 
     //
@@ -29,23 +25,11 @@ public class JarInfo {
         return jarNum;
     }
 
-    public void setJarNum(int jarNum) {
-        this.jarNum = jarNum;
-    }
-
     public String getJarType() {
         return jarType;
     }
 
-    public void setJarType(String jarType) {
-        this.jarType = jarType;
-    }
-
     public String getJarPath() {
         return jarPath;
-    }
-
-    public void setJarPath(String jarPath) {
-        this.jarPath = jarPath;
     }
 }

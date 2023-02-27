@@ -1,10 +1,9 @@
 apply plugin: 'eclipse'
 apply plugin: 'java'
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
+apply plugin: 'idea'
 
 group 'com.github.adrninistrator'
-version = "0.2.2"
+version = "1.0.0"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
@@ -18,6 +17,11 @@ project.buildDir = 'build'
 
 repositories {
     mavenCentral()
+}
+
+clean {
+    delete 'build'
+    delete 'output_dir'
 }
 
 sourceSets {
@@ -42,10 +46,13 @@ sourceSets {
     }
 }
 
-List bcel = ['org.apache.bcel:bcel:6.5.0']
+List bcel = ['org.apache.bcel:bcel:6.6.0']
+
+List junit = ['junit:junit:4.13.2']
 
 dependencies {
     compile bcel
+    testImplementation junit
 }
 
 compileJava.options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
@@ -61,7 +68,7 @@ task createProject {
     }
 }
 
-// Éú³É¿ÉÒÔÖ±½ÓÖ´ÐÐµÄjar°ü£¬²¢¿½±´Ïà¹ØÎÄ¼þ
+// ç”Ÿæˆå¯ä»¥ç›´æŽ¥æ‰§è¡Œçš„jaråŒ…ï¼Œå¹¶æ‹·è´ç›¸å…³æ–‡ä»¶
 task gen_run_jar(type: Jar) {
     archiveName 'run_javacg2.jar'
     from(sourceSets.main.output) {
@@ -72,6 +79,10 @@ task gen_run_jar(type: Jar) {
         copy {
             from 'build/libs/run_javacg2.jar'
             into 'output_dir/jar/'
+        }
+        copy {
+            from 'src/main/resources/_javacg_config/'
+            into 'output_dir/_javacg_config/'
         }
         copy {
             from 'run.bat'
@@ -88,75 +99,11 @@ task gen_run_jar(type: Jar) {
     }
 }
 
-task sourcesJar(type: Jar) {
-    doFirst {
-        archiveClassifier.set('sources')
-        from sourceSets.main.allJava
+idea {
+    module {
+        // and some extra dirs that should be excluded by IDEA
+        excludeDirs += file('.idea')
+        excludeDirs += file('gradle')
+        excludeDirs += file('output_dir')
     }
-}
-
-task javadocJar(type: Jar) {
-    doFirst {
-        archiveClassifier.set('javadoc')
-        from javadoc.destinationDir
-    }
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            groupId project.group
-            artifactId project.name
-            version "${version}"
-            from components.java
-            artifact sourcesJar
-            artifact javadocJar
-
-            pom {
-                name = "java-callgraph2"
-                description = "Programs for producing static call graphs for Java programs"
-                url = "https://github.com/Adrninistrator/java-callgraph2"
-                licenses {
-                    license {
-                        name = "The Apache License, Version 2.0"
-                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
-                    }
-                }
-                developers {
-                    developer {
-                        id = "Adrninistrator"
-                        name = "zhengyiee"
-                        email = "zhengyiee@qq.com"
-                    }
-                }
-                scm {
-                    connection = "scm:git:https://github.com/Adrninistrator/java-callgraph2.git"
-                    developerConnection = "scm:git:https://github.com/Adrninistrator/java-callgraph2.git"
-                    url = "https://github.com/Adrninistrator/java-callgraph2"
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            name 'sonatypeRepository'
-            url 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
-            credentials {
-                username = "${NEXUS_USERNAME}"
-                password = "${NEXUS_PASSWORD}"
-            }
-        }
-        maven {
-            name = 'sonatypeSnapshotRepository'
-            url = 'https://oss.sonatype.org/content/repositories/snapshots/'
-            credentials {
-                username = "${NEXUS_USERNAME}"
-                password = "${NEXUS_PASSWORD}"
-            }
-        }
-    }
-}
-
-signing {
-    sign publishing.publications.mavenJava
 }

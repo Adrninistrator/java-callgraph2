@@ -7,28 +7,42 @@ package com.adrninistrator.javacg.common;
  */
 
 public class JavaCGConstants {
+    /* JVM启动参数中的配置项 */
+    // 保存配置文件的根目录
+    public static final String PROPERTY_INPUT_ROOT_PATH = "input.root.path";
 
-    // 记录所有的接口调用实现类，及子类调用父类方法
-    public static final String PROPERTY_RECORD_ALL = "record.all";
-    // 调试日志打印
-    public static final String PROPERTY_DEBUG_PRINT = "debug.print";
-    // 合并jar/war包中的class文件时，需要合并的包名
-    public static final String PROPERTY_MERGE_CLASS_IN_JAR_PACKAGE = "merge.class.in.jar.package";
+    // 调试日志打印开关值
+    public static final String PROPERTY_VALUE_DEBUG_PRINT_IN_FILE = "file";
 
     // 文件列的分隔符
     public static final String FILE_COLUMN_SEPARATOR = "\t";
 
-    public static final String FILE_KEY_CLASS_PREFIX = "C:";
-    public static final String FILE_KEY_METHOD_PREFIX = "M:";
-    public static final String FILE_KEY_JAR_INFO_PREFIX = "J:";
-    public static final String FILE_KEY_DIR_INFO_PREFIX = "D:";
+    // 输出文件中的常量
+    public static final String FILE_KEY_JAR_INFO_PREFIX = "J";
+    public static final String FILE_KEY_DIR_INFO_PREFIX = "D";
+    public static final String FILE_KEY_CALL_TYPE_FLAG1 = "(";
+    public static final String FILE_KEY_CALL_TYPE_FLAG2 = ")";
+    public static final String FILE_KEY_METHOD_CALL_POSSIBLE_INFO_TYPE = "t";
+    public static final String FILE_KEY_METHOD_CALL_POSSIBLE_INFO_VALUE = "v";
+    public static final String FILE_KEY_METHOD_CALL_POSSIBLE_INFO_BASE64_VALUE = "bv";
+    public static final String FILE_KEY_METHOD_CALL_POSSIBLE_INFO_STATIC_FIELD = "sf";
+    public static final String FILE_KEY_METHOD_CALL_POSSIBLE_INFO_STATIC_FIELD_METHOD_CALL = "sfm";
+    public static final String FILE_KEY_EXTENDS = "e";
+    public static final String FILE_KEY_IMPLEMENTS = "i";
 
     public static final String FLAG_LAMBDA = "lambda$";
     public static final String FLAG_HASHTAG = "#";
     public static final String FLAG_ARRAY = "[]";
+    public static final String FLAG_DOT = ".";
+    public static final String FLAG_COLON = ":";
+    public static final String FLAG_LEFT_BRACKET = "(";
+    public static final String FLAG_RIGHT_BRACKET = ")";
+    public static final String FLAG_COMMA = ",";
+    public static final String FLAG_EQUAL = "=";
+
+    public static final String EMPTY_METHOD_ARGS = FLAG_LEFT_BRACKET + FLAG_RIGHT_BRACKET;
 
     public static final int DEFAULT_LINE_NUMBER = 0;
-    public static final int NONE_LINE_NUMBER = -1;
 
     public static final String METHOD_NAME_INIT = "<init>";
     public static final String METHOD_NAME_START = "start";
@@ -37,29 +51,78 @@ public class JavaCGConstants {
 
     public static final String MERGED_JAR_FLAG = "-javacg_merged.jar";
 
-    public static final String FILE_FLAG_ANNOTATION = "-annotation";
-    public static final String FILE_FLAG_LINE_NUMBER = "-line_number";
+    public static final String DIR_TAIL_OUTPUT = "-output_javacg";
+    public static final String DIR_LOG = "log_javacg";
+    public static final String DIR_CONFIG = "_javacg_config";
+
+    public static final String FILE_PREFIX_LOG = "javacg-";
+
+    public static final String FILE_CONFIG = "config.properties";
+
+    // jar包信息
+    public static final String FILE_JAR_INFO = "jar_info";
+    // 引用的类
+    public static final String FILE_CLASS_NAME = "class_name";
+    // 方法调用
+    public static final String FILE_METHOD_CALL = "method_call";
+    // Lambda表达式方法信息
+    public static final String FILE_LAMBDA_METHOD_INFO = "lambda_method_info";
+    // 类的注解
+    public static final String FILE_CLASS_ANNOTATION = "class_annotation";
+    // 方法的注解
+    public static final String FILE_METHOD_ANNOTATION = "method_annotation";
+    // 方法代码行号
+    public static final String FILE_METHOD_LINE_NUMBER = "method_line_number";
+    // 方法调用的信息
+    public static final String FILE_METHOD_CALL_INFO = "method_call_info";
+    // 类的信息
+    public static final String FILE_CLASS_INFO = "class_info";
+    // 方法的信息
+    public static final String FILE_METHOD_INFO = "method_info";
+    // 继承与实现相关信息
+    public static final String FILE_EXTENDS_IMPL = "extends_impl";
+    // Spring Bean信息
+    public static final String FILE_SPRING_BEAN = "spring_bean";
+    // 继承父类与实现接口时的签名中的类名信息
+    public static final String FILE_CLASS_SIGNATURE_EI1 = "class_signature_ei1";
 
     public static final String EXT_JAR = ".jar";
     public static final String EXT_WAR = ".war";
     public static final String EXT_CLASS = ".class";
     public static final String EXT_TXT = ".txt";
+    public static final String EXT_LOG = ".log";
+
+    // 方法调用call_id起始值0（方法调用关系最小call_id为1）
+    public static final int METHOD_CALL_ID_START = 0;
+
+    // 处理父类和子类的方法调用时，节点索引的初始值
+    public static final int EXTENDS_NODE_INDEX_INIT = -1;
 
     // 默认的jar包序号，使用0，因为实际的jar包序号从1开始
-    public static final int DEFAULT_JAR_NUM = 0;
-
-    // 输出的注解信息文件，包含属性时的列数
-    public static final int ANNOTATION_COLUMN_NUM_WITH_ATTRIBUTE = 5;
-    // 输出的注解信息文件，不包含属性时的列数
-    public static final int ANNOTATION_COLUMN_NUM_WITHOUT_ATTRIBUTE = 3;
+    public static final String DEFAULT_JAR_NUM = "0";
 
     // 将注解属性值写入文件时，\r替换后的字符
     public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN = 0x01;
     // 将注解属性值写入文件时，\n替换后的字符
     public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_LINE_FEED = 0x02;
 
-    // 输出的方法行号信息文件的列数
-    public static final int LINE_NUMBER_COLUMN_NUM = 3;
+    // JSR指令类型
+    public static final String JSR_TYPE = "0jsr";
+
+    // 代表未使用的本地变量索引值
+    public static final int LOCAL_VARIABLE_INDEX_NOT_USED = -1;
+
+    // 方法调用可能的信息中，代表被调用对象的序号，使用0
+    public static final int METHOD_CALL_POSSIBLE_INFO_SEQ_OBJECT = 0;
+
+    // 方法调用可能的信息中，参数开始的序号，从1开始
+    public static final int METHOD_CALL_POSSIBLE_INFO_SEQ_ARGS_START = 1;
+
+    public static final int SIZE_10 = 10;
+    public static final int SIZE_100 = 100;
+    public static final int SIZE_200 = 200;
+    public static final int SIZE_500 = 500;
+    public static final int SIZE_1000 = 1000;
 
     private JavaCGConstants() {
         throw new IllegalStateException("illegal");

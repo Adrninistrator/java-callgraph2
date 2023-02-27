@@ -11,9 +11,9 @@ public enum HandleJarResultEnum {
     HJRE_NOT_FIRST("NOT_FIRST", "获取jar包信息成功，不是第一次处理该jar包"),
     ;
 
-    private String result;
+    private final String result;
 
-    private String desc;
+    private final String desc;
 
     HandleJarResultEnum(String result, String desc) {
         this.result = result;
