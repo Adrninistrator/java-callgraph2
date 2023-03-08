@@ -1,0 +1,56 @@
+package com.adrninistrator.javacg.extensions.code_parser.spring;
+
+import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.extensions.code_parser.JarEntryOtherFileParser;
+import com.adrninistrator.javacg.xml.JavaCGXmlParser;
+import org.apache.commons.lang3.StringUtils;
+import org.jdom2.Element;
+
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * @author adrninistrator
+ * @date 2023/3/7
+ * @description: 对Spring XML文件中的bean解析的类
+ */
+public class SpringXmlBeanParser implements JarEntryOtherFileParser {
+
+    private final Map<String, String> beanMap = new HashMap<>();
+
+    public String getBeanClass(String beanId) {
+        return beanMap.get(beanId);
+    }
+
+    @Override
+    public String[] chooseJarEntryOtherFileExt() {
+        return JavaCGConstants.FILE_EXT_ARRAY_XML;
+    }
+
+    @Override
+    public void parseJarEntryOtherFile(InputStream inputStream, String jarEntryName) {
+        try {
+            Element root = JavaCGXmlParser.parseXmlRootElement(inputStream);
+            if (!"beans".equals(root.getName())) {
+                return;
+            }
+
+            System.out.println("处理Spring XML文件 " + jarEntryName);
+            for (Element element : root.getChildren()) {
+                if (!"bean".equals(element.getQualifiedName())) {
+                    continue;
+                }
+
+                String beanId = element.getAttributeValue("id");
+                String beanClass = element.getAttributeValue("class");
+                if (StringUtils.isNoneBlank(beanId, beanClass)) {
+                    // Spring XML文件中定义的bean可不指定id属性，这种情况下不处理
+                    beanMap.put(beanId, beanClass);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

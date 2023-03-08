@@ -2,10 +2,15 @@ package com.adrninistrator.javacg.handler;
 
 import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.common.enums.JavaCGCalleeObjTypeEnum;
+import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.branch.BranchStackEntry;
 import com.adrninistrator.javacg.dto.call.MethodCallPossibleInformation;
 import com.adrninistrator.javacg.dto.element.BaseElement;
+import com.adrninistrator.javacg.dto.element.variable.FieldElement;
+import com.adrninistrator.javacg.dto.element.variable.LocalVariableElement;
+import com.adrninistrator.javacg.dto.element.variable.StaticFieldElement;
 import com.adrninistrator.javacg.dto.element.variable.VariableElement;
 import com.adrninistrator.javacg.dto.exception.ExceptionTargetInfo;
 import com.adrninistrator.javacg.dto.field.FieldPossibleTypes;
@@ -20,7 +25,6 @@ import com.adrninistrator.javacg.dto.instruction.MethodCallParseResult;
 import com.adrninistrator.javacg.dto.instruction.RetParseResult;
 import com.adrninistrator.javacg.dto.instruction.ReturnParseResult;
 import com.adrninistrator.javacg.dto.stack.ListAsStack;
-import com.adrninistrator.javacg.enums.ConstantTypeEnum;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGElementUtil;
 import com.adrninistrator.javacg.util.JavaCGInstructionUtil;
@@ -231,7 +235,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
             // 处理异常类型
             ObjectType catchType = codeExceptionGen.getCatchType();
-            String exceptionType = (catchType != null ? catchType.getClassName() : ConstantTypeEnum.CONSTTE_NULL.getType());
+            String exceptionType = (catchType != null ? catchType.getClassName() : JavaCGConstantTypeEnum.CONSTTE_NULL.getType());
 
             // 添加Exception table的target指令及异常类型
             ExceptionTargetInfo exceptionTargetInfo = new ExceptionTargetInfo(codeExceptionGen.getHandlerPC(), exceptionType);
@@ -688,14 +692,16 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         // 获取被调用方法
         String calleeMethodName = invokeInstruction.getMethodName(cpg);
 
+        BaseElement objectElement = methodCallParseResult.getObjectElement();
+        // 处理被调用对象类型
+        methodCallPossibleInformation.setObjTypeEnum(getCalleeObjTypeEnum(objectElement));
+
+        // 处理被调用对象
         if (!JavaCGConstants.METHOD_NAME_INIT.equals(callerMethodName) ||
                 !JavaCGCommonNameConstants.CLASS_NAME_OBJECT.equals(calleeClassName) ||
                 !JavaCGConstants.METHOD_NAME_INIT.equals(calleeMethodName)) {
-                /*
-                    处理被调用对象
-                    若是构造函数中调用java.lang.Object的构造函数，则不处理
-                 */
-            methodCallPossibleInformation.addPossibleInfo4Object(methodCallParseResult.getObjectElement(), calleeClassName);
+            // 若是构造函数中调用java.lang.Object的构造函数，则不处理
+            methodCallPossibleInformation.addPossibleInfo4Object(objectElement, calleeClassName);
         }
 
         // 处理参数，序号从0开始
@@ -710,6 +716,29 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 //            JavaCGLogUtil.debugPrint("方法调用: " + JavaCGInstructionUtil.getInstructionHandlePrintInfo(ih) + " (" + getSourceLine() + ")" +
 //                    "\n被调用对象与参数: " + methodCallParseResult);
 //        }
+    }
+
+    // 获取被调用对象类型
+    private JavaCGCalleeObjTypeEnum getCalleeObjTypeEnum(BaseElement objectElement) {
+        if (objectElement instanceof StaticFieldElement) {
+            return JavaCGCalleeObjTypeEnum.COTE_STATIC_FIELD;
+        }
+
+        if (objectElement instanceof FieldElement) {
+            return JavaCGCalleeObjTypeEnum.COTE_FIELD;
+        }
+
+        if (objectElement instanceof LocalVariableElement) {
+            LocalVariableElement objLocalVariableElement = (LocalVariableElement) objectElement;
+            if (objLocalVariableElement.isThis()) {
+                return JavaCGCalleeObjTypeEnum.COTE_THIS;
+            }
+        }
+
+        if (objectElement instanceof VariableElement) {
+            return JavaCGCalleeObjTypeEnum.COTE_VARIABLE;
+        }
+        return null;
     }
 
     // 处理return指令

@@ -33,7 +33,7 @@ public class StaticFieldMethodCallElement extends VariableElement {
     public String toString() {
         return "StaticFieldMethodCallElement{" +
                 "simpleClassName='" + simpleClassName + '\'' +
-                ", type='" + type + '\'' +
+                ", type='" + getType() + '\'' +
                 ", value=" + value +
                 ", className='" + className + '\'' +
                 ", fieldName='" + fieldName + '\'' +

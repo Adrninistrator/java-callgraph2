@@ -23,11 +23,14 @@ public class JavaCGCommonNameConstants {
 
     public static final String SIMPLE_CLASS_NAME_OBJECT = Object.class.getSimpleName();
 
-    public static final String METHOD_DO_IN_TRANSACTION="doInTransaction";
-    public static final String METHOD_DO_IN_TRANSACTION_WITHOUT_RESULT="doInTransactionWithoutResult";
+    public static final String METHOD_DO_IN_TRANSACTION = "doInTransaction";
+    public static final String METHOD_DO_IN_TRANSACTION_WITHOUT_RESULT = "doInTransactionWithoutResult";
 
     public static final String ARGS_TRANSACTION_STATUS =
             JavaCGConstants.FLAG_LEFT_BRACKET + "org.springframework.transaction.TransactionStatus" + JavaCGConstants.FLAG_RIGHT_BRACKET;
+
+    public static final String METHOD_RUNNABLE_RUN = "run";
+    public static final String METHOD_CALLABLE_CALL = "call";
 
     private JavaCGCommonNameConstants() {
         throw new IllegalStateException("illegal");

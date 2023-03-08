@@ -29,7 +29,7 @@ public class JavaCGJarUtil {
 
     // 获取合并jar/war包中的class文件时，需要合并的特定包名
     private static Set<String> getMergeClassInJarPackageSet(Set<String> needHandlePackageSet) {
-        if (needHandlePackageSet == null || needHandlePackageSet.isEmpty()) {
+        if (JavaCGUtil.isCollectionEmpty(needHandlePackageSet)) {
             return new HashSet<>();
         }
 
@@ -88,6 +88,11 @@ public class JavaCGJarUtil {
             }
 
             if (oneFile.isFile()) {
+                if (!StringUtils.endsWithIgnoreCase(oneFilePath, JavaCGConstants.EXT_JAR)) {
+                    System.err.println("指定文件时只支持指定" + JavaCGConstants.EXT_JAR + "格式，假如需要处理" + JavaCGConstants.EXT_CLASS + "格式的文件，则需要指定其所在目录");
+                    return null;
+                }
+
                 // 指定的是一个jar包，直接返回
                 // 记录jar包信息，向map中保存数据的key使用固定值
                 jarInfoMap.put(oneFile.getName(), new JarInfo(JavaCGConstants.FILE_KEY_JAR_INFO_PREFIX, oneFilePath));

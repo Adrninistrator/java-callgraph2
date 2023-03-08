@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg.dto.element.constant;
 
-import com.adrninistrator.javacg.enums.ConstantTypeEnum;
+import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 
 /**
  * @author adrninistrator
@@ -14,7 +14,7 @@ public class ConstElementLong extends ConstElement {
     }
 
     @Override
-    public ConstantTypeEnum getConstantTypeEnum() {
-        return ConstantTypeEnum.CONSTTE_LONG;
+    public JavaCGConstantTypeEnum getConstantTypeEnum() {
+        return JavaCGConstantTypeEnum.CONSTTE_LONG;
     }
 }

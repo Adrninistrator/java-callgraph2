@@ -1,4 +1,4 @@
-package com.adrninistrator.javacg.enums;
+package com.adrninistrator.javacg.common.enums;
 
 import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 
@@ -7,7 +7,7 @@ import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
  * @date 2022/5/13
  * @description: 常量类型枚举
  */
-public enum ConstantTypeEnum {
+public enum JavaCGConstantTypeEnum {
     // 以下都使用实际的类型，用于进行比较
     CONSTTE_NULL("null"),
     CONSTTE_INT("int"),
@@ -24,7 +24,7 @@ public enum ConstantTypeEnum {
 
     private final String type;
 
-    ConstantTypeEnum(String type) {
+    JavaCGConstantTypeEnum(String type) {
         this.type = type;
     }
 
@@ -32,13 +32,13 @@ public enum ConstantTypeEnum {
         return type;
     }
 
-    public static ConstantTypeEnum getFromType(String type) {
-        for (ConstantTypeEnum constantTypeEnum : ConstantTypeEnum.values()) {
+    public static JavaCGConstantTypeEnum getFromType(String type) {
+        for (JavaCGConstantTypeEnum constantTypeEnum : JavaCGConstantTypeEnum.values()) {
             if (constantTypeEnum.getType().equals(type)) {
                 return constantTypeEnum;
             }
         }
-        return ConstantTypeEnum.CONSTTE_ILLEGAL;
+        return JavaCGConstantTypeEnum.CONSTTE_ILLEGAL;
     }
 
     @Override

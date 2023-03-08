@@ -32,7 +32,7 @@ public class FieldElement extends LocalVariableElement {
     public String toString() {
         return "FieldElement{" +
                 "simpleClassName='" + simpleClassName + '\'' +
-                ", type='" + type + '\'' +
+                ", type='" + getType() + '\'' +
                 ", value=" + value +
                 ", fieldName='" + fieldName + '\'' +
                 '}' + String.format(" (%x)", System.identityHashCode(this));

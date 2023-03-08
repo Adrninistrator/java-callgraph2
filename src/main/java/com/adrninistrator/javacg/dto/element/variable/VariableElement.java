@@ -10,6 +10,6 @@ import com.adrninistrator.javacg.dto.element.BaseElement;
 public class VariableElement extends BaseElement {
 
     public VariableElement(String type) {
-        this.type = type;
+        super(type);
     }
 }

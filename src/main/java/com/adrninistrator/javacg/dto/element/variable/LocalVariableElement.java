@@ -22,6 +22,11 @@ public class LocalVariableElement extends VariableElement {
 
     // 复制一个值为null，其他字段相同的本地变量
     public LocalVariableElement copyWithNullValue() {
-        return new LocalVariableElement(type, null, index);
+        return new LocalVariableElement(getType(), null, index);
+    }
+
+    // 判断是否为this
+    public boolean isThis() {
+        return index == 0;
     }
 }

@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
 
@@ -203,7 +204,7 @@ public class JavaCGUtil {
      * @return false: 不跳过 true: 跳过
      */
     public static boolean checkSkipClass(String className, Set<String> needHandlePackageSet) {
-        if (needHandlePackageSet == null || needHandlePackageSet.isEmpty()) {
+        if (JavaCGUtil.isCollectionEmpty(needHandlePackageSet)) {
             return false;
         }
         for (String needHandlePackage : needHandlePackageSet) {
@@ -263,6 +264,17 @@ public class JavaCGUtil {
      */
     public static String base64Decode(String data) {
         return new String(Base64.getDecoder().decode(data), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 判断集合是否为空
+     *
+     * @param collection
+     * @param <T>
+     * @return
+     */
+    public static <T> boolean isCollectionEmpty(Collection<T> collection) {
+        return collection == null || collection.isEmpty();
     }
 
     private JavaCGUtil() {

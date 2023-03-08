@@ -95,8 +95,7 @@ public abstract class AbstractMethodHandler {
                 若方法不需要处理，或需要处理且处理正常，都需要执行最后阶段的处理
              */
             return lastStep();
-        } catch (
-                Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             System.err.println("处理方法出现异常，需要分析原因 " + javaClass.getClassName() + " " + mg.getName());
 
@@ -107,7 +106,6 @@ public abstract class AbstractMethodHandler {
             }
             return true;
         }
-
     }
 
     // 获取源代码行号

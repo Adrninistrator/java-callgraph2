@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg.stat;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.common.enums.JavaCGCallTypeEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.conf.JavaCGConfManager;
 import com.adrninistrator.javacg.conf.JavaCGConfigureWrapper;
@@ -11,7 +12,6 @@ import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodAndArgs;
 import com.adrninistrator.javacg.dto.output.HandleOutputInfo;
-import com.adrninistrator.javacg.enums.CallTypeEnum;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatterInterface;
 import com.adrninistrator.javacg.extensions.code_parser.CodeParserInterface;
@@ -202,7 +202,7 @@ public class JCallGraph {
 
     private void init(String dirPath) {
         // 检查方法调用枚举类型是否重复定义
-        CallTypeEnum.checkRepeat();
+        JavaCGCallTypeEnum.checkRepeat();
 
         // 第一次预处理相关
         Map<String, Boolean> runnableImplClassMap = new HashMap<>(JavaCGConstants.SIZE_100);
@@ -282,8 +282,12 @@ public class JCallGraph {
          */
         Map<String, List<String>> childrenInterfaceMap = new HashMap<>(JavaCGConstants.SIZE_100);
 
+        // 扩展类管理类初始化
+        extensionsManager.init();
+
         if (javaCGConfInfo.isParseMethodCallTypeValue()) {
-            useSpringBeanByAnnotationHandler = new UseSpringBeanByAnnotationHandler(classExtendsMethodInfoMap, defineSpringBeanByAnnotationHandler);
+            useSpringBeanByAnnotationHandler = new UseSpringBeanByAnnotationHandler(classExtendsMethodInfoMap, defineSpringBeanByAnnotationHandler,
+                    extensionsManager.getSpringXmlBeanParser());
         }
         jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCGConfInfo, useSpringBeanByAnnotationHandler);
         jarEntryPreHandle2Parser.setClassExtendsSet(classExtendsSet);
@@ -349,9 +353,6 @@ public class JCallGraph {
         handleOutputInfo.setExtendsImplOutputFilePath(extendsImplOutputFilePath);
         handleOutputInfo.setSpringBeanOutputFilePath(springBeanOutputFilePath);
         handleOutputInfo.setClassSignatureEI1OutputFilePath(classSignatureEI1OutputFilePath);
-
-        // 扩展类管理类初始化
-        extensionsManager.init();
     }
 
     // 处理一个jar包

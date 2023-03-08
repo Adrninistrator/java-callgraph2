@@ -171,7 +171,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         } else if (JavaCGCommonNameConstants.CLASS_NAME_TIMER_TASK.equals(superClassName)) {
             // 找到TimerTask的子类，按照Runnable实现类处理
             runnableImplClassMap.put(className, Boolean.FALSE);
-        }else if (JavaCGCommonNameConstants.CLASS_NAME_TRANSACTION_CALLBACK_WITHOUT_RESULT.equals(superClassName)) {
+        } else if (JavaCGCommonNameConstants.CLASS_NAME_TRANSACTION_CALLBACK_WITHOUT_RESULT.equals(superClassName)) {
             // 找到TransactionCallbackWithoutResult实现类
             transactionCallbackWithoutResultChildClassMap.put(className, Boolean.FALSE);
         }

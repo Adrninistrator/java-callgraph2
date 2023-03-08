@@ -2,6 +2,7 @@ package com.adrninistrator.javacg.handler;
 
 import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 import com.adrninistrator.javacg.dto.element.BaseElement;
 import com.adrninistrator.javacg.dto.element.constant.ConstElementDouble;
 import com.adrninistrator.javacg.dto.element.constant.ConstElementFloat;
@@ -23,9 +24,9 @@ import com.adrninistrator.javacg.dto.instruction.BaseInstructionParseResult;
 import com.adrninistrator.javacg.dto.instruction.MethodCallParseResult;
 import com.adrninistrator.javacg.dto.instruction.RetParseResult;
 import com.adrninistrator.javacg.dto.instruction.ReturnParseResult;
-import com.adrninistrator.javacg.enums.ConstantTypeEnum;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
+import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.LocalVariable;
 import org.apache.bcel.classfile.LocalVariableTable;
@@ -194,56 +195,56 @@ public class InstructionHandler {
                 handleLoad((LoadInstruction) i);
                 break;
             case Const.IALOAD:
-                handleArrayLoad(ConstantTypeEnum.CONSTTE_INT);
+                handleArrayLoad(JavaCGConstantTypeEnum.CONSTTE_INT);
                 break;
             case Const.LALOAD:
-                handleArrayLoad(ConstantTypeEnum.CONSTTE_LONG);
+                handleArrayLoad(JavaCGConstantTypeEnum.CONSTTE_LONG);
                 break;
             case Const.FALOAD:
-                handleArrayLoad(ConstantTypeEnum.CONSTTE_FLOAT);
+                handleArrayLoad(JavaCGConstantTypeEnum.CONSTTE_FLOAT);
                 break;
             case Const.DALOAD:
-                handleArrayLoad(ConstantTypeEnum.CONSTTE_DOUBLE);
+                handleArrayLoad(JavaCGConstantTypeEnum.CONSTTE_DOUBLE);
                 break;
             case Const.AALOAD:
                 handleArrayLoad(null, true);
                 break;
             case Const.BALOAD:
-                handleArrayLoad(ConstantTypeEnum.CONSTTE_BYTE);
+                handleArrayLoad(JavaCGConstantTypeEnum.CONSTTE_BYTE);
                 break;
             case Const.CALOAD:
-                handleArrayLoad(ConstantTypeEnum.CONSTTE_CHAR);
+                handleArrayLoad(JavaCGConstantTypeEnum.CONSTTE_CHAR);
                 break;
             case Const.SALOAD:
-                handleArrayLoad(ConstantTypeEnum.CONSTTE_SHORT);
+                handleArrayLoad(JavaCGConstantTypeEnum.CONSTTE_SHORT);
                 break;
             case Const.ISTORE:
             case Const.ISTORE_0:
             case Const.ISTORE_1:
             case Const.ISTORE_2:
             case Const.ISTORE_3:
-                handleStore((StoreInstruction) i, ConstantTypeEnum.CONSTTE_INT, ih);
+                handleStore((StoreInstruction) i, JavaCGConstantTypeEnum.CONSTTE_INT, ih);
                 break;
             case Const.LSTORE:
             case Const.LSTORE_0:
             case Const.LSTORE_1:
             case Const.LSTORE_2:
             case Const.LSTORE_3:
-                handleStore((StoreInstruction) i, ConstantTypeEnum.CONSTTE_LONG, ih);
+                handleStore((StoreInstruction) i, JavaCGConstantTypeEnum.CONSTTE_LONG, ih);
                 break;
             case Const.FSTORE:
             case Const.FSTORE_0:
             case Const.FSTORE_1:
             case Const.FSTORE_2:
             case Const.FSTORE_3:
-                handleStore((StoreInstruction) i, ConstantTypeEnum.CONSTTE_FLOAT, ih);
+                handleStore((StoreInstruction) i, JavaCGConstantTypeEnum.CONSTTE_FLOAT, ih);
                 break;
             case Const.DSTORE:
             case Const.DSTORE_0:
             case Const.DSTORE_1:
             case Const.DSTORE_2:
             case Const.DSTORE_3:
-                handleStore((StoreInstruction) i, ConstantTypeEnum.CONSTTE_DOUBLE, ih);
+                handleStore((StoreInstruction) i, JavaCGConstantTypeEnum.CONSTTE_DOUBLE, ih);
                 break;
             case Const.ASTORE:
             case Const.ASTORE_0:
@@ -253,28 +254,28 @@ public class InstructionHandler {
                 handleStore((StoreInstruction) i, null, ih);
                 break;
             case Const.IASTORE:
-                handleArrayStore(ConstantTypeEnum.CONSTTE_INT);
+                handleArrayStore(JavaCGConstantTypeEnum.CONSTTE_INT);
                 break;
             case Const.LASTORE:
-                handleArrayStore(ConstantTypeEnum.CONSTTE_LONG);
+                handleArrayStore(JavaCGConstantTypeEnum.CONSTTE_LONG);
                 break;
             case Const.FASTORE:
-                handleArrayStore(ConstantTypeEnum.CONSTTE_FLOAT);
+                handleArrayStore(JavaCGConstantTypeEnum.CONSTTE_FLOAT);
                 break;
             case Const.DASTORE:
-                handleArrayStore(ConstantTypeEnum.CONSTTE_DOUBLE);
+                handleArrayStore(JavaCGConstantTypeEnum.CONSTTE_DOUBLE);
                 break;
             case Const.AASTORE:
                 handleArrayStore(null, true);
                 break;
             case Const.BASTORE:
-                handleArrayStore(ConstantTypeEnum.CONSTTE_BYTE);
+                handleArrayStore(JavaCGConstantTypeEnum.CONSTTE_BYTE);
                 break;
             case Const.CASTORE:
-                handleArrayStore(ConstantTypeEnum.CONSTTE_CHAR);
+                handleArrayStore(JavaCGConstantTypeEnum.CONSTTE_CHAR);
                 break;
             case Const.SASTORE:
-                handleArrayStore(ConstantTypeEnum.CONSTTE_SHORT);
+                handleArrayStore(JavaCGConstantTypeEnum.CONSTTE_SHORT);
                 break;
             case Const.POP:
                 stack.pop();
@@ -311,7 +312,7 @@ public class InstructionHandler {
             case Const.IAND:
             case Const.IOR:
             case Const.IXOR:
-                handleArithmeticOperation2(ConstantTypeEnum.CONSTTE_INT);
+                handleArithmeticOperation2(JavaCGConstantTypeEnum.CONSTTE_INT);
                 break;
             case Const.LADD:
             case Const.LSUB:
@@ -321,98 +322,98 @@ public class InstructionHandler {
             case Const.LAND:
             case Const.LOR:
             case Const.LXOR:
-                handleArithmeticOperation2(ConstantTypeEnum.CONSTTE_LONG);
+                handleArithmeticOperation2(JavaCGConstantTypeEnum.CONSTTE_LONG);
                 break;
             case Const.FADD:
             case Const.FSUB:
             case Const.FMUL:
             case Const.FDIV:
             case Const.FREM:
-                handleArithmeticOperation2(ConstantTypeEnum.CONSTTE_FLOAT);
+                handleArithmeticOperation2(JavaCGConstantTypeEnum.CONSTTE_FLOAT);
                 break;
             case Const.DADD:
             case Const.DSUB:
             case Const.DMUL:
             case Const.DDIV:
             case Const.DREM:
-                handleArithmeticOperation2(ConstantTypeEnum.CONSTTE_DOUBLE);
+                handleArithmeticOperation2(JavaCGConstantTypeEnum.CONSTTE_DOUBLE);
                 break;
             case Const.INEG:
-                handleArithmeticOperation1(ConstantTypeEnum.CONSTTE_INT);
+                handleArithmeticOperation1(JavaCGConstantTypeEnum.CONSTTE_INT);
                 break;
             case Const.LNEG:
-                handleArithmeticOperation1(ConstantTypeEnum.CONSTTE_LONG);
+                handleArithmeticOperation1(JavaCGConstantTypeEnum.CONSTTE_LONG);
                 break;
             case Const.FNEG:
-                handleArithmeticOperation1(ConstantTypeEnum.CONSTTE_FLOAT);
+                handleArithmeticOperation1(JavaCGConstantTypeEnum.CONSTTE_FLOAT);
                 break;
             case Const.DNEG:
-                handleArithmeticOperation1(ConstantTypeEnum.CONSTTE_DOUBLE);
+                handleArithmeticOperation1(JavaCGConstantTypeEnum.CONSTTE_DOUBLE);
                 break;
             case Const.ISHL:
             case Const.ISHR:
             case Const.IUSHR:
-                handleBitOperator(ConstantTypeEnum.CONSTTE_INT);
+                handleBitOperator(JavaCGConstantTypeEnum.CONSTTE_INT);
                 break;
             case Const.LSHL:
             case Const.LSHR:
             case Const.LUSHR:
-                handleBitOperator(ConstantTypeEnum.CONSTTE_LONG);
+                handleBitOperator(JavaCGConstantTypeEnum.CONSTTE_LONG);
                 break;
             case Const.IINC:
                 handleIinc((IINC) i);
                 break;
             case Const.I2L:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_INT, ConstantTypeEnum.CONSTTE_LONG);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_INT, JavaCGConstantTypeEnum.CONSTTE_LONG);
                 break;
             case Const.I2F:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_INT, ConstantTypeEnum.CONSTTE_FLOAT);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_INT, JavaCGConstantTypeEnum.CONSTTE_FLOAT);
                 break;
             case Const.I2D:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_INT, ConstantTypeEnum.CONSTTE_DOUBLE);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_INT, JavaCGConstantTypeEnum.CONSTTE_DOUBLE);
                 break;
             case Const.L2I:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_LONG, ConstantTypeEnum.CONSTTE_INT);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_LONG, JavaCGConstantTypeEnum.CONSTTE_INT);
                 break;
             case Const.L2F:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_LONG, ConstantTypeEnum.CONSTTE_FLOAT);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_LONG, JavaCGConstantTypeEnum.CONSTTE_FLOAT);
                 break;
             case Const.L2D:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_LONG, ConstantTypeEnum.CONSTTE_DOUBLE);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_LONG, JavaCGConstantTypeEnum.CONSTTE_DOUBLE);
                 break;
             case Const.F2I:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_FLOAT, ConstantTypeEnum.CONSTTE_INT);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_FLOAT, JavaCGConstantTypeEnum.CONSTTE_INT);
                 break;
             case Const.F2L:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_FLOAT, ConstantTypeEnum.CONSTTE_LONG);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_FLOAT, JavaCGConstantTypeEnum.CONSTTE_LONG);
                 break;
             case Const.F2D:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_FLOAT, ConstantTypeEnum.CONSTTE_DOUBLE);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_FLOAT, JavaCGConstantTypeEnum.CONSTTE_DOUBLE);
                 break;
             case Const.D2I:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_DOUBLE, ConstantTypeEnum.CONSTTE_INT);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_DOUBLE, JavaCGConstantTypeEnum.CONSTTE_INT);
                 break;
             case Const.D2L:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_DOUBLE, ConstantTypeEnum.CONSTTE_LONG);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_DOUBLE, JavaCGConstantTypeEnum.CONSTTE_LONG);
                 break;
             case Const.D2F:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_DOUBLE, ConstantTypeEnum.CONSTTE_FLOAT);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_DOUBLE, JavaCGConstantTypeEnum.CONSTTE_FLOAT);
                 break;
             case Const.I2B:
             case Const.I2C:
             case Const.I2S:
-                handleTypeConversion(ConstantTypeEnum.CONSTTE_INT, ConstantTypeEnum.CONSTTE_INT);
+                handleTypeConversion(JavaCGConstantTypeEnum.CONSTTE_INT, JavaCGConstantTypeEnum.CONSTTE_INT);
                 break;
             case Const.LCMP:
-                handleCompare(ConstantTypeEnum.CONSTTE_LONG);
+                handleCompare(JavaCGConstantTypeEnum.CONSTTE_LONG);
                 break;
             case Const.FCMPL:
             case Const.FCMPG:
-                handleCompare(ConstantTypeEnum.CONSTTE_FLOAT);
+                handleCompare(JavaCGConstantTypeEnum.CONSTTE_FLOAT);
                 break;
             case Const.DCMPL:
             case Const.DCMPG:
-                handleCompare(ConstantTypeEnum.CONSTTE_DOUBLE);
+                handleCompare(JavaCGConstantTypeEnum.CONSTTE_DOUBLE);
                 break;
             case Const.IFEQ:
             case Const.IFNE:
@@ -496,7 +497,7 @@ public class InstructionHandler {
                 break;
             case Const.ARRAYLENGTH:
                 stack.pop();
-                stack.push(new VariableElement(ConstantTypeEnum.CONSTTE_INT.getType()));
+                stack.push(new VariableElement(JavaCGConstantTypeEnum.CONSTTE_INT.getType()));
                 break;
             case Const.ATHROW:
                 handleATHROW();
@@ -507,7 +508,7 @@ public class InstructionHandler {
                 break;
             case Const.INSTANCEOF:
                 stack.pop();
-                stack.push(new VariableElement(ConstantTypeEnum.CONSTTE_INT.getType()));
+                stack.push(new VariableElement(JavaCGConstantTypeEnum.CONSTTE_INT.getType()));
                 break;
             case Const.MONITORENTER:
             case Const.MONITOREXIT:
@@ -541,9 +542,9 @@ public class InstructionHandler {
         String typeString = getTypeString(ldc);
         Object value = ldc.getValue(cpg);
 
-        if (ConstantTypeEnum.CONSTTE_INT.getType().equals(typeString)) {
+        if (JavaCGConstantTypeEnum.CONSTTE_INT.getType().equals(typeString)) {
             stack.push(new ConstElementInt(value));
-        } else if (ConstantTypeEnum.CONSTTE_FLOAT.getType().equals(typeString)) {
+        } else if (JavaCGConstantTypeEnum.CONSTTE_FLOAT.getType().equals(typeString)) {
             stack.push(new ConstElementFloat(value));
         } else if (JavaCGCommonNameConstants.CLASS_NAME_STRING.equals(typeString)) {
             stack.push(new ConstElementString(value));
@@ -559,9 +560,9 @@ public class InstructionHandler {
         String typeString = getTypeString(ldc2W);
         Object value = ldc2W.getValue(cpg);
 
-        if (ConstantTypeEnum.CONSTTE_LONG.getType().equals(typeString)) {
+        if (JavaCGConstantTypeEnum.CONSTTE_LONG.getType().equals(typeString)) {
             stack.push(new ConstElementLong(value));
-        } else if (ConstantTypeEnum.CONSTTE_DOUBLE.getType().equals(typeString)) {
+        } else if (JavaCGConstantTypeEnum.CONSTTE_DOUBLE.getType().equals(typeString)) {
             stack.push(new ConstElementDouble(value));
         } else {
             System.err.println("eee LDC2_W 暂不支持的情况 " + typeString + " " + value);
@@ -580,7 +581,7 @@ public class InstructionHandler {
     }
 
     // 处理数组获取值
-    private void handleArrayLoad(ConstantTypeEnum typeEnum) {
+    private void handleArrayLoad(JavaCGConstantTypeEnum typeEnum) {
         handleArrayLoad(typeEnum.getType(), false);
     }
 
@@ -604,14 +605,14 @@ public class InstructionHandler {
         // 入栈，数组元素
         stack.push(new VariableElement(usedElementType));
 
-        indexVariable.checkTypeString(ConstantTypeEnum.CONSTTE_INT.getType());
+        indexVariable.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
         if (!isAaload) {
             arrayVariable.checkTypeString(JavaCGByteCodeUtil.addArrayFlag(usedElementType));
         }
     }
 
     // 处理赋值
-    private void handleStore(StoreInstruction storeInstruction, ConstantTypeEnum typeEnum, InstructionHandle ih) {
+    private void handleStore(StoreInstruction storeInstruction, JavaCGConstantTypeEnum typeEnum, InstructionHandle ih) {
         int index = storeInstruction.getIndex();
         BaseElement baseElement = stack.pop();
         String poppedElementType = baseElement.getType();
@@ -641,7 +642,7 @@ public class InstructionHandler {
     }
 
     // 处理数组赋值
-    private void handleArrayStore(ConstantTypeEnum typeEnum) {
+    private void handleArrayStore(JavaCGConstantTypeEnum typeEnum) {
         handleArrayStore(typeEnum.getType(), false);
     }
 
@@ -650,7 +651,7 @@ public class InstructionHandler {
         BaseElement indexVariable = stack.pop();
         BaseElement arrayVariable = stack.pop();
 
-        indexVariable.checkTypeString(ConstantTypeEnum.CONSTTE_INT.getType());
+        indexVariable.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
 
         if (!isAastore) {
             valueVariable.checkTypeString(arrayType);
@@ -775,7 +776,7 @@ public class InstructionHandler {
     }
 
     // 处理双目运算
-    private void handleArithmeticOperation2(ConstantTypeEnum constantTypeEnum) {
+    private void handleArithmeticOperation2(JavaCGConstantTypeEnum constantTypeEnum) {
         BaseElement value2 = stack.pop();
         BaseElement value1 = stack.pop();
         stack.push(new VariableElement(constantTypeEnum.getType()));
@@ -785,7 +786,7 @@ public class InstructionHandler {
     }
 
     // 处理单目运算
-    private void handleArithmeticOperation1(ConstantTypeEnum constantTypeEnum) {
+    private void handleArithmeticOperation1(JavaCGConstantTypeEnum constantTypeEnum) {
         BaseElement value = stack.pop();
         stack.push(new VariableElement(constantTypeEnum.getType()));
 
@@ -793,12 +794,12 @@ public class InstructionHandler {
     }
 
     // 处理位运算
-    private void handleBitOperator(ConstantTypeEnum constantTypeEnum) {
+    private void handleBitOperator(JavaCGConstantTypeEnum constantTypeEnum) {
         BaseElement value2 = stack.pop();
         BaseElement value1 = stack.pop();
         stack.push(new VariableElement(constantTypeEnum.getType()));
 
-        value2.checkTypeString(ConstantTypeEnum.CONSTTE_INT.getType());
+        value2.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
         value1.checkTypeString(constantTypeEnum.getType());
     }
 
@@ -811,7 +812,7 @@ public class InstructionHandler {
     }
 
     // 处理类型转换
-    private void handleTypeConversion(ConstantTypeEnum oldTypeEnum, ConstantTypeEnum newTypeEnum) {
+    private void handleTypeConversion(JavaCGConstantTypeEnum oldTypeEnum, JavaCGConstantTypeEnum newTypeEnum) {
         BaseElement value = stack.pop();
         stack.push(new VariableElement(newTypeEnum.getType()));
 
@@ -819,10 +820,10 @@ public class InstructionHandler {
     }
 
     // 处理比较判断
-    private void handleCompare(ConstantTypeEnum constantTypeEnum) {
+    private void handleCompare(JavaCGConstantTypeEnum constantTypeEnum) {
         BaseElement value2 = stack.pop();
         BaseElement value1 = stack.pop();
-        stack.push(new VariableElement(ConstantTypeEnum.CONSTTE_INT.getType()));
+        stack.push(new VariableElement(JavaCGConstantTypeEnum.CONSTTE_INT.getType()));
 
         value2.checkTypeString(constantTypeEnum.getType());
         value1.checkTypeString(constantTypeEnum.getType());
@@ -831,15 +832,15 @@ public class InstructionHandler {
     // 处理if判断，1个元素
     private void handleIf1() {
         BaseElement value = stack.pop();
-        value.checkTypeString(ConstantTypeEnum.CONSTTE_INT.getType());
+        value.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
     }
 
     // 处理if判断，2个元素
     private void handleIf2() {
         BaseElement value2 = stack.pop();
         BaseElement value1 = stack.pop();
-        value2.checkTypeString(ConstantTypeEnum.CONSTTE_INT.getType());
-        value1.checkTypeString(ConstantTypeEnum.CONSTTE_INT.getType());
+        value2.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
+        value1.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
     }
 
     private void handleJSR(InstructionHandle ih) {
@@ -906,7 +907,7 @@ public class InstructionHandler {
             // 使用已获取的构造函数非静态字段可能的类型
 //			org.apache.poi.openxml4j.opc.ZipPackage 类的构建函数解析后 zipArchive 非静态字段可能的类型数量大于1 null org.apache.poi.openxml4j.util.ZipInputStreamZipEntrySource
             List<String> possibleTypeList = nonStaticFieldPossibleTypes.getPossibleTypeList(fieldName);
-            if (possibleTypeList != null && !possibleTypeList.isEmpty()) {
+            if (!JavaCGUtil.isCollectionEmpty(possibleTypeList)) {
                 if (possibleTypeList.size() == 1) {
                     // 字段可能的类型数量为1，则使用
                     fieldElement = new FieldElement(possibleTypeList.get(0), null, fieldName);
@@ -982,14 +983,14 @@ public class InstructionHandler {
         BaseElement countVariable = stack.pop();
         stack.push(new VariableElement(newarray.getType().toString()));
 
-        countVariable.checkTypeString(ConstantTypeEnum.CONSTTE_INT.getType());
+        countVariable.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
     }
 
     private void handleANEWARRAY(ANEWARRAY anewarray) {
         BaseElement countVariable = stack.pop();
         stack.push(new VariableElement(JavaCGByteCodeUtil.addArrayFlag(getTypeString(anewarray))));
 
-        countVariable.checkTypeString(ConstantTypeEnum.CONSTTE_INT.getType());
+        countVariable.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
     }
 
     private void handleATHROW() {

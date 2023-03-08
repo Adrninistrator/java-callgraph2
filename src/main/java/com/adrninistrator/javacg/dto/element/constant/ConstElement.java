@@ -1,7 +1,7 @@
 package com.adrninistrator.javacg.dto.element.constant;
 
+import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 import com.adrninistrator.javacg.dto.element.BaseElement;
-import com.adrninistrator.javacg.enums.ConstantTypeEnum;
 
 /**
  * @author adrninistrator
@@ -21,7 +21,7 @@ public abstract class ConstElement extends BaseElement {
      *
      * @return
      */
-    public abstract ConstantTypeEnum getConstantTypeEnum();
+    public abstract JavaCGConstantTypeEnum getConstantTypeEnum();
 
     @Override
     public String getType() {

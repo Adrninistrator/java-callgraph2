@@ -15,10 +15,17 @@ public abstract class BaseElement {
         变量或常量的类型
         type需要使用getType()方法，因为ConstElement是通过方法返回的type
      */
-    protected String type;
+    private String type;
 
     // 变量或常量的常量值
     protected Object value;
+
+    public BaseElement() {
+    }
+
+    public BaseElement(String type) {
+        this.type = type;
+    }
 
     public int getElementSize() {
         return JavaCGByteCodeUtil.getTypeSize(getType());

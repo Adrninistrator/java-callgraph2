@@ -1,10 +1,10 @@
 package com.adrninistrator.javacg.parser;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.common.enums.JavaCGHandleJarResultEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
-import com.adrninistrator.javacg.enums.HandleJarResultEnum;
 import com.adrninistrator.javacg.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg.handler.ClassHandler;
 import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
@@ -105,12 +105,12 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     // 根据class文件进行处理
     private void handleJarEntryName(String jarEntryName) throws IOException {
         // 获取当前处理的jar包信息
-        HandleJarResultEnum handleJarResultEnum = handleCurrentJarInfo(jarInfoMap, jarEntryName);
-        if (handleJarResultEnum == HandleJarResultEnum.HJRE_FAIL) {
+        JavaCGHandleJarResultEnum handleJarResultEnum = handleCurrentJarInfo(jarInfoMap, jarEntryName);
+        if (handleJarResultEnum == JavaCGHandleJarResultEnum.HJRE_FAIL) {
             return;
         }
 
-        if (handleJarResultEnum == HandleJarResultEnum.HJRE_FIRST) {
+        if (handleJarResultEnum == JavaCGHandleJarResultEnum.HJRE_FIRST) {
             /*
                 第一次处理某个jar包
                 向文件写入数据，内容为jar包信息
@@ -121,32 +121,32 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     }
 
     // 获取当前处理的jar包信息
-    private HandleJarResultEnum handleCurrentJarInfo(Map<String, JarInfo> jarInfoMap, String jarEntryName) {
+    private JavaCGHandleJarResultEnum handleCurrentJarInfo(Map<String, JarInfo> jarInfoMap, String jarEntryName) {
         if (jarInfoMap.size() == 1) {
             // 只有一个jar包，从Map取第一个Entry
             if (lastJarInfo == null) {
                 // 第一次处理当前jar包
                 for (Map.Entry<String, JarInfo> entry : jarInfoMap.entrySet()) {
                     lastJarInfo = entry.getValue();
-                    return HandleJarResultEnum.HJRE_FIRST;
+                    return JavaCGHandleJarResultEnum.HJRE_FIRST;
                 }
             }
 
             // 不是第一次处理当前jar包
-            return HandleJarResultEnum.HJRE_NOT_FIRST;
+            return JavaCGHandleJarResultEnum.HJRE_NOT_FIRST;
         }
 
         // jar包数量大于1个，从Map取值时使用当前JarEntry的第一层目录名称
         int index = jarEntryName.indexOf("/");
         if (index == -1) {
             System.err.println("JarEntry名称中不包含/ " + jarEntryName);
-            return HandleJarResultEnum.HJRE_FAIL;
+            return JavaCGHandleJarResultEnum.HJRE_FAIL;
         }
 
         String firstDirName = jarEntryName.substring(0, index);
         if (lastFirstDirName != null && lastFirstDirName.equals(firstDirName)) {
             // 第一层目录名未变化时，使用缓存数据
-            return HandleJarResultEnum.HJRE_NOT_FIRST;
+            return JavaCGHandleJarResultEnum.HJRE_NOT_FIRST;
         }
         lastFirstDirName = firstDirName;
 
@@ -155,7 +155,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         if (lastJarInfo == null) {
             System.err.println("合并后的jar包中出现的名称未记录过: " + jarEntryName);
         }
-        return HandleJarResultEnum.HJRE_FIRST;
+        return JavaCGHandleJarResultEnum.HJRE_FIRST;
     }
 
     // 处理Java类

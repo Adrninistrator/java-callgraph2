@@ -41,7 +41,7 @@ public class StaticFieldElement extends FieldElement {
     public String toString() {
         return "StaticFieldElement{" +
                 "simpleClassName='" + simpleClassName + '\'' +
-                ", type='" + type + '\'' +
+                ", type='" + getType() + '\'' +
                 ", value=" + value +
                 ", fieldName='" + fieldName + '\'' +
                 ", className='" + className + '\'' +

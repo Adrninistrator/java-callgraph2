@@ -2,9 +2,9 @@ package com.adrninistrator.javacg.util;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.TypeConstants;
+import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 import com.adrninistrator.javacg.dto.method.JavaCGMethodInfo;
 import com.adrninistrator.javacg.dto.method.MethodAndArgs;
-import com.adrninistrator.javacg.enums.ConstantTypeEnum;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.Attribute;
 import org.apache.bcel.classfile.JavaClass;
@@ -206,7 +206,7 @@ public class JavaCGByteCodeUtil {
      * @return
      */
     public static int getTypeSize(String typeString) {
-        if (ConstantTypeEnum.CONSTTE_DOUBLE.getType().equals(typeString) || ConstantTypeEnum.CONSTTE_LONG.getType().equals(typeString)) {
+        if (JavaCGConstantTypeEnum.CONSTTE_DOUBLE.getType().equals(typeString) || JavaCGConstantTypeEnum.CONSTTE_LONG.getType().equals(typeString)) {
             return 2;
         }
         return 1;
@@ -234,7 +234,7 @@ public class JavaCGByteCodeUtil {
      * @return false: 不为null true: 为null
      */
     public static boolean isNullType(String type) {
-        return type == null || ConstantTypeEnum.CONSTTE_NULL.getType().equals(type);
+        return type == null || JavaCGConstantTypeEnum.CONSTTE_NULL.getType().equals(type);
     }
 
     /**
@@ -264,11 +264,11 @@ public class JavaCGByteCodeUtil {
      * @return false: 与int不兼容 true: 与int兼容
      */
     public static boolean compareIntType(String type1, String type2) {
-        if (ConstantTypeEnum.CONSTTE_INT.getType().equals(type1) && JavaCGByteCodeUtil.checkCompatibleWithInt(type2)) {
+        if (JavaCGConstantTypeEnum.CONSTTE_INT.getType().equals(type1) && JavaCGByteCodeUtil.checkCompatibleWithInt(type2)) {
             return true;
         }
 
-        return ConstantTypeEnum.CONSTTE_INT.getType().equals(type2) && JavaCGByteCodeUtil.checkCompatibleWithInt(type1);
+        return JavaCGConstantTypeEnum.CONSTTE_INT.getType().equals(type2) && JavaCGByteCodeUtil.checkCompatibleWithInt(type1);
     }
 
     /**
@@ -279,11 +279,11 @@ public class JavaCGByteCodeUtil {
      * @return false: 不兼容 true: 兼容
      */
     public static boolean compareByteBooleanType(String type1, String type2) {
-        if (ConstantTypeEnum.CONSTTE_BYTE.getType().equals(type1) && ConstantTypeEnum.CONSTTE_BOOLEAN.getType().equals(type2)) {
+        if (JavaCGConstantTypeEnum.CONSTTE_BYTE.getType().equals(type1) && JavaCGConstantTypeEnum.CONSTTE_BOOLEAN.getType().equals(type2)) {
             return true;
         }
 
-        if (ConstantTypeEnum.CONSTTE_BYTE.getType().equals(type2) && ConstantTypeEnum.CONSTTE_BOOLEAN.getType().equals(type1)) {
+        if (JavaCGConstantTypeEnum.CONSTTE_BYTE.getType().equals(type2) && JavaCGConstantTypeEnum.CONSTTE_BOOLEAN.getType().equals(type1)) {
             return true;
         }
 

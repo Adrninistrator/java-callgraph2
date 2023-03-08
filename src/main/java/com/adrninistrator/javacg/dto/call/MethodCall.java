@@ -1,7 +1,8 @@
 package com.adrninistrator.javacg.dto.call;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
-import com.adrninistrator.javacg.enums.CallTypeEnum;
+import com.adrninistrator.javacg.common.enums.JavaCGCallTypeEnum;
+import com.adrninistrator.javacg.common.enums.JavaCGCalleeObjTypeEnum;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,7 +26,7 @@ public class MethodCall {
     private String callerMethodArgs;
 
     // 方法调用类型
-    private CallTypeEnum methodCallType;
+    private JavaCGCallTypeEnum methodCallType;
 
     // 被调用者类名
     private String calleeClassName;
@@ -39,15 +40,19 @@ public class MethodCall {
     // 调用者源代码行号
     private int callerSourceLine;
 
+    // 被调用类型
+    private JavaCGCalleeObjTypeEnum objTypeEnum;
+
     public MethodCall(int callId,
                       String callerClassName,
                       String callerMethodName,
                       String callerMethodArgs,
-                      CallTypeEnum methodCallType,
+                      JavaCGCallTypeEnum methodCallType,
                       String calleeClassName,
                       String calleeMethodName,
                       String calleeMethodArgs,
-                      int callerSourceLine) {
+                      int callerSourceLine,
+                      JavaCGCalleeObjTypeEnum objTypeEnum) {
         this(callerClassName,
                 callerMethodName,
                 callerMethodArgs,
@@ -55,18 +60,20 @@ public class MethodCall {
                 calleeClassName,
                 calleeMethodName,
                 calleeMethodArgs,
-                callerSourceLine);
+                callerSourceLine,
+                objTypeEnum);
         this.callId = callId;
     }
 
     public MethodCall(String callerClassName,
                       String callerMethodName,
                       String callerMethodArgs,
-                      CallTypeEnum methodCallType,
+                      JavaCGCallTypeEnum methodCallType,
                       String calleeClassName,
                       String calleeMethodName,
                       String calleeMethodArgs,
-                      int callerSourceLine) {
+                      int callerSourceLine,
+                      JavaCGCalleeObjTypeEnum objTypeEnum) {
         this.callerClassName = callerClassName;
         this.callerMethodName = callerMethodName;
         this.callerMethodArgs = callerMethodArgs;
@@ -75,6 +82,7 @@ public class MethodCall {
         this.calleeMethodName = calleeMethodName;
         this.calleeMethodArgs = calleeMethodArgs;
         this.callerSourceLine = callerSourceLine;
+        this.objTypeEnum = objTypeEnum;
     }
 
     // 返回调用者完整方法
@@ -82,17 +90,28 @@ public class MethodCall {
         return JavaCGUtil.formatFullMethod(callerClassName, callerMethodName, callerMethodArgs);
     }
 
+    // 返回被调用类型对应的字符串
+    public String genObjTypeEnum() {
+        if (objTypeEnum == null) {
+            return "";
+        }
+        return objTypeEnum.getType();
+    }
+
     // 返回被调用者完整方法
     public String genCalleeFullMethod() {
         return JavaCGUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgs);
     }
 
+    // 生成在调用关系文件中的内容
     public String genCallContent() {
         return StringUtils.joinWith(JavaCGConstants.FILE_COLUMN_SEPARATOR,
                 callId,
                 genCallerFullMethod(),
                 JavaCGConstants.FILE_KEY_CALL_TYPE_FLAG1 + methodCallType.getType() + JavaCGConstants.FILE_KEY_CALL_TYPE_FLAG2 + genCalleeFullMethod(),
-                callerSourceLine);
+                callerSourceLine,
+                genObjTypeEnum()
+        );
     }
 
     public int getCallId() {
@@ -101,69 +120,5 @@ public class MethodCall {
 
     public void setCallId(int callId) {
         this.callId = callId;
-    }
-
-    public String getCallerClassName() {
-        return callerClassName;
-    }
-
-    public void setCallerClassName(String callerClassName) {
-        this.callerClassName = callerClassName;
-    }
-
-    public String getCallerMethodName() {
-        return callerMethodName;
-    }
-
-    public void setCallerMethodName(String callerMethodName) {
-        this.callerMethodName = callerMethodName;
-    }
-
-    public String getCallerMethodArgs() {
-        return callerMethodArgs;
-    }
-
-    public void setCallerMethodArgs(String callerMethodArgs) {
-        this.callerMethodArgs = callerMethodArgs;
-    }
-
-    public int getCallerSourceLine() {
-        return callerSourceLine;
-    }
-
-    public void setCallerSourceLine(int callerSourceLine) {
-        this.callerSourceLine = callerSourceLine;
-    }
-
-    public CallTypeEnum getMethodCallType() {
-        return methodCallType;
-    }
-
-    public void setMethodCallType(CallTypeEnum methodCallType) {
-        this.methodCallType = methodCallType;
-    }
-
-    public String getCalleeClassName() {
-        return calleeClassName;
-    }
-
-    public void setCalleeClassName(String calleeClassName) {
-        this.calleeClassName = calleeClassName;
-    }
-
-    public String getCalleeMethodName() {
-        return calleeMethodName;
-    }
-
-    public void setCalleeMethodName(String calleeMethodName) {
-        this.calleeMethodName = calleeMethodName;
-    }
-
-    public String getCalleeMethodArgs() {
-        return calleeMethodArgs;
-    }
-
-    public void setCalleeMethodArgs(String calleeMethodArgs) {
-        this.calleeMethodArgs = calleeMethodArgs;
     }
 }

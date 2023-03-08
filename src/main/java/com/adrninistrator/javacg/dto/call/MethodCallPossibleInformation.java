@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg.dto.call;
 
+import com.adrninistrator.javacg.common.enums.JavaCGCalleeObjTypeEnum;
 import com.adrninistrator.javacg.dto.element.BaseElement;
 
 import java.util.HashMap;
@@ -11,6 +12,10 @@ import java.util.Map;
  * @description: 方法调用可能的信息
  */
 public class MethodCallPossibleInformation {
+
+    // 被调用类型
+    private JavaCGCalleeObjTypeEnum objTypeEnum;
+
     // 被调用对象可能的信息
     private MethodCallPossibleInfoEntry methodCallPossibleInfoEntry4Object;
 
@@ -22,6 +27,14 @@ public class MethodCallPossibleInformation {
             方法调用中被调用对象、参数的可能的信息
      */
     private Map<Integer, MethodCallPossibleInfoEntry> methodCallPossibleInfoEntryMap4Args;
+
+    public JavaCGCalleeObjTypeEnum getObjTypeEnum() {
+        return objTypeEnum;
+    }
+
+    public void setObjTypeEnum(JavaCGCalleeObjTypeEnum objTypeEnum) {
+        this.objTypeEnum = objTypeEnum;
+    }
 
     /**
      * 为被调用对象添加可能的信息

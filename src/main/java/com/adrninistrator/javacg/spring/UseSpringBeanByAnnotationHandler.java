@@ -2,6 +2,7 @@ package com.adrninistrator.javacg.spring;
 
 import com.adrninistrator.javacg.common.SpringAnnotationConstants;
 import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
+import com.adrninistrator.javacg.extensions.code_parser.spring.SpringXmlBeanParser;
 import com.adrninistrator.javacg.util.JavaCGAnnotationUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.classfile.AnnotationEntry;
@@ -23,6 +24,8 @@ public class UseSpringBeanByAnnotationHandler {
     private final Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap;
 
     private final DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler;
+
+    private final SpringXmlBeanParser springXmlBeanParser;
 
     /*
         保存各个类中使用的Spring Bean字段信息
@@ -46,9 +49,11 @@ public class UseSpringBeanByAnnotationHandler {
     private boolean useSpringBean = false;
 
     public UseSpringBeanByAnnotationHandler(Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap,
-                                            DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler) {
+                                            DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler,
+                                            SpringXmlBeanParser springXmlBeanParser) {
         this.classExtendsMethodInfoMap = classExtendsMethodInfoMap;
         this.defineSpringBeanByAnnotationHandler = defineSpringBeanByAnnotationHandler;
+        this.springXmlBeanParser = springXmlBeanParser;
     }
 
     /**
@@ -144,7 +149,18 @@ public class UseSpringBeanByAnnotationHandler {
             return Collections.emptyList();
         }
         // 获取指定类指定字段对应的Spring Bean类型列表
-        return defineSpringBeanByAnnotationHandler.getSpringBeanTypeList(springBeanName);
+        List<String> springBeanTypeList = defineSpringBeanByAnnotationHandler.getSpringBeanTypeList(springBeanName);
+        if (!JavaCGUtil.isCollectionEmpty(springBeanTypeList)) {
+            return springBeanTypeList;
+        }
+
+        // 从Spring XML中获取bean类型
+        String springBeanType = springXmlBeanParser.getBeanClass(springBeanName);
+        if (springBeanType != null) {
+            return Collections.singletonList(springBeanType);
+        }
+
+        return Collections.emptyList();
     }
 
     /**

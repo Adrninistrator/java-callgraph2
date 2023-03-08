@@ -124,6 +124,8 @@ public class JavaCGConstants {
     public static final int SIZE_500 = 500;
     public static final int SIZE_1000 = 1000;
 
+    public static final String[] FILE_EXT_ARRAY_XML = new String[]{"xml"};
+
     private JavaCGConstants() {
         throw new IllegalStateException("illegal");
     }

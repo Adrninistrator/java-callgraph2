@@ -6,6 +6,7 @@ import com.adrninistrator.javacg.extensions.annotation_attributes.DefaultAnnotat
 import com.adrninistrator.javacg.extensions.code_parser.CodeParserInterface;
 import com.adrninistrator.javacg.extensions.code_parser.JarEntryOtherFileParser;
 import com.adrninistrator.javacg.extensions.code_parser.MethodAnnotationParser;
+import com.adrninistrator.javacg.extensions.code_parser.spring.SpringXmlBeanParser;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -44,6 +45,8 @@ public class ExtensionsManager {
     // 对注解属性的元素值进行格式化的类
     private AnnotationAttributesFormatterInterface annotationAttributesFormatter;
 
+    private SpringXmlBeanParser springXmlBeanParser;
+
     private boolean inited = false;
 
     /**
@@ -60,6 +63,10 @@ public class ExtensionsManager {
         if (inited) {
             throw new JavaCGRuntimeException("不允许重复初始化");
         }
+
+        // 默认添加对Spring XML文件中的bean解析的类
+        springXmlBeanParser = new SpringXmlBeanParser();
+        allCodeParserList.add(springXmlBeanParser);
 
         for (CodeParserInterface codeParser : allCodeParserList) {
             if (codeParser instanceof JarEntryOtherFileParser) {
@@ -117,6 +124,10 @@ public class ExtensionsManager {
         }
 
         return annotationAttributesFormatter;
+    }
+
+    public SpringXmlBeanParser getSpringXmlBeanParser() {
+        return springXmlBeanParser;
     }
 
     public void setAnnotationAttributesFormatter(AnnotationAttributesFormatterInterface annotationAttributesFormatter) {
