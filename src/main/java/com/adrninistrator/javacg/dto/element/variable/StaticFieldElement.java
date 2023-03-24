@@ -12,15 +12,13 @@ public class StaticFieldElement extends FieldElement {
     // 类名
     private final String className;
 
-    public StaticFieldElement(String type, Object value, String variableName, String className) {
-        super(type, value, variableName);
-
+    public StaticFieldElement(String type, boolean arrayElement, Object value, String variableName, String className) {
+        super(type, arrayElement, value, variableName);
         this.className = className;
     }
 
-    public StaticFieldElement(String type, Object value, String variableName, String className, int index) {
-        super(type, value, variableName, index);
-
+    public StaticFieldElement(String type, boolean arrayElement, Object value, String variableName, String className, int index) {
+        super(type, arrayElement, value, variableName, index);
         this.className = className;
     }
 

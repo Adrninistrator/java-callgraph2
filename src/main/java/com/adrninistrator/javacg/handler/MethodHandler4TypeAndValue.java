@@ -6,7 +6,7 @@ import com.adrninistrator.javacg.common.enums.JavaCGCalleeObjTypeEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.branch.BranchStackEntry;
-import com.adrninistrator.javacg.dto.call.MethodCallPossibleInformation;
+import com.adrninistrator.javacg.dto.call.MethodCallPossibleInfo;
 import com.adrninistrator.javacg.dto.element.BaseElement;
 import com.adrninistrator.javacg.dto.element.variable.FieldElement;
 import com.adrninistrator.javacg.dto.element.variable.LocalVariableElement;
@@ -123,7 +123,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         value
             方法调用可能的信息
      */
-    private Map<Integer, MethodCallPossibleInformation> methodCallPossibleInfoMap;
+    private Map<Integer, MethodCallPossibleInfo> methodCallPossibleInfoMap;
 
     // 方法可能的返回信息列表
     private List<BaseElement> returnPossibleInfoList;
@@ -683,7 +683,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         if (methodCallPossibleInfoMap == null) {
             methodCallPossibleInfoMap = new HashMap<>(10);
         }
-        MethodCallPossibleInformation methodCallPossibleInformation = methodCallPossibleInfoMap.computeIfAbsent(ih.getPosition(), k -> new MethodCallPossibleInformation());
+        MethodCallPossibleInfo methodCallPossibleInfo = methodCallPossibleInfoMap.computeIfAbsent(ih.getPosition(), k -> new MethodCallPossibleInfo());
 
         // 获取调用方法
         String callerMethodName = mg.getName();
@@ -694,14 +694,14 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
         BaseElement objectElement = methodCallParseResult.getObjectElement();
         // 处理被调用对象类型
-        methodCallPossibleInformation.setObjTypeEnum(getCalleeObjTypeEnum(objectElement));
+        methodCallPossibleInfo.setObjTypeEnum(getCalleeObjTypeEnum(objectElement));
 
         // 处理被调用对象
         if (!JavaCGConstants.METHOD_NAME_INIT.equals(callerMethodName) ||
                 !JavaCGCommonNameConstants.CLASS_NAME_OBJECT.equals(calleeClassName) ||
                 !JavaCGConstants.METHOD_NAME_INIT.equals(calleeMethodName)) {
             // 若是构造函数中调用java.lang.Object的构造函数，则不处理
-            methodCallPossibleInformation.addPossibleInfo4Object(objectElement, calleeClassName);
+            methodCallPossibleInfo.addPossibleInfo4Object(objectElement, calleeClassName);
         }
 
         // 处理参数，序号从0开始
@@ -709,7 +709,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         List<BaseElement> argumentList = methodCallParseResult.getArgumentList();
         for (int i = 0; i < argumentList.size(); i++) {
             BaseElement baseElement = argumentList.get(i);
-            methodCallPossibleInformation.addPossibleInfo4Args(i, baseElement, argTypes[i].toString());
+            methodCallPossibleInfo.addPossibleInfo4Args(i, baseElement, argTypes[i].toString());
         }
 
 //        if (JavaCGLogUtil.isDebugPrintFlag()) {
@@ -764,7 +764,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
      * @param position 方法调用指令位置
      * @return
      */
-    public MethodCallPossibleInformation getMethodCallPossibleInformation(int position) {
+    public MethodCallPossibleInfo getMethodCallPossibleInfo(int position) {
         if (methodCallPossibleInfoMap == null) {
             return null;
         }

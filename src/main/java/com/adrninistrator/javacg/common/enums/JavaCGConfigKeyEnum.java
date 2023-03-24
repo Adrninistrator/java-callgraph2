@@ -8,7 +8,6 @@ package com.adrninistrator.javacg.common.enums;
 public enum JavaCGConfigKeyEnum {
     CKE_PARSE_METHOD_CALL_TYPE_VALUE("parse.method.call.type.value", "处理方法调用时是否解析可能的类型与值"),
     CKE_FIRST_PARSE_INIT_METHOD_TYPE("first.parse.init.method.type", "处理类的方法前是否需要先解析构造函数以非静态字段可能的类型，仅当上面的参数为true时才可以生效"),
-    SHOW_METHOD_ARGS_GENERICS_TYPE("show.method.args.generics.type", "显示方法参数时，是否需要显示泛型类型（如将java.util.List显示为java.util.List<java.lang.String>）"),
     CKE_CONTINUE_WHEN_ERROR("continue.when.error", "处理方法出现异常时，是否要继续"),
     CKE_DEBUG_PRINT("debug.print", "调试日志打印开关"),
     CKE_OUTPUT_FILE_EXT("output.file.ext", "输出文件后缀名（默认为.txt）"),

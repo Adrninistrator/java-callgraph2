@@ -1,5 +1,7 @@
 package com.adrninistrator.javacg.dto.field;
 
+import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +29,10 @@ public class FieldPossibleTypes {
      * @param possibleType
      */
     public void addPossibleType(String fieldName, String possibleType) {
+        if (JavaCGByteCodeUtil.isNullType(possibleType)) {
+            return;
+        }
+
         List<String> possibleTypeList = possibleTypeMap.computeIfAbsent(fieldName, k -> new ArrayList<>());
         if (possibleTypeList.isEmpty()) {
             possibleTypeList.add(possibleType);

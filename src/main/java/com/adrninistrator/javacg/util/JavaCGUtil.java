@@ -23,11 +23,7 @@ import java.util.Set;
 public class JavaCGUtil {
 
     public static boolean isInnerAnonymousClass(String className) {
-        if (!StringUtils.contains(className, "$")) {
-            return false;
-        }
-
-        String[] array = className.split("\\$");
+        String[] array = StringUtils.splitPreserveAllTokens(className, "$");
         if (array.length != 2) {
             return false;
         }
@@ -58,7 +54,7 @@ public class JavaCGUtil {
      * @return
      */
     public static String formatFullMethod(String className, String methodName, String arguments) {
-        return className + ":" + methodName + arguments;
+        return className + JavaCGConstants.FLAG_COLON + methodName + arguments;
     }
 
     /**
@@ -80,7 +76,7 @@ public class JavaCGUtil {
      * @return
      */
     public static String formatFullMethodWithArgs(String className, String methodNameAndArgs) {
-        return className + ":" + methodNameAndArgs;
+        return className + JavaCGConstants.FLAG_COLON + methodNameAndArgs;
     }
 
     /**
@@ -92,7 +88,7 @@ public class JavaCGUtil {
      * @return
      */
     public static String formatFullMethodWithoutBrackets(String className, String methodName, String methodArgsWithoutBrackets) {
-        return formatFullMethod(className, methodName, "(" + methodArgsWithoutBrackets + ")");
+        return formatFullMethod(className, methodName, JavaCGConstants.FLAG_LEFT_BRACKET + methodArgsWithoutBrackets + JavaCGConstants.FLAG_RIGHT_BRACKET);
     }
 
     /**

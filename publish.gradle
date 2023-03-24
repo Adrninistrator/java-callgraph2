@@ -10,13 +10,6 @@ task sourcesJar(type: Jar) {
     }
 }
 
-task javadocJar(type: Jar) {
-    doFirst {
-        archiveClassifier.set('javadoc')
-        from javadoc.destinationDir
-    }
-}
-
 publishing {
     publications {
         mavenJava1(MavenPublication) {
@@ -25,7 +18,6 @@ publishing {
             version "${version}"
             from components.java
             artifact sourcesJar
-            artifact javadocJar
 
             pom {
                 name = "java-callgraph2"

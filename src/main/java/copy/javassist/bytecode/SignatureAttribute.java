@@ -798,6 +798,26 @@ public class SignatureAttribute {
         return new ClassSignature(tp, superClass, ifs);
     }
 
+    /**
+     * Parses the given signature string as a method type signature.
+     *
+     * @param  sig                  the signature obtained from the <code>SignatureAttribute</code>
+     *                              of a <code>MethodInfo</code>.
+     * @return  @return  a tree-like data structure representing a method signature.  It provides
+     *          convenient accessor methods.
+     * @throws BadBytecode          thrown when a syntactical error is found.
+     * @see #getSignature()
+     * @since 3.5
+     */
+    public static MethodSignature toMethodSignature(String sig) throws BadBytecode {
+        try {
+            return parseMethodSig(sig);
+        }
+        catch (IndexOutOfBoundsException e) {
+            throw error(sig);
+        }
+    }
+
     private static MethodSignature parseMethodSig(String sig)
             throws BadBytecode
     {

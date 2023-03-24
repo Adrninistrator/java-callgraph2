@@ -36,23 +36,23 @@ public class JavaCGElementUtil {
         String existedType = existed.getType();
         String addedType = added.getType();
 
-        if (!JavaCGByteCodeUtil.isNullType(addedType)) {
-            if (JavaCGByteCodeUtil.isNullType(existedType)) {
-                return false;
-            } else if (!JavaCGByteCodeUtil.compareType(addedType, existedType)) {
-                return false;
-            }
+        if (!JavaCGByteCodeUtil.isNullType(addedType) &&
+                (JavaCGByteCodeUtil.isNullType(existedType) || !JavaCGByteCodeUtil.compareType(addedType, existedType))) {
+            /*
+                1. 假如需要添加的类型不是null则继续判断是否与已存在的类型不同（若需要添加的类型为null则不通过类型判断是否不同，继续判断后续条件）
+                2. 假如已存在的类型是null，或者已存在的类型与需要添加的类型不同时，返回不相同
+             */
+            return false;
         }
 
         // 判断值
         Object addedValue = added.getValue();
-        if (addedValue != null) {
-            Object existedValue = existed.getValue();
-            if (existedValue == null) {
-                return false;
-            } else if (!addedValue.equals(existedValue)) {
-                return false;
-            }
+        if (addedValue != null && !addedValue.equals(existed.getValue())) {
+            /*
+                假如需要添加的值非空，且与已存在的值不同时，返回不相同
+                （假如需要添加的值为空，则不通过值判断是否不同，继续判断后续条件）
+             */
+            return false;
         }
 
         if (existed instanceof FieldElement && added instanceof FieldElement) {
@@ -61,7 +61,7 @@ public class JavaCGElementUtil {
             FieldElement addedFieldElement = (FieldElement) added;
             return StringUtils.equals(existedFieldElement.getFieldName(), addedFieldElement.getFieldName());
         }
-
+        // 对于需要添加的对象和已存在的对象都属于数组，且确实不相同的情况，不进行处理，意义不大
         return true;
     }
 

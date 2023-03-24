@@ -67,7 +67,7 @@ public class JavaCGLogUtil {
                 e.printStackTrace();
             }
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> beforeExit()));
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> close()));
         }
     }
 
@@ -98,8 +98,8 @@ public class JavaCGLogUtil {
         System.out.println(data);
     }
 
-    public static void beforeExit() {
-        System.out.println("JavaCGLogUtil.beforeExit");
+    public static void close() {
+        System.out.println("JavaCGLogUtil.close");
 
         if (LOG_WRITER != null) {
             try {

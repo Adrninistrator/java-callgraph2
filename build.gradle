@@ -3,7 +3,7 @@ apply plugin: 'java'
 apply plugin: 'idea'
 
 group 'com.github.adrninistrator'
-version = "1.0.1"
+version = "1.0.4"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
@@ -49,12 +49,10 @@ sourceSets {
 // 6.7.0版本LDC.getValue()会报错，不使用
 List bcel = ['org.apache.bcel:bcel:6.6.0']
 
-List jdom = ['org.jdom:jdom2:2.0.6.1']
-
 List junit = ['junit:junit:4.13.2']
 
 dependencies {
-    compile bcel, jdom
+    compile bcel
     testImplementation junit
 }
 

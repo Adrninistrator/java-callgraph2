@@ -2,6 +2,8 @@ package com.adrninistrator.javacg.dto.field;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Objects;
+
 /**
  * @author adrninistrator
  * @date 2022/11/3
@@ -20,18 +22,12 @@ public class FieldTypeAndName {
         this.fieldName = fieldName;
     }
 
-    /**
-     * 比较与另一个准备添加的对象值是否相同
-     *
-     * @param other
-     * @return false: 不相同 true: 相同
-     */
-    public boolean compare(FieldTypeAndName other) {
-        if (other == null) {
-            return false;
-        }
-
-        return StringUtils.equals(fieldType, other.fieldType) && StringUtils.equals(fieldName, other.fieldName);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FieldTypeAndName that = (FieldTypeAndName) o;
+        return Objects.equals(fieldType, that.fieldType) && Objects.equals(fieldName, that.fieldName);
     }
 
     //

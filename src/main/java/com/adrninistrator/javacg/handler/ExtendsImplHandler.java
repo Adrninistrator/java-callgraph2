@@ -359,8 +359,20 @@ public class ExtendsImplHandler {
             return;
         }
 
-        MethodCall methodCall = new MethodCall(callIdCounter.addAndGet(), callerClassName, callerMethodName,
-                callerMethodArgs, methodCallType, calleeClassName, calleeMethodName, calleeMethodArgs, JavaCGConstants.DEFAULT_LINE_NUMBER, null);
+        MethodCall methodCall = new MethodCall(
+                callIdCounter.addAndGet(),
+                callerClassName,
+                callerMethodName,
+                callerMethodArgs,
+                methodCallType,
+                calleeClassName,
+                calleeMethodName,
+                calleeMethodArgs,
+                JavaCGConstants.DEFAULT_LINE_NUMBER,
+                null,
+                null,
+                null
+        );
         JavaCGFileUtil.write2FileWithTab(methodCallWriter, methodCall.genCallContent(), JavaCGConstants.DEFAULT_JAR_NUM);
     }
 

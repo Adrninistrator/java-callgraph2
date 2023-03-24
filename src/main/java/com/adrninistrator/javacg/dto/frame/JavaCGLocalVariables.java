@@ -7,6 +7,7 @@ import com.adrninistrator.javacg.dto.element.variable.StaticFieldElement;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGElementUtil;
 import com.adrninistrator.javacg.util.JavaCGLogUtil;
+import org.apache.bcel.generic.ArrayType;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
 
@@ -35,14 +36,14 @@ public class JavaCGLocalVariables {
         int index = 0;
         if (!mg.isStatic()) {
             // 非静态方法，将this加入本地变量
-            LocalVariableElement thisLocalVariableElement = new LocalVariableElement(mg.getClassName(), null, index);
+            LocalVariableElement thisLocalVariableElement = new LocalVariableElement(mg.getClassName(), false, null, index);
             localVariableElementList.add(thisLocalVariableElement);
             index++;
         }
 
         // 将参数加入本地变量
         for (Type arg : mg.getArgumentTypes()) {
-            LocalVariableElement localVariableElement = new LocalVariableElement(arg.toString(), null, index);
+            LocalVariableElement localVariableElement = new LocalVariableElement(arg.toString(), (arg instanceof ArrayType), null, index);
             localVariableElementList.add(localVariableElement);
             index++;
 
@@ -111,13 +112,20 @@ public class JavaCGLocalVariables {
         LocalVariableElement localVariableElement;
         if (baseElement instanceof StaticFieldElement) {
             StaticFieldElement staticFieldElement = (StaticFieldElement) baseElement;
-            localVariableElement = new StaticFieldElement(type, baseElement.getValue(), staticFieldElement.getFieldName(), staticFieldElement.getClassName(), index);
+            localVariableElement = new StaticFieldElement(type, staticFieldElement.isArrayElement(), staticFieldElement.getValue(), staticFieldElement.getFieldName(),
+                    staticFieldElement.getClassName(), index);
         } else if (baseElement instanceof FieldElement) {
             FieldElement fieldElement = (FieldElement) baseElement;
-            localVariableElement = new FieldElement(type, baseElement.getValue(), fieldElement.getFieldName(), index);
+            localVariableElement = new FieldElement(type, fieldElement.isArrayElement(), fieldElement.getValue(), fieldElement.getFieldName(), index);
         } else {
-            localVariableElement = new LocalVariableElement(type, baseElement.getValue(), index);
+            localVariableElement = new LocalVariableElement(type, baseElement.isArrayElement(), baseElement.getValue(), index);
         }
+
+        // 数组类型的处理
+        if (baseElement.isArrayElement()) {
+            localVariableElement.setArrayValueMap(baseElement.getArrayValueMap());
+        }
+
         if (JavaCGLogUtil.isDebugPrintFlag()) {
             JavaCGLogUtil.debugPrint("### 添加本地变量 (" + index + ") " + localVariableElement);
         }

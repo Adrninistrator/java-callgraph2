@@ -33,11 +33,11 @@ public class JavaCGConfManager {
             Properties properties = new Properties();
             properties.load(br);
 
-            confInfo.setParseMethodCallTypeValue(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE)));
-            confInfo.setFirstParseInitMethodType(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE)));
-            confInfo.setContinueWhenError(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR)));
+            confInfo.setParseMethodCallTypeValue(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, true)));
+            confInfo.setFirstParseInitMethodType(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE, true)));
+            confInfo.setContinueWhenError(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR, true)));
 
-            String debugPrintStr = javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_DEBUG_PRINT);
+            String debugPrintStr = javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_DEBUG_PRINT, true);
             if (JavaCGConstants.PROPERTY_VALUE_DEBUG_PRINT_IN_FILE.equals(debugPrintStr)) {
                 confInfo.setDebugPrint(true);
                 confInfo.setDebugPrintInFile(true);
@@ -46,7 +46,7 @@ public class JavaCGConfManager {
                 confInfo.setDebugPrintInFile(false);
             }
 
-            String outputFileExt = javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_OUTPUT_FILE_EXT);
+            String outputFileExt = javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_OUTPUT_FILE_EXT, true);
             if (StringUtils.isBlank(outputFileExt)) {
                 // 默认使用.txt作为输出文件后缀名
                 confInfo.setOutputFileExt(JavaCGConstants.EXT_TXT);
@@ -59,11 +59,11 @@ public class JavaCGConfManager {
         }
 
         // 获取jar_dir.properties中的配置参数
-        List<String> jarDirList = javaCGConfigureWrapper.getOtherConfigList(JavaCGOtherConfigFileUseListEnum.OCFULE_JAR_DIR);
+        List<String> jarDirList = javaCGConfigureWrapper.getOtherConfigList(JavaCGOtherConfigFileUseListEnum.OCFULE_JAR_DIR, true);
         confInfo.setJarDirList(jarDirList);
 
         // 获取packages.properties中的配置参数
-        Set<String> needHandlePackageSet = javaCGConfigureWrapper.getOtherConfigSet(JavaCGOtherConfigFileUseSetEnum.OCFUSE_PACKAGES);
+        Set<String> needHandlePackageSet = javaCGConfigureWrapper.getOtherConfigSet(JavaCGOtherConfigFileUseSetEnum.OCFUSE_PACKAGES, true);
         confInfo.setNeedHandlePackageSet(needHandlePackageSet);
 
         return confInfo;

@@ -117,12 +117,14 @@ public class JavaCGConfigureWrapper {
      * @param javaCGConfigKeyEnum
      * @return
      */
-    public String getConfig(Properties properties, JavaCGConfigKeyEnum javaCGConfigKeyEnum) {
+    public String getConfig(Properties properties, JavaCGConfigKeyEnum javaCGConfigKeyEnum, boolean printLog) {
         String key = javaCGConfigKeyEnum.getKey();
         // 优先获取通过代码添加的参数
         String value = configMap.get(key);
         if (value != null) {
-            System.out.println("使用通过代码添加的参数 [" + key + "] " + value);
+            if (printLog) {
+                System.out.println("使用通过代码添加的参数 [" + key + "] " + value);
+            }
             return value;
         }
 
@@ -132,7 +134,9 @@ public class JavaCGConfigureWrapper {
 
         // 获取配置文件中的参数
         value = properties.getProperty(key);
-        System.out.println("使用配置文件中的参数 [" + key + "] " + value);
+        if (printLog) {
+            System.out.println("使用配置文件中的参数 [" + key + "] " + value);
+        }
         return value;
     }
 
@@ -142,18 +146,22 @@ public class JavaCGConfigureWrapper {
      * @param javaCGOtherConfigFileUseSetEnum
      * @return
      */
-    public Set<String> getOtherConfigSet(JavaCGOtherConfigFileUseSetEnum javaCGOtherConfigFileUseSetEnum) {
+    public Set<String> getOtherConfigSet(JavaCGOtherConfigFileUseSetEnum javaCGOtherConfigFileUseSetEnum, boolean printLog) {
         String configFileName = javaCGOtherConfigFileUseSetEnum.getFileName();
         // 优先获取通过代码添加的参数
         Set<String> configSet = otherConfigSetMap.get(configFileName);
         if (configSet != null) {
-            System.out.println("使用通过代码添加的参数 [" + configFileName + "]\n" + StringUtils.join(new ArrayList<>(configSet), " "));
+            if (printLog) {
+                System.out.println("使用通过代码添加的参数 [" + configFileName + "]\n" + StringUtils.join(new ArrayList<>(configSet), " "));
+            }
             return configSet;
         }
 
         // 获取其他配置文件中的参数
         configSet = JavaCGFileUtil.readFile2Set(JavaCGConfManager.getInputRootPath() + configFileName);
-        System.out.println("使用配置文件中的参数 [" + configFileName + "]\n" + StringUtils.join(new ArrayList<>(configSet), " "));
+        if (printLog) {
+            System.out.println("使用配置文件中的参数 [" + configFileName + "]\n" + StringUtils.join(new ArrayList<>(configSet), " "));
+        }
         return configSet;
     }
 
@@ -163,18 +171,22 @@ public class JavaCGConfigureWrapper {
      * @param javaCGOtherConfigFileUseListEnum
      * @return
      */
-    public List<String> getOtherConfigList(JavaCGOtherConfigFileUseListEnum javaCGOtherConfigFileUseListEnum) {
+    public List<String> getOtherConfigList(JavaCGOtherConfigFileUseListEnum javaCGOtherConfigFileUseListEnum, boolean printLog) {
         String configFileName = javaCGOtherConfigFileUseListEnum.getFileName();
         // 优先获取通过代码添加的参数
         List<String> configList = otherConfigListMap.get(configFileName);
         if (configList != null) {
-            System.out.println("使用通过代码添加的参数 [" + configFileName + "]\n" + StringUtils.join(configList, " "));
+            if (printLog) {
+                System.out.println("使用通过代码添加的参数 [" + configFileName + "]\n" + StringUtils.join(configList, " "));
+            }
             return configList;
         }
 
         // 获取其他配置文件中的参数
         configList = JavaCGFileUtil.readFile2List(JavaCGConfManager.getInputRootPath() + configFileName);
-        System.out.println("使用配置文件中的参数 [" + configFileName + "]\n" + StringUtils.join(configList, " "));
+        if (printLog) {
+            System.out.println("使用配置文件中的参数 [" + configFileName + "]\n" + StringUtils.join(configList, " "));
+        }
         return configList;
     }
 }

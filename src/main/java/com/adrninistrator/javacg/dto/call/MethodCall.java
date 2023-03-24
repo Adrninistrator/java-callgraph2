@@ -17,31 +17,37 @@ public class MethodCall {
     private int callId;
 
     // 调用者类名
-    private String callerClassName;
+    private final String callerClassName;
 
     // 调用者方法名
-    private String callerMethodName;
+    private final String callerMethodName;
 
     // 调用者方法参数
-    private String callerMethodArgs;
+    private final String callerMethodArgs;
 
     // 方法调用类型
-    private JavaCGCallTypeEnum methodCallType;
+    private final JavaCGCallTypeEnum methodCallType;
 
     // 被调用者类名
-    private String calleeClassName;
+    private final String calleeClassName;
 
     // 被调用者方法名
-    private String calleeMethodName;
+    private final String calleeMethodName;
 
     // 被调用者方法参数
-    private String calleeMethodArgs;
+    private final String calleeMethodArgs;
 
     // 调用者源代码行号
-    private int callerSourceLine;
+    private final int callerSourceLine;
 
     // 被调用类型
-    private JavaCGCalleeObjTypeEnum objTypeEnum;
+    private final JavaCGCalleeObjTypeEnum objTypeEnum;
+
+    // 原始返回类型
+    private final String rawReturnType;
+
+    // 实际返回类型
+    private final String actualReturnType;
 
     public MethodCall(int callId,
                       String callerClassName,
@@ -52,7 +58,10 @@ public class MethodCall {
                       String calleeMethodName,
                       String calleeMethodArgs,
                       int callerSourceLine,
-                      JavaCGCalleeObjTypeEnum objTypeEnum) {
+                      JavaCGCalleeObjTypeEnum objTypeEnum,
+                      String rawReturnType,
+                      String actualReturnType
+    ) {
         this(callerClassName,
                 callerMethodName,
                 callerMethodArgs,
@@ -61,7 +70,10 @@ public class MethodCall {
                 calleeMethodName,
                 calleeMethodArgs,
                 callerSourceLine,
-                objTypeEnum);
+                objTypeEnum,
+                rawReturnType,
+                actualReturnType
+        );
         this.callId = callId;
     }
 
@@ -73,7 +85,10 @@ public class MethodCall {
                       String calleeMethodName,
                       String calleeMethodArgs,
                       int callerSourceLine,
-                      JavaCGCalleeObjTypeEnum objTypeEnum) {
+                      JavaCGCalleeObjTypeEnum objTypeEnum,
+                      String rawReturnType,
+                      String actualReturnType
+    ) {
         this.callerClassName = callerClassName;
         this.callerMethodName = callerMethodName;
         this.callerMethodArgs = callerMethodArgs;
@@ -83,6 +98,8 @@ public class MethodCall {
         this.calleeMethodArgs = calleeMethodArgs;
         this.callerSourceLine = callerSourceLine;
         this.objTypeEnum = objTypeEnum;
+        this.rawReturnType = rawReturnType;
+        this.actualReturnType = actualReturnType;
     }
 
     // 返回调用者完整方法
@@ -110,7 +127,9 @@ public class MethodCall {
                 genCallerFullMethod(),
                 JavaCGConstants.FILE_KEY_CALL_TYPE_FLAG1 + methodCallType.getType() + JavaCGConstants.FILE_KEY_CALL_TYPE_FLAG2 + genCalleeFullMethod(),
                 callerSourceLine,
-                genObjTypeEnum()
+                genObjTypeEnum(),
+                rawReturnType,
+                actualReturnType
         );
     }
 

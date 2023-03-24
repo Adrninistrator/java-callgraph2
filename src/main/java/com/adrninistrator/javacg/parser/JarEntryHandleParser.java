@@ -52,6 +52,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer methodInfoWriter;
     private Writer extendsImplWriter;
     private Writer classSignatureEI1Writer;
+    private Writer methodArgGenericsTypeWriter;
 
     private Map<String, JarInfo> jarInfoMap;
 
@@ -204,6 +205,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         classHandler.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
         classHandler.setMethodCallInfoWriter(methodCallInfoWriter);
         classHandler.setMethodInfoWriter(methodInfoWriter);
+        classHandler.setMethodArgGenericsTypeWriter(methodArgGenericsTypeWriter);
         classHandler.setExtensionsManager(extensionsManager);
         classHandler.setMethodNumCounter(methodNumCounter);
         classHandler.setLastJarNum(lastJarInfo.getJarNum());
@@ -382,6 +384,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setClassSignatureEI1Writer(Writer classSignatureEI1Writer) {
         this.classSignatureEI1Writer = classSignatureEI1Writer;
+    }
+
+    public void setMethodArgGenericsTypeWriter(Writer methodArgGenericsTypeWriter) {
+        this.methodArgGenericsTypeWriter = methodArgGenericsTypeWriter;
     }
 
     public void setJarInfoMap(Map<String, JarInfo> jarInfoMap) {

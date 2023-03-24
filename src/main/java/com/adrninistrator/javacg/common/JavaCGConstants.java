@@ -29,6 +29,8 @@ public class JavaCGConstants {
     public static final String FILE_KEY_METHOD_CALL_POSSIBLE_INFO_STATIC_FIELD_METHOD_CALL = "sfm";
     public static final String FILE_KEY_EXTENDS = "e";
     public static final String FILE_KEY_IMPLEMENTS = "i";
+    public static final String FILE_KEY_METHOD_ARGS_TYPE = "t";
+    public static final String FILE_KEY_METHOD_ARGS_GENERICS_TYPE = "gt";
 
     public static final String FLAG_LAMBDA = "lambda$";
     public static final String FLAG_HASHTAG = "#";
@@ -85,6 +87,8 @@ public class JavaCGConstants {
     public static final String FILE_SPRING_BEAN = "spring_bean";
     // 继承父类与实现接口时的签名中的类名信息
     public static final String FILE_CLASS_SIGNATURE_EI1 = "class_signature_ei1";
+    // 方法参数泛型类型
+    public static final String FILE_METHOD_ARG_GENERICS_TYPE = "method_arg_generics_type";
 
     public static final String EXT_JAR = ".jar";
     public static final String EXT_WAR = ".war";

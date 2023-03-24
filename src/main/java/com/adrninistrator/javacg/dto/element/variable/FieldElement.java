@@ -12,14 +12,14 @@ public class FieldElement extends LocalVariableElement {
     // 字段名称
     protected final String fieldName;
 
-    public FieldElement(String type, Object value, String fieldName) {
-        super(type, value, JavaCGConstants.LOCAL_VARIABLE_INDEX_NOT_USED);
+    public FieldElement(String type, boolean arrayElement, Object value, String fieldName) {
+        super(type, arrayElement, value, JavaCGConstants.LOCAL_VARIABLE_INDEX_NOT_USED);
 
         this.fieldName = fieldName;
     }
 
-    public FieldElement(String type, Object value, String fieldName, int index) {
-        super(type, value, index);
+    public FieldElement(String type, boolean arrayElement, Object value, String fieldName, int index) {
+        super(type, arrayElement, value, index);
 
         this.fieldName = fieldName;
     }

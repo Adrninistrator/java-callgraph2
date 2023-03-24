@@ -18,8 +18,8 @@ public class StaticFieldMethodCallElement extends VariableElement {
     // 调用的方法名称
     private final String methodName;
 
-    public StaticFieldMethodCallElement(String type, String className, String fieldName, String methodName) {
-        super(type);
+    public StaticFieldMethodCallElement(String type, boolean arrayElement, String className, String fieldName, String methodName) {
+        super(type, arrayElement);
         this.className = className;
         this.fieldName = fieldName;
         this.methodName = methodName;

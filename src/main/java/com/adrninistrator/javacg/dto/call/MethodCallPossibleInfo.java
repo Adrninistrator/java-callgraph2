@@ -9,15 +9,15 @@ import java.util.Map;
 /**
  * @author adrninistrator
  * @date 2022/11/3
- * @description: 方法调用可能的信息
+ * @description: 方法调用可能的信息，包括对应的被调用对象及参数
  */
-public class MethodCallPossibleInformation {
+public class MethodCallPossibleInfo {
 
     // 被调用类型
     private JavaCGCalleeObjTypeEnum objTypeEnum;
 
     // 被调用对象可能的信息
-    private MethodCallPossibleInfoEntry methodCallPossibleInfoEntry4Object;
+    private MethodCallPossibleList methodCallPossibleList4Object;
 
     /*
         参数可能的信息
@@ -26,7 +26,7 @@ public class MethodCallPossibleInformation {
         value
             方法调用中被调用对象、参数的可能的信息
      */
-    private Map<Integer, MethodCallPossibleInfoEntry> methodCallPossibleInfoEntryMap4Args;
+    private Map<Integer, MethodCallPossibleList> methodCallPossibleListMap4Args;
 
     public JavaCGCalleeObjTypeEnum getObjTypeEnum() {
         return objTypeEnum;
@@ -43,10 +43,10 @@ public class MethodCallPossibleInformation {
      * @param calleeClassName 方法调用指令中被调用对象类名
      */
     public void addPossibleInfo4Object(BaseElement baseElement, String calleeClassName) {
-        if (methodCallPossibleInfoEntry4Object == null) {
-            methodCallPossibleInfoEntry4Object = new MethodCallPossibleInfoEntry();
+        if (methodCallPossibleList4Object == null) {
+            methodCallPossibleList4Object = new MethodCallPossibleList();
         }
-        methodCallPossibleInfoEntry4Object.addPossibleInfo(baseElement, calleeClassName);
+        methodCallPossibleList4Object.addPossibleInfo(baseElement, calleeClassName);
     }
 
     /**
@@ -57,12 +57,12 @@ public class MethodCallPossibleInformation {
      * @param argClassName 方法调用指令中参数类名
      */
     public void addPossibleInfo4Args(int seq, BaseElement baseElement, String argClassName) {
-        if (methodCallPossibleInfoEntryMap4Args == null) {
-            methodCallPossibleInfoEntryMap4Args = new HashMap<>();
+        if (methodCallPossibleListMap4Args == null) {
+            methodCallPossibleListMap4Args = new HashMap<>();
         }
 
-        MethodCallPossibleInfoEntry methodCallPossibleInfoEntry = methodCallPossibleInfoEntryMap4Args.computeIfAbsent(seq, k -> new MethodCallPossibleInfoEntry());
-        methodCallPossibleInfoEntry.addPossibleInfo(baseElement, argClassName);
+        MethodCallPossibleList methodCallPossibleList = methodCallPossibleListMap4Args.computeIfAbsent(seq, k -> new MethodCallPossibleList());
+        methodCallPossibleList.addPossibleInfo(baseElement, argClassName);
     }
 
     /**
@@ -70,8 +70,8 @@ public class MethodCallPossibleInformation {
      *
      * @return
      */
-    public MethodCallPossibleInfoEntry getPossibleInfo4Object() {
-        return methodCallPossibleInfoEntry4Object;
+    public MethodCallPossibleList getPossibleInfo4Object() {
+        return methodCallPossibleList4Object;
     }
 
     /**
@@ -80,11 +80,11 @@ public class MethodCallPossibleInformation {
      * @param seq 序号
      * @return
      */
-    public MethodCallPossibleInfoEntry getPossibleInfo4Args(int seq) {
-        if (methodCallPossibleInfoEntryMap4Args == null) {
+    public MethodCallPossibleList getPossibleInfo4Args(int seq) {
+        if (methodCallPossibleListMap4Args == null) {
             return null;
         }
-        return methodCallPossibleInfoEntryMap4Args.get(seq);
+        return methodCallPossibleListMap4Args.get(seq);
     }
 
     /**
@@ -93,9 +93,9 @@ public class MethodCallPossibleInformation {
      * @return
      */
     public int getPossibleInfoNum4Args() {
-        if (methodCallPossibleInfoEntryMap4Args == null) {
+        if (methodCallPossibleListMap4Args == null) {
             return 0;
         }
-        return methodCallPossibleInfoEntryMap4Args.size();
+        return methodCallPossibleListMap4Args.size();
     }
 }

@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -88,8 +89,9 @@ public class JavaCGJarUtil {
             }
 
             if (oneFile.isFile()) {
-                if (!StringUtils.endsWithIgnoreCase(oneFilePath, JavaCGConstants.EXT_JAR)) {
-                    System.err.println("指定文件时只支持指定" + JavaCGConstants.EXT_JAR + "格式，假如需要处理" + JavaCGConstants.EXT_CLASS + "格式的文件，则需要指定其所在目录");
+                String oneFileNameLower = oneFile.getName().toLowerCase(Locale.ROOT);
+                if (!StringUtils.endsWithAny(oneFileNameLower, JavaCGConstants.EXT_JAR, JavaCGConstants.EXT_WAR)) {
+                    System.err.println("处理单个文件时只支持指定" + JavaCGConstants.EXT_JAR + "或" + JavaCGConstants.EXT_WAR + "格式，假如需要处理" + JavaCGConstants.EXT_CLASS + "格式的文件，则需要指定其所在目录");
                     return null;
                 }
 

@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg.dto.element.variable;
 
 import com.adrninistrator.javacg.dto.element.BaseElement;
+import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 
 /**
  * @author adrninistrator
@@ -10,6 +11,10 @@ import com.adrninistrator.javacg.dto.element.BaseElement;
 public class VariableElement extends BaseElement {
 
     public VariableElement(String type) {
-        super(type);
+        super(type, false);
+    }
+
+    public VariableElement(String type, boolean arrayElement) {
+        super(type, arrayElement);
     }
 }

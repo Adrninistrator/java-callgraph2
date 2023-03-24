@@ -32,6 +32,7 @@ import org.apache.bcel.classfile.LocalVariable;
 import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.classfile.Utility;
 import org.apache.bcel.generic.ANEWARRAY;
+import org.apache.bcel.generic.ArrayType;
 import org.apache.bcel.generic.BIPUSH;
 import org.apache.bcel.generic.CHECKCAST;
 import org.apache.bcel.generic.ConstantPoolGen;
@@ -603,7 +604,7 @@ public class InstructionHandler {
         }
 
         // 入栈，数组元素
-        stack.push(new VariableElement(usedElementType));
+        stack.push(new VariableElement(usedElementType, true));
 
         indexVariable.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
         if (!isAaload) {
@@ -656,6 +657,19 @@ public class InstructionHandler {
         if (!isAastore) {
             valueVariable.checkTypeString(arrayType);
             arrayVariable.checkTypeString(JavaCGByteCodeUtil.addArrayFlag(arrayType));
+        }
+
+        if (!arrayVariable.isArrayElement()) {
+            System.err.println("不是数组类型 " + arrayVariable.getClass().getName());
+            return;
+        }
+
+        Object indexObj = indexVariable.getValue();
+        if (indexObj instanceof Integer) {
+            // 数组赋值的元素下标是常量
+            Integer index = (Integer) indexObj;
+            // 记录数组指定下标的元素
+            arrayVariable.setElement(index, valueVariable);
         }
     }
 
@@ -871,7 +885,9 @@ public class InstructionHandler {
 
         FieldElement fieldElement = staticFieldInfo.getStatic(classType.getClassName(), fieldName);
         if (fieldElement == null) {
-            fieldElement = new StaticFieldElement(getstatic.getFieldType(cpg).toString(), null, fieldName, classType.getClassName());
+            // 假如是静态字段定义的类型与实际初始化类型不一致，则以上获取的fieldElement会是null，因为代码中没有对静态初始化方法进行处理（意义不大）
+            String type = getstatic.getFieldType(cpg).toString();
+            fieldElement = new StaticFieldElement(type, false, null, fieldName, classType.getClassName());
         }
 
         stack.push(fieldElement);
@@ -882,7 +898,11 @@ public class InstructionHandler {
         ObjectType classType = putstatic.getLoadClassType(cpg);
         BaseElement value = stack.pop();
 
-        StaticFieldElement staticFieldElement = new StaticFieldElement(value.getType(), value.getValue(), fieldName, classType.getClassName());
+        StaticFieldElement staticFieldElement = new StaticFieldElement(value.getType(), value.isArrayElement(), value.getValue(), fieldName, classType.getClassName());
+        // 数组类型的处理
+        if (value.isArrayElement()) {
+            staticFieldElement.setArrayValueMap(value.getArrayValueMap());
+        }
         staticFieldInfo.putStatic(classType.getClassName(), fieldName, staticFieldElement);
     }
 
@@ -893,7 +913,7 @@ public class InstructionHandler {
         FieldElement fieldElement = null;
         if (object instanceof LocalVariableElement) {
             LocalVariableElement localVariableElement = (LocalVariableElement) object;
-            if (localVariableElement.getIndex() == 0) {
+            if (localVariableElement.isThis()) {
                 // 仅处理对this的变量获取
                 fieldElement = nonStaticFieldInfo.get(fieldName);
                 if (fieldElement != null) {
@@ -905,21 +925,22 @@ public class InstructionHandler {
 
         if (useFieldPossibleTypeFlag) {
             // 使用已获取的构造函数非静态字段可能的类型
-//			org.apache.poi.openxml4j.opc.ZipPackage 类的构建函数解析后 zipArchive 非静态字段可能的类型数量大于1 null org.apache.poi.openxml4j.util.ZipInputStreamZipEntrySource
             List<String> possibleTypeList = nonStaticFieldPossibleTypes.getPossibleTypeList(fieldName);
             if (!JavaCGUtil.isCollectionEmpty(possibleTypeList)) {
                 if (possibleTypeList.size() == 1) {
                     // 字段可能的类型数量为1，则使用
-                    fieldElement = new FieldElement(possibleTypeList.get(0), null, fieldName);
+                    String type = possibleTypeList.get(0);
+                    fieldElement = new FieldElement(type, false, null, fieldName);
                 } else {
                     // 字段可能的类型数量大于1，无法使用
-                    System.err.println(mg.getClassName() + " 类的构选函数解析后 " + fieldName + " 非静态字段可能的类型数量大于1 " + StringUtils.join(possibleTypeList, " "));
+                    System.err.println(mg.getClassName() + " 类的构造函数解析后 " + fieldName + " 非静态字段可能的类型数量大于1 " + StringUtils.join(possibleTypeList, " "));
                 }
             }
         }
 
         if (fieldElement == null) {
-            fieldElement = new FieldElement(getfield.getFieldType(cpg).toString(), null, fieldName);
+            String type = getfield.getFieldType(cpg).toString();
+            fieldElement = new FieldElement(type, false, null, fieldName);
         }
         stack.push(fieldElement);
     }
@@ -931,9 +952,13 @@ public class InstructionHandler {
 
         if (object instanceof LocalVariableElement) {
             LocalVariableElement localVariableElement = (LocalVariableElement) object;
-            if (localVariableElement.getIndex() == 0) {
+            if (localVariableElement.isThis()) {
                 // 仅处理对this的变量赋值
-                FieldElement fieldElement = new FieldElement(value.getType(), value.getValue(), fieldName);
+                FieldElement fieldElement = new FieldElement(value.getType(), value.isArrayElement(), value.getValue(), fieldName);
+                // 数组类型的处理
+                if (value.isArrayElement()) {
+                    fieldElement.setArrayValueMap(value.getArrayValueMap());
+                }
                 nonStaticFieldInfo.put(fieldName, fieldElement);
                 if (recordFieldPossibleTypeFlag) {
                     String rawFieldType = putfield.getFieldType(cpg).toString();
@@ -964,12 +989,14 @@ public class InstructionHandler {
 
         // 处理返回值
         Type returnType = invokeInstruction.getReturnType(cpg);
-        if (returnType != Type.VOID) {
+        if (Type.VOID != returnType) {
+            // 被调用方法返回类型非void
             VariableElement variableElement;
             if (objectElement instanceof StaticFieldElement) {
+                // 被调用对象属于静态字段
                 StaticFieldElement staticFieldElement = (StaticFieldElement) objectElement;
-                variableElement = new StaticFieldMethodCallElement(returnType.toString(), staticFieldElement.getClassName(), staticFieldElement.getFieldName(),
-                        invokeInstruction.getMethodName(cpg));
+                variableElement = new StaticFieldMethodCallElement(returnType.toString(), (returnType instanceof ArrayType), staticFieldElement.getClassName(),
+                        staticFieldElement.getFieldName(), invokeInstruction.getMethodName(cpg));
             } else {
                 variableElement = new VariableElement(returnType.toString());
             }
@@ -981,14 +1008,16 @@ public class InstructionHandler {
 
     private void handleNEWARRAY(NEWARRAY newarray) {
         BaseElement countVariable = stack.pop();
-        stack.push(new VariableElement(newarray.getType().toString()));
+        VariableElement arrayElement = new VariableElement(newarray.getType().toString(), true);
+        stack.push(arrayElement);
 
         countVariable.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
     }
 
     private void handleANEWARRAY(ANEWARRAY anewarray) {
         BaseElement countVariable = stack.pop();
-        stack.push(new VariableElement(JavaCGByteCodeUtil.addArrayFlag(getTypeString(anewarray))));
+        VariableElement arrayElement = new VariableElement(JavaCGByteCodeUtil.addArrayFlag(getTypeString(anewarray)), true);
+        stack.push(arrayElement);
 
         countVariable.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
     }
@@ -1002,7 +1031,8 @@ public class InstructionHandler {
         for (int i = 0; i < multianewarray.getDimensions(); i++) {
             stack.pop();
         }
-        stack.push(new VariableElement(getTypeString(multianewarray)));
+        VariableElement arrayElement = new VariableElement(getTypeString(multianewarray), true);
+        stack.push(arrayElement);
     }
 
     //

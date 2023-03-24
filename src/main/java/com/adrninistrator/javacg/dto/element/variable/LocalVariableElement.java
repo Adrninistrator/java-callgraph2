@@ -10,19 +10,15 @@ public class LocalVariableElement extends VariableElement {
     // 本地变量索引
     private final int index;
 
-    public LocalVariableElement(String type, Object value, int index) {
-        super(type);
+    public LocalVariableElement(String type, boolean arrayElement, Object value, int index) {
+        super(type, arrayElement);
         this.value = value;
         this.index = index;
     }
 
-    public int getIndex() {
-        return index;
-    }
-
     // 复制一个值为null，其他字段相同的本地变量
     public LocalVariableElement copyWithNullValue() {
-        return new LocalVariableElement(getType(), null, index);
+        return new LocalVariableElement(getType(), arrayElement, null, index);
     }
 
     // 判断是否为this

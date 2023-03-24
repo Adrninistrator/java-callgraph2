@@ -2,7 +2,7 @@ package com.adrninistrator.javacg.spring;
 
 import com.adrninistrator.javacg.common.SpringAnnotationConstants;
 import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
-import com.adrninistrator.javacg.extensions.code_parser.spring.SpringXmlBeanParser;
+import com.adrninistrator.javacg.extensions.code_parser.SpringXmlBeanParserInterface;
 import com.adrninistrator.javacg.util.JavaCGAnnotationUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.classfile.AnnotationEntry;
@@ -25,7 +25,7 @@ public class UseSpringBeanByAnnotationHandler {
 
     private final DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler;
 
-    private final SpringXmlBeanParser springXmlBeanParser;
+    private final SpringXmlBeanParserInterface springXmlBeanParser;
 
     /*
         保存各个类中使用的Spring Bean字段信息
@@ -50,10 +50,15 @@ public class UseSpringBeanByAnnotationHandler {
 
     public UseSpringBeanByAnnotationHandler(Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap,
                                             DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler,
-                                            SpringXmlBeanParser springXmlBeanParser) {
+                                            SpringXmlBeanParserInterface springXmlBeanParser) {
         this.classExtendsMethodInfoMap = classExtendsMethodInfoMap;
         this.defineSpringBeanByAnnotationHandler = defineSpringBeanByAnnotationHandler;
         this.springXmlBeanParser = springXmlBeanParser;
+        if (springXmlBeanParser != null) {
+            System.out.println("指定" + SpringXmlBeanParserInterface.class.getSimpleName() + "实例 " + springXmlBeanParser.getClass().getName());
+        } else {
+            System.out.println("未指定" + SpringXmlBeanParserInterface.class.getSimpleName() + "实例");
+        }
     }
 
     /**
@@ -154,10 +159,12 @@ public class UseSpringBeanByAnnotationHandler {
             return springBeanTypeList;
         }
 
-        // 从Spring XML中获取bean类型
-        String springBeanType = springXmlBeanParser.getBeanClass(springBeanName);
-        if (springBeanType != null) {
-            return Collections.singletonList(springBeanType);
+        if (springXmlBeanParser != null) {
+            // 从Spring XML中获取bean类型
+            String springBeanType = springXmlBeanParser.getBeanClass(springBeanName);
+            if (springBeanType != null) {
+                return Collections.singletonList(springBeanType);
+            }
         }
 
         return Collections.emptyList();

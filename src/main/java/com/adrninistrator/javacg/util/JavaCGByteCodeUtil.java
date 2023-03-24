@@ -181,7 +181,7 @@ public class JavaCGByteCodeUtil {
             return null;
         }
 
-        if (!arrayType.endsWith(JavaCGConstants.FLAG_ARRAY) && !JavaCGByteCodeUtil.isNullType(arrayType)) {
+        if (!isArrayType(arrayType) && !JavaCGByteCodeUtil.isNullType(arrayType)) {
             System.err.println("类名不是数组形式 " + arrayType);
             return arrayType;
         }
