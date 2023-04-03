@@ -3,7 +3,7 @@ apply plugin: 'java'
 apply plugin: 'idea'
 
 group 'com.github.adrninistrator'
-version = "1.0.4"
+version = "1.0.5"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8

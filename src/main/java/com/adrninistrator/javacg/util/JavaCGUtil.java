@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg.util;
 
+import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,15 +23,23 @@ import java.util.Set;
 
 public class JavaCGUtil {
 
+    /**
+     * 判断类名是否为匿名内部类
+     *
+     * @param className
+     * @return
+     */
     public static boolean isInnerAnonymousClass(String className) {
-        String[] array = StringUtils.splitPreserveAllTokens(className, "$");
-        if (array.length != 2) {
-            return false;
-        }
-
-        return isNumStr(array[1]);
+        String tail = StringUtils.substringAfterLast(className, "$");
+        return isNumStr(tail);
     }
 
+    /**
+     * 判断字符串是否为数字
+     *
+     * @param str
+     * @return
+     */
     public static boolean isNumStr(String str) {
         if (StringUtils.isBlank(str)) {
             return false;
@@ -43,52 +52,6 @@ public class JavaCGUtil {
             }
         }
         return true;
-    }
-
-    /**
-     * 生成格式化后的完整方法
-     *
-     * @param className  完整类名
-     * @param methodName 方法名，不包含()
-     * @param arguments  方法参数，包含起始的()，参数类名之间需要使用半角逗号,分隔，不能包含空格，参数类名也需要为完整类名
-     * @return
-     */
-    public static String formatFullMethod(String className, String methodName, String arguments) {
-        return className + JavaCGConstants.FLAG_COLON + methodName + arguments;
-    }
-
-    /**
-     * 生成格式化后的完整方法，方法参数为空
-     *
-     * @param className  完整类名
-     * @param methodName 方法名，不包含()
-     * @return
-     */
-    public static String formatFullMethodEmpty(String className, String methodName) {
-        return formatFullMethod(className, methodName, JavaCGConstants.EMPTY_METHOD_ARGS);
-    }
-
-    /**
-     * 生成格式化后的完整方法
-     *
-     * @param className         完整类名
-     * @param methodNameAndArgs 方法名+方法参数
-     * @return
-     */
-    public static String formatFullMethodWithArgs(String className, String methodNameAndArgs) {
-        return className + JavaCGConstants.FLAG_COLON + methodNameAndArgs;
-    }
-
-    /**
-     * 生成格式化后的完整方法，方法参数不指定括号
-     *
-     * @param className                 完整类名
-     * @param methodName                方法名，不包含()
-     * @param methodArgsWithoutBrackets 方法参数，不包含起始的()，参数类名之间需要使用半角逗号,分隔，不能包含空格，参数类名也需要为完整类名
-     * @return
-     */
-    public static String formatFullMethodWithoutBrackets(String className, String methodName, String methodArgsWithoutBrackets) {
-        return formatFullMethod(className, methodName, JavaCGConstants.FLAG_LEFT_BRACKET + methodArgsWithoutBrackets + JavaCGConstants.FLAG_RIGHT_BRACKET);
     }
 
     /**
@@ -115,6 +78,16 @@ public class JavaCGUtil {
     }
 
     /**
+     * 判断是否为Object类
+     *
+     * @param className
+     * @return
+     */
+    public static boolean isObjectClass(String className) {
+        return JavaCGCommonNameConstants.CLASS_NAME_OBJECT.equals(className);
+    }
+
+    /**
      * 判断指定类是否为JDK中的类
      *
      * @param className
@@ -122,6 +95,16 @@ public class JavaCGUtil {
      */
     public static boolean isClassInJdk(String className) {
         return StringUtils.startsWith(className, "java.");
+    }
+
+    /**
+     * 判断是否为<init>方法
+     *
+     * @param methodName
+     * @return
+     */
+    public static boolean isInitMethod(String methodName) {
+        return JavaCGCommonNameConstants.METHOD_NAME_INIT.equals(methodName);
     }
 
     /**
@@ -200,7 +183,7 @@ public class JavaCGUtil {
      * @return false: 不跳过 true: 跳过
      */
     public static boolean checkSkipClass(String className, Set<String> needHandlePackageSet) {
-        if (JavaCGUtil.isCollectionEmpty(needHandlePackageSet)) {
+        if (isCollectionEmpty(needHandlePackageSet)) {
             return false;
         }
         for (String needHandlePackage : needHandlePackageSet) {

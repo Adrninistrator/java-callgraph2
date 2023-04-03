@@ -2,7 +2,9 @@ package com.adrninistrator.javacg.parser;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGHandleJarResultEnum;
+import com.adrninistrator.javacg.common.enums.JavaCGYesNoEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
+import com.adrninistrator.javacg.dto.classes.InnerClassInfo;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.extensions.manager.ExtensionsManager;
@@ -12,6 +14,7 @@ import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGLogUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
+import copy.javassist.bytecode.BadBytecode;
 import copy.javassist.bytecode.SignatureAttribute;
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
@@ -53,6 +56,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer extendsImplWriter;
     private Writer classSignatureEI1Writer;
     private Writer methodArgGenericsTypeWriter;
+    private Writer innerClassWriter;
 
     private Map<String, JarInfo> jarInfoMap;
 
@@ -223,6 +227,9 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
         // 处理类的签名
         handleClassSignature(javaClass, className);
+
+        // 处理内部类信息
+        handleInnerClass(javaClass);
         return true;
     }
 
@@ -230,7 +237,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private void recordExtendsAndImplInfo(JavaClass javaClass, String className) throws IOException {
         String superClassName = javaClass.getSuperclassName();
         String accessFlagsStr = String.valueOf(javaClass.getAccessFlags());
-        if (!JavaCGUtil.isClassInJdk(superClassName)) {
+        if (!JavaCGUtil.isObjectClass(superClassName)) {
+            // 仅处理父类非Object类的情况
             JavaCGFileUtil.write2FileWithTab(extendsImplWriter,
                     className,
                     accessFlagsStr,
@@ -239,18 +247,17 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         }
 
         for (String interfaceName : javaClass.getInterfaceNames()) {
-            if (!JavaCGUtil.isClassInJdk(interfaceName)) {
-                JavaCGFileUtil.write2FileWithTab(extendsImplWriter,
-                        className,
-                        accessFlagsStr,
-                        JavaCGConstants.FILE_KEY_IMPLEMENTS,
-                        interfaceName);
-            }
+            // 接口不会是Object类，不需要判断
+            JavaCGFileUtil.write2FileWithTab(extendsImplWriter,
+                    className,
+                    accessFlagsStr,
+                    JavaCGConstants.FILE_KEY_IMPLEMENTS,
+                    interfaceName);
         }
     }
 
     // 处理类的签名
-    private void handleClassSignature(JavaClass javaClass, String className) {
+    private void handleClassSignature(JavaClass javaClass, String className) throws IOException {
         if (javaClass.isAnnotation()) {
             // 若当前类为注解则不处理
             return;
@@ -280,8 +287,18 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (BadBytecode e) {
             e.printStackTrace();
+        }
+    }
+
+    // 处理内部类信息
+    private void handleInnerClass(JavaClass javaClass) throws IOException {
+        // 获取类中的内部类信息
+        List<InnerClassInfo> innerClassInfoList = JavaCGByteCodeUtil.getInnerClassInfo(javaClass);
+        for (InnerClassInfo innerClassInfo : innerClassInfoList) {
+            JavaCGFileUtil.write2FileWithTab(innerClassWriter, innerClassInfo.getInnerClassName(), innerClassInfo.getOuterClassName(),
+                    JavaCGYesNoEnum.parseStrValue(innerClassInfo.isAnonymousClass()));
         }
     }
 
@@ -388,6 +405,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setMethodArgGenericsTypeWriter(Writer methodArgGenericsTypeWriter) {
         this.methodArgGenericsTypeWriter = methodArgGenericsTypeWriter;
+    }
+
+    public void setInnerClassWriter(Writer innerClassWriter) {
+        this.innerClassWriter = innerClassWriter;
     }
 
     public void setJarInfoMap(Map<String, JarInfo> jarInfoMap) {

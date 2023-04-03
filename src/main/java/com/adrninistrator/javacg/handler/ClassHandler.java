@@ -1,6 +1,5 @@
 package com.adrninistrator.javacg.handler;
 
-import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
@@ -11,6 +10,7 @@ import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg.util.JavaCGAnnotationUtil;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
+import com.adrninistrator.javacg.util.JavaCGMethodUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import copy.javassist.bytecode.SignatureAttribute;
 import org.apache.bcel.Const;
@@ -109,7 +109,7 @@ public class ClassHandler {
             }
 
             String referencedClass = constantPool.constantToString(constant);
-            if (!JavaCGCommonNameConstants.CLASS_NAME_OBJECT.equals(referencedClass)) {
+            if (!JavaCGUtil.isObjectClass(referencedClass)) {
                 // 只处理非Object类的引用，去除类名中的数组形式
                 referencedClass = JavaCGByteCodeUtil.removeArrayInClassName(referencedClass);
                 referencedClassSet.add(referencedClass);
@@ -190,9 +190,9 @@ public class ClassHandler {
 
         String className = javaClass.getClassName();
         // 生成格式化后的方法参数
-        String callerMethodArgs = JavaCGByteCodeUtil.getArgListStr(method.getArgumentTypes());
+        String callerMethodArgs = JavaCGMethodUtil.getArgListStr(method.getArgumentTypes());
         // 生成格式化后的完整方法
-        String fullMethod = JavaCGUtil.formatFullMethod(className, method.getName(), callerMethodArgs);
+        String fullMethod = JavaCGMethodUtil.formatFullMethod(className, method.getName(), callerMethodArgs);
 
         String methodNameAndArgs = method.getName() + callerMethodArgs;
         if (!handledMethodNameAndArgs.contains(methodNameAndArgs)) {

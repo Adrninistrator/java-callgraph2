@@ -3,16 +3,19 @@ package com.adrninistrator.javacg.util;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.TypeConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
-import com.adrninistrator.javacg.dto.method.JavaCGMethodInfo;
+import com.adrninistrator.javacg.dto.classes.InnerClassInfo;
 import com.adrninistrator.javacg.dto.method.MethodAndArgs;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.Attribute;
+import org.apache.bcel.classfile.ConstantPool;
+import org.apache.bcel.classfile.InnerClass;
+import org.apache.bcel.classfile.InnerClasses;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.classfile.Signature;
 import org.apache.bcel.classfile.Utility;
-import org.apache.bcel.generic.Type;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,45 +26,6 @@ import java.util.List;
  * @description:
  */
 public class JavaCGByteCodeUtil {
-    /**
-     * 生成格式化后的完整方法
-     *
-     * @param javaCGMethodInfo 方法信息
-     * @return
-     */
-    public static String formatFullMethod(JavaCGMethodInfo javaCGMethodInfo) {
-        return formatFullMethod(javaCGMethodInfo.getClassName(), javaCGMethodInfo.getMethodName(), javaCGMethodInfo.getMethodArgumentTypes());
-    }
-
-    /**
-     * 生成格式化后的完整方法
-     *
-     * @param className  完整类名
-     * @param methodName 方法名，不包含()
-     * @param arguments  方法参数，包含起始的()，参数类名之间需要使用半角逗号,分隔，不能包含空格，参数类名也需要为完整类名
-     * @return
-     */
-    public static String formatFullMethod(String className, String methodName, Type[] arguments) {
-        return JavaCGUtil.formatFullMethod(className, methodName, getArgListStr(arguments));
-    }
-
-    /**
-     * 生成参数的字符串形式
-     *
-     * @param arguments
-     * @return
-     */
-    public static String getArgListStr(Type[] arguments) {
-        StringBuilder sb = new StringBuilder(JavaCGConstants.FLAG_LEFT_BRACKET);
-        for (int i = 0; i < arguments.length; i++) {
-            if (i != 0) {
-                sb.append(JavaCGConstants.FLAG_COMMA);
-            }
-            sb.append(arguments[i].toString());
-        }
-        sb.append(JavaCGConstants.FLAG_RIGHT_BRACKET);
-        return sb.toString();
-    }
 
     /**
      * 获取可能涉及继承的相关方法，包含参数
@@ -75,7 +39,7 @@ public class JavaCGByteCodeUtil {
             String methodName = method.getName();
             // 忽略"<init>"和"<clinit>"方法
             if (!methodName.startsWith("<") && method.isPublic() && !method.isAbstract() && !method.isStatic()) {
-                methodInfoList.add(new MethodAndArgs(methodName, getArgListStr(method.getArgumentTypes())));
+                methodInfoList.add(new MethodAndArgs(methodName, JavaCGMethodUtil.getArgListStr(method.getArgumentTypes())));
             }
         }
         return methodInfoList;
@@ -90,22 +54,9 @@ public class JavaCGByteCodeUtil {
     public static List<MethodAndArgs> genInterfaceMethodWithArgs(Method[] methods) {
         List<MethodAndArgs> methodInfoList = new ArrayList<>(methods.length);
         for (Method method : methods) {
-            methodInfoList.add(new MethodAndArgs(method.getName(), getArgListStr(method.getArgumentTypes())));
+            methodInfoList.add(new MethodAndArgs(method.getName(), JavaCGMethodUtil.getArgListStr(method.getArgumentTypes())));
         }
         return methodInfoList;
-    }
-
-    /**
-     * 获取Lambda表达式原始方法
-     *
-     * @param lambdaMethod
-     * @return
-     */
-    public static String getLambdaOrigMethod(String lambdaMethod) {
-        int indexLastLambda = lambdaMethod.lastIndexOf(JavaCGConstants.FLAG_LAMBDA);
-        String tmpString = lambdaMethod.substring(indexLastLambda + JavaCGConstants.FLAG_LAMBDA.length());
-        int indexDollar = tmpString.indexOf('$');
-        return tmpString.substring(0, indexDollar);
     }
 
     /**
@@ -136,7 +87,7 @@ public class JavaCGByteCodeUtil {
         }
 
         for (Method method : methods) {
-            if (JavaCGConstants.METHOD_NAME_INIT.equals(method.getName())) {
+            if (JavaCGUtil.isInitMethod(method.getName())) {
                 return getFuncStartSourceLine(method);
             }
         }
@@ -181,7 +132,7 @@ public class JavaCGByteCodeUtil {
             return null;
         }
 
-        if (!isArrayType(arrayType) && !JavaCGByteCodeUtil.isNullType(arrayType)) {
+        if (!isArrayType(arrayType) && !isNullType(arrayType)) {
             System.err.println("类名不是数组形式 " + arrayType);
             return arrayType;
         }
@@ -264,11 +215,11 @@ public class JavaCGByteCodeUtil {
      * @return false: 与int不兼容 true: 与int兼容
      */
     public static boolean compareIntType(String type1, String type2) {
-        if (JavaCGConstantTypeEnum.CONSTTE_INT.getType().equals(type1) && JavaCGByteCodeUtil.checkCompatibleWithInt(type2)) {
+        if (JavaCGConstantTypeEnum.CONSTTE_INT.getType().equals(type1) && checkCompatibleWithInt(type2)) {
             return true;
         }
 
-        return JavaCGConstantTypeEnum.CONSTTE_INT.getType().equals(type2) && JavaCGByteCodeUtil.checkCompatibleWithInt(type1);
+        return JavaCGConstantTypeEnum.CONSTTE_INT.getType().equals(type2) && checkCompatibleWithInt(type1);
     }
 
     /**
@@ -398,8 +349,47 @@ public class JavaCGByteCodeUtil {
                 return (Signature) attribute;
             }
         }
-
         return null;
+    }
+
+    /**
+     * 获取类中的内部类信息
+     *
+     * @param javaClass
+     * @return
+     */
+    public static List<InnerClassInfo> getInnerClassInfo(JavaClass javaClass) {
+        List<InnerClassInfo> innerClassInfoList = new ArrayList<>(0);
+        String className = javaClass.getClassName();
+        ConstantPool constantPool = javaClass.getConstantPool();
+        for (Attribute attribute : javaClass.getAttributes()) {
+            if (!(attribute instanceof InnerClasses)) {
+                continue;
+            }
+            InnerClasses innerClasses = (InnerClasses) attribute;
+            for (InnerClass innerClass : innerClasses.getInnerClasses()) {
+                int innerClassIndex = innerClass.getInnerClassIndex();
+                if (innerClassIndex == javaClass.getClassNameIndex()) {
+                    // 当前内部类对应的类名，跳过
+                    continue;
+                }
+
+                String innerClassName = constantPool.getConstantString(innerClassIndex, Const.CONSTANT_Class);
+                innerClassName = Utility.compactClassName(innerClassName, false);
+                if (JavaCGUtil.isClassInJdk(innerClassName) ||
+                        StringUtils.countMatches(innerClassName, '$') < StringUtils.countMatches(className, '$')) {
+                    /*
+                        JDK中的类类，跳过
+                        当前内部类对应的外部类，跳过
+                     */
+                    continue;
+                }
+
+                InnerClassInfo innerClassInfo = new InnerClassInfo(innerClassName, className, JavaCGUtil.isInnerAnonymousClass(innerClassName));
+                innerClassInfoList.add(innerClassInfo);
+            }
+        }
+        return innerClassInfoList;
     }
 
     private JavaCGByteCodeUtil() {

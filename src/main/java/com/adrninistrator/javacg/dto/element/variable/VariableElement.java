@@ -1,7 +1,6 @@
 package com.adrninistrator.javacg.dto.element.variable;
 
 import com.adrninistrator.javacg.dto.element.BaseElement;
-import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 
 /**
  * @author adrninistrator

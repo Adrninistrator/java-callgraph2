@@ -1,7 +1,5 @@
 package com.adrninistrator.javacg.handler;
 
-import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
-import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGCalleeObjTypeEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
@@ -29,6 +27,8 @@ import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGElementUtil;
 import com.adrninistrator.javacg.util.JavaCGInstructionUtil;
 import com.adrninistrator.javacg.util.JavaCGLogUtil;
+import com.adrninistrator.javacg.util.JavaCGMethodUtil;
+import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.generic.BranchInstruction;
@@ -258,7 +258,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
     protected boolean doHandleMethod() {
         if (JavaCGLogUtil.isDebugPrintFlag()) {
             JavaCGLogUtil.debugPrint(recordFieldPossibleTypeFlag ? "@@@ 预处理构造函数 " : "@@@ 处理方法 " +
-                    JavaCGByteCodeUtil.formatFullMethod(javaClass.getClassName(), mg.getName(), mg.getArgumentTypes()));
+                    JavaCGMethodUtil.formatFullMethod(javaClass.getClassName(), mg.getName(), mg.getArgumentTypes()));
         }
 
         // 初始化需要的对象
@@ -697,9 +697,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         methodCallPossibleInfo.setObjTypeEnum(getCalleeObjTypeEnum(objectElement));
 
         // 处理被调用对象
-        if (!JavaCGConstants.METHOD_NAME_INIT.equals(callerMethodName) ||
-                !JavaCGCommonNameConstants.CLASS_NAME_OBJECT.equals(calleeClassName) ||
-                !JavaCGConstants.METHOD_NAME_INIT.equals(calleeMethodName)) {
+        if (!JavaCGUtil.isInitMethod(callerMethodName) ||
+                !JavaCGUtil.isObjectClass(calleeClassName) ||
+                !JavaCGUtil.isInitMethod(calleeMethodName)) {
             // 若是构造函数中调用java.lang.Object的构造函数，则不处理
             methodCallPossibleInfo.addPossibleInfo4Object(objectElement, calleeClassName);
         }

@@ -12,7 +12,7 @@ import java.util.Set;
  * @date 2022/11/5
  * @description: java-callgraph2处理结果信息
  */
-public class HandleOutputInfo {
+public class JavaCGOutputInfo {
 
     // 保存当前的输出目录路径
     private final String outputDirPath;
@@ -29,7 +29,7 @@ public class HandleOutputInfo {
      */
     private final Map<String, String> otherFilePathMap = new HashMap<>();
 
-    public HandleOutputInfo(String outputDirPath, String outputFileExt) {
+    public JavaCGOutputInfo(String outputDirPath, String outputFileExt) {
         // 路径后面增加路径分隔符
         if (outputDirPath.endsWith(File.separator)) {
             this.outputDirPath = outputDirPath;
@@ -129,5 +129,9 @@ public class HandleOutputInfo {
 
     public String getMethodArgGenericsTypeFilePath() {
         return outputDirPath + JavaCGConstants.FILE_METHOD_ARG_GENERICS_TYPE + outputFileExt;
+    }
+
+    public String getInnerClassFilePath() {
+        return outputDirPath + JavaCGConstants.FILE_INNER_CLASS + outputFileExt;
     }
 }

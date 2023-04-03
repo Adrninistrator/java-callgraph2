@@ -3,7 +3,7 @@ package com.adrninistrator.javacg.conf;
 import com.adrninistrator.javacg.common.enums.JavaCGConfigKeyEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGOtherConfigFileUseListEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGOtherConfigFileUseSetEnum;
-import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
+import com.adrninistrator.javacg.exceptions.JavaCGError;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -64,7 +64,7 @@ public class JavaCGConfigureWrapper {
      */
     public void setOtherConfigSet(JavaCGOtherConfigFileUseSetEnum javaCGOtherConfigFileUseSetEnum, Set<String> configSet) {
         if (configSet == null) {
-            throw new JavaCGRuntimeException("不允许传入null，只能传入内容为空的Set");
+            throw new JavaCGError("不允许传入null，只能传入内容为空的Set");
         }
         otherConfigSetMap.put(javaCGOtherConfigFileUseSetEnum.getFileName(), configSet);
     }
@@ -76,7 +76,7 @@ public class JavaCGConfigureWrapper {
      */
     public void clearOtherConfigSet(JavaCGOtherConfigFileUseSetEnum... javaCGOtherConfigFileUseSetEnums) {
         if (javaCGOtherConfigFileUseSetEnums == null) {
-            throw new JavaCGRuntimeException("传入的参数为空");
+            throw new JavaCGError("传入的参数为空");
         }
         for (JavaCGOtherConfigFileUseSetEnum javaCGOtherConfigFileUseSetEnum : javaCGOtherConfigFileUseSetEnums) {
             otherConfigSetMap.put(javaCGOtherConfigFileUseSetEnum.getFileName(), Collections.emptySet());
@@ -91,7 +91,7 @@ public class JavaCGConfigureWrapper {
      */
     public void setOtherConfigList(JavaCGOtherConfigFileUseListEnum javaCGOtherConfigFileUseListEnum, List<String> configList) {
         if (configList == null) {
-            throw new JavaCGRuntimeException("不允许传入null，只能传入内容为空的List");
+            throw new JavaCGError("不允许传入null，只能传入内容为空的List");
         }
         otherConfigListMap.put(javaCGOtherConfigFileUseListEnum.getFileName(), configList);
     }
@@ -103,7 +103,7 @@ public class JavaCGConfigureWrapper {
      */
     public void clearOtherConfigList(JavaCGOtherConfigFileUseListEnum... javaCGOtherConfigFileUseListEnums) {
         if (javaCGOtherConfigFileUseListEnums == null) {
-            throw new JavaCGRuntimeException("传入的参数为空");
+            throw new JavaCGError("传入的参数为空");
         }
         for (JavaCGOtherConfigFileUseListEnum javaCGOtherConfigFileUseListEnum : javaCGOtherConfigFileUseListEnums) {
             otherConfigListMap.put(javaCGOtherConfigFileUseListEnum.getFileName(), Collections.emptyList());

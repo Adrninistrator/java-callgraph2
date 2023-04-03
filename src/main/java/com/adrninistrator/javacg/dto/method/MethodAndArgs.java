@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg.dto.method;
 
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
+import com.adrninistrator.javacg.util.JavaCGMethodUtil;
 import org.apache.bcel.generic.Type;
 
 import java.util.Objects;
@@ -17,7 +18,7 @@ public class MethodAndArgs {
 
     public MethodAndArgs(String methodName, Type[] argTypes) {
         this.methodName = methodName;
-        this.methodArgs = JavaCGByteCodeUtil.getArgListStr(argTypes);
+        this.methodArgs = JavaCGMethodUtil.getArgListStr(argTypes);
     }
 
     public MethodAndArgs(String methodName, String methodArgs) {

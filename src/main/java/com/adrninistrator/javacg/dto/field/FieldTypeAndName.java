@@ -1,7 +1,5 @@
 package com.adrninistrator.javacg.dto.field;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Objects;
 
 /**

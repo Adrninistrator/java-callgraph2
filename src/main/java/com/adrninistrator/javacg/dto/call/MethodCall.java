@@ -3,6 +3,7 @@ package com.adrninistrator.javacg.dto.call;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGCallTypeEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGCalleeObjTypeEnum;
+import com.adrninistrator.javacg.util.JavaCGMethodUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -104,7 +105,7 @@ public class MethodCall {
 
     // 返回调用者完整方法
     public String genCallerFullMethod() {
-        return JavaCGUtil.formatFullMethod(callerClassName, callerMethodName, callerMethodArgs);
+        return JavaCGMethodUtil.formatFullMethod(callerClassName, callerMethodName, callerMethodArgs);
     }
 
     // 返回被调用类型对应的字符串
@@ -117,7 +118,7 @@ public class MethodCall {
 
     // 返回被调用者完整方法
     public String genCalleeFullMethod() {
-        return JavaCGUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgs);
+        return JavaCGMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgs);
     }
 
     // 生成在调用关系文件中的内容

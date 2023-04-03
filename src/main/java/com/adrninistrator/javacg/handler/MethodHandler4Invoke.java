@@ -25,6 +25,7 @@ import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGInstructionUtil;
 import com.adrninistrator.javacg.util.JavaCGLogUtil;
+import com.adrninistrator.javacg.util.JavaCGMethodUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.AnnotationEntry;
@@ -401,13 +402,13 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             if (JavaCGInstructionUtil.isMethodInvokeInstructionExcludeDynamic(nextOpcode)) {
                 // 向后找到非INVOKEDYNAMIC方法调用指令，记录对应的方法
                 JavaCGMethodInfo nextCalleeMethodInfo = JavaCGInstructionUtil.getCalleeMethodInfo((InvokeInstruction) nextInstruction, cpg);
-                nextCalleeFullMethod = JavaCGByteCodeUtil.formatFullMethod(nextCalleeMethodInfo);
+                nextCalleeFullMethod = JavaCGMethodUtil.formatFullMethod(nextCalleeMethodInfo);
                 break;
             }
             nextIh = nextIh.getNext();
         }
 
-        String calleeFullMethod = JavaCGByteCodeUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArguments);
+        String calleeFullMethod = JavaCGMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArguments);
         if (nextCalleeFullMethod == null) {
             // 记录被调用的Lambda表达式方法信息，不包含下一个被调用方法信息
             JavaCGFileUtil.write2FileWithTab(lambdaMethodInfoWriter, String.valueOf(methodCall.getCallId()), calleeFullMethod);
@@ -518,7 +519,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         if (handledCalleeTypeSet.contains(calleeTypeRuntime) ||
                 StringUtils.equals(calleeClassName, calleeTypeRuntime) ||
                 JavaCGByteCodeUtil.isNullType(calleeTypeRuntime) ||
-                JavaCGCommonNameConstants.CLASS_NAME_OBJECT.equals(calleeTypeRuntime)) {
+                JavaCGUtil.isObjectClass(calleeTypeRuntime)) {
                 /*
                     以下情况不处理：
                         已处理过的被调用类型
@@ -619,7 +620,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 callTypeEnum,
                 (calleeTypeRuntime != null ? calleeTypeRuntime : calleeClassName),
                 calleeMethodName,
-                JavaCGByteCodeUtil.getArgListStr(arguments),
+                JavaCGMethodUtil.getArgListStr(arguments),
                 getSourceLine(),
                 objTypeEnum,
                 rawReturnType,
@@ -668,13 +669,13 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      * @return true: 不记录原始的方法调用类型，false: 记录原始的方法调用类型
      */
     private boolean addMethodCall4SpecialInit(String calleeClassName, String calleeMethodName, Type[] arguments) {
-        if (!JavaCGConstants.METHOD_NAME_INIT.equals(calleeMethodName)) {
+        if (!JavaCGUtil.isInitMethod(calleeMethodName)) {
             // 记录原始的方法调用类型
             return false;
         }
 
         boolean skipRawMethodCall = false;
-        String calleeMethodArgs = JavaCGByteCodeUtil.getArgListStr(arguments);
+        String calleeMethodArgs = JavaCGMethodUtil.getArgListStr(arguments);
 
         // 处理Runnable实现类
         if (handleSpecialInitMethod(runnableImplClassMap, calleeClassName, calleeMethodName, calleeMethodArgs, JavaCGCallTypeEnum.CTE_RUNNABLE_INIT_RUN1,
@@ -739,7 +740,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      * @param arguments
      */
     private void addMethodCall4ThreadStart(String calleeClassName, String calleeMethodName, Type[] arguments) {
-        if (!JavaCGConstants.METHOD_NAME_START.equals(calleeMethodName) || arguments.length > 0) {
+        if (!JavaCGCommonNameConstants.METHOD_NAME_START.equals(calleeMethodName) || arguments.length > 0) {
             // 被调用方法不是start()，返回
             return;
         }
@@ -749,7 +750,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             return;
         }
 
-        String calleeMethodArgs = JavaCGByteCodeUtil.getArgListStr(arguments);
+        String calleeMethodArgs = JavaCGMethodUtil.getArgListStr(arguments);
         // 记录Thread子类的start方法调用run方法（以上Map的value等于FALSE时，代表当前类为Thread的子类，且start()方法调用run()方法未添加过）
         addOtherMethodCall(calleeClassName, calleeMethodName, calleeMethodArgs, JavaCGCallTypeEnum.CTE_THREAD_START_RUN,
                 calleeClassName, "run", JavaCGConstants.EMPTY_METHOD_ARGS, JavaCGConstants.DEFAULT_LINE_NUMBER);

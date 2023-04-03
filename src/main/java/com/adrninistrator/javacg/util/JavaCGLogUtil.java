@@ -99,7 +99,7 @@ public class JavaCGLogUtil {
     }
 
     public static void close() {
-        System.out.println("JavaCGLogUtil.close");
+        System.out.println(JavaCGLogUtil.class.getName() + ".close");
 
         if (LOG_WRITER != null) {
             try {

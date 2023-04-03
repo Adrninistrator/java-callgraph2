@@ -38,7 +38,6 @@ public class JavaCGBootstrapMethodUtil {
                 }
             }
         }
-
         return null;
     }
 

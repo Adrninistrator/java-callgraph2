@@ -46,9 +46,6 @@ public class JavaCGConstants {
 
     public static final int DEFAULT_LINE_NUMBER = 0;
 
-    public static final String METHOD_NAME_INIT = "<init>";
-    public static final String METHOD_NAME_START = "start";
-
     public static final String NEW_LINE = "\n";
 
     public static final String MERGED_JAR_FLAG = "-javacg_merged.jar";
@@ -89,6 +86,8 @@ public class JavaCGConstants {
     public static final String FILE_CLASS_SIGNATURE_EI1 = "class_signature_ei1";
     // 方法参数泛型类型
     public static final String FILE_METHOD_ARG_GENERICS_TYPE = "method_arg_generics_type";
+    // 内部类信息
+    public static final String FILE_INNER_CLASS = "inner_class";
 
     public static final String EXT_JAR = ".jar";
     public static final String EXT_WAR = ".war";

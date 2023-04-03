@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg.extensions.manager;
 
-import com.adrninistrator.javacg.dto.output.HandleOutputInfo;
+import com.adrninistrator.javacg.dto.output.JavaCGOutputInfo;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatterInterface;
 import com.adrninistrator.javacg.extensions.annotation_attributes.DefaultAnnotationAttributesFormatter;
@@ -52,7 +52,7 @@ public class ExtensionsManager {
 
     private SpringXmlBeanParserInterface springXmlBeanParser;
 
-    private HandleOutputInfo handleOutputInfo;
+    private JavaCGOutputInfo javaCGOutputInfo;
 
     private boolean inited = false;
 
@@ -95,7 +95,7 @@ public class ExtensionsManager {
                 if (codeParser instanceof SaveData2FileParser) {
                     SaveData2FileParser saveData2FileParser = (SaveData2FileParser) codeParser;
                     // 增加其他文件信息
-                    String outputFilePath = handleOutputInfo.addOtherFileInfo(saveData2FileParser.chooseFileName());
+                    String outputFilePath = javaCGOutputInfo.addOtherFileInfo(saveData2FileParser.chooseFileName());
                     if (!saveData2FileParser.init(outputFilePath)) {
                         System.err.println("初始化失败 " + codeParser.getClass().getName());
                         return false;
@@ -170,7 +170,7 @@ public class ExtensionsManager {
         this.annotationAttributesFormatter = annotationAttributesFormatter;
     }
 
-    public void setHandleOutputInfo(HandleOutputInfo handleOutputInfo) {
-        this.handleOutputInfo = handleOutputInfo;
+    public void setJavaCGOutputInfo(JavaCGOutputInfo javaCGOutputInfo) {
+        this.javaCGOutputInfo = javaCGOutputInfo;
     }
 }

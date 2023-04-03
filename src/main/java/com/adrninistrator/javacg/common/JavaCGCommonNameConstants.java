@@ -23,6 +23,9 @@ public class JavaCGCommonNameConstants {
 
     public static final String SIMPLE_CLASS_NAME_OBJECT = Object.class.getSimpleName();
 
+    public static final String METHOD_NAME_INIT = "<init>";
+    public static final String METHOD_NAME_START = "start";
+
     public static final String METHOD_DO_IN_TRANSACTION = "doInTransaction";
     public static final String METHOD_DO_IN_TRANSACTION_WITHOUT_RESULT = "doInTransactionWithoutResult";
 

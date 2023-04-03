@@ -30,15 +30,6 @@ import java.util.Set;
  */
 public class JavaCGFileUtil {
 
-    public static String getCanonicalPath(String filePath) {
-        try {
-            return new File(filePath).getCanonicalPath();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
     public static String getCanonicalPath(File file) {
         try {
             return file.getCanonicalPath();
