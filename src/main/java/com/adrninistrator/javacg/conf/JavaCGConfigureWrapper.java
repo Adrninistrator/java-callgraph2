@@ -5,6 +5,7 @@ import com.adrninistrator.javacg.common.enums.JavaCGOtherConfigFileUseListEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGOtherConfigFileUseSetEnum;
 import com.adrninistrator.javacg.exceptions.JavaCGError;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
+import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -43,6 +44,39 @@ public class JavaCGConfigureWrapper {
     private final Map<String, List<String>> otherConfigListMap = new HashMap<>();
 
     /**
+     * 默认构造函数，忽略配置文件中的参数
+     */
+    public JavaCGConfigureWrapper() {
+        this(true);
+    }
+
+    /**
+     * @param useDefaultEmptyConfigFlag true: 使用默认的空参数（忽略配置文件中的参数） false: 使用配置文件中的参数
+     */
+    public JavaCGConfigureWrapper(boolean useDefaultEmptyConfigFlag) {
+        if (useDefaultEmptyConfigFlag) {
+            // 使用默认的空参数（忽略配置文件中的参数）
+            useDefaultEmptyConfig();
+        }
+    }
+
+    /**
+     * 使用默认的空参数（忽略配置文件中的参数）
+     * 在设置参数之前执行，避免jar包或项目中的配置文件有值时对生成结果产生干扰
+     */
+    public void useDefaultEmptyConfig() {
+        for (JavaCGConfigKeyEnum javaCGConfigKeyEnum : JavaCGConfigKeyEnum.values()) {
+            configMap.put(javaCGConfigKeyEnum.getKey(), "");
+        }
+        for (JavaCGOtherConfigFileUseSetEnum javaCGOtherConfigFileUseSetEnum : JavaCGOtherConfigFileUseSetEnum.values()) {
+            otherConfigSetMap.put(javaCGOtherConfigFileUseSetEnum.getFileName(), Collections.emptySet());
+        }
+        for (JavaCGOtherConfigFileUseListEnum javaCGOtherConfigFileUseListEnum : JavaCGOtherConfigFileUseListEnum.values()) {
+            otherConfigListMap.put(javaCGOtherConfigFileUseListEnum.getFileName(), Collections.emptyList());
+        }
+    }
+
+    /**
      * 设置配置文件中的参数
      *
      * @param javaCGConfigKeyEnum
@@ -60,6 +94,16 @@ public class JavaCGConfigureWrapper {
      * 设置其他配置文件中的参数
      *
      * @param javaCGOtherConfigFileUseSetEnum
+     * @param data
+     */
+    public void setOtherConfigSet(JavaCGOtherConfigFileUseSetEnum javaCGOtherConfigFileUseSetEnum, String... data) {
+        setOtherConfigSet(javaCGOtherConfigFileUseSetEnum, JavaCGUtil.genSetFromArray(data));
+    }
+
+    /**
+     * 设置其他配置文件中的参数
+     *
+     * @param javaCGOtherConfigFileUseSetEnum
      * @param configSet
      */
     public void setOtherConfigSet(JavaCGOtherConfigFileUseSetEnum javaCGOtherConfigFileUseSetEnum, Set<String> configSet) {
@@ -70,17 +114,13 @@ public class JavaCGConfigureWrapper {
     }
 
     /**
-     * 清空其他配置文件中的参数，避免jar包或项目中的配置文件有值时对生成结果产生干扰
+     * 设置其他配置文件中的参数
      *
-     * @param javaCGOtherConfigFileUseSetEnums
+     * @param javaCGOtherConfigFileUseListEnum
+     * @param data
      */
-    public void clearOtherConfigSet(JavaCGOtherConfigFileUseSetEnum... javaCGOtherConfigFileUseSetEnums) {
-        if (javaCGOtherConfigFileUseSetEnums == null) {
-            throw new JavaCGError("传入的参数为空");
-        }
-        for (JavaCGOtherConfigFileUseSetEnum javaCGOtherConfigFileUseSetEnum : javaCGOtherConfigFileUseSetEnums) {
-            otherConfigSetMap.put(javaCGOtherConfigFileUseSetEnum.getFileName(), Collections.emptySet());
-        }
+    public void setOtherConfigList(JavaCGOtherConfigFileUseListEnum javaCGOtherConfigFileUseListEnum, String... data) {
+        setOtherConfigList(javaCGOtherConfigFileUseListEnum, JavaCGUtil.genListFromArray(data));
     }
 
     /**
@@ -94,20 +134,6 @@ public class JavaCGConfigureWrapper {
             throw new JavaCGError("不允许传入null，只能传入内容为空的List");
         }
         otherConfigListMap.put(javaCGOtherConfigFileUseListEnum.getFileName(), configList);
-    }
-
-    /**
-     * 清空其他配置文件中的参数，避免jar包或项目中的配置文件有值时对生成结果产生干扰
-     *
-     * @param javaCGOtherConfigFileUseListEnums
-     */
-    public void clearOtherConfigList(JavaCGOtherConfigFileUseListEnum... javaCGOtherConfigFileUseListEnums) {
-        if (javaCGOtherConfigFileUseListEnums == null) {
-            throw new JavaCGError("传入的参数为空");
-        }
-        for (JavaCGOtherConfigFileUseListEnum javaCGOtherConfigFileUseListEnum : javaCGOtherConfigFileUseListEnums) {
-            otherConfigListMap.put(javaCGOtherConfigFileUseListEnum.getFileName(), Collections.emptyList());
-        }
     }
 
     /**

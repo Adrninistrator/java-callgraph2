@@ -2,6 +2,7 @@ package com.adrninistrator.javacg.util;
 
 import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.ByteArrayInputStream;
@@ -10,9 +11,13 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -254,6 +259,36 @@ public class JavaCGUtil {
      */
     public static <T> boolean isCollectionEmpty(Collection<T> collection) {
         return collection == null || collection.isEmpty();
+    }
+
+    /**
+     * 根据不定长数组生成HashSet
+     *
+     * @param a
+     * @param <T>
+     * @return
+     */
+    @SafeVarargs
+    public static <T> Set<T> genSetFromArray(T... a) {
+        if (ArrayUtils.isEmpty(a)) {
+            return new HashSet<>();
+        }
+        return new HashSet<>(Arrays.asList(a));
+    }
+
+    /**
+     * 根据不定长数组生成List
+     *
+     * @param a
+     * @param <T>
+     * @return
+     */
+    @SafeVarargs
+    public static <T> List<T> genListFromArray(T... a) {
+        if (ArrayUtils.isEmpty(a)) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(a);
     }
 
     private JavaCGUtil() {

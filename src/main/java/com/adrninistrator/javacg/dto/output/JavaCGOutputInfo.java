@@ -1,8 +1,8 @@
 package com.adrninistrator.javacg.dto.output;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.util.JavaCGUtil;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -31,11 +31,7 @@ public class JavaCGOutputInfo {
 
     public JavaCGOutputInfo(String outputDirPath, String outputFileExt) {
         // 路径后面增加路径分隔符
-        if (outputDirPath.endsWith(File.separator)) {
-            this.outputDirPath = outputDirPath;
-        } else {
-            this.outputDirPath = outputDirPath + File.separator;
-        }
+        this.outputDirPath = JavaCGUtil.addSeparator4FilePath(outputDirPath);
         this.outputFileExt = outputFileExt;
     }
 

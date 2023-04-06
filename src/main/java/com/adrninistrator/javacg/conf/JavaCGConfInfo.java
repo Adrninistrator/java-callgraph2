@@ -31,7 +31,10 @@ public class JavaCGConfInfo {
     // 调试日志打印到文件开关
     private boolean debugPrintInFile;
 
-    // 输出文件后缀名
+    // 生成文件的根目录
+    private String outputRootPath;
+
+    // 生成文件后缀名
     private String outputFileExt;
 
     public List<String> getJarDirList() {
@@ -88,6 +91,14 @@ public class JavaCGConfInfo {
 
     public void setDebugPrintInFile(boolean debugPrintInFile) {
         this.debugPrintInFile = debugPrintInFile;
+    }
+
+    public String getOutputRootPath() {
+        return outputRootPath;
+    }
+
+    public void setOutputRootPath(String outputRootPath) {
+        this.outputRootPath = outputRootPath;
     }
 
     public String getOutputFileExt() {

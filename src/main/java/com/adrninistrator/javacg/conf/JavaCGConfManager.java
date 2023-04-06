@@ -46,6 +46,9 @@ public class JavaCGConfManager {
                 confInfo.setDebugPrintInFile(false);
             }
 
+            String outputRootPath = javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_OUTPUT_ROOT_PATH, true);
+            confInfo.setOutputRootPath(outputRootPath);
+
             String outputFileExt = javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_OUTPUT_FILE_EXT, true);
             if (StringUtils.isBlank(outputFileExt)) {
                 // 默认使用.txt作为输出文件后缀名

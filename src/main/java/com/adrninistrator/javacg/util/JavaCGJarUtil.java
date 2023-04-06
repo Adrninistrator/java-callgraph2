@@ -75,9 +75,9 @@ public class JavaCGJarUtil {
      * @param jarOrDirPathList
      * @param jarInfoMap           保存需要处理的jar包文件名及对应的序号，序号从1开始
      * @param needHandlePackageSet
-     * @return null: 处理失败，非null: 新生成的jar包路径，或原有的jar包路径
+     * @return null: 处理失败，非null: 新生成的jar包文件，或原有的jar包文件
      */
-    public static String handleJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet) {
+    public static File handleJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet) {
         if (jarOrDirPathList.size() == 1) {
             // 数组只指定了一个元素
             File oneFile = new File(jarOrDirPathList.get(0));
@@ -98,7 +98,7 @@ public class JavaCGJarUtil {
                 // 指定的是一个jar包，直接返回
                 // 记录jar包信息，向map中保存数据的key使用固定值
                 jarInfoMap.put(oneFile.getName(), new JarInfo(JavaCGConstants.FILE_KEY_JAR_INFO_PREFIX, oneFilePath));
-                return oneFilePath;
+                return oneFile;
             }
         }
 
@@ -118,7 +118,7 @@ public class JavaCGJarUtil {
      * @param needHandlePackageSet
      * @return 合并后的jar包文件路径
      */
-    private static String mergeJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet) {
+    private static File mergeJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet) {
         // 获取文件或目录列表
         List<File> jarFileOrDirList = getJarFileOrDirList(jarOrDirPathList, jarInfoMap);
         if (jarFileOrDirList == null) {
@@ -185,7 +185,7 @@ public class JavaCGJarUtil {
                 addJar2Jar(jarFileInDir, zos, mergeClassInJarPackageSet);
             }
 
-            return JavaCGFileUtil.getCanonicalPath(newJarFile);
+            return newJarFile;
         } catch (Exception e) {
             e.printStackTrace();
             return null;

@@ -26,6 +26,7 @@ import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGJarUtil;
 import com.adrninistrator.javacg.util.JavaCGLogUtil;
+import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -72,7 +73,7 @@ public class JCallGraph {
     private Map<String, List<String>> duplicateClassNameMap = new HashMap<>();
 
     public static void main(String[] args) {
-        new JCallGraph().run(new JavaCGConfigureWrapper());
+        new JCallGraph().run(new JavaCGConfigureWrapper(false));
     }
 
     public boolean run(JavaCGConfigureWrapper javaCGConfigureWrapper) {
@@ -88,18 +89,28 @@ public class JCallGraph {
         JavaCGLogUtil.setDebugPrintInFile(javaCGConfInfo.isDebugPrintInFile());
 
         // 处理参数中指定的jar包
-        String newJarFilePath = handleJarInArgs();
-        if (newJarFilePath == null) {
+        File newJarFile = handleJarInConf();
+        if (newJarFile == null) {
             return false;
         }
 
-        String dirPath = newJarFilePath + JavaCGConstants.DIR_TAIL_OUTPUT + File.separator;
-        if (!JavaCGFileUtil.isDirectoryExists(dirPath, true)) {
+        String newJarFilePath = JavaCGFileUtil.getCanonicalPath(newJarFile);
+        String outputRootPath = javaCGConfInfo.getOutputRootPath();
+        String outputDirPath;
+        if (StringUtils.isBlank(outputRootPath)) {
+            // 配置参数中未指定生成文件的根目录，生成在jar包所在目录
+            outputDirPath = newJarFilePath + JavaCGConstants.DIR_TAIL_OUTPUT + File.separator;
+        } else {
+            // 配置参数中有指定生成文件的根目录，生成在指定目录
+            outputDirPath = JavaCGUtil.addSeparator4FilePath(outputRootPath) + newJarFile.getName() + JavaCGConstants.DIR_TAIL_OUTPUT + File.separator;
+        }
+        System.out.println("当前输出的根目录: " + outputDirPath);
+        if (!JavaCGFileUtil.isDirectoryExists(outputDirPath, true)) {
             return false;
         }
 
         // 初始化
-        if (!init(dirPath)) {
+        if (!init(outputDirPath)) {
             return false;
         }
 
@@ -162,14 +173,12 @@ public class JCallGraph {
             return false;
         } finally {
             // 关闭扩展类管理类
-            if (extensionsManager != null) {
-                extensionsManager.close();
-            }
+            extensionsManager.close();
         }
     }
 
-    // 处理参数中指定的jar包
-    private String handleJarInArgs() {
+    // 处理配置参数中指定的jar包
+    private File handleJarInConf() {
         List<String> jarDirList = javaCGConfInfo.getJarDirList();
         if (jarDirList.isEmpty()) {
             System.err.println("请在配置文件" + JavaCGConstants.FILE_CONFIG + "中指定需要处理的jar包或目录列表");
@@ -183,20 +192,23 @@ public class JCallGraph {
 
         jarInfoMap = new HashMap<>(jarDirList.size());
 
+        Set<String> needHandlePackageSet = javaCGConfInfo.getNeedHandlePackageSet();
         // 对指定的jar包进行处理
-        String newJarFilePath = JavaCGJarUtil.handleJar(jarDirList, jarInfoMap, javaCGConfInfo.getNeedHandlePackageSet());
-        if (newJarFilePath == null) {
+        File newJarFile = JavaCGJarUtil.handleJar(jarDirList, jarInfoMap, needHandlePackageSet);
+        if (newJarFile == null) {
             return null;
         }
 
-        System.out.println("实际处理的jar文件: " + newJarFilePath);
+        System.out.println("实际处理的jar文件: " + JavaCGFileUtil.getCanonicalPath(newJarFile));
 
-        if (javaCGConfInfo.getNeedHandlePackageSet().isEmpty()) {
+        if (needHandlePackageSet.isEmpty()) {
             System.out.println("所有包中的class文件都需要处理");
         } else {
-            System.out.println("仅处理以下包中的class文件\n" + StringUtils.join(javaCGConfInfo.getNeedHandlePackageSet(), "\n"));
+            List<String> needHandlePackageList = new ArrayList<>(needHandlePackageSet);
+            Collections.sort(needHandlePackageList);
+            System.out.println("仅处理以下包中的class文件\n" + StringUtils.join(needHandlePackageList, "\n"));
         }
-        return newJarFilePath;
+        return newJarFile;
     }
 
     private boolean init(String dirPath) {

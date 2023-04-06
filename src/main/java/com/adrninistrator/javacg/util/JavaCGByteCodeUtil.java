@@ -370,17 +370,19 @@ public class JavaCGByteCodeUtil {
             for (InnerClass innerClass : innerClasses.getInnerClasses()) {
                 int innerClassIndex = innerClass.getInnerClassIndex();
                 if (innerClassIndex == javaClass.getClassNameIndex()) {
-                    // 当前内部类对应的类名，跳过
+                    // 当前类是内部类，跳过
                     continue;
                 }
 
                 String innerClassName = constantPool.getConstantString(innerClassIndex, Const.CONSTANT_Class);
                 innerClassName = Utility.compactClassName(innerClassName, false);
                 if (JavaCGUtil.isClassInJdk(innerClassName) ||
+                        !innerClassName.startsWith(className) ||
                         StringUtils.countMatches(innerClassName, '$') < StringUtils.countMatches(className, '$')) {
                     /*
-                        JDK中的类类，跳过
-                        当前内部类对应的外部类，跳过
+                        JDK中的类，跳过
+                        当前内部类不是当前类的内部类，跳过
+                        当前类是当前内部类对应的外部类，跳过
                      */
                     continue;
                 }
