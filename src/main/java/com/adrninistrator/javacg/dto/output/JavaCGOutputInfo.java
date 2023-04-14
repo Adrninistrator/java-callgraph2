@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg.dto.output;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.common.enums.JavaCGOutPutFileTypeEnum;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 
 import java.util.HashMap;
@@ -66,68 +67,22 @@ public class JavaCGOutputInfo {
         return otherFilePathMap.keySet();
     }
 
-    //
+    /**
+     * 获取当前生成文件的目录
+     *
+     * @return
+     */
     public String getOutputDirPath() {
         return outputDirPath;
     }
 
-    public String getJarInfoOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_JAR_INFO + outputFileExt;
-    }
-
-    public String getClassNameOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_CLASS_NAME + outputFileExt;
-    }
-
-    public String getMethodCallOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_METHOD_CALL + outputFileExt;
-    }
-
-    public String getLambdaMethodInfoOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_LAMBDA_METHOD_INFO + outputFileExt;
-    }
-
-    public String getClassAnnotationOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_CLASS_ANNOTATION + outputFileExt;
-    }
-
-    public String getMethodAnnotationOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_METHOD_ANNOTATION + outputFileExt;
-    }
-
-    public String getMethodLineNumberOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_METHOD_LINE_NUMBER + outputFileExt;
-    }
-
-    public String getMethodCallInfoOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_METHOD_CALL_INFO + outputFileExt;
-    }
-
-    public String getClassInfoOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_CLASS_INFO + outputFileExt;
-    }
-
-    public String getMethodInfoOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_METHOD_INFO + outputFileExt;
-    }
-
-    public String getExtendsImplOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_EXTENDS_IMPL + outputFileExt;
-    }
-
-    public String getSpringBeanOutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_SPRING_BEAN + outputFileExt;
-    }
-
-    public String getClassSignatureEI1OutputFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_CLASS_SIGNATURE_EI1 + outputFileExt;
-    }
-
-    public String getMethodArgGenericsTypeFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_METHOD_ARG_GENERICS_TYPE + outputFileExt;
-    }
-
-    public String getInnerClassFilePath() {
-        return outputDirPath + JavaCGConstants.FILE_INNER_CLASS + outputFileExt;
+    /**
+     * 获取指定类型的生成文件的路径
+     *
+     * @param javaCGOutPutFileTypeEnum
+     * @return
+     */
+    public String getFilePath(JavaCGOutPutFileTypeEnum javaCGOutPutFileTypeEnum) {
+        return outputDirPath + javaCGOutPutFileTypeEnum.getFileName() + outputFileExt;
     }
 }

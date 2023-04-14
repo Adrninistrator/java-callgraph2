@@ -29,8 +29,8 @@ public class JavaCGConstants {
     public static final String FILE_KEY_METHOD_CALL_POSSIBLE_INFO_STATIC_FIELD_METHOD_CALL = "sfm";
     public static final String FILE_KEY_EXTENDS = "e";
     public static final String FILE_KEY_IMPLEMENTS = "i";
-    public static final String FILE_KEY_METHOD_ARGS_TYPE = "t";
-    public static final String FILE_KEY_METHOD_ARGS_GENERICS_TYPE = "gt";
+    public static final String FILE_KEY_METHOD_ARGS_RETURN_TYPE = "t";
+    public static final String FILE_KEY_METHOD_ARGS_RETURN_GENERICS_TYPE = "gt";
 
     public static final String FLAG_LAMBDA = "lambda$";
     public static final String FLAG_HASHTAG = "#";
@@ -57,37 +57,6 @@ public class JavaCGConstants {
     public static final String FILE_PREFIX_LOG = "javacg-";
 
     public static final String FILE_CONFIG = "config.properties";
-
-    // jar包信息
-    public static final String FILE_JAR_INFO = "jar_info";
-    // 引用的类
-    public static final String FILE_CLASS_NAME = "class_name";
-    // 方法调用
-    public static final String FILE_METHOD_CALL = "method_call";
-    // Lambda表达式方法信息
-    public static final String FILE_LAMBDA_METHOD_INFO = "lambda_method_info";
-    // 类的注解
-    public static final String FILE_CLASS_ANNOTATION = "class_annotation";
-    // 方法的注解
-    public static final String FILE_METHOD_ANNOTATION = "method_annotation";
-    // 方法代码行号
-    public static final String FILE_METHOD_LINE_NUMBER = "method_line_number";
-    // 方法调用的信息
-    public static final String FILE_METHOD_CALL_INFO = "method_call_info";
-    // 类的信息
-    public static final String FILE_CLASS_INFO = "class_info";
-    // 方法的信息
-    public static final String FILE_METHOD_INFO = "method_info";
-    // 继承与实现相关信息
-    public static final String FILE_EXTENDS_IMPL = "extends_impl";
-    // Spring Bean信息
-    public static final String FILE_SPRING_BEAN = "spring_bean";
-    // 继承父类与实现接口时的签名中的类名信息
-    public static final String FILE_CLASS_SIGNATURE_EI1 = "class_signature_ei1";
-    // 方法参数泛型类型
-    public static final String FILE_METHOD_ARG_GENERICS_TYPE = "method_arg_generics_type";
-    // 内部类信息
-    public static final String FILE_INNER_CLASS = "inner_class";
 
     public static final String EXT_JAR = ".jar";
     public static final String EXT_WAR = ".war";

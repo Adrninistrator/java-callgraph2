@@ -12,6 +12,7 @@ import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGMethodUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
+import copy.javassist.bytecode.BadBytecode;
 import copy.javassist.bytecode.SignatureAttribute;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.ClassFormatException;
@@ -68,6 +69,7 @@ public class ClassHandler {
     private Writer methodCallInfoWriter;
     private Writer methodInfoWriter;
     private Writer methodArgGenericsTypeWriter;
+    private Writer methodReturnGenericsTypeWriter;
 
     private AnnotationAttributesFormatterInterface annotationAttributesFormatter;
 
@@ -193,11 +195,12 @@ public class ClassHandler {
         String callerMethodArgs = JavaCGMethodUtil.getArgListStr(method.getArgumentTypes());
         // 生成格式化后的完整方法
         String fullMethod = JavaCGMethodUtil.formatFullMethod(className, method.getName(), callerMethodArgs);
-
+        // 返回类型
+        String returnType = method.getReturnType().toString();
         String methodNameAndArgs = method.getName() + callerMethodArgs;
         if (!handledMethodNameAndArgs.contains(methodNameAndArgs)) {
             // 记录方法的信息
-            JavaCGFileUtil.write2FileWithTab(methodInfoWriter, fullMethod, String.valueOf(method.getAccessFlags()));
+            JavaCGFileUtil.write2FileWithTab(methodInfoWriter, fullMethod, String.valueOf(method.getAccessFlags()), returnType);
         } else {
             existsSameMethodNameAndArgs = true;
             if (!JavaCGByteCodeUtil.isBridgeFlag(method.getAccessFlags())) {
@@ -205,8 +208,20 @@ public class ClassHandler {
             }
         }
 
-        // 记录方法参数中泛型类型
-        recordMethodArgsGenericsType(fullMethod, method);
+        String methodGenericSignature = method.getGenericSignature();
+        if (methodGenericSignature != null) {
+            try {
+                SignatureAttribute.MethodSignature methodSignature = SignatureAttribute.toMethodSignature(methodGenericSignature);
+                // 记录方法参数中泛型类型
+                recordMethodReturnGenericsType(fullMethod, methodSignature);
+
+                // 记录方法参数中泛型类型
+                recordMethodArgsGenericsType(fullMethod, methodSignature);
+            } catch (BadBytecode e) {
+                System.err.println("处理方法签名出现异常: " + fullMethod);
+                e.printStackTrace();
+            }
+        }
 
         // 处理方法调用
         MethodGen mg = new MethodGen(method, className, cpg);
@@ -241,47 +256,66 @@ public class ClassHandler {
         return methodHandler4Invoke.handleMethod();
     }
 
-    // 记录方法参数中泛型类型
-    private boolean recordMethodArgsGenericsType(String fullMethod, Method method) {
-        String methodGenericSignature = method.getGenericSignature();
-        if (methodGenericSignature == null) {
-            return true;
-        }
-
+    // 记录方法返回泛型类型
+    private void recordMethodReturnGenericsType(String fullMethod, SignatureAttribute.MethodSignature methodSignature) {
         try {
-            SignatureAttribute.MethodSignature methodSignature = SignatureAttribute.toMethodSignature(methodGenericSignature);
-            SignatureAttribute.Type[] parameterTypes = methodSignature.getParameterTypes();
-            for (int i = 0; i < parameterTypes.length; i++) {
-                SignatureAttribute.Type argType = parameterTypes[i];
-                if (!(argType instanceof SignatureAttribute.ClassType)) {
-                    continue;
-                }
-
-                List<String> methodArgsGenericsTypeList = new ArrayList<>();
-                // 解析方法参数中泛型类型，外层处理
-                parseMethodArgsGenericsType(argType, true, methodArgsGenericsTypeList);
-
-                if (methodArgsGenericsTypeList.isEmpty()) {
-                    // 未获取到方法参数中泛型类型
-                    continue;
-                }
-
-                String argTypeString = ((SignatureAttribute.ClassType) argType).getName();
-                // 记录参数类型
-                JavaCGFileUtil.write2FileWithTab(methodArgGenericsTypeWriter, fullMethod, String.valueOf(i), JavaCGConstants.FILE_KEY_METHOD_ARGS_TYPE, String.valueOf(0),
-                        argTypeString);
-
-                // 获取到方法参数中泛型类型，记录
-                for (int j = 0; j < methodArgsGenericsTypeList.size(); j++) {
-                    JavaCGFileUtil.write2FileWithTab(methodArgGenericsTypeWriter, fullMethod, String.valueOf(i), JavaCGConstants.FILE_KEY_METHOD_ARGS_GENERICS_TYPE,
-                            String.valueOf(j), methodArgsGenericsTypeList.get(j));
-                }
+            SignatureAttribute.Type returnType = methodSignature.getReturnType();
+            if (!(returnType instanceof SignatureAttribute.ClassType)) {
+                return;
             }
 
-            return true;
+            SignatureAttribute.ClassType classType = (SignatureAttribute.ClassType) returnType;
+            List<String> methodReturnGenericsTypeList = new ArrayList<>();
+            // 解析方法返回中泛型类型，外层处理
+            parseMethodArgsGenericsType(classType, true, methodReturnGenericsTypeList);
+            if (methodReturnGenericsTypeList.isEmpty()) {
+                // 未获取到方法返回中泛型类型
+                return;
+            }
+
+            // 记录返回类型
+            JavaCGFileUtil.write2FileWithTab(methodReturnGenericsTypeWriter, fullMethod, JavaCGConstants.FILE_KEY_METHOD_ARGS_RETURN_TYPE, String.valueOf(0), classType.getName());
+
+            // 获取到方法返回中泛型类型，记录
+            for (int i = 0; i < methodReturnGenericsTypeList.size(); i++) {
+                JavaCGFileUtil.write2FileWithTab(methodReturnGenericsTypeWriter, fullMethod, JavaCGConstants.FILE_KEY_METHOD_ARGS_RETURN_GENERICS_TYPE, String.valueOf(i),
+                        methodReturnGenericsTypeList.get(i));
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            return false;
+        }
+    }
+
+    // 记录方法参数中泛型类型
+    private void recordMethodArgsGenericsType(String fullMethod, SignatureAttribute.MethodSignature methodSignature) throws IOException {
+        SignatureAttribute.Type[] parameterTypes = methodSignature.getParameterTypes();
+        if (ArrayUtils.isEmpty(parameterTypes)) {
+            return;
+        }
+        for (int i = 0; i < parameterTypes.length; i++) {
+            SignatureAttribute.Type argType = parameterTypes[i];
+            if (!(argType instanceof SignatureAttribute.ClassType)) {
+                continue;
+            }
+
+            SignatureAttribute.ClassType classType = (SignatureAttribute.ClassType) argType;
+            List<String> methodArgsGenericsTypeList = new ArrayList<>();
+            // 解析方法参数中泛型类型，外层处理
+            parseMethodArgsGenericsType(classType, true, methodArgsGenericsTypeList);
+            if (methodArgsGenericsTypeList.isEmpty()) {
+                // 未获取到方法参数中泛型类型
+                continue;
+            }
+
+            // 记录参数类型
+            JavaCGFileUtil.write2FileWithTab(methodArgGenericsTypeWriter, fullMethod, String.valueOf(i), JavaCGConstants.FILE_KEY_METHOD_ARGS_RETURN_TYPE, String.valueOf(0),
+                    classType.getName());
+
+            // 获取到方法参数中泛型类型，记录
+            for (int j = 0; j < methodArgsGenericsTypeList.size(); j++) {
+                JavaCGFileUtil.write2FileWithTab(methodArgGenericsTypeWriter, fullMethod, String.valueOf(i), JavaCGConstants.FILE_KEY_METHOD_ARGS_RETURN_GENERICS_TYPE,
+                        String.valueOf(j), methodArgsGenericsTypeList.get(j));
+            }
         }
     }
 
@@ -390,6 +424,10 @@ public class ClassHandler {
 
     public void setMethodArgGenericsTypeWriter(Writer methodArgGenericsTypeWriter) {
         this.methodArgGenericsTypeWriter = methodArgGenericsTypeWriter;
+    }
+
+    public void setMethodReturnGenericsTypeWriter(Writer methodReturnGenericsTypeWriter) {
+        this.methodReturnGenericsTypeWriter = methodReturnGenericsTypeWriter;
     }
 
     public void setMethodNumCounter(JavaCGCounter methodNumCounter) {
