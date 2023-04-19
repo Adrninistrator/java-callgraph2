@@ -5,6 +5,7 @@ import com.adrninistrator.javacg.common.enums.JavaCGYesNoEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.classes.InnerClassInfo;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
+import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg.handler.ClassHandler;
@@ -60,15 +61,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer methodReturnGenericsTypeWriter;
     private Writer innerClassWriter;
 
-    private Map<String, JarInfo> jarInfoMap;
-
+    // 扩展类管理类
     private ExtensionsManager extensionsManager;
-
-    // 处理class文件时，缓存当前处理的文件的第一层目录名及对应jar包信息
-    private String lastFirstDirName;
-
-    // 最近一次处理的jar信息
-    private JarInfo lastJarInfo;
 
     // 已经记录过的jar序号
     private final Set<Integer> recordedJarNum = new HashSet<>();
@@ -89,14 +83,16 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private JavaCGCounter classNumCounter;
     private JavaCGCounter methodNumCounter;
 
-    public JarEntryHandleParser(JavaCGConfInfo javaCGConfInfo) {
-        super(javaCGConfInfo);
+    private ClassAndJarNum classAndJarNum;
+
+    public JarEntryHandleParser(JavaCGConfInfo javaCGConfInfo, Map<String, JarInfo> jarInfoMap) {
+        super(javaCGConfInfo, jarInfoMap);
     }
 
     @Override
     protected boolean handleEntry(JarInputStream jarInputStream, String jarEntryName) throws IOException {
-        // 处理jar包中的文件
-        handleJarEntryName(jarEntryName);
+        // 尝试记录Jar包信息
+        tryRecordJarInfo();
 
         if (!JavaCGFileUtil.isClassFile(jarEntryName)) {
             // 非class文件则跳过
@@ -114,66 +110,16 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         return handleJavaClass(javaClass, jarEntryName);
     }
 
-    // 处理jar包中的文件
-    private void handleJarEntryName(String jarEntryName) throws IOException {
-        // 获取当前处理的jar包信息
-        if (!handleCurrentJarInfo(jarInfoMap, jarEntryName)) {
-            return;
-        }
-
+    // 尝试记录Jar包信息
+    private void tryRecordJarInfo() throws IOException {
         int lastJarNum = lastJarInfo.getJarNum();
         if (recordedJarNum.add(lastJarNum)) {
             /*
                 当前jar包未记录时
                 向文件写入数据，内容为jar包信息
-                格式为“J:[jar包序号] jar包文件路径]，或”D:[jar包序号] 目录路径“
              */
             JavaCGFileUtil.write2FileWithTab(jarInfoWriter, lastJarInfo.getJarType(), String.valueOf(lastJarNum), lastJarInfo.getJarPath());
         }
-    }
-
-    /**
-     * 获取当前处理的jar包信息
-     *
-     * @param jarInfoMap
-     * @param jarEntryName
-     * @return true: 处理成功 false: 处理失败
-     */
-    private boolean handleCurrentJarInfo(Map<String, JarInfo> jarInfoMap, String jarEntryName) {
-        if (jarInfoMap.size() == 1) {
-            // 只有一个jar包，从Map取第一个Entry
-            if (lastJarInfo == null) {
-                // 第一次处理当前jar包
-                for (Map.Entry<String, JarInfo> entry : jarInfoMap.entrySet()) {
-                    lastJarInfo = entry.getValue();
-                    return true;
-                }
-            }
-
-            // 不是第一次处理当前jar包
-            return true;
-        }
-
-        // jar包数量大于1个，从Map取值时使用当前JarEntry的第一层目录名称
-        int index = jarEntryName.indexOf("/");
-        if (index == -1) {
-            System.err.println("JarEntry名称中不包含/ " + jarEntryName);
-            return false;
-        }
-
-        String firstDirName = jarEntryName.substring(0, index);
-        if (lastFirstDirName != null && lastFirstDirName.equals(firstDirName)) {
-            // 第一层目录名未变化时，使用缓存数据
-            return true;
-        }
-        lastFirstDirName = firstDirName;
-
-        // 首次处理，或第一层目录名变化时，需要从Map获取
-        lastJarInfo = jarInfoMap.get(firstDirName);
-        if (lastJarInfo == null) {
-            System.err.println("合并后的jar包中出现的名称未记录过: " + jarEntryName);
-        }
-        return true;
     }
 
     // 处理Java类
@@ -227,6 +173,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         classHandler.setExtensionsManager(extensionsManager);
         classHandler.setMethodNumCounter(methodNumCounter);
         classHandler.setLastJarNum(lastJarInfo.getJarNum());
+        classHandler.setClassAndJarNum(classAndJarNum);
 
         classNumCounter.addAndGet();
         if (!classHandler.handleClass()) {
@@ -429,10 +376,6 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.innerClassWriter = innerClassWriter;
     }
 
-    public void setJarInfoMap(Map<String, JarInfo> jarInfoMap) {
-        this.jarInfoMap = jarInfoMap;
-    }
-
     public void setExtensionsManager(ExtensionsManager extensionsManager) {
         this.extensionsManager = extensionsManager;
     }
@@ -447,5 +390,9 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setMethodNumCounter(JavaCGCounter methodNumCounter) {
         this.methodNumCounter = methodNumCounter;
+    }
+
+    public void setClassAndJarNum(ClassAndJarNum classAndJarNum) {
+        this.classAndJarNum = classAndJarNum;
     }
 }

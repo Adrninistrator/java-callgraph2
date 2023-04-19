@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg.util;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import org.apache.commons.lang3.StringUtils;
 
@@ -78,6 +79,7 @@ public class JavaCGJarUtil {
      * @return null: 处理失败，非null: 新生成的jar包文件，或原有的jar包文件
      */
     public static File handleJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet) {
+        JavaCGCounter jarNumCounter = new JavaCGCounter(0);
         if (jarOrDirPathList.size() == 1) {
             // 数组只指定了一个元素
             File oneFile = new File(jarOrDirPathList.get(0));
@@ -97,13 +99,13 @@ public class JavaCGJarUtil {
 
                 // 指定的是一个jar包，直接返回
                 // 记录jar包信息，向map中保存数据的key使用固定值
-                jarInfoMap.put(oneFile.getName(), new JarInfo(JavaCGConstants.FILE_KEY_JAR_INFO_PREFIX, oneFilePath));
+                jarInfoMap.put(oneFile.getName(), new JarInfo(jarNumCounter.addAndGet(), JavaCGConstants.FILE_KEY_JAR_INFO_PREFIX, oneFilePath));
                 return oneFile;
             }
         }
 
         // 指定的是一个目录，或数组指定了多于一个元素，需要生成新的jar包
-        return mergeJar(jarOrDirPathList, jarInfoMap, needHandlePackageSet);
+        return mergeJar(jarOrDirPathList, jarInfoMap, needHandlePackageSet, jarNumCounter);
     }
 
     /**
@@ -116,11 +118,12 @@ public class JavaCGJarUtil {
      * @param jarOrDirPathList
      * @param jarInfoMap
      * @param needHandlePackageSet
+     * @param jarNumCounter
      * @return 合并后的jar包文件路径
      */
-    private static File mergeJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet) {
+    private static File mergeJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet, JavaCGCounter jarNumCounter) {
         // 获取文件或目录列表
-        List<File> jarFileOrDirList = getJarFileOrDirList(jarOrDirPathList, jarInfoMap);
+        List<File> jarFileOrDirList = getJarFileOrDirList(jarOrDirPathList, jarInfoMap, jarNumCounter);
         if (jarFileOrDirList == null) {
             return null;
         }
@@ -172,7 +175,7 @@ public class JavaCGJarUtil {
                 String jarFileName = jarFileInDir.getName();
                 String jarCanonicalPath = JavaCGFileUtil.getCanonicalPath(jarFileInDir);
                 // 记录jar包信息，不覆盖现有值
-                jarInfoMap.putIfAbsent(jarFileName, new JarInfo(JavaCGConstants.FILE_KEY_JAR_INFO_PREFIX, jarCanonicalPath));
+                jarInfoMap.putIfAbsent(jarFileName, new JarInfo(jarNumCounter.addAndGet(), JavaCGConstants.FILE_KEY_JAR_INFO_PREFIX, jarCanonicalPath));
 
                 if (destJarDirNameSet.contains(jarFileName)) {
                     System.err.println("指定的jar包或目录存在同名，不处理: " + jarFileName + " " + jarCanonicalPath);
@@ -197,9 +200,10 @@ public class JavaCGJarUtil {
      *
      * @param jarOrDirPathList
      * @param jarInfoMap
+     * @param jarNumCounter
      * @return
      */
-    private static List<File> getJarFileOrDirList(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap) {
+    private static List<File> getJarFileOrDirList(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, JavaCGCounter jarNumCounter) {
         List<File> jarFileOrDirList = new ArrayList<>(jarOrDirPathList.size());
 
         for (String currentJarOrDirPath : jarOrDirPathList) {
@@ -214,7 +218,7 @@ public class JavaCGJarUtil {
 
             String jarOrDirType = jarFileOrDir.isFile() ? JavaCGConstants.FILE_KEY_JAR_INFO_PREFIX : JavaCGConstants.FILE_KEY_DIR_INFO_PREFIX;
             // 记录jar包信息，不覆盖现有值
-            jarInfoMap.putIfAbsent(jarFileOrDir.getName(), new JarInfo(jarOrDirType, jarCanonicalPath));
+            jarInfoMap.putIfAbsent(jarFileOrDir.getName(), new JarInfo(jarNumCounter.addAndGet(), jarOrDirType, jarCanonicalPath));
         }
 
         return jarFileOrDirList;

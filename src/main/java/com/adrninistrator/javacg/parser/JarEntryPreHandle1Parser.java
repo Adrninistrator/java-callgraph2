@@ -4,6 +4,8 @@ import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
+import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
+import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodAndArgs;
 import com.adrninistrator.javacg.extensions.code_parser.JarEntryOtherFileParser;
 import com.adrninistrator.javacg.extensions.manager.ExtensionsManager;
@@ -44,12 +46,15 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     private Set<String> interfaceExtendsSet;
 
+    private ClassAndJarNum classAndJarNum;
+
     private final ExtensionsManager extensionsManager;
 
     private final DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler;
 
-    public JarEntryPreHandle1Parser(JavaCGConfInfo javaCGConfInfo, DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler, ExtensionsManager extensionsManager) {
-        super(javaCGConfInfo);
+    public JarEntryPreHandle1Parser(JavaCGConfInfo javaCGConfInfo, Map<String, JarInfo> jarInfoMap, DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler,
+                                    ExtensionsManager extensionsManager) {
+        super(javaCGConfInfo, jarInfoMap);
         this.defineSpringBeanByAnnotationHandler = defineSpringBeanByAnnotationHandler;
         this.extensionsManager = extensionsManager;
     }
@@ -90,6 +95,9 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     @Override
     protected boolean handleClassEntry(JavaClass javaClass, String jarEntryName) {
+        // 记录类名及所在的jar包序号
+        classAndJarNum.put(javaClass.getClassName(), lastJarInfo.getJarNum());
+
         if (javaClass.isInterface()) {
             // 对一个接口进行预处理
             preHandle1Interface(javaClass);
@@ -216,5 +224,9 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     public void setInterfaceExtendsSet(Set<String> interfaceExtendsSet) {
         this.interfaceExtendsSet = interfaceExtendsSet;
+    }
+
+    public void setClassAndJarNum(ClassAndJarNum classAndJarNum) {
+        this.classAndJarNum = classAndJarNum;
     }
 }

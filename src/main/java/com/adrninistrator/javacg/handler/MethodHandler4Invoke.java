@@ -14,6 +14,7 @@ import com.adrninistrator.javacg.dto.call.MethodCallPossibleList;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.field.FieldPossibleTypes;
 import com.adrninistrator.javacg.dto.field.FieldTypeAndName;
+import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.method.JavaCGMethodInfo;
 import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatterInterface;
 import com.adrninistrator.javacg.extensions.code_parser.MethodAnnotationParser;
@@ -108,6 +109,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     // 非静态字段字段所有可能的类型
     private FieldPossibleTypes nonStaticFieldPossibleTypes;
+
+    private ClassAndJarNum classAndJarNum;
 
     public MethodHandler4Invoke(MethodGen mg,
                                 JavaClass javaClass,
@@ -217,7 +220,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
     protected boolean lastStep() throws IOException {
         // 处理方法之间调用关系
         for (MethodCall methodCall : methodCallList.getMethodCallList()) {
-            JavaCGFileUtil.write2FileWithTab(methodCallWriter, methodCall.genCallContent(), String.valueOf(lastJarNum));
+            String calleeClassJarNum = classAndJarNum.getJarNum(methodCall.getCalleeClassName());
+            JavaCGFileUtil.write2FileWithTab(methodCallWriter, methodCall.genCallContent(String.valueOf(lastJarNum), calleeClassJarNum));
 
             // 处理方法调用可能的信息
             handleMethodCallPossibleInfo(methodCall.getCallId(), methodCallInfoMap.get(methodCall.getCallId()));
@@ -938,5 +942,9 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     public void setNonStaticFieldPossibleTypes(FieldPossibleTypes nonStaticFieldPossibleTypes) {
         this.nonStaticFieldPossibleTypes = nonStaticFieldPossibleTypes;
+    }
+
+    public void setClassAndJarNum(ClassAndJarNum classAndJarNum) {
+        this.classAndJarNum = classAndJarNum;
     }
 }

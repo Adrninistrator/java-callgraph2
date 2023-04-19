@@ -70,8 +70,8 @@ public class JavaCGConstants {
     // 处理父类和子类的方法调用时，节点索引的初始值
     public static final int EXTENDS_NODE_INDEX_INIT = -1;
 
-    // 默认的jar包序号，使用0，因为实际的jar包序号从1开始
-    public static final String DEFAULT_JAR_NUM = "0";
+    // 代表为空的jar包序号
+    public static final String EMPTY_JAR_NUM = "-";
 
     // 将注解属性值写入文件时，\r替换后的字符
     public static final char ANNOTATION_ATTRIBUTE_VALUE_REPLACE_CARRIAGE_RETURN = 0x01;

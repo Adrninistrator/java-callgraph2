@@ -3,6 +3,7 @@ package com.adrninistrator.javacg.parser;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
+import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodAndArgs;
 import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg.util.JavaCGUtil;
@@ -39,8 +40,8 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
 
     private final UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
 
-    public JarEntryPreHandle2Parser(JavaCGConfInfo javaCGConfInfo, UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler) {
-        super(javaCGConfInfo);
+    public JarEntryPreHandle2Parser(JavaCGConfInfo javaCGConfInfo, Map<String, JarInfo> jarInfoMap, UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler) {
+        super(javaCGConfInfo, jarInfoMap);
         this.useSpringBeanByAnnotationHandler = useSpringBeanByAnnotationHandler;
     }
 

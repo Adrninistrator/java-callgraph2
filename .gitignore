@@ -8,6 +8,6 @@ out/
 .gradle/
 *.iml
 .classpath
-output_dir/
+jar_output_dir/
 log_javacg/
 run_local/

@@ -4,7 +4,6 @@ import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGCallTypeEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGCalleeObjTypeEnum;
 import com.adrninistrator.javacg.util.JavaCGMethodUtil;
-import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -122,7 +121,7 @@ public class MethodCall {
     }
 
     // 生成在调用关系文件中的内容
-    public String genCallContent() {
+    public String genCallContent(String callerJarNum, String calleeJarNum) {
         return StringUtils.joinWith(JavaCGConstants.FILE_COLUMN_SEPARATOR,
                 callId,
                 genCallerFullMethod(),
@@ -130,7 +129,9 @@ public class MethodCall {
                 callerSourceLine,
                 genObjTypeEnum(),
                 rawReturnType,
-                actualReturnType
+                actualReturnType,
+                callerJarNum,
+                calleeJarNum
         );
     }
 
@@ -140,5 +141,9 @@ public class MethodCall {
 
     public void setCallId(int callId) {
         this.callId = callId;
+    }
+
+    public String getCalleeClassName() {
+        return calleeClassName;
     }
 }

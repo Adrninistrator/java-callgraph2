@@ -3,11 +3,12 @@ apply plugin: 'java'
 apply plugin: 'idea'
 
 group 'com.github.adrninistrator'
-version = "1.0.7"
+version = "1.0.8"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+def jar_output_dir = "jar_output_dir"
 
 def defaultEncoding = 'UTF-8'
 
@@ -21,7 +22,7 @@ repositories {
 
 clean {
     delete 'build'
-    delete 'output_dir'
+    delete "${jar_output_dir}"
 }
 
 sourceSets {
@@ -79,23 +80,23 @@ task gen_run_jar(type: Jar) {
     doLast{
         copy {
             from 'build/libs/run_javacg2.jar'
-            into 'output_dir/jar/'
+            into "${jar_output_dir}/jar/"
         }
         copy {
             from 'src/main/resources/_javacg_config/'
-            into 'output_dir/_javacg_config/'
+            into "${jar_output_dir}/_javacg_config/"
         }
         copy {
             from 'run.bat'
-            into 'output_dir/'
+            into "${jar_output_dir}/"
         }
         copy {
             from 'run.sh'
-            into 'output_dir/'
+            into "${jar_output_dir}/"
         }
         copy {
             from configurations.runtimeClasspath
-            into 'output_dir/lib'
+            into "${jar_output_dir}/lib"
         }
     }
 }
@@ -105,6 +106,6 @@ idea {
         // and some extra dirs that should be excluded by IDEA
         excludeDirs += file('.idea')
         excludeDirs += file('gradle')
-        excludeDirs += file('output_dir')
+        excludeDirs += file('jar_output_dir')
     }
 }

@@ -10,6 +10,7 @@ import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
 import com.adrninistrator.javacg.dto.classes.Node4ClassExtendsMethod;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
+import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.method.MethodAndArgs;
 import com.adrninistrator.javacg.dto.stack.ListAsStack;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
@@ -47,6 +48,8 @@ public class ExtendsImplHandler {
     private Map<String, ClassImplementsMethodInfo> classInterfaceMethodInfoMap;
 
     private Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap;
+
+    private ClassAndJarNum classAndJarNum;
 
     public void handle(Writer methodCallWriter) throws IOException {
         // 将父接口中的方法添加到子接口中
@@ -359,6 +362,9 @@ public class ExtendsImplHandler {
             return;
         }
 
+        String callerClassJarNum = classAndJarNum.getJarNum(callerClassName);
+        String calleeClassJarNum = classAndJarNum.getJarNum(calleeClassName);
+
         MethodCall methodCall = new MethodCall(
                 callIdCounter.addAndGet(),
                 callerClassName,
@@ -373,7 +379,7 @@ public class ExtendsImplHandler {
                 null,
                 null
         );
-        JavaCGFileUtil.write2FileWithTab(methodCallWriter, methodCall.genCallContent(), JavaCGConstants.DEFAULT_JAR_NUM);
+        JavaCGFileUtil.write2FileWithTab(methodCallWriter, methodCall.genCallContent(callerClassJarNum, calleeClassJarNum));
     }
 
     //
@@ -407,5 +413,9 @@ public class ExtendsImplHandler {
 
     public void setClassExtendsMethodInfoMap(Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap) {
         this.classExtendsMethodInfoMap = classExtendsMethodInfoMap;
+    }
+
+    public void setClassAndJarNum(ClassAndJarNum classAndJarNum) {
+        this.classAndJarNum = classAndJarNum;
     }
 }

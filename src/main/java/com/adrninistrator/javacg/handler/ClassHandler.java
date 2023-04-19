@@ -4,6 +4,7 @@ import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.field.FieldPossibleTypes;
+import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatterInterface;
 import com.adrninistrator.javacg.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
@@ -76,6 +77,8 @@ public class ClassHandler {
     private final JavaCGConfInfo javaCGConfInfo;
 
     private int lastJarNum;
+
+    private ClassAndJarNum classAndJarNum;
 
     // 非静态字段字段所有可能的类型
     private FieldPossibleTypes nonStaticFieldPossibleTypes;
@@ -246,6 +249,7 @@ public class ClassHandler {
         methodHandler4Invoke.setParseMethodCallTypeValueFlag(javaCGConfInfo.isParseMethodCallTypeValue());
         methodHandler4Invoke.setLastJarNum(lastJarNum);
         methodHandler4Invoke.setExistsSameMethodNameAndArgs(existsSameMethodNameAndArgs);
+        methodHandler4Invoke.setClassAndJarNum(classAndJarNum);
 
         if (javaCGConfInfo.isFirstParseInitMethodType()) {
             methodHandler4Invoke.setNonStaticFieldPossibleTypes(nonStaticFieldPossibleTypes);
@@ -436,5 +440,9 @@ public class ClassHandler {
 
     public void setLastJarNum(int lastJarNum) {
         this.lastJarNum = lastJarNum;
+    }
+
+    public void setClassAndJarNum(ClassAndJarNum classAndJarNum) {
+        this.classAndJarNum = classAndJarNum;
     }
 }

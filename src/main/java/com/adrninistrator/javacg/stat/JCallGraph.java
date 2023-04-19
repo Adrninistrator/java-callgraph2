@@ -10,6 +10,7 @@ import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
+import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodAndArgs;
 import com.adrninistrator.javacg.dto.output.JavaCGOutputInfo;
@@ -59,7 +60,11 @@ public class JCallGraph {
 
     private ExtendsImplHandler extendsImplHandler;
 
-    // 保存需要处理的jar包文件名及对应的序号
+    /*
+        保存需要处理的jar包文件名及对应的jar包信息
+        key     jar包文件名
+        value   jar包信息，包含jar包序号
+     */
     private Map<String, JarInfo> jarInfoMap;
 
     private JavaCGConfInfo javaCGConfInfo;
@@ -228,36 +233,46 @@ public class JCallGraph {
         }
 
         // 第一次预处理相关
+        // Runnable实现类Map
         Map<String, Boolean> runnableImplClassMap = new HashMap<>(JavaCGConstants.SIZE_100);
+        // Callable实现类Map
         Map<String, Boolean> callableImplClassMap = new HashMap<>(JavaCGConstants.SIZE_100);
+        // TransactionCallback实现类Map
         Map<String, Boolean> transactionCallbackImplClassMap = new HashMap<>(JavaCGConstants.SIZE_10);
+        // TransactionCallbackWithoutResult子类Map
         Map<String, Boolean> transactionCallbackWithoutResultChildClassMap = new HashMap<>(JavaCGConstants.SIZE_10);
+        // Thread子类Map
         Map<String, Boolean> threadChildClassMap = new HashMap<>(JavaCGConstants.SIZE_100);
+        // 涉及继承的类名Set
         Set<String> classExtendsSet = new HashSet<>(JavaCGConstants.SIZE_100);
+        // 涉及继承的接口名Set
         Set<String> interfaceExtendsSet = new HashSet<>(JavaCGConstants.SIZE_100);
+  
+        /*
+           类名及所在的jar包序号Map
+           key    类名
+           value  类所在的jar包序号
+        */
+        ClassAndJarNum classAndJarNum = new ClassAndJarNum();
 
         /*
             类实现的接口，及类中的方法信息
-            key
-                类名
-            value
-                类实现的接口，及类中的方法信息
+            key     类名
+            value   类实现的接口，及类中的方法信息
          */
         Map<String, ClassImplementsMethodInfo> classInterfaceMethodInfoMap = new HashMap<>(JavaCGConstants.SIZE_200);
 
         /*
             接口中的方法信息
-            key
-                接口名
-            value
-                接口中的方法信息
+            key     接口名
+            value   接口中的方法信息
         */
         Map<String, List<MethodAndArgs>> interfaceMethodWithArgsMap = new HashMap<>(JavaCGConstants.SIZE_200);
 
         if (javaCGConfInfo.isParseMethodCallTypeValue()) {
             defineSpringBeanByAnnotationHandler = new DefineSpringBeanByAnnotationHandler(javaCGConfInfo);
         }
-        jarEntryPreHandle1Parser = new JarEntryPreHandle1Parser(javaCGConfInfo, defineSpringBeanByAnnotationHandler, extensionsManager);
+        jarEntryPreHandle1Parser = new JarEntryPreHandle1Parser(javaCGConfInfo, jarInfoMap, defineSpringBeanByAnnotationHandler, extensionsManager);
         jarEntryPreHandle1Parser.setClassInterfaceMethodInfoMap(classInterfaceMethodInfoMap);
         jarEntryPreHandle1Parser.setInterfaceMethodWithArgsMap(interfaceMethodWithArgsMap);
         jarEntryPreHandle1Parser.setRunnableImplClassMap(runnableImplClassMap);
@@ -267,6 +282,7 @@ public class JCallGraph {
         jarEntryPreHandle1Parser.setThreadChildClassMap(threadChildClassMap);
         jarEntryPreHandle1Parser.setClassExtendsSet(classExtendsSet);
         jarEntryPreHandle1Parser.setInterfaceExtendsSet(interfaceExtendsSet);
+        jarEntryPreHandle1Parser.setClassAndJarNum(classAndJarNum);
 
         // 第二次预处理相关
         /*
@@ -309,7 +325,7 @@ public class JCallGraph {
             useSpringBeanByAnnotationHandler = new UseSpringBeanByAnnotationHandler(classExtendsMethodInfoMap, defineSpringBeanByAnnotationHandler,
                     extensionsManager.getSpringXmlBeanParser());
         }
-        jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCGConfInfo, useSpringBeanByAnnotationHandler);
+        jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCGConfInfo, jarInfoMap, useSpringBeanByAnnotationHandler);
         jarEntryPreHandle2Parser.setClassExtendsSet(classExtendsSet);
         jarEntryPreHandle2Parser.setClassExtendsMethodInfoMap(classExtendsMethodInfoMap);
         jarEntryPreHandle2Parser.setChildrenClassMap(childrenClassMap);
@@ -318,18 +334,18 @@ public class JCallGraph {
         jarEntryPreHandle2Parser.setChildrenInterfaceMap(childrenInterfaceMap);
 
         // 正式处理相关
-        jarEntryHandleParser = new JarEntryHandleParser(javaCGConfInfo);
+        jarEntryHandleParser = new JarEntryHandleParser(javaCGConfInfo, jarInfoMap);
         jarEntryHandleParser.setUseSpringBeanByAnnotationHandler(useSpringBeanByAnnotationHandler);
         jarEntryHandleParser.setRunnableImplClassMap(runnableImplClassMap);
         jarEntryHandleParser.setCallableImplClassMap(callableImplClassMap);
         jarEntryHandleParser.setTransactionCallbackImplClassMap(transactionCallbackImplClassMap);
         jarEntryHandleParser.setTransactionCallbackWithoutResultChildClassMap(transactionCallbackWithoutResultChildClassMap);
         jarEntryHandleParser.setThreadChildClassMap(threadChildClassMap);
-        jarEntryHandleParser.setJarInfoMap(jarInfoMap);
         jarEntryHandleParser.setExtensionsManager(extensionsManager);
         jarEntryHandleParser.setCallIdCounter(callIdCounter);
         jarEntryHandleParser.setClassNumCounter(classNumCounter);
         jarEntryHandleParser.setMethodNumCounter(methodNumCounter);
+        jarEntryHandleParser.setClassAndJarNum(classAndJarNum);
 
         // 继承及实现相关的方法处理相关
         extendsImplHandler = new ExtendsImplHandler();
@@ -341,6 +357,7 @@ public class JCallGraph {
         extendsImplHandler.setChildrenInterfaceMap(childrenInterfaceMap);
         extendsImplHandler.setClassInterfaceMethodInfoMap(classInterfaceMethodInfoMap);
         extendsImplHandler.setClassExtendsMethodInfoMap(classExtendsMethodInfoMap);
+        extendsImplHandler.setClassAndJarNum(classAndJarNum);
         return true;
     }
 
