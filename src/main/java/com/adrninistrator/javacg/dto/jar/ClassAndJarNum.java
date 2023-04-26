@@ -32,6 +32,7 @@ public class ClassAndJarNum {
      * @param jarNum
      */
     public void put(String className, Integer jarNum) {
+        // 只记录每个类所出现的最靠前的Jar包序号，不覆盖现有值
         classAndJarNumMap.putIfAbsent(className, jarNum);
     }
 }

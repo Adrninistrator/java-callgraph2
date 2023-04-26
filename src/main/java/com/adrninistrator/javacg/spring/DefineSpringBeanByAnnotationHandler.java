@@ -70,7 +70,8 @@ public class DefineSpringBeanByAnnotationHandler {
                 return true;
             }
         }
-        return false;
+        // 再判断是否有@Named注解
+        return SpringAnnotationConstants.ANNOTATION_NAME_NAMED.equals(annotationType);
     }
 
     // 处理类上的Spring Component相关注解
@@ -82,10 +83,14 @@ public class DefineSpringBeanByAnnotationHandler {
             return;
         }
 
-        // 若Component相关注解的value属性值为空，则将类名首字母小写作为Bean名称作用
+        // 若Component相关注解的value属性值为空
+        // 将类名首字母小写作为Bean名称作用
         String simpleClassName = JavaCGUtil.getSimpleClassNameFromFull(className);
         String firstLetterLowerClassName = JavaCGUtil.getFirstLetterLowerClassName(simpleClassName);
         stringBeanNameAndTypeMap.put(firstLetterLowerClassName, Collections.singletonList(className));
+
+        // 再将类名作为Bean名称作用（用来支持Bean使用@Service、@Repository等注解定义，使用@Resource的type属性注入对应Bean）
+        stringBeanNameAndTypeMap.put(className, Collections.singletonList(className));
     }
 
     // 处理类上的Spring Configuration注解

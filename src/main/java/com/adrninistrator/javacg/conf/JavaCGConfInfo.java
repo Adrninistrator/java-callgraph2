@@ -31,6 +31,9 @@ public class JavaCGConfInfo {
     // 调试日志打印到文件开关
     private boolean debugPrintInFile;
 
+    // 记录方法分析耗时的开关
+    private boolean logMethodSpendTime;
+
     // 生成文件的根目录
     private String outputRootPath;
 
@@ -91,6 +94,14 @@ public class JavaCGConfInfo {
 
     public void setDebugPrintInFile(boolean debugPrintInFile) {
         this.debugPrintInFile = debugPrintInFile;
+    }
+
+    public boolean isLogMethodSpendTime() {
+        return logMethodSpendTime;
+    }
+
+    public void setLogMethodSpendTime(boolean logMethodSpendTime) {
+        this.logMethodSpendTime = logMethodSpendTime;
     }
 
     public String getOutputRootPath() {

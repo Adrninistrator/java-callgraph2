@@ -24,6 +24,8 @@ public class SpringAnnotationConstants {
     public static final String ANNOTATION_NAME_QUALIFIER = "Lorg/springframework/beans/factory/annotation/Qualifier;";
     public static final String ANNOTATION_NAME_CONFIGURATION = "Lorg/springframework/context/annotation/Configuration;";
     public static final String ANNOTATION_NAME_BEAN = "Lorg/springframework/context/annotation/Bean;";
+    public static final String ANNOTATION_NAME_NAMED = "Ljavax/inject/Named;";
+    public static final String ANNOTATION_NAME_INJECT = "Ljavax/inject/Inject;";
 
     private SpringAnnotationConstants() {
         throw new IllegalStateException("illegal");

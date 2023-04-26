@@ -177,6 +177,7 @@ public class ExtendsImplHandler {
                 }
 
                 for (MethodAndArgs interfaceMethodWithArgs : interfaceMethodWithArgsList) {
+                    // 添加时不覆盖现有的值
                     methodWithArgsMap.putIfAbsent(interfaceMethodWithArgs, accessFlags);
                 }
             }
@@ -285,6 +286,7 @@ public class ExtendsImplHandler {
             Integer superMethodAccessFlags = superMethodWithArgsMap.get(superMethodWithArgs);
             if (JavaCGByteCodeUtil.isAbstractFlag(superMethodAccessFlags)) {
                 // 处理父类抽象方法
+                // 添加时不覆盖现有的值
                 childMethodWithArgsMap.putIfAbsent(superMethodWithArgs, superMethodAccessFlags);
                 // 添加父类调用子类的方法调用
                 addExtraMethodCall(methodCallWriter, superClassName, superMethodWithArgs.getMethodName(), superMethodWithArgs.getMethodArgs(),

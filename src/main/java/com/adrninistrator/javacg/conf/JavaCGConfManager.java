@@ -46,6 +46,8 @@ public class JavaCGConfManager {
                 confInfo.setDebugPrintInFile(false);
             }
 
+            confInfo.setLogMethodSpendTime(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_LOG_METHOD_SPEND_TIME, true)));
+
             String outputRootPath = javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_OUTPUT_ROOT_PATH, true);
             confInfo.setOutputRootPath(outputRootPath);
 

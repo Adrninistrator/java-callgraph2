@@ -14,6 +14,7 @@ import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGLogUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
+import com.adrninistrator.javacg.writer.WriterSupportSkip;
 import copy.javassist.bytecode.BadBytecode;
 import copy.javassist.bytecode.SignatureAttribute;
 import org.apache.bcel.classfile.ClassParser;
@@ -60,6 +61,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer methodArgGenericsTypeWriter;
     private Writer methodReturnGenericsTypeWriter;
     private Writer innerClassWriter;
+
+    private WriterSupportSkip logMethodSpendTimeWriter;
 
     // 扩展类管理类
     private ExtensionsManager extensionsManager;
@@ -152,7 +155,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
             JavaCGLogUtil.debugPrint("处理Class: " + className);
         }
 
-        ClassHandler classHandler = new ClassHandler(javaClass, javaCGConfInfo);
+        ClassHandler classHandler = new ClassHandler(javaClass, jarEntryName, javaCGConfInfo);
         classHandler.setUseSpringBeanByAnnotationHandler(useSpringBeanByAnnotationHandler);
         classHandler.setRunnableImplClassMap(runnableImplClassMap);
         classHandler.setCallableImplClassMap(callableImplClassMap);
@@ -170,6 +173,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         classHandler.setMethodInfoWriter(methodInfoWriter);
         classHandler.setMethodArgGenericsTypeWriter(methodArgGenericsTypeWriter);
         classHandler.setMethodReturnGenericsTypeWriter(methodReturnGenericsTypeWriter);
+        classHandler.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
         classHandler.setExtensionsManager(extensionsManager);
         classHandler.setMethodNumCounter(methodNumCounter);
         classHandler.setLastJarNum(lastJarInfo.getJarNum());
@@ -374,6 +378,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setInnerClassWriter(Writer innerClassWriter) {
         this.innerClassWriter = innerClassWriter;
+    }
+
+    public void setLogMethodSpendTimeWriter(WriterSupportSkip logMethodSpendTimeWriter) {
+        this.logMethodSpendTimeWriter = logMethodSpendTimeWriter;
     }
 
     public void setExtensionsManager(ExtensionsManager extensionsManager) {

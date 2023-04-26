@@ -71,9 +71,11 @@ public class UseSpringBeanByAnnotationHandler {
         Map<String, String> fieldSpringBeanTypeMap = new HashMap<>();
 
         for (Field field : javaClass.getFields()) {
+            String fieldName = field.getName();
             AnnotationEntry resourceAnnotationEntry = null;
             AnnotationEntry autowiredAnnotationEntry = null;
             AnnotationEntry qualifierAnnotationEntry = null;
+            AnnotationEntry injectAnnotationEntry = null;
 
             for (AnnotationEntry annotationEntry : field.getAnnotationEntries()) {
                 if (SpringAnnotationConstants.ANNOTATION_NAME_RESOURCE.equals(annotationEntry.getAnnotationType())) {
@@ -82,20 +84,29 @@ public class UseSpringBeanByAnnotationHandler {
                     autowiredAnnotationEntry = annotationEntry;
                 } else if (SpringAnnotationConstants.ANNOTATION_NAME_QUALIFIER.equals(annotationEntry.getAnnotationType())) {
                     qualifierAnnotationEntry = annotationEntry;
+                } else if (SpringAnnotationConstants.ANNOTATION_NAME_INJECT.equals(annotationEntry.getAnnotationType())) {
+                    injectAnnotationEntry = annotationEntry;
                 }
             }
 
-            // 获取带有Spring注解的字段对应的Bean名称
-            String beanName = getSpringBeanNameOfField(resourceAnnotationEntry, autowiredAnnotationEntry, qualifierAnnotationEntry);
-            if (beanName != null) {
-                fieldSpringBeanNameMap.put(field.getName(), beanName);
-            } else if (resourceAnnotationEntry != null) {
+            // 记录是否有处理@Resource注解的type属性，若有则不处理name属性
+            boolean skipResource = false;
+            if (resourceAnnotationEntry != null) {
                 /*
                     字段上存在@Resource注解，但未获取到name属性值，再获取type属性值
                  */
                 String typeAttributeValue = JavaCGAnnotationUtil.getAnnotationAttributeStringValue(resourceAnnotationEntry, SpringAnnotationConstants.ANNOTATION_ATTRIBUTE_TYPE);
                 if (typeAttributeValue != null) {
-                    fieldSpringBeanTypeMap.put(field.getName(), typeAttributeValue);
+                    fieldSpringBeanTypeMap.put(fieldName, typeAttributeValue);
+                    skipResource = true;
+                }
+            }
+
+            if (!skipResource) {
+                // 获取带有Spring注解的字段对应的Bean名称
+                String beanName = getSpringBeanNameOfField(resourceAnnotationEntry, autowiredAnnotationEntry, qualifierAnnotationEntry, injectAnnotationEntry, fieldName);
+                if (beanName != null) {
+                    fieldSpringBeanNameMap.put(fieldName, beanName);
                 }
             }
         }
@@ -116,24 +127,40 @@ public class UseSpringBeanByAnnotationHandler {
      * @param resourceAnnotationEntry
      * @param autowiredAnnotationEntry
      * @param qualifierAnnotationEntry
+     * @param injectAnnotationEntry
+     * @param fieldName
      * @return
      */
-    private String getSpringBeanNameOfField(AnnotationEntry resourceAnnotationEntry, AnnotationEntry autowiredAnnotationEntry, AnnotationEntry qualifierAnnotationEntry) {
-        if (resourceAnnotationEntry == null && autowiredAnnotationEntry == null) {
-            // 字段上没有@Resource、@Autowired注解
+    private String getSpringBeanNameOfField(AnnotationEntry resourceAnnotationEntry,
+                                            AnnotationEntry autowiredAnnotationEntry,
+                                            AnnotationEntry qualifierAnnotationEntry,
+                                            AnnotationEntry injectAnnotationEntry,
+                                            String fieldName) {
+        if (resourceAnnotationEntry == null && autowiredAnnotationEntry == null && injectAnnotationEntry == null) {
+            // 字段上没有@Resource、@Autowired、@Inject注解
             // 返回null，代表字段不是Spring Bean
             return null;
         }
 
         if (resourceAnnotationEntry != null) {
             // 字段上有@Resource注解，获取name属性值
-            return JavaCGAnnotationUtil.getAnnotationAttributeStringValue(resourceAnnotationEntry, SpringAnnotationConstants.ANNOTATION_ATTRIBUTE_NAME);
+            String nameOfResource = JavaCGAnnotationUtil.getAnnotationAttributeStringValue(resourceAnnotationEntry, SpringAnnotationConstants.ANNOTATION_ATTRIBUTE_NAME);
+            if (nameOfResource == null) {
+                // @Resource注解name属性值为空，返回字段名称
+                return fieldName;
+            }
+            return nameOfResource;
         }
 
+        if (injectAnnotationEntry != null) {
+            // 字段上没有@Inject注解，返回字段名称
+            return fieldName;
+        }
+
+        // 字段上有@Autowired注解
         if (qualifierAnnotationEntry == null) {
-            // 字段上有@Autowired注解，没有@Qualifier注解
-            // 返回空字符串，代表字段是Spring Bean，但变量类型不需要转换
-            return "";
+            // 字段上没有@Qualifier注解，返回字段名称
+            return fieldName;
         }
 
         // 字段上有@Autowired、@Qualifier注解

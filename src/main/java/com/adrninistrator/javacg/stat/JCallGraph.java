@@ -29,6 +29,7 @@ import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGJarUtil;
 import com.adrninistrator.javacg.util.JavaCGLogUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
+import com.adrninistrator.javacg.writer.WriterSupportSkip;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
@@ -138,7 +139,8 @@ public class JCallGraph {
              Writer classSignatureEI1Writer = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_EI1));
              Writer methodArgGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ARG_GENERICS_TYPE));
              Writer methodReturnGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_RETURN_GENERICS_TYPE));
-             Writer innerClassWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_INNER_CLASS))
+             Writer innerClassWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_INNER_CLASS));
+             WriterSupportSkip logMethodSpendTimeWriter = new WriterSupportSkip(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LOG_METHOD_SPEND_TIME))
         ) {
             jarEntryHandleParser.setJarInfoWriter(jarInfoWriter);
             jarEntryHandleParser.setClassNameWriter(classNameWriter);
@@ -155,6 +157,7 @@ public class JCallGraph {
             jarEntryHandleParser.setMethodArgGenericsTypeWriter(methodArgGenericsTypeWriter);
             jarEntryHandleParser.setMethodReturnGenericsTypeWriter(methodReturnGenericsTypeWriter);
             jarEntryHandleParser.setInnerClassWriter(innerClassWriter);
+            jarEntryHandleParser.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
 
             // 处理jar包
             if (!handleJar(newJarFilePath, methodCallWriter, springBeanWriter)) {

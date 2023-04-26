@@ -13,6 +13,7 @@ import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGMethodUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
+import com.adrninistrator.javacg.writer.WriterSupportSkip;
 import copy.javassist.bytecode.BadBytecode;
 import copy.javassist.bytecode.SignatureAttribute;
 import org.apache.bcel.Const;
@@ -43,6 +44,8 @@ public class ClassHandler {
 
     private final JavaClass javaClass;
 
+    private final String classFileName;
+
     private final ConstantPoolGen cpg;
 
     private final Set<String> handledMethodNameAndArgs;
@@ -71,6 +74,7 @@ public class ClassHandler {
     private Writer methodInfoWriter;
     private Writer methodArgGenericsTypeWriter;
     private Writer methodReturnGenericsTypeWriter;
+    private WriterSupportSkip logMethodSpendTimeWriter;
 
     private AnnotationAttributesFormatterInterface annotationAttributesFormatter;
 
@@ -83,8 +87,9 @@ public class ClassHandler {
     // 非静态字段字段所有可能的类型
     private FieldPossibleTypes nonStaticFieldPossibleTypes;
 
-    public ClassHandler(JavaClass javaClass, JavaCGConfInfo javaCGConfInfo) {
+    public ClassHandler(JavaClass javaClass, String classFileName, JavaCGConfInfo javaCGConfInfo) {
         this.javaClass = javaClass;
+        this.classFileName = classFileName;
         this.javaCGConfInfo = javaCGConfInfo;
         cpg = new ConstantPoolGen(javaClass.getConstantPool());
         handledMethodNameAndArgs = new HashSet<>();
@@ -211,6 +216,12 @@ public class ClassHandler {
             }
         }
 
+        long startTime = 0;
+        if (javaCGConfInfo.isLogMethodSpendTime()) {
+            startTime = System.currentTimeMillis();
+            logMethodSpendTimeWriter.write(classFileName + JavaCGConstants.FILE_COLUMN_SEPARATOR + fullMethod);
+        }
+
         String methodGenericSignature = method.getGenericSignature();
         if (methodGenericSignature != null) {
             try {
@@ -257,7 +268,13 @@ public class ClassHandler {
 
         handledMethodNameAndArgs.add(methodNameAndArgs);
 
-        return methodHandler4Invoke.handleMethod();
+        boolean success = methodHandler4Invoke.handleMethod();
+        if (javaCGConfInfo.isLogMethodSpendTime()) {
+            long spendTime = System.currentTimeMillis() - startTime;
+            logMethodSpendTimeWriter.write(JavaCGConstants.FILE_COLUMN_SEPARATOR + spendTime + JavaCGConstants.NEW_LINE);
+        }
+
+        return success;
     }
 
     // 记录方法返回泛型类型
@@ -432,6 +449,10 @@ public class ClassHandler {
 
     public void setMethodReturnGenericsTypeWriter(Writer methodReturnGenericsTypeWriter) {
         this.methodReturnGenericsTypeWriter = methodReturnGenericsTypeWriter;
+    }
+
+    public void setLogMethodSpendTimeWriter(WriterSupportSkip logMethodSpendTimeWriter) {
+        this.logMethodSpendTimeWriter = logMethodSpendTimeWriter;
     }
 
     public void setMethodNumCounter(JavaCGCounter methodNumCounter) {
