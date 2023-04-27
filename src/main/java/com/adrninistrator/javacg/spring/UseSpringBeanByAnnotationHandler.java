@@ -8,6 +8,7 @@ import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.Field;
 import org.apache.bcel.classfile.JavaClass;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -75,6 +76,7 @@ public class UseSpringBeanByAnnotationHandler {
             AnnotationEntry resourceAnnotationEntry = null;
             AnnotationEntry autowiredAnnotationEntry = null;
             AnnotationEntry qualifierAnnotationEntry = null;
+            AnnotationEntry namedAnnotationEntry = null;
             AnnotationEntry injectAnnotationEntry = null;
 
             for (AnnotationEntry annotationEntry : field.getAnnotationEntries()) {
@@ -84,13 +86,15 @@ public class UseSpringBeanByAnnotationHandler {
                     autowiredAnnotationEntry = annotationEntry;
                 } else if (SpringAnnotationConstants.ANNOTATION_NAME_QUALIFIER.equals(annotationEntry.getAnnotationType())) {
                     qualifierAnnotationEntry = annotationEntry;
+                } else if (SpringAnnotationConstants.ANNOTATION_NAME_NAMED.equals(annotationEntry.getAnnotationType())) {
+                    namedAnnotationEntry = annotationEntry;
                 } else if (SpringAnnotationConstants.ANNOTATION_NAME_INJECT.equals(annotationEntry.getAnnotationType())) {
                     injectAnnotationEntry = annotationEntry;
                 }
             }
 
             // 记录是否有处理@Resource注解的type属性，若有则不处理name属性
-            boolean skipResource = false;
+            boolean skip = false;
             if (resourceAnnotationEntry != null) {
                 /*
                     字段上存在@Resource注解，但未获取到name属性值，再获取type属性值
@@ -98,13 +102,14 @@ public class UseSpringBeanByAnnotationHandler {
                 String typeAttributeValue = JavaCGAnnotationUtil.getAnnotationAttributeStringValue(resourceAnnotationEntry, SpringAnnotationConstants.ANNOTATION_ATTRIBUTE_TYPE);
                 if (typeAttributeValue != null) {
                     fieldSpringBeanTypeMap.put(fieldName, typeAttributeValue);
-                    skipResource = true;
+                    skip = true;
                 }
             }
 
-            if (!skipResource) {
+            if (!skip) {
                 // 获取带有Spring注解的字段对应的Bean名称
-                String beanName = getSpringBeanNameOfField(resourceAnnotationEntry, autowiredAnnotationEntry, qualifierAnnotationEntry, injectAnnotationEntry, fieldName);
+                String beanName = getSpringBeanNameOfField(resourceAnnotationEntry, autowiredAnnotationEntry, qualifierAnnotationEntry, namedAnnotationEntry,
+                        injectAnnotationEntry, fieldName);
                 if (beanName != null) {
                     fieldSpringBeanNameMap.put(fieldName, beanName);
                 }
@@ -127,6 +132,7 @@ public class UseSpringBeanByAnnotationHandler {
      * @param resourceAnnotationEntry
      * @param autowiredAnnotationEntry
      * @param qualifierAnnotationEntry
+     * @param namedAnnotationEntry
      * @param injectAnnotationEntry
      * @param fieldName
      * @return
@@ -134,6 +140,7 @@ public class UseSpringBeanByAnnotationHandler {
     private String getSpringBeanNameOfField(AnnotationEntry resourceAnnotationEntry,
                                             AnnotationEntry autowiredAnnotationEntry,
                                             AnnotationEntry qualifierAnnotationEntry,
+                                            AnnotationEntry namedAnnotationEntry,
                                             AnnotationEntry injectAnnotationEntry,
                                             String fieldName) {
         if (resourceAnnotationEntry == null && autowiredAnnotationEntry == null && injectAnnotationEntry == null) {
@@ -153,8 +160,19 @@ public class UseSpringBeanByAnnotationHandler {
         }
 
         if (injectAnnotationEntry != null) {
-            // 字段上没有@Inject注解，返回字段名称
-            return fieldName;
+            // 字段上有@Inject注解
+            if (namedAnnotationEntry == null) {
+                // 字段上没有@Named注解，返回字段名称
+                return fieldName;
+            }
+            // 字段上有@Named注解
+            String valueOfNamed = JavaCGAnnotationUtil.getAnnotationAttributeStringValue(namedAnnotationEntry, SpringAnnotationConstants.ANNOTATION_ATTRIBUTE_VALUE);
+            if (StringUtils.isBlank(valueOfNamed)) {
+                // @Named注解的value属性值为空，返回字段名称
+                return fieldName;
+            }
+            // @Named注解的value属性值非空，返回value属性值
+            return valueOfNamed;
         }
 
         // 字段上有@Autowired注解
@@ -163,8 +181,14 @@ public class UseSpringBeanByAnnotationHandler {
             return fieldName;
         }
 
-        // 字段上有@Autowired、@Qualifier注解
-        return JavaCGAnnotationUtil.getAnnotationAttributeStringValue(qualifierAnnotationEntry, SpringAnnotationConstants.ANNOTATION_ATTRIBUTE_VALUE);
+        // 字段上有@Qualifier注解
+        String valueOfQualifier = JavaCGAnnotationUtil.getAnnotationAttributeStringValue(qualifierAnnotationEntry, SpringAnnotationConstants.ANNOTATION_ATTRIBUTE_VALUE);
+        if (StringUtils.isBlank(valueOfQualifier)) {
+            // @Qualifier注解的value属性值为空，返回字段名称
+            return fieldName;
+        }
+        // @Qualifier注解的value属性值非空，返回value属性值
+        return valueOfQualifier;
     }
 
     /**
@@ -175,6 +199,12 @@ public class UseSpringBeanByAnnotationHandler {
      * @return
      */
     public List<String> getSpringBeanTypeList(String className, String fieldName) {
+        // 获取指定类指定字段对应的Spring Bean的类型，通过注解中的type属性获取
+        String springBeanType = getSpringBeanTypeByAnnotationType(className, fieldName);
+        if (springBeanType != null) {
+            return Collections.singletonList(springBeanType);
+        }
+
         // 获取指定类指定字段对应的Spring Bean名称
         String springBeanName = getSpringBeanName(className, fieldName);
         if (springBeanName == null) {
@@ -188,13 +218,70 @@ public class UseSpringBeanByAnnotationHandler {
 
         if (springXmlBeanParser != null) {
             // 从Spring XML中获取bean类型
-            String springBeanType = springXmlBeanParser.getBeanClass(springBeanName);
-            if (springBeanType != null) {
-                return Collections.singletonList(springBeanType);
+            String springBeanTypeInXml = springXmlBeanParser.getBeanClass(springBeanName);
+            if (springBeanTypeInXml != null) {
+                return Collections.singletonList(springBeanTypeInXml);
             }
         }
 
         return Collections.emptyList();
+    }
+
+    /**
+     * 获取指定类指定字段对应的Spring Bean的类型，通过注解中的type属性获取
+     *
+     * @param className
+     * @param fieldName
+     * @return
+     */
+    private String getSpringBeanTypeByAnnotationType(String className, String fieldName) {
+        // 先从当前类的字段中获取
+        String springBeanFieldType = doGetSpringBeanTypeByAnnotationType(className, fieldName);
+        if (springBeanFieldType != null) {
+            return springBeanFieldType;
+        }
+
+        // 尝试从当前类的父类字段中获取
+        String currentClassName = className;
+        while (true) {
+            ClassExtendsMethodInfo classExtendsMethodInfo = classExtendsMethodInfoMap.get(currentClassName);
+            if (classExtendsMethodInfo == null) {
+                // 当前类不存在自定义父类
+                break;
+            }
+
+            currentClassName = classExtendsMethodInfo.getSuperClassName();
+            if (JavaCGUtil.isClassInJdk(currentClassName)) {
+                // 当前类父类为JDK中的类
+                break;
+            }
+
+            // 从当前类的父类字段中获取
+            springBeanFieldType = doGetSpringBeanTypeByAnnotationType(currentClassName, fieldName);
+            if (springBeanFieldType != null) {
+                // 假如当前字段在父类中，且为Spring Bean，则添加到当前类的Map中，避免再到父类Map中查找
+                Map<String, String> fieldSpringBeanTypeMap = classFieldSpringBeanTypeMap.computeIfAbsent(className, k -> new HashMap<>());
+                fieldSpringBeanTypeMap.put(fieldName, springBeanFieldType);
+                break;
+            }
+        }
+        return springBeanFieldType;
+    }
+
+    /**
+     * 执行获取指定类指定字段对应的Spring Bean类型，通过注解中的type属性获取
+     *
+     * @param className 类名
+     * @param fieldName 字段名
+     * @return
+     */
+    private String doGetSpringBeanTypeByAnnotationType(String className, String fieldName) {
+        // 获取类对应的字段及Spring Bean类型Map
+        Map<String, String> fieldSpringBeanTypeMap = classFieldSpringBeanTypeMap.get(className);
+        if (fieldSpringBeanTypeMap == null) {
+            return null;
+        }
+        return fieldSpringBeanTypeMap.get(fieldName);
     }
 
     /**
@@ -228,9 +315,10 @@ public class UseSpringBeanByAnnotationHandler {
 
             // 从当前类的父类字段中获取
             springBeanFieldName = doGetSpringBeanName(currentClassName, fieldName);
-            if (springBeanFieldName != null) {  // 假如当前字段在父类中，且为Spring Bean，则添加到当前类的Map中，避免再到父类Map中查找
-                Map<String, String> fieldSpringBeanTypeMap = classFieldSpringBeanNameMap.computeIfAbsent(className, k -> new HashMap<>());
-                fieldSpringBeanTypeMap.put(fieldName, springBeanFieldName);
+            if (springBeanFieldName != null) {
+                // 假如当前字段在父类中，且为Spring Bean，则添加到当前类的Map中，避免再到父类Map中查找
+                Map<String, String> fieldSpringBeanNameMap = classFieldSpringBeanNameMap.computeIfAbsent(className, k -> new HashMap<>());
+                fieldSpringBeanNameMap.put(fieldName, springBeanFieldName);
                 break;
             }
         }
@@ -245,15 +333,6 @@ public class UseSpringBeanByAnnotationHandler {
      * @return
      */
     private String doGetSpringBeanName(String className, String fieldName) {
-        // 获取类对应的字段及Spring Bean类型Map
-        Map<String, String> fieldSpringBeanTypeMap = classFieldSpringBeanTypeMap.get(className);
-        if (fieldSpringBeanTypeMap != null) {
-            String fieldSpringBeanType = fieldSpringBeanTypeMap.get(fieldName);
-            if (fieldSpringBeanType != null) {
-                return fieldSpringBeanType;
-            }
-        }
-
         // 获取类对应的字段及Spring Bean名称Map
         Map<String, String> fieldSpringBeanNameMap = classFieldSpringBeanNameMap.get(className);
         if (fieldSpringBeanNameMap == null) {

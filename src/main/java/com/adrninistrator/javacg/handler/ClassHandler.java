@@ -219,6 +219,7 @@ public class ClassHandler {
         long startTime = 0;
         if (javaCGConfInfo.isLogMethodSpendTime()) {
             startTime = System.currentTimeMillis();
+            // 记录当前处理的类名、方法
             logMethodSpendTimeWriter.write(classFileName + JavaCGConstants.FILE_COLUMN_SEPARATOR + fullMethod);
         }
 
@@ -271,6 +272,7 @@ public class ClassHandler {
         boolean success = methodHandler4Invoke.handleMethod();
         if (javaCGConfInfo.isLogMethodSpendTime()) {
             long spendTime = System.currentTimeMillis() - startTime;
+            // 记录方法处理耗时
             logMethodSpendTimeWriter.write(JavaCGConstants.FILE_COLUMN_SEPARATOR + spendTime + JavaCGConstants.NEW_LINE);
         }
 
