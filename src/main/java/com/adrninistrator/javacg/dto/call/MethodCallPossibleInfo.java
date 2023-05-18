@@ -3,7 +3,9 @@ package com.adrninistrator.javacg.dto.call;
 import com.adrninistrator.javacg.common.enums.JavaCGCalleeObjTypeEnum;
 import com.adrninistrator.javacg.dto.element.BaseElement;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -46,7 +48,8 @@ public class MethodCallPossibleInfo {
         if (methodCallPossibleList4Object == null) {
             methodCallPossibleList4Object = new MethodCallPossibleList();
         }
-        methodCallPossibleList4Object.addPossibleInfo(baseElement, calleeClassName);
+        List<BaseElement> handledElementList = new ArrayList<>(1);
+        methodCallPossibleList4Object.addPossibleInfo(baseElement, calleeClassName, handledElementList);
     }
 
     /**
@@ -62,7 +65,8 @@ public class MethodCallPossibleInfo {
         }
 
         MethodCallPossibleList methodCallPossibleList = methodCallPossibleListMap4Args.computeIfAbsent(seq, k -> new MethodCallPossibleList());
-        methodCallPossibleList.addPossibleInfo(baseElement, argClassName);
+        List<BaseElement> handledElementList = new ArrayList<>(1);
+        methodCallPossibleList.addPossibleInfo(baseElement, argClassName, handledElementList);
     }
 
     /**

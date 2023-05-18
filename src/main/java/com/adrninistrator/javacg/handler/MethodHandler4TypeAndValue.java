@@ -23,7 +23,6 @@ import com.adrninistrator.javacg.dto.instruction.MethodCallParseResult;
 import com.adrninistrator.javacg.dto.instruction.RetParseResult;
 import com.adrninistrator.javacg.dto.instruction.ReturnParseResult;
 import com.adrninistrator.javacg.dto.stack.ListAsStack;
-import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGElementUtil;
 import com.adrninistrator.javacg.util.JavaCGInstructionUtil;
 import com.adrninistrator.javacg.util.JavaCGLogUtil;
@@ -297,7 +296,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             int position = ih.getPosition();
             // 解析当前指令
             if (JavaCGLogUtil.isDebugPrintFlag()) {
-                JavaCGLogUtil.debugPrint("### 处理指令 " + JavaCGInstructionUtil.getInstructionHandlePrintInfo(ih));
+                JavaCGLogUtil.debugPrint("### 处理指令 " + JavaCGInstructionUtil.getInstructionHandlePrintInfo(ih) + " (" + getSourceLine() + ")");
             }
 
             // 判断跳转目标指令是否跳过处理
@@ -691,6 +690,10 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         String calleeClassName = invokeInstruction.getReferenceType(cpg).toString();
         // 获取被调用方法
         String calleeMethodName = invokeInstruction.getMethodName(cpg);
+        Type[] argTypes = invokeInstruction.getArgumentTypes(cpg);
+        if (JavaCGLogUtil.isDebugPrintFlag()) {
+            JavaCGLogUtil.debugPrint("被调用方法: " + JavaCGMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, argTypes));
+        }
 
         BaseElement objectElement = methodCallParseResult.getObjectElement();
         // 处理被调用对象类型
@@ -705,7 +708,6 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         }
 
         // 处理参数，序号从0开始
-        Type[] argTypes = invokeInstruction.getArgumentTypes(cpg);
         List<BaseElement> argumentList = methodCallParseResult.getArgumentList();
         for (int i = 0; i < argumentList.size(); i++) {
             BaseElement baseElement = argumentList.get(i);

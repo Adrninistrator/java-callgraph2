@@ -6,6 +6,7 @@ import com.adrninistrator.javacg.dto.element.variable.StaticFieldElement;
 import com.adrninistrator.javacg.dto.element.variable.StaticFieldMethodCallElement;
 import com.adrninistrator.javacg.dto.field.FieldTypeAndName;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
+import com.adrninistrator.javacg.util.JavaCGLogUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,16 +44,19 @@ public class MethodCallPossibleList {
     /**
      * 添加可能的信息
      *
-     * @param baseElement 操作数栈中的元素
-     * @param definedType 代码中定义的类型
+     * @param baseElement        操作数栈中的元素
+     * @param definedType        代码中定义的类型
+     * @param handledElementList 已经处理过的元素
      */
-    public void addPossibleInfo(BaseElement baseElement, String definedType) {
+    public void addPossibleInfo(BaseElement baseElement, String definedType, List<BaseElement> handledElementList) {
         if (baseElement == null) {
             return;
         }
 
-        MethodCallPossibleEntry addedMethodCallPossibleEntry = new MethodCallPossibleEntry();
+        // 记录已经处理过的元素
+        handledElementList.add(baseElement);
 
+        MethodCallPossibleEntry addedMethodCallPossibleEntry = new MethodCallPossibleEntry();
         if (baseElement instanceof StaticFieldMethodCallElement) {
             // 添加被调用对象或参数是静态字段方法返回值的可能信息
             String staticFieldMethodCallInfo = ((StaticFieldMethodCallElement) baseElement).getInfo();
@@ -119,6 +123,15 @@ public class MethodCallPossibleList {
                 Collections.sort(keyList);
                 for (Integer key : keyList) {
                     BaseElement arrayElement = map.get(key);
+                    if (handledElementList.contains(arrayElement)) {
+                        // 假如数组中的元素已经处理过，说明出现了数组元素的循环引用，需要结束，否则会死循环
+                        System.err.println("eee 出现数组元素的循环引用");
+                        if (JavaCGLogUtil.isDebugPrintFlag()) {
+                            JavaCGLogUtil.debugPrint("eee 出现数组元素的循环引用 " + arrayElement);
+                        }
+                        continue;
+                    }
+
                     String arrayElementType;
                     if (JavaCGByteCodeUtil.isArrayType(definedType)) {
                         /*
@@ -130,7 +143,7 @@ public class MethodCallPossibleList {
                         arrayElementType = definedType;
                     }
                     // 处理数组中的元素
-                    addPossibleInfo(arrayElement, arrayElementType);
+                    addPossibleInfo(arrayElement, arrayElementType, handledElementList);
                 }
             }
         }
