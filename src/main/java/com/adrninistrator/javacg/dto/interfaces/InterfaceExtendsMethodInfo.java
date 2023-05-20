@@ -10,7 +10,7 @@ import java.util.List;
  * @description: 接口继承的信息，包括接口继承的接口，及接口中的方法
  */
 public class InterfaceExtendsMethodInfo {
-    // 接口继承的接口
+    // 接口继承的接口，接口可以继承多个接口
     private final List<String> superInterfaceList;
 
     // 接口中的方法

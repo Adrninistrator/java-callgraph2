@@ -91,11 +91,19 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         // 遍历类的方法
         for (Method method : javaClass.getMethods()) {
             String methodName = method.getName();
-            if (!methodName.startsWith("<") &&
-                    !method.isStatic()
-                    && (method.isAbstract() || method.isPublic() || method.isProtected())
+            if (!methodName.startsWith("<")
+                    && !method.isStatic()
+                    && (method.isAbstract()
+                    || method.isPublic()
+                    || method.isProtected()
+                    || !method.isPrivate())
             ) {
-                // 记录当前类的方法信息
+                /*
+                    对于以下可能涉及继承的方法进行记录：
+                    非<init>、<clinit>
+                    非静态
+                    抽象方法，或public方法，或protected方法，或非public且非protected且非private方法
+                 */
                 methodAttributeMap.put(new MethodAndArgs(methodName, method.getArgumentTypes()), method.getAccessFlags());
             }
         }
@@ -112,7 +120,8 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
             return;
         }
 
-        for (String superInterfaceName : interfaceClass.getInterfaceNames()) {
+        String[] superInterfaceNames = interfaceClass.getInterfaceNames();
+        for (String superInterfaceName : superInterfaceNames) {
             // 记录父类及其子类，忽略以"java."开头的父类
             List<String> childrenInterfaceList = childrenInterfaceMap.computeIfAbsent(superInterfaceName, k -> new ArrayList<>());
             childrenInterfaceList.add(interfaceName);
@@ -123,7 +132,7 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         for (Method method : interfaceClass.getMethods()) {
             methodAttributeList.add(new MethodAndArgs(method.getName(), method.getArgumentTypes()));
         }
-        interfaceExtendsMethodInfoMap.put(interfaceName, new InterfaceExtendsMethodInfo(Arrays.asList(interfaceClass.getInterfaceNames()), methodAttributeList));
+        interfaceExtendsMethodInfoMap.put(interfaceName, new InterfaceExtendsMethodInfo(Arrays.asList(superInterfaceNames), methodAttributeList));
     }
 
     //

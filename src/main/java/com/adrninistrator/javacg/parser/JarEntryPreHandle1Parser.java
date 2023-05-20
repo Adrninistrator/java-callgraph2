@@ -32,7 +32,7 @@ import java.util.jar.JarInputStream;
  */
 public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
-    private Map<String, ClassImplementsMethodInfo> classInterfaceMethodInfoMap;
+    private Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap;
 
     private Map<String, List<MethodAndArgs>> interfaceMethodWithArgsMap;
 
@@ -147,13 +147,13 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
         if (interfaceNames.length > 0 &&
                 methods != null && methods.length > 0 &&
-                classInterfaceMethodInfoMap.get(className) == null) {
+                classImplementsMethodInfoMap.get(className) == null) {
             List<String> interfaceNameList = new ArrayList<>(interfaceNames.length);
             interfaceNameList.addAll(Arrays.asList(interfaceNames));
 
             List<MethodAndArgs> implClassMethodWithArgsList = JavaCGByteCodeUtil.genImplClassMethodWithArgs(methods);
 
-            classInterfaceMethodInfoMap.put(className, new ClassImplementsMethodInfo(interfaceNameList, implClassMethodWithArgsList));
+            classImplementsMethodInfoMap.put(className, new ClassImplementsMethodInfo(interfaceNameList, implClassMethodWithArgsList));
 
             if (!javaClass.isAbstract()) {
                 if (interfaceNameList.contains(JavaCGCommonNameConstants.CLASS_NAME_RUNNABLE)) {
@@ -190,8 +190,8 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         }
     }
 
-    public void setClassInterfaceMethodInfoMap(Map<String, ClassImplementsMethodInfo> classInterfaceMethodInfoMap) {
-        this.classInterfaceMethodInfoMap = classInterfaceMethodInfoMap;
+    public void setClassImplementsMethodInfoMap(Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap) {
+        this.classImplementsMethodInfoMap = classImplementsMethodInfoMap;
     }
 
     public void setInterfaceMethodWithArgsMap(Map<String, List<MethodAndArgs>> interfaceMethodWithArgsMap) {

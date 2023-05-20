@@ -266,6 +266,16 @@ public class JavaCGByteCodeUtil {
     }
 
     /**
+     * 判断是否为private
+     *
+     * @param accessFlags
+     * @return
+     */
+    public static boolean isPrivateMethod(int accessFlags) {
+        return (accessFlags & Const.ACC_PRIVATE) != 0;
+    }
+
+    /**
      * 判断是否为abstract
      *
      * @param accessFlags

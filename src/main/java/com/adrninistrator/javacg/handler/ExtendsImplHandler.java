@@ -45,7 +45,7 @@ public class ExtendsImplHandler {
 
     private Map<String, List<String>> childrenInterfaceMap;
 
-    private Map<String, ClassImplementsMethodInfo> classInterfaceMethodInfoMap;
+    private Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap;
 
     private Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap;
 
@@ -157,7 +157,7 @@ public class ExtendsImplHandler {
                 continue;
             }
 
-            ClassImplementsMethodInfo classImplementsMethodInfo = classInterfaceMethodInfoMap.get(superClassName);
+            ClassImplementsMethodInfo classImplementsMethodInfo = classImplementsMethodInfoMap.get(superClassName);
             if (classImplementsMethodInfo == null) {
                 continue;
             }
@@ -294,14 +294,23 @@ public class ExtendsImplHandler {
                 continue;
             }
 
-            if (JavaCGByteCodeUtil.isPublicFlag(superMethodAccessFlags) || JavaCGByteCodeUtil.isProtectedMethod(superMethodAccessFlags)) {
-                // 父类的public/protected且非抽象方法
+            if (JavaCGByteCodeUtil.isPublicFlag(superMethodAccessFlags)
+                    || JavaCGByteCodeUtil.isProtectedMethod(superMethodAccessFlags)
+                    || (!JavaCGByteCodeUtil.isPrivateMethod(superMethodAccessFlags)
+                    && JavaCGUtil.checkSamePackage(superClassName, childClassName))
+            ) {
+                /*
+                    对于父类中满足以下条件的非抽象方法进行处理：
+                    public
+                    或protected
+                    或非public非protected非private且父类与子类同名
+                 */
                 if (childMethodWithArgsMap.get(superMethodWithArgs) != null) {
+                    // 若当前方法已经处理过则跳过
                     continue;
                 }
 
                 childMethodWithArgsMap.put(superMethodWithArgs, superMethodAccessFlags);
-
                 // 添加子类调用父类方法
                 addExtraMethodCall(methodCallWriter, childClassName, superMethodWithArgs.getMethodName(), superMethodWithArgs.getMethodArgs(),
                         JavaCGCallTypeEnum.CTE_CHILD_CALL_SUPER, superClassName, superMethodWithArgs.getMethodName(), superMethodWithArgs.getMethodArgs());
@@ -311,17 +320,17 @@ public class ExtendsImplHandler {
 
     // 记录接口调用实现类方法
     private void recordInterfaceCallClassMethod(Writer methodCallWriter) throws IOException {
-        if (classInterfaceMethodInfoMap.isEmpty() || interfaceMethodWithArgsMap.isEmpty()) {
+        if (classImplementsMethodInfoMap.isEmpty() || interfaceMethodWithArgsMap.isEmpty()) {
             return;
         }
 
 
-        List<String> classNameList = new ArrayList<>(classInterfaceMethodInfoMap.keySet());
+        List<String> classNameList = new ArrayList<>(classImplementsMethodInfoMap.keySet());
         // 对类名进行排序
         Collections.sort(classNameList);
         // 对类名进行遍历
         for (String className : classNameList) {
-            ClassImplementsMethodInfo classImplementsMethodInfo = classInterfaceMethodInfoMap.get(className);
+            ClassImplementsMethodInfo classImplementsMethodInfo = classImplementsMethodInfoMap.get(className);
             List<String> interfaceNameList = classImplementsMethodInfo.getInterfaceNameList();
             // 对实现的接口进行排序
             Collections.sort(interfaceNameList);
@@ -409,8 +418,8 @@ public class ExtendsImplHandler {
         this.childrenInterfaceMap = childrenInterfaceMap;
     }
 
-    public void setClassInterfaceMethodInfoMap(Map<String, ClassImplementsMethodInfo> classInterfaceMethodInfoMap) {
-        this.classInterfaceMethodInfoMap = classInterfaceMethodInfoMap;
+    public void setClassImplementsMethodInfoMap(Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap) {
+        this.classImplementsMethodInfoMap = classImplementsMethodInfoMap;
     }
 
     public void setClassExtendsMethodInfoMap(Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap) {

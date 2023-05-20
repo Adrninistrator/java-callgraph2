@@ -263,7 +263,7 @@ public class JCallGraph {
             key     类名
             value   类实现的接口，及类中的方法信息
          */
-        Map<String, ClassImplementsMethodInfo> classInterfaceMethodInfoMap = new HashMap<>(JavaCGConstants.SIZE_200);
+        Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap = new HashMap<>(JavaCGConstants.SIZE_200);
 
         /*
             接口中的方法信息
@@ -276,7 +276,7 @@ public class JCallGraph {
             defineSpringBeanByAnnotationHandler = new DefineSpringBeanByAnnotationHandler(javaCGConfInfo);
         }
         jarEntryPreHandle1Parser = new JarEntryPreHandle1Parser(javaCGConfInfo, jarInfoMap, defineSpringBeanByAnnotationHandler, extensionsManager);
-        jarEntryPreHandle1Parser.setClassInterfaceMethodInfoMap(classInterfaceMethodInfoMap);
+        jarEntryPreHandle1Parser.setClassImplementsMethodInfoMap(classImplementsMethodInfoMap);
         jarEntryPreHandle1Parser.setInterfaceMethodWithArgsMap(interfaceMethodWithArgsMap);
         jarEntryPreHandle1Parser.setRunnableImplClassMap(runnableImplClassMap);
         jarEntryPreHandle1Parser.setCallableImplClassMap(callableImplClassMap);
@@ -325,7 +325,11 @@ public class JCallGraph {
         Map<String, List<String>> childrenInterfaceMap = new HashMap<>(JavaCGConstants.SIZE_100);
 
         if (javaCGConfInfo.isParseMethodCallTypeValue()) {
-            useSpringBeanByAnnotationHandler = new UseSpringBeanByAnnotationHandler(classExtendsMethodInfoMap, defineSpringBeanByAnnotationHandler,
+            useSpringBeanByAnnotationHandler = new UseSpringBeanByAnnotationHandler(
+                    classExtendsMethodInfoMap,
+                    classImplementsMethodInfoMap,
+                    interfaceExtendsMethodInfoMap,
+                    defineSpringBeanByAnnotationHandler,
                     extensionsManager.getSpringXmlBeanParser());
         }
         jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCGConfInfo, jarInfoMap, useSpringBeanByAnnotationHandler);
@@ -358,7 +362,7 @@ public class JCallGraph {
         extendsImplHandler.setChildrenClassMap(childrenClassMap);
         extendsImplHandler.setInterfaceExtendsMethodInfoMap(interfaceExtendsMethodInfoMap);
         extendsImplHandler.setChildrenInterfaceMap(childrenInterfaceMap);
-        extendsImplHandler.setClassInterfaceMethodInfoMap(classInterfaceMethodInfoMap);
+        extendsImplHandler.setClassImplementsMethodInfoMap(classImplementsMethodInfoMap);
         extendsImplHandler.setClassExtendsMethodInfoMap(classExtendsMethodInfoMap);
         extendsImplHandler.setClassAndJarNum(classAndJarNum);
         return true;
