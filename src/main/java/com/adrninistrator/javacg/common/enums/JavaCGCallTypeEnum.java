@@ -40,6 +40,7 @@ public enum JavaCGCallTypeEnum {
     CTE_THREAD_START_RUN("_TSR", "Thread start() 方法调用 run() 方法"),
     CTE_SUPER_CALL_CHILD("_SCC", "父类调用子类方法"),
     CTE_CHILD_CALL_SUPER("_CCS", "子类调用父类方法"),
+    CTE_CHILD_CALL_SUPER_SPECIAL("_CCS_SPE", "子类通过super.调用父类方法"),
     CTE_CHILD_CALL_SUPER_INTERFACE("_CCS_I", "子接口调用父接口方法"),
     CTE_MANUAL_ADDED("_MA", "人工添加的方法调用"),
     CTE_METHOD_ANNOTATION_ADDED("_MAA", "通过方法注解添加的调用关系"),

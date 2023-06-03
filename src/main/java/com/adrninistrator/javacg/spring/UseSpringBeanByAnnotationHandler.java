@@ -315,7 +315,6 @@ public class UseSpringBeanByAnnotationHandler {
         }
 
         List<String> matchedSpringBeanTypeList = new ArrayList<>(springBeanTypeList.size());
-
         for (String springBeanType : springBeanTypeList) {
             if (springBeanType.equals(fieldType) ||
                     JavaCGUtil.isChildOf(springBeanType, fieldType, classExtendsMethodInfoMap) ||

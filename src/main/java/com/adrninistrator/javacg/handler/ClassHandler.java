@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg.handler;
 
+import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
@@ -160,7 +161,7 @@ public class ClassHandler {
         if (javaCGConfInfo.isFirstParseInitMethodType()) {
             // 解析构造函数
             for (Method method : javaClass.getMethods()) {
-                if ("<init>".equals(method.getName()) && !parseInitMethod(method)) {
+                if (JavaCGCommonNameConstants.METHOD_NAME_INIT.equals(method.getName()) && !parseInitMethod(method)) {
                     return false;
                 }
             }

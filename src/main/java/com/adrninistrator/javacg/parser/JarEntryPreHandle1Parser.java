@@ -151,8 +151,8 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
             List<String> interfaceNameList = new ArrayList<>(interfaceNames.length);
             interfaceNameList.addAll(Arrays.asList(interfaceNames));
 
+            // 记录类实现的接口，及类中可能涉及实现的相关方法
             List<MethodAndArgs> implClassMethodWithArgsList = JavaCGByteCodeUtil.genImplClassMethodWithArgs(methods);
-
             classImplementsMethodInfoMap.put(className, new ClassImplementsMethodInfo(interfaceNameList, implClassMethodWithArgsList));
 
             if (!javaClass.isAbstract()) {

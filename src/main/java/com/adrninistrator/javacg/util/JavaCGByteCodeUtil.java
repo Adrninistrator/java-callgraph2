@@ -6,6 +6,7 @@ import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 import com.adrninistrator.javacg.dto.classes.InnerClassInfo;
 import com.adrninistrator.javacg.dto.method.MethodAndArgs;
 import org.apache.bcel.Const;
+import org.apache.bcel.classfile.AccessFlags;
 import org.apache.bcel.classfile.Attribute;
 import org.apache.bcel.classfile.ConstantPool;
 import org.apache.bcel.classfile.InnerClass;
@@ -28,7 +29,50 @@ import java.util.List;
 public class JavaCGByteCodeUtil {
 
     /**
-     * 获取可能涉及继承的相关方法，包含参数
+     * 判断当前方法是否为涉及继承的方法
+     *
+     * @param methodName
+     * @param accessFlags
+     * @return
+     */
+    public static boolean checkExtendsMethod(String methodName, AccessFlags accessFlags) {
+       /*
+            同时满足以下条件：
+            非<init>、<clinit>
+            非静态
+            抽象方法，或public方法，或protected方法，或非public且非protected且非private方法
+         */
+        return !methodName.startsWith("<")
+                && !accessFlags.isStatic()
+                && (accessFlags.isAbstract()
+                || accessFlags.isPublic()
+                || accessFlags.isProtected()
+                || !accessFlags.isPrivate());
+    }
+
+    /**
+     * 判断当前方法是否为涉及实现的方法
+     *
+     * @param methodName
+     * @param accessFlags
+     * @return
+     */
+    public static boolean checkImplMethod(String methodName, AccessFlags accessFlags) {
+       /*
+            同时满足以下条件：
+            非<init>、<clinit>
+            非静态
+            非抽象
+            public方法（只能为public，不能为默认修饰符）
+         */
+        return !methodName.startsWith("<")
+                && !accessFlags.isStatic()
+                && !accessFlags.isAbstract()
+                && accessFlags.isPublic();
+    }
+
+    /**
+     * 获取可能涉及实现的相关方法，包含参数
      *
      * @param methods
      * @return
@@ -37,8 +81,8 @@ public class JavaCGByteCodeUtil {
         List<MethodAndArgs> methodInfoList = new ArrayList<>(methods.length);
         for (Method method : methods) {
             String methodName = method.getName();
-            // 忽略"<init>"和"<clinit>"方法
-            if (!methodName.startsWith("<") && method.isPublic() && !method.isAbstract() && !method.isStatic()) {
+            if (checkImplMethod(methodName, method)) {
+                // 记录可能涉及实现的方法
                 methodInfoList.add(new MethodAndArgs(methodName, JavaCGMethodUtil.getArgListStr(method.getArgumentTypes())));
             }
         }

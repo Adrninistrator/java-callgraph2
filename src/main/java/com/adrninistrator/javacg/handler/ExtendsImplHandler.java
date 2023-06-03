@@ -4,6 +4,7 @@ import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGCallTypeEnum;
 import com.adrninistrator.javacg.comparator.MethodAndArgsComparator;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
+import com.adrninistrator.javacg.dto.access_flag.JavaCGAccessFlags;
 import com.adrninistrator.javacg.dto.call.MethodCall;
 import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
@@ -17,6 +18,7 @@ import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGLogUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
+import org.apache.bcel.Const;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -58,11 +60,11 @@ public class ExtendsImplHandler {
         // 将接口中的抽象方法添加到抽象父类中
         addInterfaceMethod4SuperAbstractClass();
 
-        // 记录接口调用实现类方法
-        recordInterfaceCallClassMethod(methodCallWriter);
-
         // 记录父类调用子类方法，及子类调用父类方法
         recordClassExtendsMethod(methodCallWriter);
+
+        // 记录接口调用实现类方法
+        recordInterfaceCallClassMethod(methodCallWriter);
     }
 
     // 将父接口中的方法添加到子接口中
@@ -303,7 +305,7 @@ public class ExtendsImplHandler {
                     对于父类中满足以下条件的非抽象方法进行处理：
                     public
                     或protected
-                    或非public非protected非private且父类与子类同名
+                    或非public非protected非private且父类与子类在同一个包
                  */
                 if (childMethodWithArgsMap.get(superMethodWithArgs) != null) {
                     // 若当前方法已经处理过则跳过
@@ -324,7 +326,6 @@ public class ExtendsImplHandler {
             return;
         }
 
-
         List<String> classNameList = new ArrayList<>(classImplementsMethodInfoMap.keySet());
         // 对类名进行排序
         Collections.sort(classNameList);
@@ -335,7 +336,7 @@ public class ExtendsImplHandler {
             // 对实现的接口进行排序
             Collections.sort(interfaceNameList);
 
-            // 找到在接口和实现类中都存在的
+            // 找到在接口和实现类中都存在的方法
             for (String interfaceName : interfaceNameList) {
                 List<MethodAndArgs> interfaceMethodWithArgsList = interfaceMethodWithArgsMap.get(interfaceName);
                 if (JavaCGUtil.isCollectionEmpty(interfaceMethodWithArgsList)) {
@@ -343,6 +344,9 @@ public class ExtendsImplHandler {
                 }
 
                 List<MethodAndArgs> methodWithArgsList = classImplementsMethodInfo.getMethodWithArgsList();
+                // 在处理接口调用实现类方法时，将父类中定义的可能涉及实现的方法添加到当前类的方法中
+                addSuperMethod2ImplClass(methodWithArgsList, className);
+
                 // 对方法进行排序
                 methodWithArgsList.sort(MethodAndArgsComparator.getInstance());
                 // 对方法进行遍历
@@ -351,10 +355,45 @@ public class ExtendsImplHandler {
                         // 接口中不包含的方法，跳过
                         continue;
                     }
-
+                    // 添加接口调用实现类方法
                     addExtraMethodCall(methodCallWriter, interfaceName, methodWithArgs.getMethodName(), methodWithArgs.getMethodArgs(),
                             JavaCGCallTypeEnum.CTE_INTERFACE_CALL_IMPL_CLASS, className, methodWithArgs.getMethodName(), methodWithArgs.getMethodArgs());
                 }
+            }
+        }
+    }
+
+    /**
+     * 在处理接口调用实现类方法时，将父类中定义的可能涉及实现的方法添加到当前类的方法中
+     *
+     * @param methodWithArgsList 当前类中定义的方法
+     * @param className
+     */
+    private void addSuperMethod2ImplClass(List<MethodAndArgs> methodWithArgsList, String className) {
+        // 获取当前处理的实现类涉及继承的信息
+        ClassExtendsMethodInfo classExtendsMethodInfo = classExtendsMethodInfoMap.get(className);
+        if (classExtendsMethodInfo == null) {
+            return;
+        }
+
+        // 获取当前处理的实现类中的方法信息
+        Map<MethodAndArgs, Integer> methodWithArgsMap = classExtendsMethodInfo.getMethodWithArgsMap();
+        if (methodWithArgsMap == null) {
+            return;
+        }
+
+        for (Map.Entry<MethodAndArgs, Integer> entry : methodWithArgsMap.entrySet()) {
+            MethodAndArgs methodAndArgs = entry.getKey();
+            if (methodWithArgsList.contains(methodAndArgs)) {
+                // 已包含的方法，跳过
+                continue;
+            }
+
+            String methodName = methodAndArgs.getMethodName();
+            JavaCGAccessFlags methodAccessFlags = new JavaCGAccessFlags(entry.getValue());
+            if (JavaCGByteCodeUtil.checkImplMethod(methodName, methodAccessFlags)) {
+                // 将父类中定义的，可能涉及实现的方法添加到当前类的方法中
+                methodWithArgsList.add(methodAndArgs);
             }
         }
     }

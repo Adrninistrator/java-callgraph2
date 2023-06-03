@@ -6,6 +6,7 @@ import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodAndArgs;
 import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
+import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
@@ -91,19 +92,8 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         // 遍历类的方法
         for (Method method : javaClass.getMethods()) {
             String methodName = method.getName();
-            if (!methodName.startsWith("<")
-                    && !method.isStatic()
-                    && (method.isAbstract()
-                    || method.isPublic()
-                    || method.isProtected()
-                    || !method.isPrivate())
-            ) {
-                /*
-                    对于以下可能涉及继承的方法进行记录：
-                    非<init>、<clinit>
-                    非静态
-                    抽象方法，或public方法，或protected方法，或非public且非protected且非private方法
-                 */
+            if (JavaCGByteCodeUtil.checkExtendsMethod(methodName, method)) {
+                // 对于可能涉及继承的方法进行记录
                 methodAttributeMap.put(new MethodAndArgs(methodName, method.getArgumentTypes()), method.getAccessFlags());
             }
         }
