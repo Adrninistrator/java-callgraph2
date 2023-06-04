@@ -24,6 +24,7 @@ public enum JavaCGOutPutFileTypeEnum {
     OPFTE_METHOD_RETURN_GENERICS_TYPE("method_return_generics_type", "方法返回泛型类型"),
     OPFTE_SPRING_BEAN("spring_bean", "Spring Bean信息"),
     OPFTE_LOG_METHOD_SPEND_TIME("_log_method_spend_time", "日志-方法处理耗时"),
+    OPFTE_ILLEGAL("illegal", "非法值"),
     ;
 
     private final String fileName;

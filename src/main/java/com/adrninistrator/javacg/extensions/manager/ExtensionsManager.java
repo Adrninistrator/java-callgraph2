@@ -7,7 +7,7 @@ import com.adrninistrator.javacg.extensions.annotation_attributes.DefaultAnnotat
 import com.adrninistrator.javacg.extensions.code_parser.CodeParserInterface;
 import com.adrninistrator.javacg.extensions.code_parser.JarEntryOtherFileParser;
 import com.adrninistrator.javacg.extensions.code_parser.MethodAnnotationParser;
-import com.adrninistrator.javacg.extensions.code_parser.SaveData2FileParser;
+import com.adrninistrator.javacg.extensions.code_parser.AbstractSaveData2FileParser;
 import com.adrninistrator.javacg.extensions.code_parser.SpringXmlBeanParserInterface;
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,7 +45,7 @@ public class ExtensionsManager {
     private final Map<String, MethodAnnotationParser> methodAnnotationParserMap = new HashMap<>();
 
     // 解析并将结果保存在文件的类
-    private final List<SaveData2FileParser> saveData2FileParserList = new ArrayList<>();
+    private final List<AbstractSaveData2FileParser> saveData2FileParserList = new ArrayList<>();
 
     // 对注解属性的元素值进行格式化的类
     private AnnotationAttributesFormatterInterface annotationAttributesFormatter;
@@ -92,8 +92,8 @@ public class ExtensionsManager {
                 }
 
                 // 处理解析并将结果保存在文件的类
-                if (codeParser instanceof SaveData2FileParser) {
-                    SaveData2FileParser saveData2FileParser = (SaveData2FileParser) codeParser;
+                if (codeParser instanceof AbstractSaveData2FileParser) {
+                    AbstractSaveData2FileParser saveData2FileParser = (AbstractSaveData2FileParser) codeParser;
                     // 增加其他文件信息
                     String outputFilePath = javaCGOutputInfo.addOtherFileInfo(saveData2FileParser.chooseFileName());
                     if (!saveData2FileParser.init(outputFilePath)) {
@@ -123,7 +123,7 @@ public class ExtensionsManager {
 
     // 关闭处理
     public void close() {
-        for (SaveData2FileParser saveData2FileParser : saveData2FileParserList) {
+        for (AbstractSaveData2FileParser saveData2FileParser : saveData2FileParserList) {
             saveData2FileParser.close();
         }
     }

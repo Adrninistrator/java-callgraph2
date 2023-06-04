@@ -338,12 +338,14 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
         JavaCGCallTypeEnum callTypeEnum = JavaCGCallTypeEnum.CTE_RAW_INVOKE_SPECIAL;
         if (!JavaCGCommonNameConstants.METHOD_NAME_INIT.equals(calleeMethodName)
-                && calleeClassName.equals(javaClass.getSuperclassName())) {
+                && calleeClassName.equals(javaClass.getSuperclassName())
+                && JavaCGCalleeObjTypeEnum.COTE_THIS == methodCallPossibleInfo.getObjTypeEnum()) {
             /*
                 满足以下所有条件时，将方法调用类型修改为代表super.方法调用：
                 - 方法调用指令为INVOKESPECIAL
                 - 被调用方法不是<init>
                 - 被调用类为调用类的父类
+                - 被调用对象是this
              */
             callTypeEnum = JavaCGCallTypeEnum.CTE_CHILD_CALL_SUPER_SPECIAL;
         }

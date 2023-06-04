@@ -124,23 +124,23 @@ public class JCallGraph {
         // 打印生成的文件信息
         printOutputFileInfo();
 
-        try (Writer jarInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_JAR_INFO));
-             Writer classNameWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_NAME));
-             Writer methodCallWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL));
-             Writer lambdaMethodInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LAMBDA_METHOD_INFO));
-             Writer classAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_ANNOTATION));
-             Writer methodAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ANNOTATION));
-             Writer methodLineNumberWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_LINE_NUMBER));
-             Writer methodCallInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL_INFO));
-             Writer classInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_INFO));
-             Writer methodInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_INFO));
-             Writer extendsImplWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_EXTENDS_IMPL));
-             Writer springBeanWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_SPRING_BEAN));
-             Writer classSignatureEI1Writer = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_EI1));
-             Writer methodArgGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ARG_GENERICS_TYPE));
-             Writer methodReturnGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_RETURN_GENERICS_TYPE));
-             Writer innerClassWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_INNER_CLASS));
-             WriterSupportSkip logMethodSpendTimeWriter = new WriterSupportSkip(javaCGOutputInfo.getFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LOG_METHOD_SPEND_TIME))
+        try (Writer jarInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_JAR_INFO));
+             Writer classNameWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_NAME));
+             Writer methodCallWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL));
+             Writer lambdaMethodInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LAMBDA_METHOD_INFO));
+             Writer classAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_ANNOTATION));
+             Writer methodAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ANNOTATION));
+             Writer methodLineNumberWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_LINE_NUMBER));
+             Writer methodCallInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL_INFO));
+             Writer classInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_INFO));
+             Writer methodInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_INFO));
+             Writer extendsImplWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_EXTENDS_IMPL));
+             Writer springBeanWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_SPRING_BEAN));
+             Writer classSignatureEI1Writer = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_EI1));
+             Writer methodArgGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ARG_GENERICS_TYPE));
+             Writer methodReturnGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_RETURN_GENERICS_TYPE));
+             Writer innerClassWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_INNER_CLASS));
+             WriterSupportSkip logMethodSpendTimeWriter = new WriterSupportSkip(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LOG_METHOD_SPEND_TIME))
         ) {
             jarEntryHandleParser.setJarInfoWriter(jarInfoWriter);
             jarEntryHandleParser.setClassNameWriter(classNameWriter);
@@ -372,7 +372,7 @@ public class JCallGraph {
     private void printOutputFileInfo() {
         System.out.println("写入文件:");
         for (JavaCGOutPutFileTypeEnum javaCGOutPutFileTypeEnum : JavaCGOutPutFileTypeEnum.values()) {
-            System.out.println(javaCGOutputInfo.getFilePath(javaCGOutPutFileTypeEnum));
+            System.out.println(javaCGOutputInfo.getMainFilePath(javaCGOutPutFileTypeEnum));
         }
 
         Set<String> otherFileNameSet = javaCGOutputInfo.getOtherFileNameSet();

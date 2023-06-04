@@ -82,7 +82,7 @@ public class JavaCGOutputInfo {
      * @param javaCGOutPutFileTypeEnum
      * @return
      */
-    public String getFilePath(JavaCGOutPutFileTypeEnum javaCGOutPutFileTypeEnum) {
+    public String getMainFilePath(JavaCGOutPutFileTypeEnum javaCGOutPutFileTypeEnum) {
         return outputDirPath + javaCGOutPutFileTypeEnum.getFileName() + outputFileExt;
     }
 }

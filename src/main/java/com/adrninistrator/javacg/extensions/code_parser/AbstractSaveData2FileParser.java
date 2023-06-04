@@ -9,7 +9,7 @@ import java.io.Writer;
  * @date 2023/3/13
  * @description: 解析并将结果保存在文件的类（对jar包中的其他文件解析）
  */
-public abstract class SaveData2FileParser implements JarEntryOtherFileParser {
+public abstract class AbstractSaveData2FileParser implements JarEntryOtherFileParser {
 
     protected Writer writer;
 
