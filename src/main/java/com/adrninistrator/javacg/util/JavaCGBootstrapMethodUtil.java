@@ -91,13 +91,14 @@ public class JavaCGBootstrapMethodUtil {
         }
         ConstantNameAndType constantNameAndType = (ConstantNameAndType) constantNAT;
         String methodName = constantPool.constantToString(constantNameAndType.getNameIndex(), Const.CONSTANT_Utf8);
-        String methodArgs = constantPool.constantToString(constantNameAndType.getSignatureIndex(), Const.CONSTANT_Utf8);
-
-        if (methodName != null && methodArgs != null) {
-            return new JavaCGMethodInfo(className, methodName, Type.getArgumentTypes(methodArgs));
+        String methodArgsReturn = constantPool.constantToString(constantNameAndType.getSignatureIndex(), Const.CONSTANT_Utf8);
+        if (methodName != null && methodArgsReturn != null) {
+            Type[] methodArgTypes = Type.getArgumentTypes(methodArgsReturn);
+            Type returnType = Type.getReturnType(methodArgsReturn);
+            return new JavaCGMethodInfo(className, methodName, methodArgTypes, returnType);
         }
 
-        System.err.println("### 获取方法信息失败 " + javaClass.getClassName() + " " + className + " " + methodName + " " + methodArgs);
+        System.err.println("### 获取方法信息失败 " + javaClass.getClassName() + " " + className + " " + methodName + " " + methodArgsReturn);
         return null;
     }
 

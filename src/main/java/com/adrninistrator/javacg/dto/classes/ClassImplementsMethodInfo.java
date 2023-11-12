@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg.dto.classes;
 
-import com.adrninistrator.javacg.dto.method.MethodAndArgs;
+import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 
 import java.util.List;
 
@@ -15,9 +15,9 @@ public class ClassImplementsMethodInfo {
     private final List<String> interfaceNameList;
 
     // 类中的方法信息
-    private final List<MethodAndArgs> methodWithArgsList;
+    private final List<MethodArgReturnTypes> methodWithArgsList;
 
-    public ClassImplementsMethodInfo(List<String> interfaceNameList, List<MethodAndArgs> methodWithArgsList) {
+    public ClassImplementsMethodInfo(List<String> interfaceNameList, List<MethodArgReturnTypes> methodWithArgsList) {
         this.interfaceNameList = interfaceNameList;
         this.methodWithArgsList = methodWithArgsList;
     }
@@ -26,7 +26,7 @@ public class ClassImplementsMethodInfo {
         return interfaceNameList;
     }
 
-    public List<MethodAndArgs> getMethodWithArgsList() {
+    public List<MethodArgReturnTypes> getMethodWithArgsList() {
         return methodWithArgsList;
     }
 }

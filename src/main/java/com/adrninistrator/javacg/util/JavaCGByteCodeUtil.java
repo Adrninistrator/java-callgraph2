@@ -4,7 +4,7 @@ import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.TypeConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 import com.adrninistrator.javacg.dto.classes.InnerClassInfo;
-import com.adrninistrator.javacg.dto.method.MethodAndArgs;
+import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.AccessFlags;
 import org.apache.bcel.classfile.Attribute;
@@ -77,13 +77,13 @@ public class JavaCGByteCodeUtil {
      * @param methods
      * @return
      */
-    public static List<MethodAndArgs> genImplClassMethodWithArgs(Method[] methods) {
-        List<MethodAndArgs> methodInfoList = new ArrayList<>(methods.length);
+    public static List<MethodArgReturnTypes> genImplClassMethodWithArgs(Method[] methods) {
+        List<MethodArgReturnTypes> methodInfoList = new ArrayList<>(methods.length);
         for (Method method : methods) {
             String methodName = method.getName();
             if (checkImplMethod(methodName, method)) {
                 // 记录可能涉及实现的方法
-                methodInfoList.add(new MethodAndArgs(methodName, JavaCGMethodUtil.getArgListStr(method.getArgumentTypes())));
+                methodInfoList.add(new MethodArgReturnTypes(methodName, method.getArgumentTypes(), method.getReturnType()));
             }
         }
         return methodInfoList;
@@ -95,10 +95,10 @@ public class JavaCGByteCodeUtil {
      * @param methods
      * @return
      */
-    public static List<MethodAndArgs> genInterfaceMethodWithArgs(Method[] methods) {
-        List<MethodAndArgs> methodInfoList = new ArrayList<>(methods.length);
+    public static List<MethodArgReturnTypes> genInterfaceMethodWithArgs(Method[] methods) {
+        List<MethodArgReturnTypes> methodInfoList = new ArrayList<>(methods.length);
         for (Method method : methods) {
-            methodInfoList.add(new MethodAndArgs(method.getName(), JavaCGMethodUtil.getArgListStr(method.getArgumentTypes())));
+            methodInfoList.add(new MethodArgReturnTypes(method.getName(), method.getArgumentTypes(), method.getReturnType()));
         }
         return methodInfoList;
     }

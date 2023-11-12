@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg.dto.classes;
 
-import com.adrninistrator.javacg.dto.method.MethodAndArgs;
+import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 
 import java.util.Map;
 
@@ -23,9 +23,9 @@ public class ClassExtendsMethodInfo {
         value
             方法的accessFlags
      */
-    private final Map<MethodAndArgs, Integer> methodWithArgsMap;
+    private final Map<MethodArgReturnTypes, Integer> methodWithArgsMap;
 
-    public ClassExtendsMethodInfo(int accessFlags, String superClassName, Map<MethodAndArgs, Integer> methodWithArgsMap) {
+    public ClassExtendsMethodInfo(int accessFlags, String superClassName, Map<MethodArgReturnTypes, Integer> methodWithArgsMap) {
         this.accessFlags = accessFlags;
         this.superClassName = superClassName;
         this.methodWithArgsMap = methodWithArgsMap;
@@ -39,7 +39,7 @@ public class ClassExtendsMethodInfo {
         return superClassName;
     }
 
-    public Map<MethodAndArgs, Integer> getMethodWithArgsMap() {
+    public Map<MethodArgReturnTypes, Integer> getMethodWithArgsMap() {
         return methodWithArgsMap;
     }
 }

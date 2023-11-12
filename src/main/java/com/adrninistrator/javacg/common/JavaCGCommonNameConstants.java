@@ -35,6 +35,8 @@ public class JavaCGCommonNameConstants {
     public static final String METHOD_RUNNABLE_RUN = "run";
     public static final String METHOD_CALLABLE_CALL = "call";
 
+    public static final String RETURN_TYPE_VOID = "void";
+
     private JavaCGCommonNameConstants() {
         throw new IllegalStateException("illegal");
     }

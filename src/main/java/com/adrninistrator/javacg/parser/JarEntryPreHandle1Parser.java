@@ -6,7 +6,7 @@ import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
 import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
-import com.adrninistrator.javacg.dto.method.MethodAndArgs;
+import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg.extensions.code_parser.JarEntryOtherFileParser;
 import com.adrninistrator.javacg.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg.spring.DefineSpringBeanByAnnotationHandler;
@@ -34,7 +34,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     private Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap;
 
-    private Map<String, List<MethodAndArgs>> interfaceMethodWithArgsMap;
+    private Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgsMap;
 
     private Map<String, Boolean> runnableImplClassMap;
     private Map<String, Boolean> callableImplClassMap;
@@ -127,7 +127,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         Method[] methods = interfaceClass.getMethods();
         if (methods != null && methods.length > 0 &&
                 interfaceMethodWithArgsMap.get(interfaceName) == null) {
-            List<MethodAndArgs> interfaceMethodWithArgsList = JavaCGByteCodeUtil.genInterfaceMethodWithArgs(methods);
+            List<MethodArgReturnTypes> interfaceMethodWithArgsList = JavaCGByteCodeUtil.genInterfaceMethodWithArgs(methods);
             interfaceMethodWithArgsMap.put(interfaceName, interfaceMethodWithArgsList);
         }
 
@@ -152,7 +152,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
             interfaceNameList.addAll(Arrays.asList(interfaceNames));
 
             // 记录类实现的接口，及类中可能涉及实现的相关方法
-            List<MethodAndArgs> implClassMethodWithArgsList = JavaCGByteCodeUtil.genImplClassMethodWithArgs(methods);
+            List<MethodArgReturnTypes> implClassMethodWithArgsList = JavaCGByteCodeUtil.genImplClassMethodWithArgs(methods);
             classImplementsMethodInfoMap.put(className, new ClassImplementsMethodInfo(interfaceNameList, implClassMethodWithArgsList));
 
             if (!javaClass.isAbstract()) {
@@ -194,7 +194,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         this.classImplementsMethodInfoMap = classImplementsMethodInfoMap;
     }
 
-    public void setInterfaceMethodWithArgsMap(Map<String, List<MethodAndArgs>> interfaceMethodWithArgsMap) {
+    public void setInterfaceMethodWithArgsMap(Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgsMap) {
         this.interfaceMethodWithArgsMap = interfaceMethodWithArgsMap;
     }
 

@@ -12,7 +12,7 @@ import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
-import com.adrninistrator.javacg.dto.method.MethodAndArgs;
+import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg.dto.output.JavaCGOutputInfo;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatterInterface;
@@ -270,7 +270,7 @@ public class JCallGraph {
             key     接口名
             value   接口中的方法信息
         */
-        Map<String, List<MethodAndArgs>> interfaceMethodWithArgsMap = new HashMap<>(JavaCGConstants.SIZE_200);
+        Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgsMap = new HashMap<>(JavaCGConstants.SIZE_200);
 
         if (javaCGConfInfo.isParseMethodCallTypeValue()) {
             defineSpringBeanByAnnotationHandler = new DefineSpringBeanByAnnotationHandler(javaCGConfInfo);

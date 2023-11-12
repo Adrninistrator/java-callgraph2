@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg.dto.interfaces;
 
-import com.adrninistrator.javacg.dto.method.MethodAndArgs;
+import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 
 import java.util.List;
 
@@ -14,9 +14,9 @@ public class InterfaceExtendsMethodInfo {
     private final List<String> superInterfaceList;
 
     // 接口中的方法
-    private final List<MethodAndArgs> methodAndArgsList;
+    private final List<MethodArgReturnTypes> methodAndArgsList;
 
-    public InterfaceExtendsMethodInfo(List<String> superInterfaceList, List<MethodAndArgs> methodAndArgsList) {
+    public InterfaceExtendsMethodInfo(List<String> superInterfaceList, List<MethodArgReturnTypes> methodAndArgsList) {
         this.superInterfaceList = superInterfaceList;
         this.methodAndArgsList = methodAndArgsList;
     }
@@ -25,7 +25,7 @@ public class InterfaceExtendsMethodInfo {
         return superInterfaceList;
     }
 
-    public List<MethodAndArgs> getMethodAndArgsList() {
+    public List<MethodArgReturnTypes> getMethodAndArgsList() {
         return methodAndArgsList;
     }
 }

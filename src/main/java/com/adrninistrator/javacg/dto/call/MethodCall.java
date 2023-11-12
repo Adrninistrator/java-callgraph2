@@ -25,6 +25,9 @@ public class MethodCall {
     // 调用者方法参数
     private final String callerMethodArgs;
 
+    // 调用者方法返回类型
+    private String callerReturnType;
+
     // 方法调用类型
     private final JavaCGCallTypeEnum methodCallType;
 
@@ -53,6 +56,7 @@ public class MethodCall {
                       String callerClassName,
                       String callerMethodName,
                       String callerMethodArgs,
+                      String callerReturnType,
                       JavaCGCallTypeEnum methodCallType,
                       String calleeClassName,
                       String calleeMethodName,
@@ -65,6 +69,7 @@ public class MethodCall {
         this(callerClassName,
                 callerMethodName,
                 callerMethodArgs,
+                callerReturnType,
                 methodCallType,
                 calleeClassName,
                 calleeMethodName,
@@ -80,6 +85,7 @@ public class MethodCall {
     public MethodCall(String callerClassName,
                       String callerMethodName,
                       String callerMethodArgs,
+                      String callerReturnType,
                       JavaCGCallTypeEnum methodCallType,
                       String calleeClassName,
                       String calleeMethodName,
@@ -92,6 +98,7 @@ public class MethodCall {
         this.callerClassName = callerClassName;
         this.callerMethodName = callerMethodName;
         this.callerMethodArgs = callerMethodArgs;
+        this.callerReturnType = callerReturnType;
         this.methodCallType = methodCallType;
         this.calleeClassName = calleeClassName;
         this.calleeMethodName = calleeMethodName;
@@ -127,6 +134,7 @@ public class MethodCall {
                 genCallerFullMethod(),
                 JavaCGConstants.FILE_KEY_CALL_TYPE_FLAG1 + methodCallType.getType() + JavaCGConstants.FILE_KEY_CALL_TYPE_FLAG2 + genCalleeFullMethod(),
                 callerSourceLine,
+                callerReturnType,
                 genObjTypeEnum(),
                 rawReturnType,
                 actualReturnType,

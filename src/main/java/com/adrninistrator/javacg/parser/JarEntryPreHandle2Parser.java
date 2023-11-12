@@ -4,7 +4,7 @@ import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
-import com.adrninistrator.javacg.dto.method.MethodAndArgs;
+import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
@@ -88,13 +88,14 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
             childrenClassList.add(className);
         }
 
-        Map<MethodAndArgs, Integer> methodAttributeMap = new HashMap<>();
+        Map<MethodArgReturnTypes, Integer> methodAttributeMap = new HashMap<>();
         // 遍历类的方法
         for (Method method : javaClass.getMethods()) {
             String methodName = method.getName();
             if (JavaCGByteCodeUtil.checkExtendsMethod(methodName, method)) {
                 // 对于可能涉及继承的方法进行记录
-                methodAttributeMap.put(new MethodAndArgs(methodName, method.getArgumentTypes()), method.getAccessFlags());
+                MethodArgReturnTypes methodArgReturnTypes = new MethodArgReturnTypes(methodName, method.getArgumentTypes(), method.getReturnType());
+                methodAttributeMap.put(methodArgReturnTypes, method.getAccessFlags());
             }
         }
         classExtendsMethodInfoMap.put(className, new ClassExtendsMethodInfo(javaClass.getAccessFlags(), superClassName, methodAttributeMap));
@@ -118,9 +119,9 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         }
 
         // 记录当前接口的方法信息
-        List<MethodAndArgs> methodAttributeList = new ArrayList<>();
+        List<MethodArgReturnTypes> methodAttributeList = new ArrayList<>();
         for (Method method : interfaceClass.getMethods()) {
-            methodAttributeList.add(new MethodAndArgs(method.getName(), method.getArgumentTypes()));
+            methodAttributeList.add(new MethodArgReturnTypes(method.getName(), method.getArgumentTypes(), method.getReturnType()));
         }
         interfaceExtendsMethodInfoMap.put(interfaceName, new InterfaceExtendsMethodInfo(Arrays.asList(superInterfaceNames), methodAttributeList));
     }

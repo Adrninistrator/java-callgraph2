@@ -154,14 +154,16 @@ public class JavaCGInstructionUtil {
      * @return
      */
     public static JavaCGMethodInfo getCalleeMethodInfo(InvokeInstruction invokeInstruction, ConstantPoolGen cpg) {
+        String calleeMethodName = invokeInstruction.getMethodName(cpg);
+        Type[] calleeArgTypes = invokeInstruction.getArgumentTypes(cpg);
         if (invokeInstruction instanceof INVOKEDYNAMIC) {
-            throw new JavaCGRuntimeException("不支持INVOKEDYNAMIC指令");
+            // getReferenceType()方法获取到的类型为java.lang.Object
+            String calleeClassName = invokeInstruction.getType(cpg).toString();
+            return new JavaCGMethodInfo(calleeClassName, calleeMethodName, calleeArgTypes, invokeInstruction.getReturnType(cpg));
         }
 
         String calleeClassName = invokeInstruction.getReferenceType(cpg).toString();
-        String calleeMethodName = invokeInstruction.getMethodName(cpg);
-        Type[] arguments = invokeInstruction.getArgumentTypes(cpg);
-        return new JavaCGMethodInfo(calleeClassName, calleeMethodName, arguments);
+        return new JavaCGMethodInfo(calleeClassName, calleeMethodName, calleeArgTypes, invokeInstruction.getReturnType(cpg));
     }
 
     private JavaCGInstructionUtil() {

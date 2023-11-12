@@ -33,12 +33,16 @@ public abstract class AbstractMethodHandler {
 
     protected JavaCGConfInfo javaCGConfInfo;
 
+    // 当前方法的返回类型
+    protected String methodReturnType;
+
     protected AbstractMethodHandler(MethodGen mg, JavaClass javaClass, JavaCGConfInfo javaCGConfInfo) {
         this.javaClass = javaClass;
         this.mg = mg;
         this.javaCGConfInfo = javaCGConfInfo;
         cpg = mg.getConstantPool();
         lineNumberTable = mg.getLineNumberTable(cpg);
+        methodReturnType = mg.getReturnType().toString();
     }
 
     /**

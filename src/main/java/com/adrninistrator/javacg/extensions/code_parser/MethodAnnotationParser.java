@@ -23,6 +23,7 @@ public interface MethodAnnotationParser extends CodeParserInterface {
      * @param callerClassName     当前方法的类名
      * @param callerMethodName    当前方法的方法名
      * @param callerMethodArgs    当前方法的参数信息
+     * @param callerReturnType    当前方法的返回类型
      * @param annotationClassName 当前处理的注解类名
      * @param annotationEntry     当前处理的注解信息
      * @param methodCallList      方法调用信息列表
@@ -30,6 +31,7 @@ public interface MethodAnnotationParser extends CodeParserInterface {
     void parseMethodAnnotation(String callerClassName,
                                String callerMethodName,
                                String callerMethodArgs,
+                               String callerReturnType,
                                String annotationClassName,
                                AnnotationEntry annotationEntry,
                                MethodCallList methodCallList);
