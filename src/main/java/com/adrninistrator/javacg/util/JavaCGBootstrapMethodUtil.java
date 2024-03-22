@@ -5,8 +5,10 @@ import org.apache.bcel.Const;
 import org.apache.bcel.classfile.Attribute;
 import org.apache.bcel.classfile.BootstrapMethod;
 import org.apache.bcel.classfile.BootstrapMethods;
+import org.apache.bcel.classfile.ClassFormatException;
 import org.apache.bcel.classfile.Constant;
 import org.apache.bcel.classfile.ConstantCP;
+import org.apache.bcel.classfile.ConstantFieldref;
 import org.apache.bcel.classfile.ConstantMethodHandle;
 import org.apache.bcel.classfile.ConstantNameAndType;
 import org.apache.bcel.classfile.ConstantPool;
@@ -80,6 +82,9 @@ public class JavaCGBootstrapMethodUtil {
             return null;
         }
 
+        if (constantCP instanceof ConstantFieldref) {
+            return null;
+        }
         ConstantCP constantClassAndMethod = (ConstantCP) constantCP;
         String className = constantPool.getConstantString(constantClassAndMethod.getClassIndex(), Const.CONSTANT_Class);
         className = Utility.compactClassName(className, false);
@@ -93,9 +98,14 @@ public class JavaCGBootstrapMethodUtil {
         String methodName = constantPool.constantToString(constantNameAndType.getNameIndex(), Const.CONSTANT_Utf8);
         String methodArgsReturn = constantPool.constantToString(constantNameAndType.getSignatureIndex(), Const.CONSTANT_Utf8);
         if (methodName != null && methodArgsReturn != null) {
-            Type[] methodArgTypes = Type.getArgumentTypes(methodArgsReturn);
-            Type returnType = Type.getReturnType(methodArgsReturn);
-            return new JavaCGMethodInfo(className, methodName, methodArgTypes, returnType);
+            try {
+                Type[] methodArgTypes = Type.getArgumentTypes(methodArgsReturn);
+                Type returnType = Type.getReturnType(methodArgsReturn);
+                return new JavaCGMethodInfo(className, methodName, methodArgTypes, returnType);
+            } catch (ClassFormatException e) {
+                System.err.println("### 方法参数与返回类型不符合预期，不处理 " + methodArgsReturn + " " + constantClassAndMethod.getClass().getName());
+                return null;
+            }
         }
 
         System.err.println("### 获取方法信息失败 " + javaClass.getClassName() + " " + className + " " + methodName + " " + methodArgsReturn);
