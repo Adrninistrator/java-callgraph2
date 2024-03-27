@@ -180,6 +180,14 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             maxLineNumber = minLineNumber;
         } else {
             maxLineNumber = lineNumbers[lineNumbers.length - 1].getLineNumber();
+            // 寻找行号中的最大值
+            for (LineNumber lineNumber : lineNumbers) {
+                int sourceLineNumber = lineNumber.getLineNumber();
+                if(maxLineNumber < sourceLineNumber){
+                    maxLineNumber = sourceLineNumber;
+                }
+            }
+
         }
 
         // 记录方法起始代码行号
