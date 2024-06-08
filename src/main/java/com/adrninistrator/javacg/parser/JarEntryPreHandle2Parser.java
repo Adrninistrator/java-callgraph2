@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg.parser;
 
+import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
@@ -7,7 +8,8 @@ import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
-import com.adrninistrator.javacg.util.JavaCGUtil;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
+import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 
@@ -15,10 +17,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarInputStream;
 
 /**
  * @author adrninistrator
@@ -27,17 +29,15 @@ import java.util.jar.JarInputStream;
  */
 public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
 
-    private Set<String> classExtendsSet;
+    private final Set<String> classExtendsSet = new HashSet<>(JavaCGConstants.SIZE_100);
 
+    private Map<String, String> classAndSuperMap;
     private Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap;
-
     private Map<String, List<String>> childrenClassMap;
-
     private Set<String> interfaceExtendsSet;
-
     private Map<String, InterfaceExtendsMethodInfo> interfaceExtendsMethodInfoMap;
-
     private Map<String, List<String>> childrenInterfaceMap;
+    private Set<String> allClassNameSet;
 
     private final UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
 
@@ -47,15 +47,30 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
     }
 
     @Override
-    protected boolean handleEntry(JarInputStream jarInputStream, String jarEntryName) throws IOException {
+    public void init() {
+        // 获取涉及继承的类
+        for (Map.Entry<String, String> entry : classAndSuperMap.entrySet()) {
+            String superClassName = entry.getValue();
+            if (JavaCGClassMethodUtil.isClassInJdk(superClassName) && !allClassNameSet.contains(superClassName)) {
+                // 若父类是JDK中的类，且在已指定的jar包中未找到，则不添加
+                continue;
+            }
+            String className = entry.getKey();
+            classExtendsSet.add(className);
+            classExtendsSet.add(superClassName);
+        }
+    }
+
+    @Override
+    protected boolean handleEntry(ZipInputStream zipInputStream, String jarEntryPath) throws IOException {
         // 尝试处理jar包中的class文件
-        tryHandleClassEntry(jarInputStream, jarEntryName);
+        tryHandleClassEntry(zipInputStream, jarEntryPath);
         // 以上方法返回值不处理
         return true;
     }
 
     @Override
-    protected boolean handleClassEntry(JavaClass javaClass, String jarEntryName) {
+    protected boolean handleClassEntry(JavaClass javaClass, String jarEntryPath) {
         if (javaClass.isClass()) {
             // 处理类
             // 查找涉及继承的类的信息，需要提前执行，使后续处理方法调用时，classExtendsMethodInfoMap的数据是完整的
@@ -82,11 +97,8 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         }
 
         String superClassName = javaClass.getSuperclassName();
-        if (!JavaCGUtil.isClassInJdk(superClassName)) {
-            // 记录父类及其子类，忽略以"java."开头的父类
-            List<String> childrenClassList = childrenClassMap.computeIfAbsent(superClassName, k -> new ArrayList<>());
-            childrenClassList.add(className);
-        }
+        List<String> childrenClassList = childrenClassMap.computeIfAbsent(superClassName, k -> new ArrayList<>());
+        childrenClassList.add(className);
 
         Map<MethodArgReturnTypes, Integer> methodAttributeMap = new HashMap<>();
         // 遍历类的方法
@@ -127,8 +139,8 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
     }
 
     //
-    public void setClassExtendsSet(Set<String> classExtendsSet) {
-        this.classExtendsSet = classExtendsSet;
+    public void setClassAndSuperMap(Map<String, String> classAndSuperMap) {
+        this.classAndSuperMap = classAndSuperMap;
     }
 
     public void setClassExtendsMethodInfoMap(Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap) {
@@ -149,5 +161,9 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
 
     public void setChildrenInterfaceMap(Map<String, List<String>> childrenInterfaceMap) {
         this.childrenInterfaceMap = childrenInterfaceMap;
+    }
+
+    public void setAllClassNameSet(Set<String> allClassNameSet) {
+        this.allClassNameSet = allClassNameSet;
     }
 }

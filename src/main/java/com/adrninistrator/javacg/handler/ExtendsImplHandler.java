@@ -4,7 +4,7 @@ import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGCallTypeEnum;
 import com.adrninistrator.javacg.comparator.MethodArgReturnTypesComparator;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
-import com.adrninistrator.javacg.dto.access_flag.JavaCGAccessFlags;
+import com.adrninistrator.javacg.dto.accessflag.JavaCGAccessFlags;
 import com.adrninistrator.javacg.dto.call.MethodCall;
 import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
@@ -15,9 +15,11 @@ import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg.dto.stack.ListAsStack;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
-import com.adrninistrator.javacg.util.JavaCGLogUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -34,21 +36,19 @@ import java.util.Set;
  * @description: 继承及实现相关的方法处理类
  */
 public class ExtendsImplHandler {
+    private static final Logger logger = LoggerFactory.getLogger(ExtendsImplHandler.class);
+
     private JavaCGConfInfo javaCGConfInfo;
 
     private JavaCGCounter callIdCounter;
 
-    private Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgsMap;
-
+    private Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgTypesMap;
     private Map<String, List<String>> childrenClassMap;
-
     private Map<String, InterfaceExtendsMethodInfo> interfaceExtendsMethodInfoMap;
-
     private Map<String, List<String>> childrenInterfaceMap;
-
     private Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap;
-
     private Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap;
+    private Set<String> allClassNameSet;
 
     private ClassAndJarNum classAndJarNum;
 
@@ -79,9 +79,7 @@ public class ExtendsImplHandler {
                     if (!topSuperInterfaceSet.add(superInterface)) {
                         continue;
                     }
-                    if (JavaCGLogUtil.isDebugPrintFlag()) {
-                        JavaCGLogUtil.debugPrint("处理一个顶层父接口: " + superInterface);
-                    }
+                    logger.debug("处理一个顶层父接口: {}", superInterface);
                 }
             }
         }
@@ -121,12 +119,12 @@ public class ExtendsImplHandler {
 
         InterfaceExtendsMethodInfo childInterfaceExtendsMethodInfo = interfaceExtendsMethodInfoMap.get(childInterface);
 
-        List<MethodArgReturnTypes> superInterfaceMethodAndArgsList = superInterfaceExtendsMethodInfo.getMethodAndArgsList();
+        List<MethodArgReturnTypes> superInterfaceMethodAndArgsList = superInterfaceExtendsMethodInfo.getMethodAndArgTypesList();
         // 对父接口中的方法进行排序
         superInterfaceMethodAndArgsList.sort(MethodArgReturnTypesComparator.getInstance());
         // 遍历父接口中的方法
         for (MethodArgReturnTypes superMethodAndArgs : superInterfaceMethodAndArgsList) {
-            List<MethodArgReturnTypes> childInterfaceMethodAndArgsList = childInterfaceExtendsMethodInfo.getMethodAndArgsList();
+            List<MethodArgReturnTypes> childInterfaceMethodAndArgsList = childInterfaceExtendsMethodInfo.getMethodAndArgTypesList();
             if (childInterfaceMethodAndArgsList.contains(superMethodAndArgs)) {
                 // 子接口中已包含父接口，跳过
                 continue;
@@ -136,14 +134,13 @@ public class ExtendsImplHandler {
             childInterfaceMethodAndArgsList.add(superMethodAndArgs);
 
             // 在子接口中添加父接口的方法（所有接口都需要记录的结构）
-            List<MethodArgReturnTypes> childInterfaceMethodAndArgsListAll = interfaceMethodWithArgsMap.computeIfAbsent(childInterface, k -> new ArrayList<>());
+            List<MethodArgReturnTypes> childInterfaceMethodAndArgsListAll = interfaceMethodWithArgTypesMap.computeIfAbsent(childInterface, k -> new ArrayList<>());
             childInterfaceMethodAndArgsListAll.add(superMethodAndArgs);
 
             // 添加子接口调用父接口方法
             addExtraMethodCall(methodCallWriter, childInterface, superMethodAndArgs.getMethodName(), superMethodAndArgs.getMethodArgTypes(),
                     superMethodAndArgs.getMethodReturnType(), JavaCGCallTypeEnum.CTE_CHILD_CALL_SUPER_INTERFACE, superInterface, superMethodAndArgs.getMethodName(),
-                    superMethodAndArgs.getMethodArgTypes(), superMethodAndArgs.getMethodReturnType()
-            );
+                    superMethodAndArgs.getMethodArgTypes(), superMethodAndArgs.getMethodReturnType());
         }
     }
 
@@ -165,7 +162,7 @@ public class ExtendsImplHandler {
                 continue;
             }
 
-            Map<MethodArgReturnTypes, Integer> methodWithArgsMap = classExtendsMethodInfo.getMethodWithArgsMap();
+            Map<MethodArgReturnTypes, Integer> methodWithArgTypesMap = classExtendsMethodInfo.getMethodWithArgTypesMap();
 
             int accessFlags = 0;
             accessFlags = JavaCGByteCodeUtil.setAbstractFlag(accessFlags, true);
@@ -174,14 +171,14 @@ public class ExtendsImplHandler {
 
             // 将接口中的抽象方法加到抽象父类中
             for (String interfaceName : classImplementsMethodInfo.getInterfaceNameList()) {
-                List<MethodArgReturnTypes> interfaceMethodWithArgsList = interfaceMethodWithArgsMap.get(interfaceName);
-                if (interfaceMethodWithArgsList == null) {
+                List<MethodArgReturnTypes> interfaceMethodWithArgTypesList = interfaceMethodWithArgTypesMap.get(interfaceName);
+                if (interfaceMethodWithArgTypesList == null) {
                     continue;
                 }
 
-                for (MethodArgReturnTypes interfaceMethodWithArgs : interfaceMethodWithArgsList) {
+                for (MethodArgReturnTypes interfaceMethodWithArgTypes : interfaceMethodWithArgTypesList) {
                     // 添加时不覆盖现有的值
-                    methodWithArgsMap.putIfAbsent(interfaceMethodWithArgs, accessFlags);
+                    methodWithArgTypesMap.putIfAbsent(interfaceMethodWithArgTypes, accessFlags);
                 }
             }
         }
@@ -196,7 +193,8 @@ public class ExtendsImplHandler {
             String className = classExtendsMethodInfoEntry.getKey();
             ClassExtendsMethodInfo classExtendsMethodInfo = classExtendsMethodInfoEntry.getValue();
             String superClassName = classExtendsMethodInfo.getSuperClassName();
-            if (JavaCGUtil.isClassInJdk(superClassName)) {
+            // 判断当前类是否为顶层父类
+            if (checkTopSuperClass(className, superClassName)) {
                 topSuperClassNameSet.add(className);
             }
         }
@@ -210,23 +208,30 @@ public class ExtendsImplHandler {
         }
     }
 
+    // 判断某个类是否为顶层父类
+    private boolean checkTopSuperClass(String className, String superClassName) {
+        if (!JavaCGClassMethodUtil.isClassInJdk(className) && JavaCGClassMethodUtil.isClassInJdk(superClassName)) {
+            // 当前类不是JDK中的类，且父类是JDK中的类，属于顶层父类
+            return true;
+        }
+        // 若当前类是JDK中的类，且父类不在所有处理的jar包中，属于顶层父类
+        return JavaCGClassMethodUtil.isClassInJdk(className) && !allClassNameSet.contains(superClassName);
+    }
+
     // 处理一个顶层父类
     private void handleOneTopSuperClass(String topSuperClassName, Writer methodCallWriter) throws IOException {
-        if (JavaCGLogUtil.isDebugPrintFlag()) {
-            JavaCGLogUtil.debugPrint("处理一个顶层父类: " + topSuperClassName);
-        }
+        logger.debug("处理一个顶层父类: {}", topSuperClassName);
         ListAsStack<Node4ClassExtendsMethod> nodeStack = new ListAsStack<>();
 
         // 初始化节点列表
-        Node4ClassExtendsMethod topNode = new Node4ClassExtendsMethod(topSuperClassName, JavaCGConstants.EXTENDS_NODE_INDEX_INIT);
-        nodeStack.push(topNode);
+        nodeStack.push(new Node4ClassExtendsMethod(topSuperClassName, -1));
 
         // 开始循环
         while (true) {
             Node4ClassExtendsMethod currentNode = nodeStack.peek();
             List<String> childrenClassList = childrenClassMap.get(currentNode.getSuperClassName());
             if (childrenClassList == null) {
-                System.err.println("### 未找到顶层父类的子类: " + currentNode.getSuperClassName());
+                logger.debug("未找到顶层父类的子类: {}", currentNode.getSuperClassName());
                 return;
             }
 
@@ -259,8 +264,7 @@ public class ExtendsImplHandler {
 
             // 当前的子类下有子类
             // 入栈
-            Node4ClassExtendsMethod nextNode = new Node4ClassExtendsMethod(childClassName, JavaCGConstants.EXTENDS_NODE_INDEX_INIT);
-            nodeStack.push(nextNode);
+            nodeStack.push(new Node4ClassExtendsMethod(childClassName, -1));
         }
     }
 
@@ -268,40 +272,40 @@ public class ExtendsImplHandler {
     private void handleSuperAndChildClass(String superClassName, String childClassName, Writer methodCallWriter) throws IOException {
         ClassExtendsMethodInfo superClassMethodInfo = classExtendsMethodInfoMap.get(superClassName);
         if (superClassMethodInfo == null) {
-            System.err.println("### 未找到父类信息: " + superClassName);
+            logger.error("未找到父类信息: {}", superClassName);
             return;
         }
 
         ClassExtendsMethodInfo childClassMethodInfo = classExtendsMethodInfoMap.get(childClassName);
         if (childClassMethodInfo == null) {
-            System.err.println("### 未找到子类信息: " + childClassName);
+            logger.error("未找到子类信息: {}", childClassName);
             return;
         }
 
-        Map<MethodArgReturnTypes, Integer> superMethodWithArgsMap = superClassMethodInfo.getMethodWithArgsMap();
-        Map<MethodArgReturnTypes, Integer> childMethodWithArgsMap = childClassMethodInfo.getMethodWithArgsMap();
+        Map<MethodArgReturnTypes, Integer> superMethodWithArgTypesMap = superClassMethodInfo.getMethodWithArgTypesMap();
+        Map<MethodArgReturnTypes, Integer> childMethodWithArgTypesMap = childClassMethodInfo.getMethodWithArgTypesMap();
 
-        List<MethodArgReturnTypes> superMethodAndArgsList = new ArrayList<>(superMethodWithArgsMap.keySet());
+        List<MethodArgReturnTypes> superMethodAndArgTypesList = new ArrayList<>(superMethodWithArgTypesMap.keySet());
         // 对父类方法进行排序
-        superMethodAndArgsList.sort(MethodArgReturnTypesComparator.getInstance());
+        superMethodAndArgTypesList.sort(MethodArgReturnTypesComparator.getInstance());
         // 遍历父类方法
-        for (MethodArgReturnTypes superMethodWithArgs : superMethodAndArgsList) {
-            Integer superMethodAccessFlags = superMethodWithArgsMap.get(superMethodWithArgs);
+        for (MethodArgReturnTypes superMethodWithArgTypes : superMethodAndArgTypesList) {
+            Integer superMethodAccessFlags = superMethodWithArgTypesMap.get(superMethodWithArgTypes);
             if (JavaCGByteCodeUtil.isAbstractFlag(superMethodAccessFlags)) {
                 // 处理父类抽象方法
                 // 添加时不覆盖现有的值
-                childMethodWithArgsMap.putIfAbsent(superMethodWithArgs, superMethodAccessFlags);
+                childMethodWithArgTypesMap.putIfAbsent(superMethodWithArgTypes, superMethodAccessFlags);
                 // 添加父类调用子类的方法调用
-                addExtraMethodCall(methodCallWriter, superClassName, superMethodWithArgs.getMethodName(), superMethodWithArgs.getMethodArgTypes(),
-                        superMethodWithArgs.getMethodReturnType(), JavaCGCallTypeEnum.CTE_SUPER_CALL_CHILD, childClassName, superMethodWithArgs.getMethodName(),
-                        superMethodWithArgs.getMethodArgTypes(), superMethodWithArgs.getMethodReturnType());
+                addExtraMethodCall(methodCallWriter, superClassName, superMethodWithArgTypes.getMethodName(), superMethodWithArgTypes.getMethodArgTypes(),
+                        superMethodWithArgTypes.getMethodReturnType(), JavaCGCallTypeEnum.CTE_SUPER_CALL_CHILD, childClassName, superMethodWithArgTypes.getMethodName(),
+                        superMethodWithArgTypes.getMethodArgTypes(), superMethodWithArgTypes.getMethodReturnType());
                 continue;
             }
 
             if (JavaCGByteCodeUtil.isPublicFlag(superMethodAccessFlags)
                     || JavaCGByteCodeUtil.isProtectedMethod(superMethodAccessFlags)
                     || (!JavaCGByteCodeUtil.isPrivateMethod(superMethodAccessFlags)
-                    && JavaCGUtil.checkSamePackage(superClassName, childClassName))
+                    && JavaCGClassMethodUtil.checkSamePackage(superClassName, childClassName))
             ) {
                 /*
                     对于父类中满足以下条件的非抽象方法进行处理：
@@ -309,23 +313,23 @@ public class ExtendsImplHandler {
                     或protected
                     或非public非protected非private且父类与子类在同一个包
                  */
-                if (childMethodWithArgsMap.get(superMethodWithArgs) != null) {
+                if (childMethodWithArgTypesMap.get(superMethodWithArgTypes) != null) {
                     // 若当前方法已经处理过则跳过
                     continue;
                 }
 
-                childMethodWithArgsMap.put(superMethodWithArgs, superMethodAccessFlags);
+                childMethodWithArgTypesMap.put(superMethodWithArgTypes, superMethodAccessFlags);
                 // 添加子类调用父类方法
-                addExtraMethodCall(methodCallWriter, childClassName, superMethodWithArgs.getMethodName(), superMethodWithArgs.getMethodArgTypes(),
-                        superMethodWithArgs.getMethodReturnType(), JavaCGCallTypeEnum.CTE_CHILD_CALL_SUPER, superClassName, superMethodWithArgs.getMethodName(),
-                        superMethodWithArgs.getMethodArgTypes(), superMethodWithArgs.getMethodReturnType());
+                addExtraMethodCall(methodCallWriter, childClassName, superMethodWithArgTypes.getMethodName(), superMethodWithArgTypes.getMethodArgTypes(),
+                        superMethodWithArgTypes.getMethodReturnType(), JavaCGCallTypeEnum.CTE_CHILD_CALL_SUPER, superClassName, superMethodWithArgTypes.getMethodName(),
+                        superMethodWithArgTypes.getMethodArgTypes(), superMethodWithArgTypes.getMethodReturnType());
             }
         }
     }
 
     // 记录接口调用实现类方法
     private void recordInterfaceCallClassMethod(Writer methodCallWriter) throws IOException {
-        if (classImplementsMethodInfoMap.isEmpty() || interfaceMethodWithArgsMap.isEmpty()) {
+        if (classImplementsMethodInfoMap.isEmpty() || interfaceMethodWithArgTypesMap.isEmpty()) {
             return;
         }
 
@@ -341,27 +345,28 @@ public class ExtendsImplHandler {
 
             // 找到在接口和实现类中都存在的方法
             for (String interfaceName : interfaceNameList) {
-                List<MethodArgReturnTypes> interfaceMethodWithArgsList = interfaceMethodWithArgsMap.get(interfaceName);
-                if (JavaCGUtil.isCollectionEmpty(interfaceMethodWithArgsList)) {
+                List<MethodArgReturnTypes> interfaceMethodWithArgTypesList = interfaceMethodWithArgTypesMap.get(interfaceName);
+                if (JavaCGUtil.isCollectionEmpty(interfaceMethodWithArgTypesList)) {
                     continue;
                 }
 
-                List<MethodArgReturnTypes> methodWithArgsList = classImplementsMethodInfo.getMethodWithArgsList();
+                List<MethodArgReturnTypes> methodWithArgTypesList = classImplementsMethodInfo.getMethodWithArgTypesList();
                 // 在处理接口调用实现类方法时，将父类中定义的可能涉及实现的方法添加到当前类的方法中
-                addSuperMethod2ImplClass(methodWithArgsList, className);
+                addSuperMethod2ImplClass(methodWithArgTypesList, className);
 
                 // 对方法进行排序
-                methodWithArgsList.sort(MethodArgReturnTypesComparator.getInstance());
+                methodWithArgTypesList.sort(MethodArgReturnTypesComparator.getInstance());
                 // 对方法进行遍历
-                for (MethodArgReturnTypes methodWithArgs : methodWithArgsList) {
-                    if (!interfaceMethodWithArgsList.contains(methodWithArgs)) {
+                for (MethodArgReturnTypes methodWithArgTypes : methodWithArgTypesList) {
+                    if (!interfaceMethodWithArgTypesList.contains(methodWithArgTypes)) {
                         // 接口中不包含的方法，跳过
                         continue;
                     }
                     // 添加接口调用实现类方法
-                    addExtraMethodCall(methodCallWriter, interfaceName, methodWithArgs.getMethodName(), methodWithArgs.getMethodArgTypes(), methodWithArgs.getMethodReturnType(),
-                            JavaCGCallTypeEnum.CTE_INTERFACE_CALL_IMPL_CLASS, className, methodWithArgs.getMethodName(), methodWithArgs.getMethodArgTypes(),
-                            methodWithArgs.getMethodReturnType());
+                    addExtraMethodCall(methodCallWriter, interfaceName, methodWithArgTypes.getMethodName(), methodWithArgTypes.getMethodArgTypes(),
+                            methodWithArgTypes.getMethodReturnType(),
+                            JavaCGCallTypeEnum.CTE_INTERFACE_CALL_IMPL_CLASS, className, methodWithArgTypes.getMethodName(), methodWithArgTypes.getMethodArgTypes(),
+                            methodWithArgTypes.getMethodReturnType());
                 }
             }
         }
@@ -370,10 +375,10 @@ public class ExtendsImplHandler {
     /**
      * 在处理接口调用实现类方法时，将父类中定义的可能涉及实现的方法添加到当前类的方法中
      *
-     * @param methodWithArgsList 当前类中定义的方法
+     * @param methodWithArgTypesList 当前类中定义的方法
      * @param className
      */
-    private void addSuperMethod2ImplClass(List<MethodArgReturnTypes> methodWithArgsList, String className) {
+    private void addSuperMethod2ImplClass(List<MethodArgReturnTypes> methodWithArgTypesList, String className) {
         // 获取当前处理的实现类涉及继承的信息
         ClassExtendsMethodInfo classExtendsMethodInfo = classExtendsMethodInfoMap.get(className);
         if (classExtendsMethodInfo == null) {
@@ -381,23 +386,23 @@ public class ExtendsImplHandler {
         }
 
         // 获取当前处理的实现类中的方法信息
-        Map<MethodArgReturnTypes, Integer> methodWithArgsMap = classExtendsMethodInfo.getMethodWithArgsMap();
-        if (methodWithArgsMap == null) {
+        Map<MethodArgReturnTypes, Integer> methodWithArgTypesMap = classExtendsMethodInfo.getMethodWithArgTypesMap();
+        if (methodWithArgTypesMap == null) {
             return;
         }
 
-        for (Map.Entry<MethodArgReturnTypes, Integer> entry : methodWithArgsMap.entrySet()) {
-            MethodArgReturnTypes methodAndArgs = entry.getKey();
-            if (methodWithArgsList.contains(methodAndArgs)) {
+        for (Map.Entry<MethodArgReturnTypes, Integer> entry : methodWithArgTypesMap.entrySet()) {
+            MethodArgReturnTypes methodAndArgTypes = entry.getKey();
+            if (methodWithArgTypesList.contains(methodAndArgTypes)) {
                 // 已包含的方法，跳过
                 continue;
             }
 
-            String methodName = methodAndArgs.getMethodName();
+            String methodName = methodAndArgTypes.getMethodName();
             JavaCGAccessFlags methodAccessFlags = new JavaCGAccessFlags(entry.getValue());
             if (JavaCGByteCodeUtil.checkImplMethod(methodName, methodAccessFlags)) {
                 // 将父类中定义的，可能涉及实现的方法添加到当前类的方法中
-                methodWithArgsList.add(methodAndArgs);
+                methodWithArgTypesList.add(methodAndArgTypes);
             }
         }
     }
@@ -406,12 +411,12 @@ public class ExtendsImplHandler {
     private void addExtraMethodCall(Writer methodCallWriter,
                                     String callerClassName,
                                     String callerMethodName,
-                                    String callerMethodArgs,
+                                    String callerMethodArgTypes,
                                     String callerMethodReturnType,
                                     JavaCGCallTypeEnum methodCallType,
                                     String calleeClassName,
                                     String calleeMethodName,
-                                    String calleeMethodArgs,
+                                    String calleeMethodArgTypes,
                                     String calleeMethodReturnType) throws IOException {
         if (JavaCGUtil.checkSkipClass(callerClassName, javaCGConfInfo.getNeedHandlePackageSet()) ||
                 JavaCGUtil.checkSkipClass(calleeClassName, javaCGConfInfo.getNeedHandlePackageSet())) {
@@ -421,22 +426,19 @@ public class ExtendsImplHandler {
         String callerClassJarNum = classAndJarNum.getJarNum(callerClassName);
         String calleeClassJarNum = classAndJarNum.getJarNum(calleeClassName);
 
-        MethodCall methodCall = new MethodCall(
-                callIdCounter.addAndGet(),
-                callerClassName,
-                callerMethodName,
-                callerMethodArgs,
-                callerMethodReturnType,
-                methodCallType,
-                calleeClassName,
-                calleeMethodName,
-                calleeMethodArgs,
-                JavaCGConstants.DEFAULT_LINE_NUMBER,
-                null,
-                calleeMethodReturnType,
-                null
-        );
-        JavaCGFileUtil.write2FileWithTab(methodCallWriter, methodCall.genCallContent(callerClassJarNum, calleeClassJarNum));
+        MethodCall methodCall = new MethodCall();
+        methodCall.setCallId(callIdCounter.addAndGet());
+        methodCall.setCallerClassName(callerClassName);
+        methodCall.setCallerMethodName(callerMethodName);
+        methodCall.setCallerMethodArgTypes(callerMethodArgTypes);
+        methodCall.setCallerReturnType(callerMethodReturnType);
+        methodCall.setCallerSourceLine(JavaCGConstants.DEFAULT_LINE_NUMBER);
+        methodCall.setMethodCallType(methodCallType);
+        methodCall.setCalleeClassName(calleeClassName);
+        methodCall.setCalleeMethodName(calleeMethodName);
+        methodCall.setCalleeMethodArgTypes(calleeMethodArgTypes);
+        methodCall.setRawReturnType(calleeMethodReturnType);
+        JavaCGFileUtil.write2FileWithTab(methodCallWriter, methodCall.genMethodCallContent(callerClassJarNum, calleeClassJarNum));
     }
 
     //
@@ -448,8 +450,8 @@ public class ExtendsImplHandler {
         this.callIdCounter = callIdCounter;
     }
 
-    public void setInterfaceMethodWithArgsMap(Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgsMap) {
-        this.interfaceMethodWithArgsMap = interfaceMethodWithArgsMap;
+    public void setInterfaceMethodWithArgTypesMap(Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgTypesMap) {
+        this.interfaceMethodWithArgTypesMap = interfaceMethodWithArgTypesMap;
     }
 
     public void setChildrenClassMap(Map<String, List<String>> childrenClassMap) {
@@ -470,6 +472,10 @@ public class ExtendsImplHandler {
 
     public void setClassExtendsMethodInfoMap(Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap) {
         this.classExtendsMethodInfoMap = classExtendsMethodInfoMap;
+    }
+
+    public void setAllClassNameSet(Set<String> allClassNameSet) {
+        this.allClassNameSet = allClassNameSet;
     }
 
     public void setClassAndJarNum(ClassAndJarNum classAndJarNum) {

@@ -1,7 +1,7 @@
 package com.adrninistrator.javacg.util;
 
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
-import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatterInterface;
+import com.adrninistrator.javacg.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.ArrayElementValue;
 import org.apache.bcel.classfile.ClassElementValue;
@@ -10,6 +10,8 @@ import org.apache.bcel.classfile.ElementValuePair;
 import org.apache.bcel.classfile.SimpleElementValue;
 import org.apache.bcel.classfile.Utility;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Writer;
 import java.util.ArrayList;
@@ -21,6 +23,8 @@ import java.util.List;
  * @description: 对注解进行处理的工具类
  */
 public class JavaCGAnnotationUtil {
+
+    private static final Logger logger = LoggerFactory.getLogger(JavaCGAnnotationUtil.class);
 
     /**
      * 获取注解中指定名称的注解属性值，String类型
@@ -84,35 +88,37 @@ public class JavaCGAnnotationUtil {
     /**
      * 将注解信息写入文件
      *
-     * @param classOrMethod     类名或方法
-     * @param annotationEntries
      * @param writer
+     * @param annotationEntries
+     * @param annotationAttributesFormatter
+     * @param objectInfo                    类名、方法或字段信息，可能包含多项
      */
-    public static void writeAnnotationInfo(String classOrMethod,
+    public static void writeAnnotationInfo(Writer writer,
                                            AnnotationEntry[] annotationEntries,
                                            AnnotationAttributesFormatterInterface annotationAttributesFormatter,
-                                           Writer writer) {
+                                           String... objectInfo) {
         if (annotationEntries == null || annotationEntries.length == 0) {
             return;
         }
 
+        String objectInfoStr = JavaCGFileUtil.appendFileColumn(objectInfo);
         try {
             for (AnnotationEntry annotationEntry : annotationEntries) {
                 String annotationClassName = Utility.typeSignatureToString(annotationEntry.getAnnotationType(), false);
                 if (annotationEntry.getElementValuePairs() == null || annotationEntry.getElementValuePairs().length == 0) {
                     // 注解属性为空
-                    JavaCGFileUtil.write2FileWithTab(writer, classOrMethod, annotationClassName);
+                    JavaCGFileUtil.write2FileWithTab(writer, objectInfoStr, annotationClassName);
                     continue;
                 }
 
                 // 注解属性非空
                 for (ElementValuePair elementValuePair : annotationEntry.getElementValuePairs()) {
                     String formattedValue = annotationAttributesFormatter.format(elementValuePair);
-                    JavaCGFileUtil.write2FileWithTab(writer, classOrMethod, annotationClassName, elementValuePair.getNameString(), formattedValue);
+                    JavaCGFileUtil.write2FileWithTab(writer, objectInfoStr, annotationClassName, elementValuePair.getNameString(), formattedValue);
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("error ", e);
         }
     }
 

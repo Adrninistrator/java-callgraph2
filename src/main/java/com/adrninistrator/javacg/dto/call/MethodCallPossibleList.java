@@ -2,11 +2,19 @@ package com.adrninistrator.javacg.dto.call;
 
 import com.adrninistrator.javacg.dto.element.BaseElement;
 import com.adrninistrator.javacg.dto.element.variable.FieldElement;
+import com.adrninistrator.javacg.dto.element.variable.LocalVariableElement;
 import com.adrninistrator.javacg.dto.element.variable.StaticFieldElement;
 import com.adrninistrator.javacg.dto.element.variable.StaticFieldMethodCallElement;
+import com.adrninistrator.javacg.dto.element.variable.VariableElement;
 import com.adrninistrator.javacg.dto.field.FieldTypeAndName;
+import com.adrninistrator.javacg.dto.field.StaticFieldTypeAndName;
+import com.adrninistrator.javacg.dto.variabledatasource.AbstractVariableDataSource;
+import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceMethodArg;
+import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceMethodCallReturn;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
-import com.adrninistrator.javacg.util.JavaCGLogUtil;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,23 +28,16 @@ import java.util.Map;
  */
 public class MethodCallPossibleList {
 
+    private static final Logger logger = LoggerFactory.getLogger(MethodCallPossibleList.class);
+
     // 方法调用中可能的信息列表
     private List<MethodCallPossibleEntry> methodCallPossibleEntryList;
-
-    // 可能的被调用静态字段数量
-    private int staticFieldClassAndFieldNameNum;
 
     // 可能的被调用非静态字段数量
     private int nonStaticFieldNum;
 
     // 可能的类型数量
     private int typeNum;
-
-    // 可能的值数量
-    private int valueNum;
-
-    // 被调用对象或参数是静态字段方法返回值的可能信息数量
-    private int staticFieldMethodCallNum;
 
     // 是否为数组类型
     private boolean arrayElement;
@@ -55,6 +56,7 @@ public class MethodCallPossibleList {
 
         // 记录已经处理过的元素
         handledElementList.add(baseElement);
+        String type = baseElement.getType();
 
         MethodCallPossibleEntry addedMethodCallPossibleEntry = new MethodCallPossibleEntry();
         if (baseElement instanceof StaticFieldMethodCallElement) {
@@ -63,16 +65,54 @@ public class MethodCallPossibleList {
             addedMethodCallPossibleEntry.setStaticFieldMethodCall(staticFieldMethodCallInfo);
         } else if (baseElement instanceof StaticFieldElement) {
             // 添加可能的被调用静态字段
-            String staticFieldClassAndFieldName = ((StaticFieldElement) baseElement).getClassAndFieldName();
-            addedMethodCallPossibleEntry.setStaticFieldClassAndFieldName(staticFieldClassAndFieldName);
+            StaticFieldElement staticFieldElement = (StaticFieldElement) baseElement;
+            StaticFieldTypeAndName staticField = new StaticFieldTypeAndName(type, staticFieldElement.getName(), staticFieldElement.getClassName());
+            addedMethodCallPossibleEntry.setStaticField(staticField);
         } else if (baseElement instanceof FieldElement) {
             // 添加可能的被调用非静态字段
             FieldElement fieldElement = (FieldElement) baseElement;
-            FieldTypeAndName fieldTypeAndName = new FieldTypeAndName(fieldElement.getType(), fieldElement.getFieldName());
+            FieldTypeAndName fieldTypeAndName = new FieldTypeAndName(fieldElement.getType(), fieldElement.getName());
             addedMethodCallPossibleEntry.setNonStaticField(fieldTypeAndName);
+        } else if (baseElement instanceof LocalVariableElement) {
+            // 添加可能的被调用本地变量
+            addedMethodCallPossibleEntry.setNameOfVariable(((LocalVariableElement) baseElement).getName());
+        }
+        // 以上有VariableElement的子类，这里不else
+        if (baseElement instanceof VariableElement) {
+            // 添加可能的被调用变量对应的数据来源
+            VariableElement variableElement = (VariableElement) baseElement;
+            AbstractVariableDataSource variableDataSource = variableElement.getVariableDataSource();
+            if (variableDataSource instanceof VariableDataSourceMethodCallReturn) {
+                VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = (VariableDataSourceMethodCallReturn) variableDataSource;
+                String calleeFullMethod = JavaCGClassMethodUtil.formatFullMethod(variableDataSourceMethodCallReturn.getCalleeClassName(),
+                        variableDataSourceMethodCallReturn.getCalleeMethodName(), variableDataSourceMethodCallReturn.getCalleeArgTypeStr());
+                addedMethodCallPossibleEntry.setMethodCallReturnFullMethod(calleeFullMethod);
+                addedMethodCallPossibleEntry.setMethodCallReturnInstructionPosition(variableDataSourceMethodCallReturn.getInvokeInstructionPosition());
+            } else if (variableDataSource instanceof VariableDataSourceMethodArg) {
+                VariableDataSourceMethodArg variableDataSourceMethodArg = (VariableDataSourceMethodArg) variableDataSource;
+                addedMethodCallPossibleEntry.setMethodArgSeq(variableDataSourceMethodArg.getArgSeq());
+            }
+
+            // 添加可能的被调用变量对应的等值转换前的数据来源
+            AbstractVariableDataSource variableDataSourceEQC = variableElement.getVariableDataSourceEQC();
+            if (variableDataSourceEQC instanceof VariableDataSourceMethodCallReturn) {
+                VariableDataSourceMethodCallReturn variableDataSourceMethodCallEQC = (VariableDataSourceMethodCallReturn) variableDataSourceEQC;
+                String calleeFullMethod = JavaCGClassMethodUtil.formatFullMethod(variableDataSourceMethodCallEQC.getCalleeClassName(),
+                        variableDataSourceMethodCallEQC.getCalleeMethodName(), variableDataSourceMethodCallEQC.getCalleeArgTypeStr());
+                addedMethodCallPossibleEntry.setMethodCallReturnFullMethodEQC(calleeFullMethod);
+                addedMethodCallPossibleEntry.setMethodCallReturnInstructionPositionEQC(variableDataSourceMethodCallEQC.getInvokeInstructionPosition());
+            } else if (variableDataSourceEQC instanceof VariableDataSourceMethodArg) {
+                VariableDataSourceMethodArg variableDataSourceMethodArgEQC = (VariableDataSourceMethodArg) variableDataSourceEQC;
+                addedMethodCallPossibleEntry.setMethodArgSeqEQC(variableDataSourceMethodArgEQC.getArgSeq());
+            }
+
+            // 添加catch异常对象对应的catch代码块开始指令偏移量
+            Integer catchExceptionStartPosition = variableElement.getCatchExceptionStartPosition();
+            if (catchExceptionStartPosition != null) {
+                addedMethodCallPossibleEntry.setCatchExceptionStartPosition(catchExceptionStartPosition);
+            }
         }
 
-        String type = baseElement.getType();
         if (!JavaCGByteCodeUtil.isNullType(type) &&
                 !type.equals(definedType) &&
                 !JavaCGByteCodeUtil.compareIntType(type, definedType) &&
@@ -90,6 +130,7 @@ public class MethodCallPossibleList {
         Object value = baseElement.getValue();
         if (value != null) {
             // 添加可能的值
+            addedMethodCallPossibleEntry.setValueType(type);
             addedMethodCallPossibleEntry.setValue(value);
         }
 
@@ -125,10 +166,7 @@ public class MethodCallPossibleList {
                     BaseElement arrayElement = map.get(key);
                     if (handledElementList.contains(arrayElement)) {
                         // 假如数组中的元素已经处理过，说明出现了数组元素的循环引用，需要结束，否则会死循环
-                        System.err.println("eee 出现数组元素的循环引用");
-                        if (JavaCGLogUtil.isDebugPrintFlag()) {
-                            JavaCGLogUtil.debugPrint("eee 出现数组元素的循环引用 " + arrayElement);
-                        }
+                        logger.warn("出现数组元素的循环引用 {}", arrayElement.getType());
                         continue;
                     }
 
@@ -153,25 +191,12 @@ public class MethodCallPossibleList {
     private void addEntry(MethodCallPossibleEntry addedMethodCallPossibleEntry) {
         methodCallPossibleEntryList.add(addedMethodCallPossibleEntry);
         // 记录内容数量
-        if (addedMethodCallPossibleEntry.getStaticFieldMethodCall() != null) {
-            staticFieldMethodCallNum++;
-        }
-        if (addedMethodCallPossibleEntry.getStaticFieldClassAndFieldName() != null) {
-            staticFieldClassAndFieldNameNum++;
-        }
         if (addedMethodCallPossibleEntry.getNonStaticField() != null) {
             nonStaticFieldNum++;
         }
         if (addedMethodCallPossibleEntry.getType() != null) {
             typeNum++;
         }
-        if (addedMethodCallPossibleEntry.getValue() != null) {
-            valueNum++;
-        }
-    }
-
-    public boolean hasStaticFieldClassAndFieldName() {
-        return staticFieldClassAndFieldNameNum > 0;
     }
 
     public boolean hasNonStaticField() {
@@ -180,14 +205,6 @@ public class MethodCallPossibleList {
 
     public boolean hasType() {
         return typeNum > 0;
-    }
-
-    public boolean hasValue() {
-        return valueNum > 0;
-    }
-
-    public boolean hasStaticFieldMethodCall() {
-        return staticFieldMethodCallNum > 0;
     }
 
     public List<MethodCallPossibleEntry> getMethodCallPossibleEntryList() {

@@ -2,6 +2,8 @@ package com.adrninistrator.javacg.stat;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGCallTypeEnum;
+import com.adrninistrator.javacg.common.enums.JavaCGOtherConfigFileUseListEnum;
+import com.adrninistrator.javacg.common.enums.JavaCGOtherConfigFileUseSetEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGOutPutFileTypeEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.conf.JavaCGConfManager;
@@ -15,9 +17,9 @@ import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg.dto.output.JavaCGOutputInfo;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
-import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatterInterface;
-import com.adrninistrator.javacg.extensions.code_parser.CodeParserInterface;
-import com.adrninistrator.javacg.extensions.code_parser.SpringXmlBeanParserInterface;
+import com.adrninistrator.javacg.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
+import com.adrninistrator.javacg.extensions.codeparser.CodeParserInterface;
+import com.adrninistrator.javacg.extensions.codeparser.SpringXmlBeanParserInterface;
 import com.adrninistrator.javacg.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg.handler.ExtendsImplHandler;
 import com.adrninistrator.javacg.parser.JarEntryHandleParser;
@@ -27,10 +29,11 @@ import com.adrninistrator.javacg.spring.DefineSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGJarUtil;
-import com.adrninistrator.javacg.util.JavaCGLogUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import com.adrninistrator.javacg.writer.WriterSupportSkip;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,9 +52,13 @@ import java.util.Set;
  * @description: 入口类
  */
 public class JCallGraph {
-    private final JavaCGCounter callIdCounter = new JavaCGCounter(JavaCGConstants.METHOD_CALL_ID_START);
-    private final JavaCGCounter classNumCounter = new JavaCGCounter(0);
-    private final JavaCGCounter methodNumCounter = new JavaCGCounter(0);
+    private static final Logger logger = LoggerFactory.getLogger(JCallGraph.class);
+
+    private final JavaCGCounter callIdCounter = new JavaCGCounter(JavaCGConstants.METHOD_CALL_ID_MIN_BEFORE);
+    private final JavaCGCounter classNumCounter = new JavaCGCounter();
+    private final JavaCGCounter methodNumCounter = new JavaCGCounter();
+    private final JavaCGCounter failCounter = new JavaCGCounter();
+    private final JavaCGCounter fieldRelationshipCounter = new JavaCGCounter(JavaCGConstants.RECORD_ID_MIN_BEFORE);
 
     private final ExtensionsManager extensionsManager = new ExtensionsManager();
 
@@ -89,11 +96,10 @@ public class JCallGraph {
         }
 
         long startTime = System.currentTimeMillis();
-
         javaCGConfInfo = JavaCGConfManager.getConfInfo(javaCGConfigureWrapper);
-
-        JavaCGLogUtil.setDebugPrintFlag(javaCGConfInfo.isDebugPrint());
-        JavaCGLogUtil.setDebugPrintInFile(javaCGConfInfo.isDebugPrintInFile());
+        if (javaCGConfInfo == null) {
+            return false;
+        }
 
         // 处理参数中指定的jar包
         File newJarFile = handleJarInConf();
@@ -111,76 +117,104 @@ public class JCallGraph {
             // 配置参数中有指定生成文件的根目录，生成在指定目录
             outputDirPath = JavaCGUtil.addSeparator4FilePath(outputRootPath) + newJarFile.getName() + JavaCGConstants.DIR_TAIL_OUTPUT + File.separator;
         }
-        System.out.println("当前输出的根目录: " + outputDirPath);
+        // 记录当前使用的生成文件的目录
+        javaCGConfInfo.setUsedOutputDirPath(outputDirPath);
+        logger.info("当前输出的根目录: {}", outputDirPath);
         if (!JavaCGFileUtil.isDirectoryExists(outputDirPath, true)) {
             return false;
         }
 
         // 初始化
-        if (!init(outputDirPath)) {
+        if (!init(javaCGConfigureWrapper, outputDirPath)) {
             return false;
         }
 
         // 打印生成的文件信息
         printOutputFileInfo();
 
-        try (Writer jarInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_JAR_INFO));
-             Writer classNameWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_NAME));
-             Writer methodCallWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL));
-             Writer lambdaMethodInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LAMBDA_METHOD_INFO));
-             Writer classAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_ANNOTATION));
-             Writer methodAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ANNOTATION));
-             Writer methodLineNumberWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_LINE_NUMBER));
-             Writer methodCallInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL_INFO));
+        try (Writer classAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_ANNOTATION));
              Writer classInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_INFO));
-             Writer methodInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_INFO));
-             Writer extendsImplWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_EXTENDS_IMPL));
-             Writer springBeanWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_SPRING_BEAN));
+             Writer classNameWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_NAME));
              Writer classSignatureEI1Writer = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_EI1));
-             Writer methodArgGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ARG_GENERICS_TYPE));
-             Writer methodReturnGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_RETURN_GENERICS_TYPE));
+             Writer extendsImplWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_EXTENDS_IMPL));
+             Writer fieldAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_FIELD_ANNOTATION));
+             Writer fieldInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_FIELD_INFO));
+             Writer fieldGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_FIELD_GENERICS_TYPE));
+             Writer fieldRelationshipWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_FIELD_RELATIONSHIP));
+             Writer getMethodWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_GET_METHOD));
              Writer innerClassWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_INNER_CLASS));
+             Writer jarInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_JAR_INFO));
+             Writer lambdaMethodInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LAMBDA_METHOD_INFO));
+             Writer methodAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ANNOTATION));
+             Writer methodArgumentWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ARGUMENT));
+             Writer methodArgAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ARG_ANNOTATION));
+             Writer methodArgGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_ARG_GENERICS_TYPE));
+             Writer methodCallInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL_INFO));
+             Writer methodCallMethodCallReturnWriter =
+                     JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL_METHOD_CALL_RETURN));
+             Writer methodCallStaticFieldWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL_STATIC_FIELD));
+             Writer methodReturnArgSeqWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_RETURN_ARG_SEQ));
+             Writer methodReturnCallIdWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_RETURN_CALL_ID));
+             Writer methodCallWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CALL));
+             Writer methodInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_INFO));
+             Writer methodLineNumberWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_LINE_NUMBER));
+             Writer methodReturnGenericsTypeWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_RETURN_GENERICS_TYPE));
+             Writer methodCatchWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_CATCH));
+             Writer methodFinallyWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_FINALLY));
+             Writer methodThrowWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_METHOD_THROW));
+             Writer setMethodWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_SET_METHOD));
+             Writer springBeanWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_SPRING_BEAN));
+             Writer staticFinalFieldMethodCallIdWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_SF_FIELD_METHOD_CALL));
              WriterSupportSkip logMethodSpendTimeWriter = new WriterSupportSkip(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LOG_METHOD_SPEND_TIME))
         ) {
-            jarEntryHandleParser.setJarInfoWriter(jarInfoWriter);
-            jarEntryHandleParser.setClassNameWriter(classNameWriter);
-            jarEntryHandleParser.setMethodCallWriter(methodCallWriter);
-            jarEntryHandleParser.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
+            JavaCGFileUtil.write2FileWithTab(jarInfoWriter, JavaCGConstants.FILE_KEY_RESULT_DIR_INFO_PREFIX, String.valueOf(JavaCGConstants.RECORD_ID_MIN),
+                    javaCGOutputInfo.getOutputDirPath());
+
             jarEntryHandleParser.setClassAnnotationWriter(classAnnotationWriter);
-            jarEntryHandleParser.setMethodAnnotationWriter(methodAnnotationWriter);
-            jarEntryHandleParser.setMethodLineNumberWriter(methodLineNumberWriter);
-            jarEntryHandleParser.setMethodCallInfoWriter(methodCallInfoWriter);
             jarEntryHandleParser.setClassInfoWriter(classInfoWriter);
-            jarEntryHandleParser.setMethodInfoWriter(methodInfoWriter);
-            jarEntryHandleParser.setExtendsImplWriter(extendsImplWriter);
+            jarEntryHandleParser.setClassNameWriter(classNameWriter);
             jarEntryHandleParser.setClassSignatureEI1Writer(classSignatureEI1Writer);
-            jarEntryHandleParser.setMethodArgGenericsTypeWriter(methodArgGenericsTypeWriter);
-            jarEntryHandleParser.setMethodReturnGenericsTypeWriter(methodReturnGenericsTypeWriter);
+            jarEntryHandleParser.setExtendsImplWriter(extendsImplWriter);
+            jarEntryHandleParser.setFieldAnnotationWriter(fieldAnnotationWriter);
+            jarEntryHandleParser.setFieldInfoWriter(fieldInfoWriter);
+            jarEntryHandleParser.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
+            jarEntryHandleParser.setFieldRelationshipWriter(fieldRelationshipWriter);
+            jarEntryHandleParser.setGetMethodWriter(getMethodWriter);
             jarEntryHandleParser.setInnerClassWriter(innerClassWriter);
+            jarEntryHandleParser.setJarInfoWriter(jarInfoWriter);
+            jarEntryHandleParser.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
+            jarEntryHandleParser.setMethodAnnotationWriter(methodAnnotationWriter);
+            jarEntryHandleParser.setMethodArgumentWriter(methodArgumentWriter);
+            jarEntryHandleParser.setMethodArgAnnotationWriter(methodArgAnnotationWriter);
+            jarEntryHandleParser.setMethodArgGenericsTypeWriter(methodArgGenericsTypeWriter);
+            jarEntryHandleParser.setMethodCallInfoWriter(methodCallInfoWriter);
+            jarEntryHandleParser.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
+            jarEntryHandleParser.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
+            jarEntryHandleParser.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
+            jarEntryHandleParser.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
+            jarEntryHandleParser.setMethodCallWriter(methodCallWriter);
+            jarEntryHandleParser.setMethodInfoWriter(methodInfoWriter);
+            jarEntryHandleParser.setMethodLineNumberWriter(methodLineNumberWriter);
+            jarEntryHandleParser.setMethodReturnGenericsTypeWriter(methodReturnGenericsTypeWriter);
+            jarEntryHandleParser.setMethodCatchWriter(methodCatchWriter);
+            jarEntryHandleParser.setMethodFinallyWriter(methodFinallyWriter);
+            jarEntryHandleParser.setMethodThrowWriter(methodThrowWriter);
+            jarEntryHandleParser.setSetMethodWriter(setMethodWriter);
+            jarEntryHandleParser.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
+
             jarEntryHandleParser.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
 
             // 处理jar包
-            if (!handleJar(newJarFilePath, methodCallWriter, springBeanWriter)) {
+            if (!handleJar(newJarFilePath, methodCallWriter, springBeanWriter) || failCounter.getCount() > 0) {
+                logger.error("处理失败，出错次数 {}", failCounter.getCount());
                 return false;
             }
 
             long spendTime = System.currentTimeMillis() - startTime;
-            String printInfo = "执行完毕，处理数量，类： " + classNumCounter.getCount() +
-                    " ，方法: " + methodNumCounter.getCount() +
-                    " ，方法调用: " + callIdCounter.getCount() +
-                    " ，耗时: " + (spendTime / 1000.0D) + " S";
-            System.out.println(printInfo);
-            if (JavaCGLogUtil.isDebugPrintInFile()) {
-                JavaCGLogUtil.debugPrint(printInfo);
-            }
+            logger.info("执行完毕，处理数量，类： {} 方法: {} 方法调用: {} 耗时: {} 秒", classNumCounter.getCount(), methodNumCounter.getCount(), callIdCounter.getCount(), spendTime / 1000.0D);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
-            String errorInfo = "### 出现异常: " + e.getMessage();
-            System.err.println(errorInfo);
-            if (JavaCGLogUtil.isDebugPrintInFile()) {
-                JavaCGLogUtil.debugPrint(errorInfo);
-            }
+            logger.error("出现异常 ", e);
             return false;
         } finally {
             // 关闭扩展类管理类
@@ -192,46 +226,49 @@ public class JCallGraph {
     private File handleJarInConf() {
         List<String> jarDirList = javaCGConfInfo.getJarDirList();
         if (jarDirList.isEmpty()) {
-            System.err.println("请在配置文件" + JavaCGConstants.FILE_CONFIG + "中指定需要处理的jar包或目录列表");
+            logger.error("请在配置文件 {} 中指定需要处理的jar包或目录列表", JavaCGOtherConfigFileUseListEnum.OCFULE_JAR_DIR.getFileName());
             return null;
         }
 
-        System.out.println("需要处理的jar包或目录:");
-        for (String jarDir : jarDirList) {
-            System.out.println(jarDir);
-        }
+        logger.info("需要处理的jar包或目录:\n{}", StringUtils.join(jarDirList, "\n"));
 
         jarInfoMap = new HashMap<>(jarDirList.size());
 
         Set<String> needHandlePackageSet = javaCGConfInfo.getNeedHandlePackageSet();
+        Set<String> jarDirMergeFileTypeSet = javaCGConfInfo.getJarDirMergeFileTypeSet();
         // 对指定的jar包进行处理
-        File newJarFile = JavaCGJarUtil.handleJar(jarDirList, jarInfoMap, needHandlePackageSet);
+        File newJarFile = JavaCGJarUtil.handleJar(jarDirList, jarInfoMap, needHandlePackageSet, jarDirMergeFileTypeSet);
         if (newJarFile == null) {
             return null;
         }
 
-        System.out.println("实际处理的jar文件: " + JavaCGFileUtil.getCanonicalPath(newJarFile));
+        logger.info("实际处理的jar文件: {}", JavaCGFileUtil.getCanonicalPath(newJarFile));
 
         if (needHandlePackageSet.isEmpty()) {
-            System.out.println("所有包中的class文件都需要处理");
+            logger.info("所有包中的class文件都需要处理");
         } else {
             List<String> needHandlePackageList = new ArrayList<>(needHandlePackageSet);
             Collections.sort(needHandlePackageList);
-            System.out.println("仅处理以下包中的class文件\n" + StringUtils.join(needHandlePackageList, "\n"));
+            logger.info("仅处理以下包中的class文件\n{}", StringUtils.join(needHandlePackageList, "\n"));
         }
         return newJarFile;
     }
 
-    private boolean init(String dirPath) {
+    private boolean init(JavaCGConfigureWrapper javaCGConfigureWrapper, String outputDirPath) {
         // 检查方法调用枚举类型是否重复定义
         JavaCGCallTypeEnum.checkRepeat();
 
         // 处理结果信息相关
-        javaCGOutputInfo = new JavaCGOutputInfo(dirPath, javaCGConfInfo.getOutputFileExt());
+        javaCGOutputInfo = new JavaCGOutputInfo(outputDirPath, javaCGConfInfo.getOutputFileExt());
 
         // 扩展类管理类初始化
         extensionsManager.setJavaCGOutputInfo(javaCGOutputInfo);
         if (!extensionsManager.init()) {
+            return false;
+        }
+
+        // 检查对jar包中的其他文件解析时需要处理的文件类型，是否有在合并jar包或目录时需要合并的文件类型中指定
+        if (!checkJarDirMergeFileType(javaCGConfigureWrapper)) {
             return false;
         }
 
@@ -246,10 +283,12 @@ public class JCallGraph {
         Map<String, Boolean> transactionCallbackWithoutResultChildClassMap = new HashMap<>(JavaCGConstants.SIZE_10);
         // Thread子类Map
         Map<String, Boolean> threadChildClassMap = new HashMap<>(JavaCGConstants.SIZE_100);
-        // 涉及继承的类名Set
-        Set<String> classExtendsSet = new HashSet<>(JavaCGConstants.SIZE_100);
+        // 类名及对应的父类（父类非Object时记录）
+        Map<String, String> classAndSuperMap = new HashMap<>(JavaCGConstants.SIZE_100);
         // 涉及继承的接口名Set
         Set<String> interfaceExtendsSet = new HashSet<>(JavaCGConstants.SIZE_100);
+        // 所有在jar包中出现的类名Set
+        Set<String> allClassNameSet = new HashSet<>(JavaCGConstants.SIZE_1000);
   
         /*
            类名及所在的jar包序号Map
@@ -270,21 +309,22 @@ public class JCallGraph {
             key     接口名
             value   接口中的方法信息
         */
-        Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgsMap = new HashMap<>(JavaCGConstants.SIZE_200);
+        Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgTypesMap = new HashMap<>(JavaCGConstants.SIZE_200);
 
         if (javaCGConfInfo.isParseMethodCallTypeValue()) {
-            defineSpringBeanByAnnotationHandler = new DefineSpringBeanByAnnotationHandler(javaCGConfInfo);
+            defineSpringBeanByAnnotationHandler = new DefineSpringBeanByAnnotationHandler(javaCGConfInfo, failCounter);
         }
         jarEntryPreHandle1Parser = new JarEntryPreHandle1Parser(javaCGConfInfo, jarInfoMap, defineSpringBeanByAnnotationHandler, extensionsManager);
         jarEntryPreHandle1Parser.setClassImplementsMethodInfoMap(classImplementsMethodInfoMap);
-        jarEntryPreHandle1Parser.setInterfaceMethodWithArgsMap(interfaceMethodWithArgsMap);
+        jarEntryPreHandle1Parser.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
         jarEntryPreHandle1Parser.setRunnableImplClassMap(runnableImplClassMap);
         jarEntryPreHandle1Parser.setCallableImplClassMap(callableImplClassMap);
         jarEntryPreHandle1Parser.setTransactionCallbackImplClassMap(transactionCallbackImplClassMap);
         jarEntryPreHandle1Parser.setTransactionCallbackWithoutResultChildClassMap(transactionCallbackWithoutResultChildClassMap);
         jarEntryPreHandle1Parser.setThreadChildClassMap(threadChildClassMap);
-        jarEntryPreHandle1Parser.setClassExtendsSet(classExtendsSet);
+        jarEntryPreHandle1Parser.setClassAndSuperMap(classAndSuperMap);
         jarEntryPreHandle1Parser.setInterfaceExtendsSet(interfaceExtendsSet);
+        jarEntryPreHandle1Parser.setAllClassNameSet(allClassNameSet);
         jarEntryPreHandle1Parser.setClassAndJarNum(classAndJarNum);
 
         // 第二次预处理相关
@@ -333,10 +373,11 @@ public class JCallGraph {
                     extensionsManager.getSpringXmlBeanParser());
         }
         jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCGConfInfo, jarInfoMap, useSpringBeanByAnnotationHandler);
-        jarEntryPreHandle2Parser.setClassExtendsSet(classExtendsSet);
+        jarEntryPreHandle2Parser.setClassAndSuperMap(classAndSuperMap);
         jarEntryPreHandle2Parser.setClassExtendsMethodInfoMap(classExtendsMethodInfoMap);
         jarEntryPreHandle2Parser.setChildrenClassMap(childrenClassMap);
         jarEntryPreHandle2Parser.setInterfaceExtendsSet(interfaceExtendsSet);
+        jarEntryPreHandle2Parser.setAllClassNameSet(allClassNameSet);
         jarEntryPreHandle2Parser.setInterfaceExtendsMethodInfoMap(interfaceExtendsMethodInfoMap);
         jarEntryPreHandle2Parser.setChildrenInterfaceMap(childrenInterfaceMap);
 
@@ -352,38 +393,68 @@ public class JCallGraph {
         jarEntryHandleParser.setCallIdCounter(callIdCounter);
         jarEntryHandleParser.setClassNumCounter(classNumCounter);
         jarEntryHandleParser.setMethodNumCounter(methodNumCounter);
+        jarEntryHandleParser.setFailCounter(failCounter);
+        jarEntryHandleParser.setFieldRelationshipCounter(fieldRelationshipCounter);
         jarEntryHandleParser.setClassAndJarNum(classAndJarNum);
 
         // 继承及实现相关的方法处理相关
         extendsImplHandler = new ExtendsImplHandler();
         extendsImplHandler.setJavaCGConfInfo(javaCGConfInfo);
         extendsImplHandler.setCallIdCounter(callIdCounter);
-        extendsImplHandler.setInterfaceMethodWithArgsMap(interfaceMethodWithArgsMap);
+        extendsImplHandler.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
         extendsImplHandler.setChildrenClassMap(childrenClassMap);
         extendsImplHandler.setInterfaceExtendsMethodInfoMap(interfaceExtendsMethodInfoMap);
         extendsImplHandler.setChildrenInterfaceMap(childrenInterfaceMap);
         extendsImplHandler.setClassImplementsMethodInfoMap(classImplementsMethodInfoMap);
         extendsImplHandler.setClassExtendsMethodInfoMap(classExtendsMethodInfoMap);
+        extendsImplHandler.setAllClassNameSet(allClassNameSet);
         extendsImplHandler.setClassAndJarNum(classAndJarNum);
+        return true;
+    }
+
+    /**
+     * 检查对jar包中的其他文件解析时需要处理的文件类型，是否有在合并jar包或目录时需要合并的文件类型中指定
+     *
+     * @param javaCGConfigureWrapper
+     * @return
+     */
+    private boolean checkJarDirMergeFileType(JavaCGConfigureWrapper javaCGConfigureWrapper) {
+        Set<String> jarDirMergeFileTypeSet = javaCGConfigureWrapper.getOtherConfigSet(JavaCGOtherConfigFileUseSetEnum.OCFUSE_JAR_DIR_MERGE_FILE_TYPE, false);
+        Set<String> lowerJarDirMergeFileTypeSet = new HashSet<>(jarDirMergeFileTypeSet.size());
+        for (String jarDirMergeFileType : jarDirMergeFileTypeSet) {
+            lowerJarDirMergeFileTypeSet.add(jarDirMergeFileType.toLowerCase());
+        }
+        for (String jarEntryOtherFileType : extensionsManager.getJarEntryOtherFileTypeSet()) {
+            String lowerJarEntryOtherFileType = jarEntryOtherFileType.toLowerCase();
+            if (JavaCGConstants.FILE_TYPE_CLASS.equals(lowerJarEntryOtherFileType)) {
+                continue;
+            }
+            if (!lowerJarDirMergeFileTypeSet.contains(lowerJarEntryOtherFileType)) {
+                logger.error("对jar包中的其他文件解析时需要处理的文件类型 {} 未在合并jar包或目录时需要合并的文件类型配置文件 {} 中指定", jarEntryOtherFileType,
+                        JavaCGOtherConfigFileUseSetEnum.OCFUSE_JAR_DIR_MERGE_FILE_TYPE.getFileName());
+                return false;
+            }
+        }
         return true;
     }
 
     // 打印生成的文件信息
     private void printOutputFileInfo() {
-        System.out.println("写入文件:");
         for (JavaCGOutPutFileTypeEnum javaCGOutPutFileTypeEnum : JavaCGOutPutFileTypeEnum.values()) {
-            System.out.println(javaCGOutputInfo.getMainFilePath(javaCGOutPutFileTypeEnum));
+            if (javaCGOutPutFileTypeEnum == JavaCGOutPutFileTypeEnum.OPFTE_ILLEGAL) {
+                continue;
+            }
+            logger.info("写入文件: {}", javaCGOutputInfo.getMainFilePath(javaCGOutPutFileTypeEnum));
         }
 
         Set<String> otherFileNameSet = javaCGOutputInfo.getOtherFileNameSet();
         if (otherFileNameSet.isEmpty()) {
-            System.out.println("不写入其他文件");
+            logger.info("不写入其他类型的文件");
             return;
         }
 
-        System.out.println("写入其他文件");
         for (String otherFileName : otherFileNameSet) {
-            System.out.println(otherFileName + " " + javaCGOutputInfo.getOtherFilePath(otherFileName));
+            logger.info("写入其他类型的文件 {} {}", otherFileName, javaCGOutputInfo.getOtherFilePath(otherFileName));
         }
     }
 
@@ -416,8 +487,7 @@ public class JCallGraph {
             recordSpringBeanNameAndType(springBeanWriter);
             return true;
         } catch (Exception e) {
-            System.err.println("处理jar包出现异常 " + jarFilePath);
-            e.printStackTrace();
+            logger.error("处理jar包出现异常 {} ", jarFilePath, e);
             return false;
         }
     }
@@ -438,10 +508,22 @@ public class JCallGraph {
             return;
         }
 
-        for (String springBeanName : defineSpringBeanByAnnotationHandler.getSpringBeanNameSet()) {
+        List<String> springBeanNameList = new ArrayList<>(defineSpringBeanByAnnotationHandler.getSpringBeanNameSet());
+        Collections.sort(springBeanNameList);
+        for (String springBeanName : springBeanNameList) {
             List<String> springBeanTypeList = defineSpringBeanByAnnotationHandler.getSpringBeanTypeList(springBeanName);
             for (int i = 0; i < springBeanTypeList.size(); i++) {
-                JavaCGFileUtil.write2FileWithTab(springBeanWriter, springBeanName, String.valueOf(i), springBeanTypeList.get(i));
+                JavaCGFileUtil.write2FileWithTab(springBeanWriter, springBeanName, String.valueOf(i), springBeanTypeList.get(i), JavaCGConstants.FILE_KEY_SPRING_BEAN_IN_JAVA);
+            }
+        }
+        // 记录XML中定义的Spring Bean信息
+        SpringXmlBeanParserInterface springXmlBeanParser = extensionsManager.getSpringXmlBeanParser();
+        if (springXmlBeanParser != null) {
+            Map<String, String> springBeanMapInXml = springXmlBeanParser.getBeanMap();
+            List<String> springBeanNameInXmlList = new ArrayList<>(springBeanMapInXml.keySet());
+            for (String springBeanNameInXml : springBeanNameInXmlList) {
+                String springBeanTypeInXml = springBeanMapInXml.get(springBeanNameInXml);
+                JavaCGFileUtil.write2FileWithTab(springBeanWriter, springBeanNameInXml, "0", springBeanTypeInXml, JavaCGConstants.FILE_KEY_SPRING_BEAN_IN_XML);
             }
         }
     }
@@ -449,7 +531,7 @@ public class JCallGraph {
     // 打印重复的类名
     private void printDuplicateClasses() {
         if (duplicateClassNameMap.isEmpty()) {
-            JavaCGLogUtil.debugPrint("不存在重复的类名");
+            logger.info("不存在重复的类名");
             return;
         }
 
@@ -458,9 +540,9 @@ public class JCallGraph {
 
         for (String duplicateClassName : duplicateClassNameList) {
             List<String> classFilePathList = duplicateClassNameMap.get(duplicateClassName);
-            JavaCGLogUtil.debugPrint("重复的类名 " + duplicateClassName + " 使用的class文件 " + classFilePathList.get(0));
+            logger.info("重复的类名 {} 使用的class文件 {}", duplicateClassName, classFilePathList.get(0));
             for (int i = 1; i < classFilePathList.size(); i++) {
-                JavaCGLogUtil.debugPrint("重复的类名 " + duplicateClassName + " 跳过的class文件 " + classFilePathList.get(i));
+                logger.info("重复的类名 {} 跳过的class文件 {}", duplicateClassName, classFilePathList.get(i));
             }
         }
     }
@@ -472,17 +554,12 @@ public class JCallGraph {
      * @param codeParser
      */
     public void addCodeParser(CodeParserInterface codeParser) {
+        if (codeParser instanceof SpringXmlBeanParserInterface) {
+            // 设置对Spring XML中的Bean解析的类
+            extensionsManager.setSpringXmlBeanParser((SpringXmlBeanParserInterface) codeParser);
+            return;
+        }
         extensionsManager.addCodeParser(codeParser);
-    }
-
-    /**
-     * 设置对Spring XML中的Bean解析的类
-     * 需要在调用run()方法之前调用当前方法
-     *
-     * @param springXmlBeanParser
-     */
-    public void setSpringXmlBeanParser(SpringXmlBeanParserInterface springXmlBeanParser) {
-        extensionsManager.setSpringXmlBeanParser(springXmlBeanParser);
     }
 
     // 获取java-callgraph2处理结果信息

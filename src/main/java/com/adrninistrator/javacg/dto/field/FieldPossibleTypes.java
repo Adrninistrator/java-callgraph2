@@ -34,11 +34,6 @@ public class FieldPossibleTypes {
         }
 
         List<String> possibleTypeList = possibleTypeMap.computeIfAbsent(fieldName, k -> new ArrayList<>());
-        if (possibleTypeList.isEmpty()) {
-            possibleTypeList.add(possibleType);
-            return;
-        }
-
         if (!possibleTypeList.contains(possibleType)) {
             possibleTypeList.add(possibleType);
         }

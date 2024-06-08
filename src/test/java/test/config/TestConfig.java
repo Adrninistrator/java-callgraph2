@@ -29,26 +29,22 @@ public class TestConfig {
         javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, Boolean.TRUE.toString());
         javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE, Boolean.TRUE.toString());
         javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR, Boolean.FALSE.toString());
-        javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_DEBUG_PRINT, Boolean.FALSE.toString());
-        javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_OUTPUT_FILE_EXT, ".txt");
+        javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_OUTPUT_FILE_EXT, ".md");
         new JCallGraph().run(javaCGConfigureWrapper);
     }
 
     @Test
     public void testDebugPrintOn() {
-        javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_DEBUG_PRINT, Boolean.TRUE.toString());
         new JCallGraph().run(javaCGConfigureWrapper);
     }
 
     @Test
     public void testDebugPrintInFile() {
-        javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_DEBUG_PRINT, JavaCGConstants.PROPERTY_VALUE_DEBUG_PRINT_IN_FILE);
         new JCallGraph().run(javaCGConfigureWrapper);
     }
 
     @Test
     public void testParseMethodCallTypeValueOff() {
-        javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_DEBUG_PRINT, "");
         javaCGConfigureWrapper.setConfig(JavaCGConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, Boolean.FALSE.toString());
         new JCallGraph().run(javaCGConfigureWrapper);
     }

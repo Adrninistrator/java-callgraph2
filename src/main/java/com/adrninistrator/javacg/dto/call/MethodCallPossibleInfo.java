@@ -81,7 +81,7 @@ public class MethodCallPossibleInfo {
     /**
      * 获取参数可能的信息
      *
-     * @param seq 序号
+     * @param seq 参数序号，从0开始
      * @return
      */
     public MethodCallPossibleList getPossibleInfo4Args(int seq) {

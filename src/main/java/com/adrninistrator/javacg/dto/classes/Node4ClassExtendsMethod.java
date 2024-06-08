@@ -3,7 +3,7 @@ package com.adrninistrator.javacg.dto.classes;
 /**
  * @author adrninistrator
  * @date 2021/6/27
- * @description: 处理涉及继承的类的方法时使用的信息
+ * @description: 处理涉及继承的类的方法时使用的栈的节点
  */
 
 public class Node4ClassExtendsMethod {

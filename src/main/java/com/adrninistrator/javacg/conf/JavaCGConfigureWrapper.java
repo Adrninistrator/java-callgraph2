@@ -7,10 +7,13 @@ import com.adrninistrator.javacg.exceptions.JavaCGError;
 import com.adrninistrator.javacg.util.JavaCGFileUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -22,6 +25,8 @@ import java.util.Set;
  * @description: 配置参数包装类
  */
 public class JavaCGConfigureWrapper {
+    private static final Logger logger = LoggerFactory.getLogger(JavaCGConfigureWrapper.class);
+
     /*
         主要配置文件中的参数
         key 参数名
@@ -137,6 +142,13 @@ public class JavaCGConfigureWrapper {
     }
 
     /**
+     * 设置需要处理所有的类
+     */
+    public void setPackageUseAll() {
+        setOtherConfigSet(JavaCGOtherConfigFileUseSetEnum.OCFUSE_PACKAGES, new HashSet<>());
+    }
+
+    /**
      * 获取配置文件中的参数，或通过代码添加的参数
      *
      * @param properties
@@ -149,7 +161,7 @@ public class JavaCGConfigureWrapper {
         String value = configMap.get(key);
         if (value != null) {
             if (printLog) {
-                System.out.println("使用通过代码添加的参数 [" + key + "] " + value);
+                logger.info("使用通过代码添加的参数 [{}] {}", key, value);
             }
             return value;
         }
@@ -161,7 +173,7 @@ public class JavaCGConfigureWrapper {
         // 获取配置文件中的参数
         value = properties.getProperty(key);
         if (printLog) {
-            System.out.println("使用配置文件中的参数 [" + key + "] " + value);
+            logger.info("使用配置文件中的参数 [{}] {}", key, value);
         }
         return value;
     }
@@ -178,7 +190,7 @@ public class JavaCGConfigureWrapper {
         Set<String> configSet = otherConfigSetMap.get(configFileName);
         if (configSet != null) {
             if (printLog) {
-                System.out.println("使用通过代码添加的参数 [" + configFileName + "]\n" + StringUtils.join(new ArrayList<>(configSet), " "));
+                logger.info("使用通过代码添加的参数 [{}]\n{}", configFileName, StringUtils.join(new ArrayList<>(configSet), " "));
             }
             return configSet;
         }
@@ -186,7 +198,7 @@ public class JavaCGConfigureWrapper {
         // 获取其他配置文件中的参数
         configSet = JavaCGFileUtil.readFile2Set(JavaCGConfManager.getInputRootPath() + configFileName);
         if (printLog) {
-            System.out.println("使用配置文件中的参数 [" + configFileName + "]\n" + StringUtils.join(new ArrayList<>(configSet), " "));
+            logger.info("使用配置文件中的参数 [{}]\n{}", configFileName, StringUtils.join(new ArrayList<>(configSet), " "));
         }
         return configSet;
     }
@@ -203,7 +215,7 @@ public class JavaCGConfigureWrapper {
         List<String> configList = otherConfigListMap.get(configFileName);
         if (configList != null) {
             if (printLog) {
-                System.out.println("使用通过代码添加的参数 [" + configFileName + "]\n" + StringUtils.join(configList, " "));
+                logger.info("使用通过代码添加的参数 [{}]\n{}", configFileName, StringUtils.join(configList, " "));
             }
             return configList;
         }
@@ -211,7 +223,7 @@ public class JavaCGConfigureWrapper {
         // 获取其他配置文件中的参数
         configList = JavaCGFileUtil.readFile2List(JavaCGConfManager.getInputRootPath() + configFileName);
         if (printLog) {
-            System.out.println("使用配置文件中的参数 [" + configFileName + "]\n" + StringUtils.join(configList, " "));
+            logger.info("使用配置文件中的参数 [{}]\n{}", configFileName, StringUtils.join(configList, " "));
         }
         return configList;
     }

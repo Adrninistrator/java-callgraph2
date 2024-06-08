@@ -1,15 +1,20 @@
 package com.adrninistrator.javacg.dto.frame;
 
+import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.element.BaseElement;
 import com.adrninistrator.javacg.dto.element.variable.FieldElement;
 import com.adrninistrator.javacg.dto.element.variable.LocalVariableElement;
 import com.adrninistrator.javacg.dto.element.variable.StaticFieldElement;
+import com.adrninistrator.javacg.dto.element.variable.VariableElement;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
 import com.adrninistrator.javacg.util.JavaCGElementUtil;
-import com.adrninistrator.javacg.util.JavaCGLogUtil;
+import org.apache.bcel.classfile.LocalVariable;
+import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.generic.ArrayType;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +27,8 @@ import java.util.Set;
  */
 public class JavaCGLocalVariables {
 
+    private static final Logger logger = LoggerFactory.getLogger(JavaCGLocalVariables.class);
+
     private List<LocalVariableElement> localVariableElementList;
 
     /**
@@ -30,20 +37,23 @@ public class JavaCGLocalVariables {
      * @param mg
      * @return
      */
-    public JavaCGLocalVariables(MethodGen mg) {
+    public JavaCGLocalVariables(LocalVariableTable localVariableTable, MethodGen mg) {
         localVariableElementList = new ArrayList<>(mg.getMaxLocals());
 
         int index = 0;
         if (!mg.isStatic()) {
             // 非静态方法，将this加入本地变量
-            LocalVariableElement thisLocalVariableElement = new LocalVariableElement(mg.getClassName(), false, null, index);
+            LocalVariableElement thisLocalVariableElement = new LocalVariableElement(mg.getClassName(), false, null, index, JavaCGConstants.THIS);
             localVariableElementList.add(thisLocalVariableElement);
             index++;
         }
 
         // 将参数加入本地变量
         for (Type arg : mg.getArgumentTypes()) {
-            LocalVariableElement localVariableElement = new LocalVariableElement(arg.toString(), (arg instanceof ArrayType), null, index);
+            // 获取参数对应的本地变量值，pc使用0就能获取到
+            LocalVariable localVariable = localVariableTable.getLocalVariable(index, 0);
+            LocalVariableElement localVariableElement = new LocalVariableElement(arg.toString(), (arg instanceof ArrayType), null, index,
+                    (localVariable != null) ? localVariable.getName() : null);
             localVariableElementList.add(localVariableElement);
             index++;
 
@@ -60,9 +70,16 @@ public class JavaCGLocalVariables {
      * @return
      */
     public JavaCGLocalVariables copy() {
-        JavaCGLocalVariables clone = new JavaCGLocalVariables();
-        clone.localVariableElementList = new ArrayList<>(localVariableElementList);
-        return clone;
+        JavaCGLocalVariables javaCGLocalVariablesCopy = new JavaCGLocalVariables();
+        javaCGLocalVariablesCopy.localVariableElementList = new ArrayList<>(this.localVariableElementList.size());
+        for (LocalVariableElement localVariableElement : this.localVariableElementList) {
+            if (localVariableElement == null) {
+                javaCGLocalVariablesCopy.localVariableElementList.add(null);
+                continue;
+            }
+            javaCGLocalVariablesCopy.localVariableElementList.add(localVariableElement.copyLocalVariableElement());
+        }
+        return javaCGLocalVariablesCopy;
     }
 
     /**
@@ -108,17 +125,23 @@ public class JavaCGLocalVariables {
      * @param baseElement 操作数栈出栈的内容
      * @param index       本地变量的索引
      */
-    public void add(String type, BaseElement baseElement, int index) {
+    public void add(String type, BaseElement baseElement, int index, String variableName) {
         LocalVariableElement localVariableElement;
         if (baseElement instanceof StaticFieldElement) {
             StaticFieldElement staticFieldElement = (StaticFieldElement) baseElement;
-            localVariableElement = new StaticFieldElement(type, staticFieldElement.isArrayElement(), staticFieldElement.getValue(), staticFieldElement.getFieldName(),
-                    staticFieldElement.getClassName(), index);
+            localVariableElement = new StaticFieldElement(type, staticFieldElement.isArrayElement(), staticFieldElement.getValue(), index, staticFieldElement.getName(),
+                    staticFieldElement.getClassName());
         } else if (baseElement instanceof FieldElement) {
             FieldElement fieldElement = (FieldElement) baseElement;
-            localVariableElement = new FieldElement(type, fieldElement.isArrayElement(), fieldElement.getValue(), fieldElement.getFieldName(), index);
+            localVariableElement = new FieldElement(type, fieldElement.isArrayElement(), fieldElement.getValue(), index, fieldElement.getName(), fieldElement.getClassName());
         } else {
-            localVariableElement = new LocalVariableElement(type, baseElement.isArrayElement(), baseElement.getValue(), index);
+            localVariableElement = new LocalVariableElement(type, baseElement.isArrayElement(), baseElement.getValue(), index, variableName);
+            // 非FieldElement，且非StaticFieldElement时，拷贝数据来源
+            localVariableElement.copyVariableDataSource(baseElement);
+        }
+        if (baseElement instanceof VariableElement) {
+            VariableElement variableElement = (VariableElement) baseElement;
+            localVariableElement.setCatchExceptionStartPosition(variableElement.getCatchExceptionStartPosition());
         }
 
         // 数组类型的处理
@@ -126,9 +149,7 @@ public class JavaCGLocalVariables {
             localVariableElement.setArrayValueMap(baseElement.getArrayValueMap());
         }
 
-        if (JavaCGLogUtil.isDebugPrintFlag()) {
-            JavaCGLogUtil.debugPrint("### 添加本地变量 (" + index + ") " + localVariableElement);
-        }
+        logger.debug("添加本地变量 ({}) {}", index, localVariableElement);
 
         if (localVariableElementList.size() > index) {
             // 对应索引的本地变量已存在

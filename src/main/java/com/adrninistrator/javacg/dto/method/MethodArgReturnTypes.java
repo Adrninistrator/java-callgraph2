@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg.dto.method;
 
-import com.adrninistrator.javacg.util.JavaCGMethodUtil;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
 import org.apache.bcel.generic.Type;
 
 import java.util.Objects;
@@ -22,7 +22,7 @@ public class MethodArgReturnTypes {
 
     public MethodArgReturnTypes(String methodName, Type[] argTypes, Type returnType) {
         this.methodName = methodName;
-        this.methodArgTypes = JavaCGMethodUtil.getArgListStr(argTypes);
+        this.methodArgTypes = JavaCGClassMethodUtil.getArgTypeStr(argTypes);
         this.methodReturnType = returnType.toString();
     }
 

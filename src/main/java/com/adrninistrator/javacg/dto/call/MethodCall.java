@@ -3,8 +3,9 @@ package com.adrninistrator.javacg.dto.call;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGCallTypeEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGCalleeObjTypeEnum;
-import com.adrninistrator.javacg.util.JavaCGMethodUtil;
-import org.apache.commons.lang3.StringUtils;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
+import com.adrninistrator.javacg.util.JavaCGFileUtil;
+import org.apache.bcel.generic.Type;
 
 /**
  * @author adrninistrator
@@ -17,101 +18,47 @@ public class MethodCall {
     private int callId;
 
     // 调用者类名
-    private final String callerClassName;
+    private String callerClassName;
 
     // 调用者方法名
-    private final String callerMethodName;
+    private String callerMethodName;
 
-    // 调用者方法参数
-    private final String callerMethodArgs;
+    // 调用者方法参数类型
+    private String callerMethodArgTypes;
 
     // 调用者方法返回类型
     private String callerReturnType;
 
     // 方法调用类型
-    private final JavaCGCallTypeEnum methodCallType;
+    private JavaCGCallTypeEnum methodCallType;
 
     // 被调用者类名
-    private final String calleeClassName;
+    private String calleeClassName;
 
     // 被调用者方法名
-    private final String calleeMethodName;
+    private String calleeMethodName;
 
-    // 被调用者方法参数
-    private final String calleeMethodArgs;
+    // 被调用者方法参数类型
+    private String calleeMethodArgTypes;
 
     // 调用者源代码行号
-    private final int callerSourceLine;
+    private int callerSourceLine;
 
     // 被调用类型
-    private final JavaCGCalleeObjTypeEnum objTypeEnum;
+    private JavaCGCalleeObjTypeEnum objTypeEnum;
 
     // 原始返回类型
-    private final String rawReturnType;
+    private String rawReturnType;
 
     // 实际返回类型
-    private final String actualReturnType;
+    private String actualReturnType;
 
-    public MethodCall(int callId,
-                      String callerClassName,
-                      String callerMethodName,
-                      String callerMethodArgs,
-                      String callerReturnType,
-                      JavaCGCallTypeEnum methodCallType,
-                      String calleeClassName,
-                      String calleeMethodName,
-                      String calleeMethodArgs,
-                      int callerSourceLine,
-                      JavaCGCalleeObjTypeEnum objTypeEnum,
-                      String rawReturnType,
-                      String actualReturnType
-    ) {
-        this(callerClassName,
-                callerMethodName,
-                callerMethodArgs,
-                callerReturnType,
-                methodCallType,
-                calleeClassName,
-                calleeMethodName,
-                calleeMethodArgs,
-                callerSourceLine,
-                objTypeEnum,
-                rawReturnType,
-                actualReturnType
-        );
-        this.callId = callId;
-    }
-
-    public MethodCall(String callerClassName,
-                      String callerMethodName,
-                      String callerMethodArgs,
-                      String callerReturnType,
-                      JavaCGCallTypeEnum methodCallType,
-                      String calleeClassName,
-                      String calleeMethodName,
-                      String calleeMethodArgs,
-                      int callerSourceLine,
-                      JavaCGCalleeObjTypeEnum objTypeEnum,
-                      String rawReturnType,
-                      String actualReturnType
-    ) {
-        this.callerClassName = callerClassName;
-        this.callerMethodName = callerMethodName;
-        this.callerMethodArgs = callerMethodArgs;
-        this.callerReturnType = callerReturnType;
-        this.methodCallType = methodCallType;
-        this.calleeClassName = calleeClassName;
-        this.calleeMethodName = calleeMethodName;
-        this.calleeMethodArgs = calleeMethodArgs;
-        this.callerSourceLine = callerSourceLine;
-        this.objTypeEnum = objTypeEnum;
-        this.rawReturnType = rawReturnType;
-        this.actualReturnType = actualReturnType;
-    }
+    // 被调用方法的参数类型数组
+    private Type[] argTypes;
 
     // 返回调用者完整方法
     public String genCallerFullMethod() {
-        return JavaCGMethodUtil.formatFullMethod(callerClassName, callerMethodName, callerMethodArgs);
+        return JavaCGClassMethodUtil.formatFullMethod(callerClassName, callerMethodName, callerMethodArgTypes);
     }
 
     // 返回被调用类型对应的字符串
@@ -124,16 +71,16 @@ public class MethodCall {
 
     // 返回被调用者完整方法
     public String genCalleeFullMethod() {
-        return JavaCGMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgs);
+        return JavaCGClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgTypes);
     }
 
     // 生成在调用关系文件中的内容
-    public String genCallContent(String callerJarNum, String calleeJarNum) {
-        return StringUtils.joinWith(JavaCGConstants.FILE_COLUMN_SEPARATOR,
-                callId,
+    public String genMethodCallContent(String callerJarNum, String calleeJarNum) {
+        return JavaCGFileUtil.appendFileColumn(
+                String.valueOf(callId),
                 genCallerFullMethod(),
                 JavaCGConstants.FILE_KEY_CALL_TYPE_FLAG1 + methodCallType.getType() + JavaCGConstants.FILE_KEY_CALL_TYPE_FLAG2 + genCalleeFullMethod(),
-                callerSourceLine,
+                String.valueOf(callerSourceLine),
                 callerReturnType,
                 genObjTypeEnum(),
                 rawReturnType,
@@ -151,7 +98,107 @@ public class MethodCall {
         this.callId = callId;
     }
 
+    public String getCallerClassName() {
+        return callerClassName;
+    }
+
+    public void setCallerClassName(String callerClassName) {
+        this.callerClassName = callerClassName;
+    }
+
+    public String getCallerMethodName() {
+        return callerMethodName;
+    }
+
+    public void setCallerMethodName(String callerMethodName) {
+        this.callerMethodName = callerMethodName;
+    }
+
+    public String getCallerMethodArgTypes() {
+        return callerMethodArgTypes;
+    }
+
+    public void setCallerMethodArgTypes(String callerMethodArgTypes) {
+        this.callerMethodArgTypes = callerMethodArgTypes;
+    }
+
+    public String getCallerReturnType() {
+        return callerReturnType;
+    }
+
+    public void setCallerReturnType(String callerReturnType) {
+        this.callerReturnType = callerReturnType;
+    }
+
+    public JavaCGCallTypeEnum getMethodCallType() {
+        return methodCallType;
+    }
+
+    public void setMethodCallType(JavaCGCallTypeEnum methodCallType) {
+        this.methodCallType = methodCallType;
+    }
+
     public String getCalleeClassName() {
         return calleeClassName;
+    }
+
+    public void setCalleeClassName(String calleeClassName) {
+        this.calleeClassName = calleeClassName;
+    }
+
+    public String getCalleeMethodName() {
+        return calleeMethodName;
+    }
+
+    public void setCalleeMethodName(String calleeMethodName) {
+        this.calleeMethodName = calleeMethodName;
+    }
+
+    public String getCalleeMethodArgTypes() {
+        return calleeMethodArgTypes;
+    }
+
+    public void setCalleeMethodArgTypes(String calleeMethodArgTypes) {
+        this.calleeMethodArgTypes = calleeMethodArgTypes;
+    }
+
+    public int getCallerSourceLine() {
+        return callerSourceLine;
+    }
+
+    public void setCallerSourceLine(int callerSourceLine) {
+        this.callerSourceLine = callerSourceLine;
+    }
+
+    public JavaCGCalleeObjTypeEnum getObjTypeEnum() {
+        return objTypeEnum;
+    }
+
+    public void setObjTypeEnum(JavaCGCalleeObjTypeEnum objTypeEnum) {
+        this.objTypeEnum = objTypeEnum;
+    }
+
+    public String getRawReturnType() {
+        return rawReturnType;
+    }
+
+    public void setRawReturnType(String rawReturnType) {
+        this.rawReturnType = rawReturnType;
+    }
+
+    public String getActualReturnType() {
+        return actualReturnType;
+    }
+
+    public void setActualReturnType(String actualReturnType) {
+        this.actualReturnType = actualReturnType;
+    }
+
+    public Type[] getArgTypes() {
+        return argTypes;
+    }
+
+    public void setArgTypes(Type[] argTypes) {
+        this.argTypes = argTypes;
     }
 }

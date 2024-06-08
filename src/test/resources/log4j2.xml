@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Configuration>
+<Configuration status="info" monitorInterval="5">
+    <Appenders>
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %C{1}.%M(%L) - %m%n"/>
+        </Console>
+
+        <!--        todo    -->
+        <File name="branchStepFile" fileName="log_javacg/branch_step-${date:yyyyMMdd-HHmmss}.log">
+            <PatternLayout pattern="%m%n"/>
+        </File>
+
+        <Async name="asyncBranchStep" bufferSize="512" includeLocation="true">
+            <AppenderRef ref="branchStepFile"/>
+        </Async>
+        <!--        todo    -->
+
+        <!--        todo    -->
+        <File name="instructionPathFile" fileName="log_javacg/instruction_path-${date:yyyyMMdd-HHmmss}.log">
+            <PatternLayout pattern="%m%n"/>
+        </File>
+
+        <Async name="asyncInstructionPath" bufferSize="512" includeLocation="true">
+            <AppenderRef ref="instructionPathFile"/>
+        </Async>
+        <!--        todo    -->
+
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="console"/>
+        </Root>
+
+        <Logger name="com.adrninistrator" level="info" additivity="false">
+            <AppenderRef ref="console" />
+        </Logger>
+
+        <!--        todo    -->
+        <AsyncLogger name="branchStepLogger" level="info" additivity="false" includeLocation="true">
+            <AppenderRef ref="asyncBranchStep" />
+        </AsyncLogger>
+        <!--        todo    -->
+
+        <!--        todo    -->
+        <AsyncLogger name="instructionPathLogger" level="info" additivity="false" includeLocation="true">
+            <AppenderRef ref="asyncInstructionPath" />
+        </AsyncLogger>
+        <!--        todo    -->
+    </Loggers>
+</Configuration>

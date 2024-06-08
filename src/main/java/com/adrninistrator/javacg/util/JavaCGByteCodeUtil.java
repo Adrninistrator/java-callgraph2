@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg.util;
 
+import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.TypeConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
@@ -16,7 +17,10 @@ import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.classfile.Signature;
 import org.apache.bcel.classfile.Utility;
+import org.apache.bcel.generic.MethodGen;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +31,8 @@ import java.util.List;
  * @description:
  */
 public class JavaCGByteCodeUtil {
+
+    private static final Logger logger = LoggerFactory.getLogger(JavaCGByteCodeUtil.class);
 
     /**
      * 判断当前方法是否为涉及继承的方法
@@ -44,10 +50,7 @@ public class JavaCGByteCodeUtil {
          */
         return !methodName.startsWith("<")
                 && !accessFlags.isStatic()
-                && (accessFlags.isAbstract()
-                || accessFlags.isPublic()
-                || accessFlags.isProtected()
-                || !accessFlags.isPrivate());
+                && (accessFlags.isAbstract() || accessFlags.isPublic() || accessFlags.isProtected() || !accessFlags.isPrivate());
     }
 
     /**
@@ -77,7 +80,7 @@ public class JavaCGByteCodeUtil {
      * @param methods
      * @return
      */
-    public static List<MethodArgReturnTypes> genImplClassMethodWithArgs(Method[] methods) {
+    public static List<MethodArgReturnTypes> genImplClassMethodWithArgTypes(Method[] methods) {
         List<MethodArgReturnTypes> methodInfoList = new ArrayList<>(methods.length);
         for (Method method : methods) {
             String methodName = method.getName();
@@ -95,7 +98,7 @@ public class JavaCGByteCodeUtil {
      * @param methods
      * @return
      */
-    public static List<MethodArgReturnTypes> genInterfaceMethodWithArgs(Method[] methods) {
+    public static List<MethodArgReturnTypes> genInterfaceMethodWithArgTypes(Method[] methods) {
         List<MethodArgReturnTypes> methodInfoList = new ArrayList<>(methods.length);
         for (Method method : methods) {
             methodInfoList.add(new MethodArgReturnTypes(method.getName(), method.getArgumentTypes(), method.getReturnType()));
@@ -124,14 +127,14 @@ public class JavaCGByteCodeUtil {
      * @param javaClass
      * @return
      */
-    private static int getInitFuncStartSourceLine(JavaClass javaClass) {
+    public static int getInitFuncStartSourceLine(JavaClass javaClass) {
         Method[] methods = javaClass.getMethods();
         if (methods == null) {
             return JavaCGConstants.DEFAULT_LINE_NUMBER;
         }
 
         for (Method method : methods) {
-            if (JavaCGUtil.isInitMethod(method.getName())) {
+            if (JavaCGClassMethodUtil.isInitMethod(method.getName())) {
                 return getFuncStartSourceLine(method);
             }
         }
@@ -166,7 +169,7 @@ public class JavaCGByteCodeUtil {
     }
 
     /**
-     * 去年数组形式最后的[]
+     * 去掉数组形式最后的[]
      *
      * @param arrayType
      * @return
@@ -177,11 +180,21 @@ public class JavaCGByteCodeUtil {
         }
 
         if (!isArrayType(arrayType) && !isNullType(arrayType)) {
-            System.err.println("类名不是数组形式 " + arrayType);
+            logger.error("类名不是数组形式 {}", arrayType);
             return arrayType;
         }
 
         return arrayType.substring(0, arrayType.length() - JavaCGConstants.FLAG_ARRAY.length());
+    }
+
+    /**
+     * 去掉数组形式中全部的[]
+     *
+     * @param type
+     * @return
+     */
+    public static String removeAllArrayFlag(String type) {
+        return StringUtils.replace(type, JavaCGConstants.FLAG_ARRAY, "");
     }
 
     /**
@@ -340,6 +353,16 @@ public class JavaCGByteCodeUtil {
     }
 
     /**
+     * 判断是否为Enum
+     *
+     * @param accessFlags
+     * @return
+     */
+    public static boolean isEnumFlag(int accessFlags) {
+        return (accessFlags & Const.ACC_ENUM) != 0;
+    }
+
+    /**
      * 设置public标志
      *
      * @param accessFlags
@@ -392,6 +415,25 @@ public class JavaCGByteCodeUtil {
     }
 
     /**
+     * 获得修饰符字符串
+     *
+     * @param accessFlags
+     * @return
+     */
+    public static String getModifiersString(int accessFlags) {
+        if (isPublicFlag(accessFlags)) {
+            return JavaCGCommonNameConstants.MODIFIERS_PUBLIC;
+        }
+        if (isProtectedMethod(accessFlags)) {
+            return JavaCGCommonNameConstants.MODIFIERS_PROTECTED;
+        }
+        if (isPrivateMethod(accessFlags)) {
+            return JavaCGCommonNameConstants.MODIFIERS_PRIVATE;
+        }
+        return JavaCGCommonNameConstants.MODIFIERS_DEFAULT;
+    }
+
+    /**
      * 获取类的Signature
      *
      * @param javaClass
@@ -404,6 +446,34 @@ public class JavaCGByteCodeUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * 判断指定的类是否为匿名内部类
+     *
+     * @param javaClass
+     * @return
+     */
+    public static boolean checkInnerAnonymousClass(JavaClass javaClass) {
+        // 根据类名判断是否为匿名内部类
+        if (!JavaCGClassMethodUtil.isInnerAnonymousClass(javaClass.getClassName())) {
+            return false;
+        }
+
+        for (Attribute attribute : javaClass.getAttributes()) {
+            if (!(attribute instanceof InnerClasses)) {
+                continue;
+            }
+            InnerClasses innerClasses = (InnerClasses) attribute;
+            for (InnerClass innerClass : innerClasses.getInnerClasses()) {
+                int innerClassIndex = innerClass.getInnerClassIndex();
+                if (innerClassIndex == javaClass.getClassNameIndex()) {
+                    // 当前类是内部类
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -430,7 +500,7 @@ public class JavaCGByteCodeUtil {
 
                 String innerClassName = constantPool.getConstantString(innerClassIndex, Const.CONSTANT_Class);
                 innerClassName = Utility.compactClassName(innerClassName, false);
-                if (JavaCGUtil.isClassInJdk(innerClassName) ||
+                if (JavaCGClassMethodUtil.isClassInJdk(innerClassName) ||
                         !innerClassName.startsWith(className) ||
                         StringUtils.countMatches(innerClassName, '$') < StringUtils.countMatches(className, '$')) {
                     /*
@@ -441,11 +511,34 @@ public class JavaCGByteCodeUtil {
                     continue;
                 }
 
-                InnerClassInfo innerClassInfo = new InnerClassInfo(innerClassName, className, JavaCGUtil.isInnerAnonymousClass(innerClassName));
+                InnerClassInfo innerClassInfo = new InnerClassInfo(innerClassName, className, JavaCGClassMethodUtil.isInnerAnonymousClass(innerClassName));
                 innerClassInfoList.add(innerClassInfo);
             }
         }
         return innerClassInfoList;
+    }
+
+    /**
+     * 获取指定的变量下标在当前方法中的参数下标
+     *
+     * @param mg
+     * @param variableIndex 变量下标
+     * @return -1: 不是获取方法参数 >=0: 方法参数下标（从0开始）
+     */
+    public static int getArgIndexInMethod(MethodGen mg, int variableIndex) {
+        int argIndex = variableIndex - (mg.isStatic() ? 0 : 1);
+        return argIndex < mg.getArgumentTypes().length ? argIndex : -1;
+    }
+
+    /**
+     * 获取指定的方法参数在LocalVariableTable中的下标
+     *
+     * @param mg
+     * @param argIndex
+     * @return
+     */
+    public static int getLocalVariableTableIndex(MethodGen mg, int argIndex) {
+        return argIndex + (mg.isStatic() ? 0 : 1);
     }
 
     private JavaCGByteCodeUtil() {

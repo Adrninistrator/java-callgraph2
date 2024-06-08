@@ -15,6 +15,8 @@ import org.apache.bcel.classfile.ConstantPool;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Utility;
 import org.apache.bcel.generic.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author adrninistrator
@@ -22,6 +24,7 @@ import org.apache.bcel.generic.Type;
  * @description:
  */
 public class JavaCGBootstrapMethodUtil {
+    private static final Logger logger = LoggerFactory.getLogger(JavaCGBootstrapMethodUtil.class);
 
     /**
      * 获得JavaClass中指定下标的BootstrapMethod
@@ -78,7 +81,7 @@ public class JavaCGBootstrapMethodUtil {
 
         Constant constantCP = constantPool.getConstant(constantMethodHandle.getReferenceIndex());
         if (!(constantCP instanceof ConstantCP)) {
-            System.err.println("### 不满足instanceof ConstantCP " + constantCP.getClass().getName());
+            logger.error("不满足instanceof ConstantCP {}", constantCP.getClass().getName());
             return null;
         }
 
@@ -91,7 +94,7 @@ public class JavaCGBootstrapMethodUtil {
 
         Constant constantNAT = constantPool.getConstant(constantClassAndMethod.getNameAndTypeIndex());
         if (!(constantNAT instanceof ConstantNameAndType)) {
-            System.err.println("### 不满足instanceof ConstantNameAndType " + constantNAT.getClass().getName());
+            logger.error("不满足instanceof ConstantNameAndType {}", constantNAT.getClass().getName());
             return null;
         }
         ConstantNameAndType constantNameAndType = (ConstantNameAndType) constantNAT;
@@ -103,12 +106,12 @@ public class JavaCGBootstrapMethodUtil {
                 Type returnType = Type.getReturnType(methodArgsReturn);
                 return new JavaCGMethodInfo(className, methodName, methodArgTypes, returnType);
             } catch (ClassFormatException e) {
-                System.err.println("### 方法参数与返回类型不符合预期，不处理 " + methodArgsReturn + " " + constantClassAndMethod.getClass().getName());
+                logger.error("方法参数与返回类型不符合预期，不处理 {} {}", methodArgsReturn, constantClassAndMethod.getClass().getName());
                 return null;
             }
         }
 
-        System.err.println("### 获取方法信息失败 " + javaClass.getClassName() + " " + className + " " + methodName + " " + methodArgsReturn);
+        logger.error("获取方法信息失败 {} {} {} {}", javaClass.getClassName(), className, methodName, methodArgsReturn);
         return null;
     }
 

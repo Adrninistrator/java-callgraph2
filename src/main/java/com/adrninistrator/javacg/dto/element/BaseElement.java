@@ -2,7 +2,8 @@ package com.adrninistrator.javacg.dto.element;
 
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
-import com.adrninistrator.javacg.util.JavaCGLogUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +14,8 @@ import java.util.Map;
  * @description: 被操作元素的基类
  */
 public abstract class BaseElement {
+    private static final Logger logger = LoggerFactory.getLogger(BaseElement.class);
+
     protected String simpleClassName = this.getClass().getSimpleName();
 
     /*
@@ -36,10 +39,10 @@ public abstract class BaseElement {
     // 变量或常量的常量值
     protected Object value;
 
-    public BaseElement() {
+    protected BaseElement() {
     }
 
-    public BaseElement(String type, boolean arrayElement) {
+    protected BaseElement(String type, boolean arrayElement) {
         this.type = type;
         /*
             当外部参数指定当前属于数组类型，或类型字符串属于数组形式时，都认为是数组类型
@@ -51,12 +54,14 @@ public abstract class BaseElement {
         }
     }
 
+    public abstract BaseElement copyElement();
+
     public int getElementSize() {
         return JavaCGByteCodeUtil.getTypeSize(getType());
     }
 
     public void checkTypeString(String expectedType) {
-        if (!JavaCGLogUtil.isDebugPrintFlag()) {
+        if (!logger.isDebugEnabled()) {
             return;
         }
 
@@ -69,8 +74,7 @@ public abstract class BaseElement {
             return;
         }
 
-        JavaCGLogUtil.debugPrint("eee 类型与预期的不一致" + this + " expectedType: " + expectedType);
-        System.err.println("eee 类型与预期的不一致\n" + this + "\nexpectedType:" + expectedType);
+        logger.error("类型与预期的不一致 {} expectedType: {}", this, expectedType);
     }
 
     /**
@@ -113,5 +117,4 @@ public abstract class BaseElement {
     public String toString() {
         return simpleClassName + " type: " + getType() + " value: " + value + String.format(" (%x)", System.identityHashCode(this));
     }
-
 }

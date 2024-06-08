@@ -2,19 +2,24 @@ package com.adrninistrator.javacg.parser;
 
 import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.common.enums.JavaCGOtherConfigFileUseListEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
 import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
-import com.adrninistrator.javacg.extensions.code_parser.JarEntryOtherFileParser;
+import com.adrninistrator.javacg.extensions.codeparser.JarEntryOtherFileParser;
 import com.adrninistrator.javacg.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg.spring.DefineSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
+import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,7 +28,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarInputStream;
 
 /**
  * @author adrninistrator
@@ -32,17 +36,20 @@ import java.util.jar.JarInputStream;
  */
 public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
+    private static final Logger logger = LoggerFactory.getLogger(JarEntryPreHandle1Parser.class);
+
     private Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap;
 
-    private Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgsMap;
+    private Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgTypesMap;
 
     private Map<String, Boolean> runnableImplClassMap;
     private Map<String, Boolean> callableImplClassMap;
     private Map<String, Boolean> transactionCallbackImplClassMap;
     private Map<String, Boolean> transactionCallbackWithoutResultChildClassMap;
     private Map<String, Boolean> threadChildClassMap;
+    private Set<String> allClassNameSet;
 
-    private Set<String> classExtendsSet;
+    private Map<String, String> classAndSuperMap;
 
     private Set<String> interfaceExtendsSet;
 
@@ -60,24 +67,26 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
     }
 
     @Override
-    protected boolean handleEntry(JarInputStream jarInputStream, String jarEntryName) throws IOException {
+    protected boolean handleEntry(ZipInputStream zipInputStream, String jarEntryPath) throws IOException {
         // 尝试处理jar包中的class文件
-        if (tryHandleClassEntry(jarInputStream, jarEntryName)) {
+        if (tryHandleClassEntry(zipInputStream, jarEntryPath)) {
             // 是class文件，不再处理
             return true;
         }
 
         // 非class文件，判断是否需要使用扩展类处理jar包中的文件
-        String jarEntryFileExt = StringUtils.substringAfterLast(jarEntryName, JavaCGConstants.FLAG_DOT);
+        String jarEntryFileExt = JavaCGConstants.FLAG_DOT + StringUtils.substringAfterLast(jarEntryPath, JavaCGConstants.FLAG_DOT);
+        logger.debug("jar包中文件的后缀: [{}] {}", jarEntryPath, jarEntryFileExt);
         List<JarEntryOtherFileParser> jarEntryOtherFileParserList = extensionsManager.getJarEntryOtherFileParserList(jarEntryFileExt);
         if (jarEntryOtherFileParserList == null) {
             // 当前文件不存在对应的扩展类，不处理
+            logger.debug("当前文件不存在对应的扩展类，不处理 {}", jarEntryFileExt);
             return true;
         }
 
         // 存在扩展类需要处理当前文件
         // 将不可重复读的JarInputStream缓存为可以重复读取的ByteArrayInputStream
-        InputStream cachedInputStream = JavaCGUtil.cacheInputStream(jarInputStream);
+        InputStream cachedInputStream = JavaCGUtil.cacheInputStream(zipInputStream);
         if (cachedInputStream == null) {
             return false;
         }
@@ -85,7 +94,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         // 调用扩展类的方法
         for (JarEntryOtherFileParser jarEntryOtherFileParser : jarEntryOtherFileParserList) {
             // 处理一个jar包中的文件
-            jarEntryOtherFileParser.parseJarEntryOtherFile(cachedInputStream, jarEntryName);
+            jarEntryOtherFileParser.parseJarEntryOtherFile(cachedInputStream, jarEntryPath);
             // 重置缓存的InputStream，使下次能够从头开始继续读取
             cachedInputStream.reset();
         }
@@ -94,7 +103,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
     }
 
     @Override
-    protected boolean handleClassEntry(JavaClass javaClass, String jarEntryName) {
+    protected boolean handleClassEntry(JavaClass javaClass, String jarEntryPath) {
         // 记录类名及所在的jar包序号
         classAndJarNum.put(javaClass.getClassName(), lastJarInfo.getJarNum());
 
@@ -111,7 +120,6 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
             // 处理Spring Bean相关注解
             return defineSpringBeanByAnnotationHandler.recordSpringBeanInfo(javaClass);
         }
-
         return true;
     }
 
@@ -126,9 +134,9 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         // 记录接口的方法
         Method[] methods = interfaceClass.getMethods();
         if (methods != null && methods.length > 0 &&
-                interfaceMethodWithArgsMap.get(interfaceName) == null) {
-            List<MethodArgReturnTypes> interfaceMethodWithArgsList = JavaCGByteCodeUtil.genInterfaceMethodWithArgs(methods);
-            interfaceMethodWithArgsMap.put(interfaceName, interfaceMethodWithArgsList);
+                interfaceMethodWithArgTypesMap.get(interfaceName) == null) {
+            List<MethodArgReturnTypes> interfaceMethodWithArgTypesList = JavaCGByteCodeUtil.genInterfaceMethodWithArgTypes(methods);
+            interfaceMethodWithArgTypesMap.put(interfaceName, interfaceMethodWithArgTypesList);
         }
 
         String[] superInterfaceNames = interfaceClass.getInterfaceNames();
@@ -140,8 +148,14 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
     }
 
     // 对一个Class进行预处理
-    private void preHandle1Class(JavaClass javaClass) {
+    private boolean preHandle1Class(JavaClass javaClass) {
         String className = javaClass.getClassName();
+        if (JavaCGClassMethodUtil.isObjectClass(className)) {
+            logger.error("Object类所在jar包不需要添加到需要分析的jar包参数中，假如需要添加JDK中的类，可以解压相关的class文件到目录中并在 {} 中指定", JavaCGOtherConfigFileUseListEnum.OCFULE_JAR_DIR.getFileName());
+            return false;
+        }
+        allClassNameSet.add(className);
+
         String[] interfaceNames = javaClass.getInterfaceNames();
         Method[] methods = javaClass.getMethods();
 
@@ -152,8 +166,8 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
             interfaceNameList.addAll(Arrays.asList(interfaceNames));
 
             // 记录类实现的接口，及类中可能涉及实现的相关方法
-            List<MethodArgReturnTypes> implClassMethodWithArgsList = JavaCGByteCodeUtil.genImplClassMethodWithArgs(methods);
-            classImplementsMethodInfoMap.put(className, new ClassImplementsMethodInfo(interfaceNameList, implClassMethodWithArgsList));
+            List<MethodArgReturnTypes> implClassMethodWithArgTypesList = JavaCGByteCodeUtil.genImplClassMethodWithArgTypes(methods);
+            classImplementsMethodInfoMap.put(className, new ClassImplementsMethodInfo(interfaceNameList, implClassMethodWithArgTypesList));
 
             if (!javaClass.isAbstract()) {
                 if (interfaceNameList.contains(JavaCGCommonNameConstants.CLASS_NAME_RUNNABLE)) {
@@ -184,18 +198,19 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
             transactionCallbackWithoutResultChildClassMap.put(className, Boolean.FALSE);
         }
 
-        if (!JavaCGUtil.isClassInJdk(superClassName)) {
-            classExtendsSet.add(className);
-            classExtendsSet.add(superClassName);
+        // 若当前类的父类非Object，则记录当前类及对应的父类
+        if (!JavaCGClassMethodUtil.isObjectClass(superClassName)) {
+            classAndSuperMap.put(className, superClassName);
         }
+        return true;
     }
 
     public void setClassImplementsMethodInfoMap(Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap) {
         this.classImplementsMethodInfoMap = classImplementsMethodInfoMap;
     }
 
-    public void setInterfaceMethodWithArgsMap(Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgsMap) {
-        this.interfaceMethodWithArgsMap = interfaceMethodWithArgsMap;
+    public void setInterfaceMethodWithArgTypesMap(Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgTypesMap) {
+        this.interfaceMethodWithArgTypesMap = interfaceMethodWithArgTypesMap;
     }
 
     public void setRunnableImplClassMap(Map<String, Boolean> runnableImplClassMap) {
@@ -218,8 +233,12 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         this.threadChildClassMap = threadChildClassMap;
     }
 
-    public void setClassExtendsSet(Set<String> classExtendsSet) {
-        this.classExtendsSet = classExtendsSet;
+    public void setAllClassNameSet(Set<String> allClassNameSet) {
+        this.allClassNameSet = allClassNameSet;
+    }
+
+    public void setClassAndSuperMap(Map<String, String> classAndSuperMap) {
+        this.classAndSuperMap = classAndSuperMap;
     }
 
     public void setInterfaceExtendsSet(Set<String> interfaceExtendsSet) {

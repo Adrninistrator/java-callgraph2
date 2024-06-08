@@ -9,6 +9,7 @@ import java.util.List;
  * @description: 當作棧使用的List
  */
 public class ListAsStack<E> {
+    // 栈的当前位置，初始值-1
     private int head = -1;
 
     private final List<E> list = new ArrayList<>();
@@ -62,7 +63,7 @@ public class ListAsStack<E> {
      * @param index
      * @return
      */
-    public E getElement(int index) {
+    public E getElementAt(int index) {
         return list.get(index);
     }
 
@@ -91,15 +92,5 @@ public class ListAsStack<E> {
      */
     public int getHead() {
         return head;
-    }
-
-    /**
-     * 获取指定下标的元素
-     *
-     * @param index
-     * @return
-     */
-    public E getAt(int index) {
-        return list.get(index);
     }
 }

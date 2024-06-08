@@ -23,12 +23,12 @@ public class ClassExtendsMethodInfo {
         value
             方法的accessFlags
      */
-    private final Map<MethodArgReturnTypes, Integer> methodWithArgsMap;
+    private final Map<MethodArgReturnTypes, Integer> methodWithArgTypesMap;
 
-    public ClassExtendsMethodInfo(int accessFlags, String superClassName, Map<MethodArgReturnTypes, Integer> methodWithArgsMap) {
+    public ClassExtendsMethodInfo(int accessFlags, String superClassName, Map<MethodArgReturnTypes, Integer> methodWithArgTypesMap) {
         this.accessFlags = accessFlags;
         this.superClassName = superClassName;
-        this.methodWithArgsMap = methodWithArgsMap;
+        this.methodWithArgTypesMap = methodWithArgTypesMap;
     }
 
     public int getAccessFlags() {
@@ -39,7 +39,7 @@ public class ClassExtendsMethodInfo {
         return superClassName;
     }
 
-    public Map<MethodArgReturnTypes, Integer> getMethodWithArgsMap() {
-        return methodWithArgsMap;
+    public Map<MethodArgReturnTypes, Integer> getMethodWithArgTypesMap() {
+        return methodWithArgTypesMap;
     }
 }

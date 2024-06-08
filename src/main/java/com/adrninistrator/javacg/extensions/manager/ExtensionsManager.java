@@ -2,19 +2,23 @@ package com.adrninistrator.javacg.extensions.manager;
 
 import com.adrninistrator.javacg.dto.output.JavaCGOutputInfo;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
-import com.adrninistrator.javacg.extensions.annotation_attributes.AnnotationAttributesFormatterInterface;
-import com.adrninistrator.javacg.extensions.annotation_attributes.DefaultAnnotationAttributesFormatter;
-import com.adrninistrator.javacg.extensions.code_parser.CodeParserInterface;
-import com.adrninistrator.javacg.extensions.code_parser.JarEntryOtherFileParser;
-import com.adrninistrator.javacg.extensions.code_parser.MethodAnnotationParser;
-import com.adrninistrator.javacg.extensions.code_parser.AbstractSaveData2FileParser;
-import com.adrninistrator.javacg.extensions.code_parser.SpringXmlBeanParserInterface;
+import com.adrninistrator.javacg.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
+import com.adrninistrator.javacg.extensions.annotationattributes.DefaultAnnotationAttributesFormatter;
+import com.adrninistrator.javacg.extensions.codeparser.AbstractSaveData2FileParser;
+import com.adrninistrator.javacg.extensions.codeparser.CodeParserInterface;
+import com.adrninistrator.javacg.extensions.codeparser.JarEntryOtherFileParser;
+import com.adrninistrator.javacg.extensions.codeparser.MethodAnnotationParser;
+import com.adrninistrator.javacg.extensions.codeparser.SpringXmlBeanParserInterface;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author adrninistrator
@@ -22,6 +26,8 @@ import java.util.Map;
  * @description: 扩展类管理类
  */
 public class ExtensionsManager {
+
+    private static final Logger logger = LoggerFactory.getLogger(ExtensionsManager.class);
 
     // 保存所有的代码解析扩展类列表
     private final List<CodeParserInterface> allCodeParserList = new ArrayList<>();
@@ -46,6 +52,9 @@ public class ExtensionsManager {
 
     // 解析并将结果保存在文件的类
     private final List<AbstractSaveData2FileParser> saveData2FileParserList = new ArrayList<>();
+
+    // 对jar包中的其他文件解析时需要处理的文件类型集合
+    private final Set<String> jarEntryOtherFileTypeSet = new HashSet<>();
 
     // 对注解属性的元素值进行格式化的类
     private AnnotationAttributesFormatterInterface annotationAttributesFormatter;
@@ -88,6 +97,8 @@ public class ExtensionsManager {
                     for (String otherFileExtension : otherFileExtensions) {
                         List<JarEntryOtherFileParser> otherFileParserList = otherFileParserMap.computeIfAbsent(otherFileExtension, k -> new ArrayList<>());
                         otherFileParserList.add(jarEntryOtherFileParser);
+                        // 记录对jar包中的其他文件解析时需要处理的文件类型
+                        jarEntryOtherFileTypeSet.add(otherFileExtension);
                     }
                 }
 
@@ -97,7 +108,7 @@ public class ExtensionsManager {
                     // 增加其他文件信息
                     String outputFilePath = javaCGOutputInfo.addOtherFileInfo(saveData2FileParser.chooseFileName());
                     if (!saveData2FileParser.init(outputFilePath)) {
-                        System.err.println("初始化失败 " + codeParser.getClass().getName());
+                        logger.error("初始化失败 {}", codeParser.getClass().getName());
                         return false;
                     }
                     saveData2FileParserList.add(saveData2FileParser);
@@ -112,7 +123,7 @@ public class ExtensionsManager {
                     }
                 }
             } else {
-                System.err.println("不支持的类型 " + codeParser.getClass().getName());
+                logger.error("不支持的类型 {}", codeParser.getClass().getName());
                 return false;
             }
         }
@@ -148,6 +159,10 @@ public class ExtensionsManager {
             return null;
         }
         return methodAnnotationParserMap.get(methodAnnotationClass);
+    }
+
+    public Set<String> getJarEntryOtherFileTypeSet() {
+        return jarEntryOtherFileTypeSet;
     }
 
     public AnnotationAttributesFormatterInterface getAnnotationAttributesFormatter() {

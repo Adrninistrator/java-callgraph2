@@ -10,10 +10,10 @@ import java.util.Objects;
 public class FieldTypeAndName {
 
     // 字段类型
-    private final String fieldType;
+    protected final String fieldType;
 
     // 字段名称
-    private final String fieldName;
+    protected final String fieldName;
 
     public FieldTypeAndName(String fieldType, String fieldName) {
         this.fieldType = fieldType;
@@ -25,7 +25,12 @@ public class FieldTypeAndName {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FieldTypeAndName that = (FieldTypeAndName) o;
-        return Objects.equals(fieldType, that.fieldType) && Objects.equals(fieldName, that.fieldName);
+        return fieldName.equals(that.fieldName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fieldName);
     }
 
     //

@@ -14,18 +14,18 @@ public class InterfaceExtendsMethodInfo {
     private final List<String> superInterfaceList;
 
     // 接口中的方法
-    private final List<MethodArgReturnTypes> methodAndArgsList;
+    private final List<MethodArgReturnTypes> methodAndArgTypesList;
 
-    public InterfaceExtendsMethodInfo(List<String> superInterfaceList, List<MethodArgReturnTypes> methodAndArgsList) {
+    public InterfaceExtendsMethodInfo(List<String> superInterfaceList, List<MethodArgReturnTypes> MethodAndArgTypesList) {
         this.superInterfaceList = superInterfaceList;
-        this.methodAndArgsList = methodAndArgsList;
+        this.methodAndArgTypesList = MethodAndArgTypesList;
     }
 
     public List<String> getSuperInterfaceList() {
         return superInterfaceList;
     }
 
-    public List<MethodArgReturnTypes> getMethodAndArgsList() {
-        return methodAndArgsList;
+    public List<MethodArgReturnTypes> getMethodAndArgTypesList() {
+        return methodAndArgTypesList;
     }
 }

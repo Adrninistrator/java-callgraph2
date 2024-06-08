@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg.common;
 
 import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
+import org.apache.bcel.Const;
 
 /**
  * @author adrninistrator
@@ -18,6 +19,8 @@ public class TypeConstants {
 
     public static final String BYTE_ARRAY_TYPE = JavaCGConstantTypeEnum.CONSTTE_BYTE.getType() + JavaCGConstants.FLAG_ARRAY;
     public static final String BOOLEAN_ARRAY_TYPE = JavaCGConstantTypeEnum.CONSTTE_BOOLEAN.getType() + JavaCGConstants.FLAG_ARRAY;
+
+    public static final short[] GOTO_OPCODES = new short[]{Const.GOTO, Const.GOTO_W};
 
     private TypeConstants() {
         throw new IllegalStateException("illegal");

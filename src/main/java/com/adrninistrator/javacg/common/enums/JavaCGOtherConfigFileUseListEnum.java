@@ -8,7 +8,13 @@ import com.adrninistrator.javacg.common.JavaCGConstants;
  * @description:
  */
 public enum JavaCGOtherConfigFileUseListEnum {
-    OCFULE_JAR_DIR(JavaCGConstants.DIR_CONFIG + "/jar_dir.properties", "指定需要处理的jar包，或保存class、jar文件的目录"),
+    OCFULE_JAR_DIR(JavaCGConstants.DIR_CONFIG + "/jar_dir.properties",
+            "(作用) 指定需要处理的jar包路径，或保存class、jar文件的目录路径（每行代表一个jar包或目录路径，支持多行）"
+                    + JavaCGConstants.NEW_LINE + "(格式) 路径中的分隔符使用/或\\均可，目录最后指定或不指定分隔符均可"
+                    + JavaCGConstants.NEW_LINE + "(示例) build/libs/"
+                    + JavaCGConstants.NEW_LINE + "(示例) build/libs/test.jar"
+                    + JavaCGConstants.NEW_LINE + "(示例) D:/test/build/libs/test.jar"
+    ),
     ;
 
     private final String fileName;

@@ -3,6 +3,7 @@ package com.adrninistrator.javacg.handler;
 import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
+import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.element.BaseElement;
 import com.adrninistrator.javacg.dto.element.constant.ConstElementDouble;
 import com.adrninistrator.javacg.dto.element.constant.ConstElementFloat;
@@ -17,15 +18,24 @@ import com.adrninistrator.javacg.dto.element.variable.StaticFieldElement;
 import com.adrninistrator.javacg.dto.element.variable.StaticFieldMethodCallElement;
 import com.adrninistrator.javacg.dto.element.variable.VariableElement;
 import com.adrninistrator.javacg.dto.field.FieldPossibleTypes;
-import com.adrninistrator.javacg.dto.frame.FieldInformation;
+import com.adrninistrator.javacg.dto.frame.FieldInformationMap;
 import com.adrninistrator.javacg.dto.frame.JavaCGLocalVariables;
 import com.adrninistrator.javacg.dto.frame.JavaCGOperandStack;
-import com.adrninistrator.javacg.dto.instruction.BaseInstructionParseResult;
-import com.adrninistrator.javacg.dto.instruction.MethodCallParseResult;
-import com.adrninistrator.javacg.dto.instruction.RetParseResult;
-import com.adrninistrator.javacg.dto.instruction.ReturnParseResult;
+import com.adrninistrator.javacg.dto.instruction.parseresult.AThrowNullParseResult;
+import com.adrninistrator.javacg.dto.instruction.parseresult.AThrowParseResult;
+import com.adrninistrator.javacg.dto.instruction.parseresult.BaseInstructionParseResult;
+import com.adrninistrator.javacg.dto.instruction.parseresult.MethodCallParseResult;
+import com.adrninistrator.javacg.dto.instruction.parseresult.PutFieldParseResult;
+import com.adrninistrator.javacg.dto.instruction.parseresult.PutStaticParseResult;
+import com.adrninistrator.javacg.dto.instruction.parseresult.RetParseResult;
+import com.adrninistrator.javacg.dto.instruction.parseresult.ReturnParseResult;
+import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceMethodArg;
+import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceMethodCallReturn;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 import com.adrninistrator.javacg.util.JavaCGByteCodeUtil;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
+import com.adrninistrator.javacg.util.JavaCGElementUtil;
+import com.adrninistrator.javacg.util.JavaCGInstructionUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.LocalVariable;
@@ -61,11 +71,13 @@ import org.apache.bcel.generic.RET;
 import org.apache.bcel.generic.SIPUSH;
 import org.apache.bcel.generic.StoreInstruction;
 import org.apache.bcel.generic.Type;
-import org.apache.bcel.generic.TypedInstruction;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author adrninistrator
@@ -73,6 +85,10 @@ import java.util.List;
  * @description: 对指令进行处理
  */
 public class InstructionHandler {
+    private static final Logger logger = LoggerFactory.getLogger(InstructionHandler.class);
+
+    private final Map<String, Map<String, Integer>> frEqConversionMethodMap;
+
     private final MethodGen mg;
 
     private final ConstantPoolGen cpg;
@@ -83,9 +99,12 @@ public class InstructionHandler {
 
     private JavaCGLocalVariables locals;
 
-    private FieldInformation nonStaticFieldInfo;
+    private FieldInformationMap nonStaticFieldInfoMap;
 
-    private FieldInformation staticFieldInfo;
+    private FieldInformationMap staticFieldInfoMap;
+
+    // 需要记录返回对象的可能信息的开关
+    private boolean recordReturnPossibleInfoFlag;
 
     // 解析构造函数以获取非静态字段可能的类型的开关
     private boolean recordFieldPossibleTypeFlag;
@@ -93,31 +112,38 @@ public class InstructionHandler {
     // 使用已获取的构造函数非静态字段可能的类型的开关
     private boolean useFieldPossibleTypeFlag;
 
+    // 需要分析dto的字段之间的关联关系的开关
+    private boolean analyseFieldRelationshipFlag;
+
     // 非静态字段字段所有可能的类型
     private FieldPossibleTypes nonStaticFieldPossibleTypes;
 
-    public InstructionHandler(MethodGen mg,
+    // 当前方法是否可能为set方法
+    private boolean maybeSetMethod;
+
+    // 当前方法是否为静态代码块
+    private boolean inClinitMethod;
+
+    public InstructionHandler(JavaCGConfInfo javaCGConfInfo,
+                              MethodGen mg,
                               LocalVariableTable localVariableTable,
                               JavaCGOperandStack stack,
                               JavaCGLocalVariables locals,
-                              FieldInformation nonStaticFieldInfo,
-                              FieldInformation staticFieldInfo) {
+                              FieldInformationMap nonStaticFieldInfoMap,
+                              FieldInformationMap staticFieldInfoMap) {
+        this.frEqConversionMethodMap = javaCGConfInfo.getFrEqConversionMethodMap();
         this.mg = mg;
         this.cpg = mg.getConstantPool();
         this.localVariableTable = localVariableTable;
         this.stack = stack;
         this.locals = locals;
-        this.nonStaticFieldInfo = nonStaticFieldInfo;
-        this.staticFieldInfo = staticFieldInfo;
-    }
-
-    private String getTypeString(TypedInstruction typedInstruction) {
-        return typedInstruction.getType(cpg).toString();
+        this.nonStaticFieldInfoMap = nonStaticFieldInfoMap;
+        this.staticFieldInfoMap = staticFieldInfoMap;
     }
 
     public BaseInstructionParseResult parse(InstructionHandle ih) {
         Instruction i = ih.getInstruction();
-        int opCode = i.getOpcode();
+        short opCode = i.getOpcode();
         BaseInstructionParseResult instructionParseResult = null;
 
         switch (opCode) {
@@ -464,31 +490,31 @@ public class InstructionHandler {
                 handleGETSTATIC((GETSTATIC) i);
                 break;
             case Const.PUTSTATIC:
-                handlePUTSTATIC((PUTSTATIC) i);
+                instructionParseResult = handlePUTSTATIC((PUTSTATIC) i);
                 break;
             case Const.GETFIELD:
                 handleGETFIELD((GETFIELD) i);
                 break;
             case Const.PUTFIELD:
-                handlePUTFIELD((PUTFIELD) i);
+                instructionParseResult = handlePUTFIELD((PUTFIELD) i);
                 break;
             case Const.INVOKEVIRTUAL:
-                instructionParseResult = handleMethodInvoke((INVOKEVIRTUAL) i, true);
+                instructionParseResult = handleMethodInvoke((INVOKEVIRTUAL) i, ih, true);
                 break;
             case Const.INVOKESPECIAL:
-                instructionParseResult = handleMethodInvoke((INVOKESPECIAL) i, true);
+                instructionParseResult = handleMethodInvoke((INVOKESPECIAL) i, ih, true);
                 break;
             case Const.INVOKESTATIC:
-                instructionParseResult = handleMethodInvoke((INVOKESTATIC) i, false);
+                instructionParseResult = handleMethodInvoke((INVOKESTATIC) i, ih, false);
                 break;
             case Const.INVOKEINTERFACE:
-                instructionParseResult = handleMethodInvoke((INVOKEINTERFACE) i, true);
+                instructionParseResult = handleMethodInvoke((INVOKEINTERFACE) i, ih, true);
                 break;
             case Const.INVOKEDYNAMIC:
-                instructionParseResult = handleMethodInvoke((INVOKEDYNAMIC) i, false);
+                instructionParseResult = handleMethodInvoke((INVOKEDYNAMIC) i, ih, false);
                 break;
             case Const.NEW:
-                stack.push(new VariableElement(getTypeString((NEW) i)));
+                stack.push(new VariableElement(JavaCGInstructionUtil.getTypeString((NEW) i, cpg)));
                 break;
             case Const.NEWARRAY:
                 handleNEWARRAY((NEWARRAY) i);
@@ -501,11 +527,10 @@ public class InstructionHandler {
                 stack.push(new VariableElement(JavaCGConstantTypeEnum.CONSTTE_INT.getType()));
                 break;
             case Const.ATHROW:
-                handleATHROW();
+                instructionParseResult = handleATHROW();
                 break;
             case Const.CHECKCAST:
-                stack.pop();
-                stack.push(new VariableElement(getTypeString((CHECKCAST) i)));
+                handleCHECKCAST((CHECKCAST) i);
                 break;
             case Const.INSTANCEOF:
                 stack.pop();
@@ -532,7 +557,7 @@ public class InstructionHandler {
                 handleJSR(ih);
                 break;
             default:
-                System.err.println("eee 未处理的指令 " + opCode + " " + i.getClass().getName());
+                logger.error("未处理的指令 {} {}", opCode, i.getClass().getName());
                 break;
         }
 
@@ -540,7 +565,7 @@ public class InstructionHandler {
     }
 
     private void handleLDC(LDC ldc) {
-        String typeString = getTypeString(ldc);
+        String typeString = JavaCGInstructionUtil.getTypeString(ldc, cpg);
         Object value = ldc.getValue(cpg);
 
         if (JavaCGConstantTypeEnum.CONSTTE_INT.getType().equals(typeString)) {
@@ -553,12 +578,12 @@ public class InstructionHandler {
             ObjectType objectType = (ObjectType) value;
             stack.push(new VariableElement(objectType.getClassName()));
         } else {
-            System.err.println("eee LDC 暂不支持的情况 " + typeString + " " + value);
+            logger.error("LDC 暂不支持的情况 {} {}", typeString, value);
         }
     }
 
     private void handleLDC2W(LDC2_W ldc2W) {
-        String typeString = getTypeString(ldc2W);
+        String typeString = JavaCGInstructionUtil.getTypeString(ldc2W, cpg);
         Object value = ldc2W.getValue(cpg);
 
         if (JavaCGConstantTypeEnum.CONSTTE_LONG.getType().equals(typeString)) {
@@ -566,19 +591,29 @@ public class InstructionHandler {
         } else if (JavaCGConstantTypeEnum.CONSTTE_DOUBLE.getType().equals(typeString)) {
             stack.push(new ConstElementDouble(value));
         } else {
-            System.err.println("eee LDC2_W 暂不支持的情况 " + typeString + " " + value);
+            logger.error("LDC2_W 暂不支持的情况 {} {}", typeString, value);
         }
     }
 
     // 处理获取值
     private void handleLoad(LoadInstruction loadInstruction) {
-        int index = loadInstruction.getIndex();
-        if (locals.size() > index) {
-            stack.push(locals.get(index));
+        int loadIndex = loadInstruction.getIndex();
+        if (locals.size() > loadIndex) {
+            LocalVariableElement local = locals.get(loadIndex);
+            // 获取LOAD指令对应的方法参数下标
+            int argIndex = JavaCGByteCodeUtil.getArgIndexInMethod(mg, loadIndex);
+            if (argIndex >= 0) {
+                // 当前LOAD指令是获取方法参数
+                VariableDataSourceMethodArg variableDataSourceMethodArg = new VariableDataSourceMethodArg(JavaCGConstants.METHOD_CALL_ARGUMENTS_START_SEQ + argIndex,
+                        local.getType());
+                // 记录变量的数据来源
+                local.recordVariableDataSource(variableDataSourceMethodArg, frEqConversionMethodMap);
+            }
+            stack.push(local);
             return;
         }
 
-        throw new JavaCGRuntimeException("本地变量不存在 " + index);
+        throw new JavaCGRuntimeException("本地变量不存在 " + loadIndex);
     }
 
     // 处理数组获取值
@@ -618,19 +653,20 @@ public class InstructionHandler {
         BaseElement baseElement = stack.pop();
         String poppedElementType = baseElement.getType();
 
+        // 从LocalVariableTable中获取本地变量对应类型
+        LocalVariable localVariable = localVariableTable.getLocalVariable(index, ih.getNext().getPosition());
+        String variableName = (localVariable != null ? localVariable.getName() : null);
         if (typeEnum == null) {
             // 处理ASTORE指令
             if (!JavaCGByteCodeUtil.isNullType(poppedElementType)) {
                 // 操作数栈中元素类型有值
                 // 添加本地变量
-                locals.add(poppedElementType, baseElement, index);
+                locals.add(poppedElementType, baseElement, index, variableName);
                 return;
             }
         }
 
         // 处理非ASTORE指令，或操作数栈中元素类型未获取到值
-        // 从LocalVariableTable中获取本地变量对应类型
-        LocalVariable localVariable = localVariableTable.getLocalVariable(index, ih.getNext().getPosition());
         String actualType;
         if (localVariable != null) {
             actualType = Utility.typeSignatureToString(localVariable.getSignature(), false);
@@ -639,7 +675,7 @@ public class InstructionHandler {
         }
 
         // 添加本地变量
-        locals.add(actualType, baseElement, index);
+        locals.add(actualType, baseElement, index, variableName);
     }
 
     // 处理数组赋值
@@ -660,7 +696,7 @@ public class InstructionHandler {
         }
 
         if (!arrayVariable.isArrayElement()) {
-            System.err.println("不是数组类型 " + arrayVariable.getClass().getName());
+            logger.error("不是数组类型 {}", arrayVariable.getClass().getName());
             return;
         }
 
@@ -789,17 +825,17 @@ public class InstructionHandler {
         stack.push(element2);
     }
 
-    // 处理双目运算
+    // 处理二元运算
     private void handleArithmeticOperation2(JavaCGConstantTypeEnum constantTypeEnum) {
         BaseElement value2 = stack.pop();
         BaseElement value1 = stack.pop();
-        stack.push(new VariableElement(constantTypeEnum.getType()));
-
         value2.checkTypeString(constantTypeEnum.getType());
         value1.checkTypeString(constantTypeEnum.getType());
+
+        stack.push(new VariableElement(constantTypeEnum.getType()));
     }
 
-    // 处理单目运算
+    // 处理一元运算
     private void handleArithmeticOperation1(JavaCGConstantTypeEnum constantTypeEnum) {
         BaseElement value = stack.pop();
         stack.push(new VariableElement(constantTypeEnum.getType()));
@@ -862,7 +898,7 @@ public class InstructionHandler {
     }
 
     private RetParseResult handleRET(RET ret) {
-        // 根据ret指令索引获取对应的本地变量
+        // 根据RET指令索引获取对应的本地变量
         LocalVariableElement localVariableElement = locals.get(ret.getIndex());
 
         if (!JavaCGConstants.JSR_TYPE.equals(localVariableElement.getType()) ||
@@ -876,90 +912,110 @@ public class InstructionHandler {
 
     private ReturnParseResult handleReturn() {
         BaseElement baseElement = stack.pop();
-        return new ReturnParseResult(baseElement);
+        if (recordReturnPossibleInfoFlag || analyseFieldRelationshipFlag) {
+            return new ReturnParseResult(baseElement);
+        }
+        return null;
     }
 
     private void handleGETSTATIC(GETSTATIC getstatic) {
         String fieldName = getstatic.getFieldName(cpg);
         ObjectType classType = getstatic.getLoadClassType(cpg);
 
-        FieldElement fieldElement = staticFieldInfo.getStatic(classType.getClassName(), fieldName);
+        FieldElement fieldElement = staticFieldInfoMap.getStatic(classType.getClassName(), fieldName);
         if (fieldElement == null) {
             // 假如是静态字段定义的类型与实际初始化类型不一致，则以上获取的fieldElement会是null，因为代码中没有对静态初始化方法进行处理（意义不大）
-            String type = getstatic.getFieldType(cpg).toString();
-            fieldElement = new StaticFieldElement(type, false, null, fieldName, classType.getClassName());
+            String fieldType = getstatic.getFieldType(cpg).toString();
+            fieldElement = new StaticFieldElement(fieldType, false, null, fieldName, classType.getClassName());
         }
-
         stack.push(fieldElement);
     }
 
-    private void handlePUTSTATIC(PUTSTATIC putstatic) {
+    private PutStaticParseResult handlePUTSTATIC(PUTSTATIC putstatic) {
         String fieldName = putstatic.getFieldName(cpg);
         ObjectType classType = putstatic.getLoadClassType(cpg);
         BaseElement value = stack.pop();
 
-        StaticFieldElement staticFieldElement = new StaticFieldElement(value.getType(), value.isArrayElement(), value.getValue(), fieldName, classType.getClassName());
+        String putStaticClassName = classType.getClassName();
+        StaticFieldElement staticFieldElement = new StaticFieldElement(value.getType(), value.isArrayElement(), value.getValue(), fieldName, putStaticClassName);
         // 数组类型的处理
         if (value.isArrayElement()) {
             staticFieldElement.setArrayValueMap(value.getArrayValueMap());
         }
-        staticFieldInfo.putStatic(classType.getClassName(), fieldName, staticFieldElement);
+
+        staticFieldInfoMap.putStatic(putStaticClassName, fieldName, staticFieldElement);
+
+        if (inClinitMethod) {
+            // 仅当在静态代码块时返回以下解析结果
+            return new PutStaticParseResult(putStaticClassName, fieldName, putstatic.getFieldType(cpg).toString(), value);
+        }
+        return null;
     }
 
     private void handleGETFIELD(GETFIELD getfield) {
         String fieldName = getfield.getFieldName(cpg);
         BaseElement object = stack.pop();
+        if (!(object instanceof VariableElement)) {
+            throw new JavaCGRuntimeException("GETFIELD对象类型与预期不一致: " + object.getClass().getName());
+        }
 
-        FieldElement fieldElement = null;
         if (object instanceof LocalVariableElement) {
-            LocalVariableElement localVariableElement = (LocalVariableElement) object;
-            if (localVariableElement.isThis()) {
-                // 仅处理对this的变量获取
-                fieldElement = nonStaticFieldInfo.get(fieldName);
+            LocalVariableElement objectLocalVariableElement = (LocalVariableElement) object;
+            FieldElement fieldElement;
+            if (objectLocalVariableElement.isThis()) {
+                // 处理对this的变量获取
+                // 尝试从已处理的非静态变量中获取
+                fieldElement = nonStaticFieldInfoMap.get(fieldName);
                 if (fieldElement != null) {
                     stack.push(fieldElement);
                     return;
                 }
-            }
-        }
 
-        if (useFieldPossibleTypeFlag) {
-            // 使用已获取的构造函数非静态字段可能的类型
-            List<String> possibleTypeList = nonStaticFieldPossibleTypes.getPossibleTypeList(fieldName);
-            if (!JavaCGUtil.isCollectionEmpty(possibleTypeList)) {
-                if (possibleTypeList.size() == 1) {
-                    // 字段可能的类型数量为1，则使用
-                    String type = possibleTypeList.get(0);
-                    fieldElement = new FieldElement(type, false, null, fieldName);
-                } else {
-                    // 字段可能的类型数量大于1，无法使用
-                    System.err.println(mg.getClassName() + " 类的构造函数解析后 " + fieldName + " 非静态字段可能的类型数量大于1 " + StringUtils.join(possibleTypeList, " "));
+                if (useFieldPossibleTypeFlag) {
+                    // 从已处理的非静态变量中未获取到，使用当前类已获取的构造函数非静态字段可能的类型
+                    List<String> possibleTypeList = nonStaticFieldPossibleTypes.getPossibleTypeList(fieldName);
+                    if (!JavaCGUtil.isCollectionEmpty(possibleTypeList)) {
+                        if (possibleTypeList.size() == 1) {
+                            // 字段可能的类型数量为1，则使用
+                            String objectClassName = JavaCGElementUtil.getVariableClassNameOrThis(objectLocalVariableElement);
+                            fieldElement = new FieldElement(possibleTypeList.get(0), false, null, fieldName, objectClassName);
+                            stack.push(fieldElement);
+                            return;
+                        }
+                        // 字段可能的类型数量大于1，无法使用
+                        logger.warn("{} 类的构造函数解析后 {} 非静态字段可能的类型数量大于1 {}", mg.getClassName(), fieldName, StringUtils.join(possibleTypeList, " "));
+                    }
                 }
             }
         }
 
-        if (fieldElement == null) {
-            String type = getfield.getFieldType(cpg).toString();
-            fieldElement = new FieldElement(type, false, null, fieldName);
-        }
+        // 若以上未得到字段合适的类型，则使用GETFIELD指令对应的类型
+        String fieldType = getfield.getFieldType(cpg).toString();
+        String objectClassName = JavaCGElementUtil.getVariableClassNameOrThis((VariableElement) object);
+        FieldElement fieldElement = new FieldElement(fieldType, false, null, fieldName, objectClassName);
         stack.push(fieldElement);
     }
 
-    private void handlePUTFIELD(PUTFIELD putfield) {
+    private PutFieldParseResult handlePUTFIELD(PUTFIELD putfield) {
         String fieldName = putfield.getFieldName(cpg);
         BaseElement value = stack.pop();
         BaseElement object = stack.pop();
+        if (!(object instanceof VariableElement)) {
+            throw new JavaCGRuntimeException("PUTFIELD对象类型与预期不一致: " + object.getClass().getName());
+        }
 
         if (object instanceof LocalVariableElement) {
-            LocalVariableElement localVariableElement = (LocalVariableElement) object;
-            if (localVariableElement.isThis()) {
+            LocalVariableElement objectLocalVariableElement = (LocalVariableElement) object;
+            if (objectLocalVariableElement.isThis()) {
                 // 仅处理对this的变量赋值
-                FieldElement fieldElement = new FieldElement(value.getType(), value.isArrayElement(), value.getValue(), fieldName);
+                String objectClassName = JavaCGElementUtil.getVariableClassNameOrThis(objectLocalVariableElement);
+                FieldElement fieldElement = new FieldElement(value.getType(), value.isArrayElement(), value.getValue(), fieldName, objectClassName);
                 // 数组类型的处理
                 if (value.isArrayElement()) {
                     fieldElement.setArrayValueMap(value.getArrayValueMap());
                 }
-                nonStaticFieldInfo.put(fieldName, fieldElement);
+
+                nonStaticFieldInfoMap.put(fieldName, fieldElement);
                 if (recordFieldPossibleTypeFlag) {
                     String rawFieldType = putfield.getFieldType(cpg).toString();
                     if (!StringUtils.equals(rawFieldType, value.getType())) {
@@ -969,16 +1025,22 @@ public class InstructionHandler {
                 }
             }
         }
+
+        if (analyseFieldRelationshipFlag && maybeSetMethod) {
+            return new PutFieldParseResult(fieldName, putfield.getFieldType(cpg).toString(), value, object);
+        }
+        return null;
     }
 
     // 处理方法调用指令
-    private MethodCallParseResult handleMethodInvoke(InvokeInstruction invokeInstruction, boolean userObjectReference) {
+    private MethodCallParseResult handleMethodInvoke(InvokeInstruction invokeInstruction, InstructionHandle ih, boolean userObjectReference) {
         // 处理参数
-        int argumentNumber = invokeInstruction.getArgumentTypes(cpg).length;
-        List<BaseElement> argumentList = new ArrayList<>(argumentNumber);
+        Type[] argTypes = invokeInstruction.getArgumentTypes(cpg);
+        int argumentNumber = argTypes.length;
+        List<BaseElement> argElementList = new ArrayList<>(argumentNumber);
         for (int i = 0; i < argumentNumber; i++) {
             // 参数逆序处理
-            argumentList.add(0, stack.pop());
+            argElementList.add(0, stack.pop());
         }
 
         BaseElement objectElement = null;
@@ -989,6 +1051,8 @@ public class InstructionHandler {
 
         // 处理返回值
         Type returnType = invokeInstruction.getReturnType(cpg);
+        String calleeClassName = invokeInstruction.getReferenceType(cpg).toString();
+        String calleeMethodName = invokeInstruction.getMethodName(cpg);
         if (Type.VOID != returnType) {
             // 被调用方法返回类型非void
             VariableElement variableElement;
@@ -996,14 +1060,32 @@ public class InstructionHandler {
                 // 被调用对象属于静态字段
                 StaticFieldElement staticFieldElement = (StaticFieldElement) objectElement;
                 variableElement = new StaticFieldMethodCallElement(returnType.toString(), (returnType instanceof ArrayType), staticFieldElement.getClassName(),
-                        staticFieldElement.getFieldName(), invokeInstruction.getMethodName(cpg));
+                        staticFieldElement.getName(), calleeMethodName);
             } else {
                 variableElement = new VariableElement(returnType.toString());
             }
+            VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = new VariableDataSourceMethodCallReturn(ih.getPosition(),
+                    invokeInstruction.getClass().getSimpleName(), calleeClassName, calleeMethodName, JavaCGClassMethodUtil.getArgTypeStr(argTypes), returnType.toString(),
+                    objectElement, argElementList);
+
+            // 记录变量的数据来源
+            variableElement.recordVariableDataSource(variableDataSourceMethodCallReturn, frEqConversionMethodMap);
             stack.push(variableElement);
+        } else if (JavaCGClassMethodUtil.isInitMethod(calleeMethodName) && !JavaCGClassMethodUtil.isObjectClass(calleeClassName) && !stack.isEmpty()) {
+            // 调用构造函数，且不是调用Object的构造函数，且操作数栈非空时处理
+            BaseElement topElement = stack.peek();
+            if (topElement instanceof VariableElement) {
+                // 调用构造函数时，栈中的元素有可能不是变量
+                VariableElement topVariableElement = (VariableElement) topElement;
+                // 修改数据来源
+                VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = new VariableDataSourceMethodCallReturn(ih.getPosition(),
+                        invokeInstruction.getClass().getSimpleName(), calleeClassName, calleeMethodName, JavaCGClassMethodUtil.getArgTypeStr(argTypes), calleeClassName,
+                        objectElement, argElementList);
+                topVariableElement.recordVariableDataSource(variableDataSourceMethodCallReturn, frEqConversionMethodMap);
+            }
         }
 
-        return new MethodCallParseResult(objectElement, argumentList);
+        return new MethodCallParseResult(objectElement, argElementList);
     }
 
     private void handleNEWARRAY(NEWARRAY newarray) {
@@ -1016,22 +1098,40 @@ public class InstructionHandler {
 
     private void handleANEWARRAY(ANEWARRAY anewarray) {
         BaseElement countVariable = stack.pop();
-        VariableElement arrayElement = new VariableElement(JavaCGByteCodeUtil.addArrayFlag(getTypeString(anewarray)), true);
+        VariableElement arrayElement = new VariableElement(JavaCGByteCodeUtil.addArrayFlag(JavaCGInstructionUtil.getTypeString(anewarray, cpg)), true);
         stack.push(arrayElement);
 
         countVariable.checkTypeString(JavaCGConstantTypeEnum.CONSTTE_INT.getType());
     }
 
-    private void handleATHROW() {
-        BaseElement throwableElement = stack.pop();
-        stack.push(throwableElement);
+    private AThrowParseResult handleATHROW() {
+        BaseElement throwElement = stack.pop();
+        if (throwElement instanceof ConstElementNull) {
+            // throw null写法对应的情况
+            return new AThrowNullParseResult();
+        }
+
+        if (!(throwElement instanceof VariableElement)) {
+            throw new JavaCGRuntimeException("抛出异常的元素类型不是变量 " + throwElement.getClass().getName());
+        }
+        VariableElement variableElement = (VariableElement) throwElement;
+        stack.push(variableElement);
+        return new AThrowParseResult(variableElement);
+    }
+
+    private void handleCHECKCAST(CHECKCAST checkcast) {
+        BaseElement elementBefore = stack.pop();
+        VariableElement variableElementAfter = new VariableElement(JavaCGInstructionUtil.getTypeString(checkcast, cpg));
+        // 拷贝变量数据来源
+        variableElementAfter.copyVariableDataSource(elementBefore);
+        stack.push(variableElementAfter);
     }
 
     private void handleMULTIANEWARRAY(MULTIANEWARRAY multianewarray) {
         for (int i = 0; i < multianewarray.getDimensions(); i++) {
             stack.pop();
         }
-        VariableElement arrayElement = new VariableElement(getTypeString(multianewarray), true);
+        VariableElement arrayElement = new VariableElement(JavaCGInstructionUtil.getTypeString(multianewarray, cpg), true);
         stack.push(arrayElement);
     }
 
@@ -1044,12 +1144,16 @@ public class InstructionHandler {
         this.locals = locals;
     }
 
-    public void setNonStaticFieldInfo(FieldInformation nonStaticFieldInfo) {
-        this.nonStaticFieldInfo = nonStaticFieldInfo;
+    public void setNonStaticFieldInfoMap(FieldInformationMap nonStaticFieldInfoMap) {
+        this.nonStaticFieldInfoMap = nonStaticFieldInfoMap;
     }
 
-    public void setStaticFieldInfo(FieldInformation staticFieldInfo) {
-        this.staticFieldInfo = staticFieldInfo;
+    public void setStaticFieldInfoMap(FieldInformationMap staticFieldInfoMap) {
+        this.staticFieldInfoMap = staticFieldInfoMap;
+    }
+
+    public void setRecordReturnPossibleInfoFlag(boolean recordReturnPossibleInfoFlag) {
+        this.recordReturnPossibleInfoFlag = recordReturnPossibleInfoFlag;
     }
 
     public void setRecordFieldPossibleTypeFlag(boolean recordFieldPossibleTypeFlag) {
@@ -1060,7 +1164,19 @@ public class InstructionHandler {
         this.useFieldPossibleTypeFlag = useFieldPossibleTypeFlag;
     }
 
+    public void setAnalyseFieldRelationshipFlag(boolean analyseFieldRelationshipFlag) {
+        this.analyseFieldRelationshipFlag = analyseFieldRelationshipFlag;
+    }
+
     public void setNonStaticFieldPossibleTypes(FieldPossibleTypes nonStaticFieldPossibleTypes) {
         this.nonStaticFieldPossibleTypes = nonStaticFieldPossibleTypes;
+    }
+
+    public void setMaybeSetMethod(boolean maybeSetMethod) {
+        this.maybeSetMethod = maybeSetMethod;
+    }
+
+    public void setInClinitMethod(boolean inClinitMethod) {
+        this.inClinitMethod = inClinitMethod;
     }
 }

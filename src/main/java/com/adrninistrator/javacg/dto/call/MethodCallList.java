@@ -1,6 +1,8 @@
 package com.adrninistrator.javacg.dto.call;
 
+import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
+import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +24,27 @@ public class MethodCallList {
         this.callIdCounter = callIdCounter;
     }
 
+    /**
+     * 增加方法调用对象，使用指定的的call_id
+     *
+     * @param methodCall
+     */
     public void addMethodCall(MethodCall methodCall) {
+        if (methodCall == null || methodCall.getCallId() < JavaCGConstants.METHOD_CALL_ID_MIN) {
+            throw new JavaCGRuntimeException("不允许传入null，或者是call_id非法");
+        }
+        methodCallList.add(methodCall);
+    }
+
+    /**
+     * 增加方法调用对象，使用自动增加的call_id
+     *
+     * @param methodCall
+     */
+    public void addMethodCallAutoCallId(MethodCall methodCall) {
+        if (methodCall == null || methodCall.getCallId() >= JavaCGConstants.METHOD_CALL_ID_MIN) {
+            throw new JavaCGRuntimeException("不允许传入null，或者是call_id有值");
+        }
         methodCall.setCallId(callIdCounter.addAndGet());
         methodCallList.add(methodCall);
     }

@@ -1,9 +1,10 @@
 apply plugin: 'eclipse'
 apply plugin: 'java'
+apply plugin: 'java-library'
 apply plugin: 'idea'
 
 group 'com.github.adrninistrator'
-version = "1.0.18"
+version = "2.0.0"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
@@ -47,14 +48,28 @@ sourceSets {
     }
 }
 
+List apache_common = ['commons-codec:commons-codec:1.15']
+
 // 6.7.0版本LDC.getValue()会报错，不使用
 List bcel = ['org.apache.bcel:bcel:6.6.0']
 
+List zip4j = ['net.lingala.zip4j:zip4j:2.11.5']
+
+List slf4j = ['org.slf4j:slf4j-api:1.7.36']
+
 List junit = ['junit:junit:4.13.2']
 
+List log4j = [
+        'org.apache.logging.log4j:log4j-api:2.20.0',
+        'org.apache.logging.log4j:log4j-core:2.20.0',
+        'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
+]
+
+List disruptor = ['com.lmax:disruptor:3.3.7']
+
 dependencies {
-    compile bcel
-    testImplementation junit
+    api apache_common, bcel, zip4j, slf4j
+    testImplementation junit, log4j, disruptor
 }
 
 compileJava.options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
@@ -77,7 +92,7 @@ task gen_run_jar(type: Jar) {
         into '/'
     }
 
-    doLast{
+    doLast {
         copy {
             from 'build/libs/run_javacg2.jar'
             into "${jar_output_dir}/jar/"
@@ -85,6 +100,10 @@ task gen_run_jar(type: Jar) {
         copy {
             from 'src/main/resources/_javacg_config/'
             into "${jar_output_dir}/_javacg_config/"
+        }
+        copy {
+            from new File('src/test/resources').listFiles().findAll { File f -> (f.name.startsWith('log4j2') && f.name.endsWith('.xml')) }
+            into "${jar_output_dir}/config/"
         }
         copy {
             from 'run.bat'
@@ -95,7 +114,9 @@ task gen_run_jar(type: Jar) {
             into "${jar_output_dir}/"
         }
         copy {
-            from configurations.runtimeClasspath
+            from configurations.testRuntimeClasspath.getFiles().findAll {
+                File f -> (!f.name.startsWith("junit-") && !f.name.startsWith('hamcrest-core-'))
+            }
             into "${jar_output_dir}/lib"
         }
     }

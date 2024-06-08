@@ -4,14 +4,16 @@ import com.adrninistrator.javacg.common.SpringAnnotationConstants;
 import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
 import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
-import com.adrninistrator.javacg.extensions.code_parser.SpringXmlBeanParserInterface;
+import com.adrninistrator.javacg.extensions.codeparser.SpringXmlBeanParserInterface;
 import com.adrninistrator.javacg.util.JavaCGAnnotationUtil;
-import com.adrninistrator.javacg.util.JavaCGLogUtil;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.Field;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,6 +27,8 @@ import java.util.Map;
  * @description: 处理通过注解使用Spring Bean的信息
  */
 public class UseSpringBeanByAnnotationHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(UseSpringBeanByAnnotationHandler.class);
 
     // 类涉及继承的信息
     private final Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap;
@@ -89,9 +93,9 @@ public class UseSpringBeanByAnnotationHandler {
         this.defineSpringBeanByAnnotationHandler = defineSpringBeanByAnnotationHandler;
         this.springXmlBeanParser = springXmlBeanParser;
         if (springXmlBeanParser != null) {
-            System.out.println("指定" + SpringXmlBeanParserInterface.class.getSimpleName() + "实例 " + springXmlBeanParser.getClass().getName());
+            logger.info("指定 {} 实例 {}", SpringXmlBeanParserInterface.class.getSimpleName(), springXmlBeanParser.getClass().getName());
         } else {
-            System.out.println("未指定" + SpringXmlBeanParserInterface.class.getSimpleName() + "实例");
+            logger.info("未指定 {} 实例", SpringXmlBeanParserInterface.class.getSimpleName());
         }
     }
 
@@ -317,8 +321,8 @@ public class UseSpringBeanByAnnotationHandler {
         List<String> matchedSpringBeanTypeList = new ArrayList<>(springBeanTypeList.size());
         for (String springBeanType : springBeanTypeList) {
             if (springBeanType.equals(fieldType) ||
-                    JavaCGUtil.isChildOf(springBeanType, fieldType, classExtendsMethodInfoMap) ||
-                    JavaCGUtil.isImplementationOf(springBeanType, fieldType, classExtendsMethodInfoMap, classImplementsMethodInfoMap, interfaceExtendsMethodInfoMap)) {
+                    JavaCGClassMethodUtil.isChildOf(springBeanType, fieldType, classExtendsMethodInfoMap) ||
+                    JavaCGClassMethodUtil.isImplementationOf(springBeanType, fieldType, classExtendsMethodInfoMap, classImplementsMethodInfoMap, interfaceExtendsMethodInfoMap)) {
                 /*
                     若满足以下任意条件，则认为类型匹配
                     当前字段的类型=Spring Bean类型
@@ -330,12 +334,7 @@ public class UseSpringBeanByAnnotationHandler {
             }
 
             // 字段类型，与字段对应的Spring Bean的类型不匹配
-            String errorMsg = "eee 以下类获取到的字段的Spring Bean类型与字段类型不匹配 " + className + " " + fieldName + " " + springBeanType + " " + fieldType;
-            if (JavaCGLogUtil.isDebugPrintFlag()) {
-                JavaCGLogUtil.debugPrint(errorMsg);
-            } else {
-                System.err.println(errorMsg);
-            }
+            logger.warn("以下类获取到的字段的Spring Bean类型与字段类型不匹配 {} {} {} {}", className, fieldName, springBeanType, fieldType);
         }
 
         // 记录当前类的当前字段匹配的Spring Bean类型
@@ -367,7 +366,7 @@ public class UseSpringBeanByAnnotationHandler {
             }
 
             currentClassName = classExtendsMethodInfo.getSuperClassName();
-            if (JavaCGUtil.isClassInJdk(currentClassName)) {
+            if (JavaCGClassMethodUtil.isClassInJdk(currentClassName)) {
                 // 当前类父类为JDK中的类
                 break;
             }
@@ -424,7 +423,7 @@ public class UseSpringBeanByAnnotationHandler {
             }
 
             currentClassName = classExtendsMethodInfo.getSuperClassName();
-            if (JavaCGUtil.isClassInJdk(currentClassName)) {
+            if (JavaCGClassMethodUtil.isClassInJdk(currentClassName)) {
                 // 当前类父类为JDK中的类
                 break;
             }

@@ -3,7 +3,13 @@ package com.adrninistrator.javacg.util;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
+import net.lingala.zip4j.io.inputstream.ZipInputStream;
+import net.lingala.zip4j.io.outputstream.ZipOutputStream;
+import net.lingala.zip4j.model.LocalFileHeader;
+import net.lingala.zip4j.model.ZipParameters;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -17,10 +23,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 /**
  * @author adrninistrator
@@ -28,6 +30,8 @@ import java.util.zip.ZipOutputStream;
  * @description:
  */
 public class JavaCGJarUtil {
+
+    private static final Logger logger = LoggerFactory.getLogger(JavaCGJarUtil.class);
 
     // 获取合并jar/war包中的class文件时，需要合并的特定包名
     private static Set<String> getMergeClassInJarPackageSet(Set<String> needHandlePackageSet) {
@@ -37,7 +41,6 @@ public class JavaCGJarUtil {
 
         Set<String> mergeClassInJarPackageSet = new HashSet<>(needHandlePackageSet.size());
 
-        System.out.println("合并jar/war包中的class文件时，需要合并的包名:");
         for (String mergeClassInJarPackage : needHandlePackageSet) {
             if (StringUtils.isBlank(mergeClassInJarPackage)) {
                 continue;
@@ -60,7 +63,7 @@ public class JavaCGJarUtil {
                 newMergeClassInJarPackage += "/";
             }
 
-            System.out.println(newMergeClassInJarPackage);
+            logger.info("合并jar/war包中的class文件时，需要合并的包名: {}", newMergeClassInJarPackage);
 
             mergeClassInJarPackageSet.add(newMergeClassInJarPackage);
         }
@@ -74,26 +77,27 @@ public class JavaCGJarUtil {
      * 其他情况下，需要生成新的jar包
      *
      * @param jarOrDirPathList
-     * @param jarInfoMap           保存需要处理的jar包文件名及对应的序号，序号从1开始
+     * @param jarInfoMap             保存需要处理的jar包文件名及对应的序号，序号从1开始
      * @param needHandlePackageSet
+     * @param jarDirMergeFileTypeSet
      * @return null: 处理失败，非null: 新生成的jar包文件，或原有的jar包文件
      */
-    public static File handleJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet) {
-        JavaCGCounter jarNumCounter = new JavaCGCounter(0);
+    public static File handleJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet, Set<String> jarDirMergeFileTypeSet) {
+        JavaCGCounter jarNumCounter = new JavaCGCounter(JavaCGConstants.RECORD_ID_MIN);
         if (jarOrDirPathList.size() == 1) {
             // 数组只指定了一个元素
             File oneFile = new File(jarOrDirPathList.get(0));
             String oneFilePath = JavaCGFileUtil.getCanonicalPath(oneFile);
 
             if (!oneFile.exists()) {
-                System.err.println("指定的jar包或目录不存在: " + oneFilePath);
+                logger.error("指定的jar包或目录不存在: {}", oneFilePath);
                 return null;
             }
 
             if (oneFile.isFile()) {
                 String oneFileNameLower = oneFile.getName().toLowerCase(Locale.ROOT);
                 if (!StringUtils.endsWithAny(oneFileNameLower, JavaCGConstants.EXT_JAR, JavaCGConstants.EXT_WAR)) {
-                    System.err.println("处理单个文件时只支持指定" + JavaCGConstants.EXT_JAR + "或" + JavaCGConstants.EXT_WAR + "格式，假如需要处理" + JavaCGConstants.EXT_CLASS + "格式的文件，则需要指定其所在目录");
+                    logger.error("处理单个文件时只支持指定 {} 或 {} 格式，假如需要处理 {} 格式的文件，则需要指定其所在目录", JavaCGConstants.EXT_JAR, JavaCGConstants.EXT_WAR, JavaCGConstants.EXT_CLASS);
                     return null;
                 }
 
@@ -105,23 +109,25 @@ public class JavaCGJarUtil {
         }
 
         // 指定的是一个目录，或数组指定了多于一个元素，需要生成新的jar包
-        return mergeJar(jarOrDirPathList, jarInfoMap, needHandlePackageSet, jarNumCounter);
+        return mergeJar(jarOrDirPathList, jarInfoMap, needHandlePackageSet, jarDirMergeFileTypeSet, jarNumCounter);
     }
 
     /**
      * 合并jar包
      * 将每个jar包或目录生成一个新的jar包，第一层目录名为原jar包或目录名
-     * 若指定的数组第1个元素为jar包，则新生成的jar包生成在同一个目录中
-     * 若指定的数组第1个元素为目录，则新生成的jar包生成在该目录中
+     * 若指定的数组第一个元素为jar包，则新生成的jar包生成在同一个目录中
+     * 若指定的数组第一个元素为目录，则新生成的jar包生成在该目录中
      * 若只指定了一个目录，也需要生成新的jar包
      *
      * @param jarOrDirPathList
      * @param jarInfoMap
      * @param needHandlePackageSet
+     * @param jarDirMergeFileTypeSet
      * @param jarNumCounter
      * @return 合并后的jar包文件路径
      */
-    private static File mergeJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet, JavaCGCounter jarNumCounter) {
+    private static File mergeJar(List<String> jarOrDirPathList, Map<String, JarInfo> jarInfoMap, Set<String> needHandlePackageSet, Set<String> jarDirMergeFileTypeSet,
+                                 JavaCGCounter jarNumCounter) {
         // 获取文件或目录列表
         List<File> jarFileOrDirList = getJarFileOrDirList(jarOrDirPathList, jarInfoMap, jarNumCounter);
         if (jarFileOrDirList == null) {
@@ -133,10 +139,10 @@ public class JavaCGJarUtil {
         if (newJarFile.exists()) {
             // 新的jar包文件已存在
             if (newJarFile.isDirectory()) {
-                System.err.println("新的jar包文件已存在，但是是目录: " + JavaCGFileUtil.getCanonicalPath(newJarFile));
+                logger.error("新的jar包文件已存在，但是是目录: {}", JavaCGFileUtil.getCanonicalPath(newJarFile));
                 return null;
             } else if (!JavaCGFileUtil.deleteFile(newJarFile)) {
-                System.err.println("新的jar包文件已存在，删除失败: " + JavaCGFileUtil.getCanonicalPath(newJarFile));
+                logger.error("新的jar包文件已存在，删除失败: {}", JavaCGFileUtil.getCanonicalPath(newJarFile));
                 return null;
             }
         }
@@ -155,19 +161,19 @@ public class JavaCGJarUtil {
             for (File jarFileOrDir : jarFileOrDirList) {
                 String jarFileOrDirName = jarFileOrDir.getName();
                 if (destJarDirNameSet.contains(jarFileOrDirName)) {
-                    System.err.println("指定的jar/war包或目录存在同名，不处理: " + jarFileOrDirName + " " + JavaCGFileUtil.getCanonicalPath(jarFileOrDir));
+                    logger.error("指定的jar/war包或目录存在同名，不处理: {} {}", jarFileOrDirName, JavaCGFileUtil.getCanonicalPath(jarFileOrDir));
                     continue;
                 }
                 destJarDirNameSet.add(jarFileOrDirName);
 
                 if (jarFileOrDir.isFile()) {
                     // 将jar/war包添加到jar包中
-                    addJar2Jar(jarFileOrDir, zos, mergeClassInJarPackageSet);
+                    addJar2Jar(jarFileOrDir, zos, mergeClassInJarPackageSet, jarDirMergeFileTypeSet);
                     continue;
                 }
 
                 // 将目录添加到jar包中
-                addDir2Jar(jarFileOrDir, jarFileInDirList, zos);
+                addDir2Jar(jarFileOrDir, jarFileInDirList, zos, jarDirMergeFileTypeSet);
             }
 
             // 合并目录中的后缀为.jar/.war文件
@@ -178,19 +184,19 @@ public class JavaCGJarUtil {
                 jarInfoMap.putIfAbsent(jarFileName, new JarInfo(jarNumCounter.addAndGet(), JavaCGConstants.FILE_KEY_JAR_INFO_PREFIX, jarCanonicalPath));
 
                 if (destJarDirNameSet.contains(jarFileName)) {
-                    System.err.println("指定的jar包或目录存在同名，不处理: " + jarFileName + " " + jarCanonicalPath);
+                    logger.error("指定的jar包或目录存在同名，不处理: {} {}", jarFileName, jarCanonicalPath);
                     continue;
                 }
                 destJarDirNameSet.add(jarFileName);
 
-                System.out.println("添加目录中的jar/war包: " + jarCanonicalPath);
+                logger.info("添加目录中的jar/war包: {}", jarCanonicalPath);
                 // 将jar/war包添加到jar包中
-                addJar2Jar(jarFileInDir, zos, mergeClassInJarPackageSet);
+                addJar2Jar(jarFileInDir, zos, mergeClassInJarPackageSet, jarDirMergeFileTypeSet);
             }
 
             return newJarFile;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("error ", e);
             return null;
         }
     }
@@ -209,9 +215,14 @@ public class JavaCGJarUtil {
         for (String currentJarOrDirPath : jarOrDirPathList) {
             File jarFileOrDir = new File(currentJarOrDirPath);
             String jarCanonicalPath = JavaCGFileUtil.getCanonicalPath(jarFileOrDir);
-            if (!jarFileOrDir.exists()) {
-                System.err.println("指定的jar包或目录不存在: " + jarCanonicalPath);
+            if (!jarFileOrDir.exists() || jarCanonicalPath == null) {
+                logger.error("指定的jar包或目录不存在: {}", jarCanonicalPath);
                 return null;
+            }
+            if (jarCanonicalPath.endsWith(JavaCGConstants.MERGED_JAR_FLAG)) {
+                // 假如指定了合并产生的jar包，且指定的jar包数量大于1，则跳过
+                logger.info("跳过合并产生的jar包: {}", jarCanonicalPath);
+                continue;
             }
 
             jarFileOrDirList.add(jarFileOrDir);
@@ -227,44 +238,46 @@ public class JavaCGJarUtil {
     // 获得新的jar包文件
     private static File getNewJarFile(File firstJarFile, String firstJarPath) {
         if (firstJarFile.isFile()) {
-            // 数组第1个元素为jar包
+            // 数组第一个元素为jar包
             return new File(firstJarPath + JavaCGConstants.MERGED_JAR_FLAG);
         }
 
-        // 数组第1个元素为目录
+        // 数组第一个元素为目录
         return new File(firstJarPath + File.separator + firstJarFile.getName() + JavaCGConstants.MERGED_JAR_FLAG);
     }
 
     // 将jar/war包添加到jar包中
-    private static void addJar2Jar(File sourceJarFile, ZipOutputStream targetZos, Set<String> mergeClassInJarPackageSet) throws IOException {
+    private static void addJar2Jar(File sourceJarFile, ZipOutputStream targetZos, Set<String> mergeClassInJarPackageSet, Set<String> jarDirMergeFileTypeSet) throws IOException {
         String sourceJarName = sourceJarFile.getName();
 
-        try (JarInputStream jarInputStream = new JarInputStream(new BufferedInputStream(new FileInputStream(sourceJarFile), 1024 * 32))) {
-            JarEntry jarEntry;
-            while ((jarEntry = jarInputStream.getNextJarEntry()) != null) {
-                if (jarEntry.isDirectory()) {
+        try (ZipInputStream zipInputStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(sourceJarFile), 1024 * 8))) {
+            LocalFileHeader fileHeader;
+            while ((fileHeader = zipInputStream.getNextEntry()) != null) {
+                if (fileHeader.isDirectory()) {
                     // 跳过目录
                     continue;
                 }
 
-                String jarEntryName = jarEntry.getName();
-                String jarEntryNameLower = jarEntryName.toLowerCase();
-                if (!jarEntryNameLower.endsWith(JavaCGConstants.EXT_CLASS)) {
-                    // 跳过非.class文件
-                    continue;
-                }
-
-                if (skipClassEntry(jarEntryName, mergeClassInJarPackageSet)) {
-                    // 跳过class文件
+                String jarEntryPath = fileHeader.getFileName();
+                // 判断当前文件是否需要跳过
+                if (StringUtils.endsWithIgnoreCase(jarEntryPath, JavaCGConstants.EXT_CLASS)) {
+                    // class文件，判断是否需要跳过
+                    if (skipClassEntry(jarEntryPath, mergeClassInJarPackageSet)) {
+                        continue;
+                    }
+                } else if (!JavaCGUtil.checkMergeFileType(jarEntryPath, jarDirMergeFileTypeSet)) {
+                    // 其他类型的文件，不需要处理
+                    logger.debug("当前文件类型不匹配，不合并 {}", jarEntryPath);
                     continue;
                 }
 
                 // 处理jar包中的一个非jar文件
-                ZipEntry newZipEntry = new ZipEntry(sourceJarName + "/" + jarEntryName);
-                targetZos.putNextEntry(newZipEntry);
+                ZipParameters zipParameters = new ZipParameters();
+                zipParameters.setFileNameInZip(sourceJarName + "/" + jarEntryPath);
+                targetZos.putNextEntry(zipParameters);
 
                 // 向目标jar文件写入数据
-                addInput2Jar(jarInputStream, targetZos);
+                addInput2Jar(zipInputStream, targetZos);
             }
         }
     }
@@ -272,11 +285,11 @@ public class JavaCGJarUtil {
     /**
      * 是否跳过class文件
      *
-     * @param jarEntryName
+     * @param jarEntryPath
      * @param mergeClassInJarPackageSet
      * @return true: 跳过 false: 不跳过
      */
-    private static boolean skipClassEntry(String jarEntryName, Set<String> mergeClassInJarPackageSet) {
+    private static boolean skipClassEntry(String jarEntryPath, Set<String> mergeClassInJarPackageSet) {
         if (mergeClassInJarPackageSet.isEmpty()) {
             // 不跳过class文件
             return false;
@@ -288,27 +301,23 @@ public class JavaCGJarUtil {
                 war包中的class文件在WEB-INF/classes/目录中
                 Spring Boot Maven Plugin插件打包后的jar包，class文件在BOOT-INF/classes/目录中
              */
-            if (jarEntryName.startsWith(mergeClassInJarPackage) ||
-                    jarEntryName.startsWith("WEB-INF/classes/" + mergeClassInJarPackage) ||
-                    jarEntryName.startsWith("BOOT-INF/classes/" + mergeClassInJarPackage)
+            if (jarEntryPath.startsWith(mergeClassInJarPackage) ||
+                    jarEntryPath.startsWith(JavaCGConstants.WEB_INF_CLASSES + "/" + mergeClassInJarPackage) ||
+                    jarEntryPath.startsWith(JavaCGConstants.BOOT_INF_CLASSES + "/" + mergeClassInJarPackage)
             ) {
-                if (JavaCGLogUtil.isDebugPrintFlag()) {
-                    JavaCGLogUtil.debugPrint("当前class文件包名匹配，需要合并 " + jarEntryName + " " + mergeClassInJarPackage);
-                }
+                logger.debug("当前class文件包名匹配，需要合并 {} {}", jarEntryPath, mergeClassInJarPackage);
                 // 不跳过包名满足要求的class文件
                 return false;
             }
         }
 
         // 跳过包名不满足要求的class文件
-        if (JavaCGLogUtil.isDebugPrintFlag()) {
-            JavaCGLogUtil.debugPrint("当前class文件包名不匹配，不合并 " + jarEntryName);
-        }
+        logger.debug("当前class文件包名或类名不匹配，不合并 {}", jarEntryPath);
         return true;
     }
 
     // 将目录添加到jar包中
-    private static void addDir2Jar(File sourceDirFile, List<File> jarFileInDirList, ZipOutputStream targetZos) throws IOException {
+    private static void addDir2Jar(File sourceDirFile, List<File> jarFileInDirList, ZipOutputStream targetZos, Set<String> jarDirMergeFileTypeSet) throws IOException {
         // 保存后缀非.jar文件对象列表
         List<File> nonJarFileList = new ArrayList<>();
         // 保存后缀非.jar文件的相对路径列表
@@ -321,8 +330,21 @@ public class JavaCGJarUtil {
         }
 
         for (int i = 0; i < nonJarFileList.size(); i++) {
-            ZipEntry newZipEntry = new ZipEntry(nonJarFileRelativelyPathList.get(i));
-            targetZos.putNextEntry(newZipEntry);
+            String filePath = nonJarFileRelativelyPathList.get(i);
+            /*
+                判断文件是否需要处理：
+                class文件需要处理，不判断文件类名
+                其他文件，判断是否为需要处理的类型
+             */
+            if (!StringUtils.endsWithIgnoreCase(filePath, JavaCGConstants.EXT_CLASS) &&
+                    !JavaCGUtil.checkMergeFileType(filePath, jarDirMergeFileTypeSet)) {
+                logger.debug("当前文件类型不匹配，不合并 {}", filePath);
+                continue;
+            }
+
+            ZipParameters zipParameters = new ZipParameters();
+            zipParameters.setFileNameInZip(filePath);
+            targetZos.putNextEntry(zipParameters);
 
             // 向目标jar文件写入数据
             try (InputStream inputStream = new FileInputStream(nonJarFileList.get(i))) {
@@ -349,8 +371,7 @@ public class JavaCGJarUtil {
 
             // 处理文件
             String currentFileName = file.getName();
-            String currentFileNameLower = currentFileName.toLowerCase();
-            if (currentFileNameLower.endsWith(JavaCGConstants.EXT_JAR) || currentFileNameLower.endsWith(JavaCGConstants.EXT_WAR)) {
+            if (StringUtils.endsWithAny(currentFileName.toLowerCase(), JavaCGConstants.EXT_JAR, JavaCGConstants.EXT_WAR)) {
                 // 目录中的当前文件后缀是.jar/.war
                 if (!currentFileName.endsWith(JavaCGConstants.MERGED_JAR_FLAG)) {
                     // 不是合并产生的文件
@@ -361,18 +382,29 @@ public class JavaCGJarUtil {
                 // 目录中的当前文件后缀不是.jar/.war，且不包含合并产生的文件标记（对合并文件执行生成的.txt结果文件不需要再合并），需要合并到最终的jar包中
                 // 记录后缀非.jar文件的文件对象及相对路径
                 nonJarFileList.add(file);
-                fileRelativelyPathList.add(dirPathHeader + "/" + currentFileNameLower);
+                fileRelativelyPathList.add(dirPathHeader + "/" + currentFileName);
             }
         }
     }
 
     // 向目标jar文件写入数据
     private static void addInput2Jar(InputStream inputStream, ZipOutputStream targetZos) throws IOException {
-        byte[] data = new byte[4096];
+        byte[] data = new byte[8192];
         int len;
         while ((len = inputStream.read(data)) > 0) {
             targetZos.write(data, 0, len);
         }
+        targetZos.closeEntry();
+    }
+
+    /**
+     * 从jar包中的文件路径获取文件名称
+     *
+     * @param jarEntryPath jar包中的文件路径
+     * @return
+     */
+    public static String getJarEntryNameFromPath(String jarEntryPath) {
+        return JavaCGUtil.getSubStringAfterLast(jarEntryPath, "/");
     }
 
     private JavaCGJarUtil() {

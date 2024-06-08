@@ -2,9 +2,10 @@ package com.adrninistrator.javacg.spring;
 
 import com.adrninistrator.javacg.common.SpringAnnotationConstants;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
+import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.handler.MethodHandler4TypeAndValue;
 import com.adrninistrator.javacg.util.JavaCGAnnotationUtil;
-import com.adrninistrator.javacg.util.JavaCGUtil;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
@@ -27,6 +28,8 @@ public class DefineSpringBeanByAnnotationHandler {
 
     private final JavaCGConfInfo javaCGConfInfo;
 
+    private final JavaCGCounter failCounter;
+
     /*
         保存Spring Bean信息
             key:    Bean的名称
@@ -34,8 +37,9 @@ public class DefineSpringBeanByAnnotationHandler {
      */
     private final Map<String, List<String>> stringBeanNameAndTypeMap = new HashMap<>(100);
 
-    public DefineSpringBeanByAnnotationHandler(JavaCGConfInfo javaCGConfInfo) {
+    public DefineSpringBeanByAnnotationHandler(JavaCGConfInfo javaCGConfInfo, JavaCGCounter failCounter) {
         this.javaCGConfInfo = javaCGConfInfo;
+        this.failCounter = failCounter;
     }
 
     /**
@@ -85,8 +89,8 @@ public class DefineSpringBeanByAnnotationHandler {
 
         // 若Component相关注解的value属性值为空
         // 将类名首字母小写作为Bean名称作用
-        String simpleClassName = JavaCGUtil.getSimpleClassNameFromFull(className);
-        String firstLetterLowerClassName = JavaCGUtil.getFirstLetterLowerClassName(simpleClassName);
+        String simpleClassName = JavaCGClassMethodUtil.getSimpleClassNameFromFull(className);
+        String firstLetterLowerClassName = JavaCGClassMethodUtil.getFirstLetterLowerClassName(simpleClassName);
         stringBeanNameAndTypeMap.put(firstLetterLowerClassName, Collections.singletonList(className));
     }
 
@@ -112,7 +116,9 @@ public class DefineSpringBeanByAnnotationHandler {
     // 处理方法上的Spring Bean注解
     private boolean handleSpringBeanAnnotation(JavaClass javaClass, Method method, AnnotationEntry beanAnnotation) {
         MethodGen mg = new MethodGen(method, javaClass.getClassName(), new ConstantPoolGen(javaClass.getConstantPool()));
-        MethodHandler4TypeAndValue methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(mg, javaClass, javaCGConfInfo);
+        String callerFullMethod = JavaCGClassMethodUtil.formatFullMethod(javaClass.getClassName(), method.getName(), method.getArgumentTypes());
+        MethodHandler4TypeAndValue methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(method, mg, javaClass, callerFullMethod, javaCGConfInfo);
+        methodHandler4TypeAndValue.setFailCounter(failCounter);
         methodHandler4TypeAndValue.setParseMethodCallTypeValueFlag(false);
         methodHandler4TypeAndValue.setRecordReturnPossibleInfoFlag(true);
         if (!methodHandler4TypeAndValue.handleMethod()) {

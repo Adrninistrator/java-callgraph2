@@ -1,6 +1,8 @@
 package com.adrninistrator.javacg.dto.element.variable;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.dto.element.BaseElement;
+import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
 
 /**
  * @author adrninistrator
@@ -25,8 +27,15 @@ public class StaticFieldMethodCallElement extends VariableElement {
         this.methodName = methodName;
     }
 
+    @Override
+    public BaseElement copyElement() {
+        StaticFieldMethodCallElement staticFieldMethodCallElementCopy = new StaticFieldMethodCallElement(getType(), arrayElement, className, fieldName, methodName);
+        staticFieldMethodCallElementCopy.copyVariableDataSource(this);
+        return staticFieldMethodCallElementCopy;
+    }
+
     public String getInfo() {
-        return className + JavaCGConstants.FLAG_COLON + fieldName + JavaCGConstants.FLAG_COLON + methodName + JavaCGConstants.EMPTY_METHOD_ARGS;
+        return JavaCGClassMethodUtil.genClassAndField(className, fieldName) + JavaCGConstants.FLAG_COLON + methodName + JavaCGConstants.EMPTY_METHOD_ARGS;
     }
 
     @Override

@@ -37,32 +37,32 @@ public class FrameSnapshotsOfIhs {
      * @param position
      * @param addedStack
      * @param addedLocals
-     * @param addedNonStaticFieldInfo
-     * @param addedStaticFieldInfo
+     * @param addedNonStaticFieldInfoMap
+     * @param addedStaticFieldInfoMap
      * @return false: 已存在相同的信息快照，未添加 true: 不存在相同的信息快照，有添加
      */
     public boolean addSnapshot(int position,
                                JavaCGOperandStack addedStack,
                                JavaCGLocalVariables addedLocals,
-                               FieldInformation addedNonStaticFieldInfo,
-                               FieldInformation addedStaticFieldInfo) {
+                               FieldInformationMap addedNonStaticFieldInfoMap,
+                               FieldInformationMap addedStaticFieldInfoMap) {
         List<FrameSnapshotEntry> frameSnapshotEntryList = frameSnapshotOfIhsMap.get(position);
         if (frameSnapshotEntryList == null) {
             // 当前跳转目标指令处理过的栈桢信息快照为空，记录信息快照
             frameSnapshotEntryList = new ArrayList<>();
-            frameSnapshotEntryList.add(new FrameSnapshotEntry(addedStack.copy(), addedLocals.copy(), addedNonStaticFieldInfo.copy(), addedStaticFieldInfo.copy()));
+            frameSnapshotEntryList.add(new FrameSnapshotEntry(addedStack.copy(), addedLocals.copy(), addedNonStaticFieldInfoMap.copy(), addedStaticFieldInfoMap.copy()));
             frameSnapshotOfIhsMap.put(position, frameSnapshotEntryList);
             return true;
         }
 
         // 判断当前栈桢对应的信息快照是否存在相同的记录
-        if (checkExistSnapshotLooseMode(frameSnapshotEntryList, addedStack, addedLocals, addedNonStaticFieldInfo, addedStaticFieldInfo)) {
+        if (checkExistSnapshotLooseMode(frameSnapshotEntryList, addedStack, addedLocals, addedNonStaticFieldInfoMap, addedStaticFieldInfoMap)) {
             // 已存在相同的信息快照，未添加
             return false;
         }
 
         // 不存在相同的信息快照，需要添加
-        frameSnapshotEntryList.add(new FrameSnapshotEntry(addedStack.copy(), addedLocals.copy(), addedNonStaticFieldInfo.copy(), addedStaticFieldInfo.copy()));
+        frameSnapshotEntryList.add(new FrameSnapshotEntry(addedStack.copy(), addedLocals.copy(), addedNonStaticFieldInfoMap.copy(), addedStaticFieldInfoMap.copy()));
         return true;
     }
 
@@ -72,19 +72,19 @@ public class FrameSnapshotsOfIhs {
      * @param frameSnapshotEntryList
      * @param addedStack
      * @param addedLocals
-     * @param addedNonStaticFieldInfo
-     * @param addedStaticFieldInfo
+     * @param addedNonStaticFieldInfoMap
+     * @param addedStaticFieldInfoMap
      * @return false: 不存在相同的信息快照 true: 已存在相同的信息快照
      */
     private boolean checkExistSnapshotLooseMode(List<FrameSnapshotEntry> frameSnapshotEntryList,
                                                 JavaCGOperandStack addedStack,
                                                 JavaCGLocalVariables addedLocals,
-                                                FieldInformation addedNonStaticFieldInfo,
-                                                FieldInformation addedStaticFieldInfo) {
+                                                FieldInformationMap addedNonStaticFieldInfoMap,
+                                                FieldInformationMap addedStaticFieldInfoMap) {
         int addedStackSize = addedStack.size();
         int addedLocalsSize = addedLocals.size();
-        int addedNonStaticFieldInfoSize = addedNonStaticFieldInfo.size();
-        int addedStaticFieldInfoSize = addedStaticFieldInfo.size();
+        int addedNonStaticFieldInfoSize = addedNonStaticFieldInfoMap.size();
+        int addedStaticFieldInfoSize = addedStaticFieldInfoMap.size();
 
         Set<Integer> sameStackSeqSet = new HashSet<>(addedStackSize);
         Set<Integer> sameLocalsSeqSet = new HashSet<>(addedLocalsSize);
@@ -116,7 +116,7 @@ public class FrameSnapshotsOfIhs {
 
             if (addedNonStaticFieldInfoSize != sameNonStaticFieldInfoNameSet.size()) {
                 // 本地变量还不是每个元素都存在相同的信息，还需要比较
-                FieldInformation.compareLooseMode(frameSnapshotEntry.getNonStaticFieldInfo(), addedNonStaticFieldInfo, sameNonStaticFieldInfoNameSet);
+                FieldInformationMap.compareLooseMode(frameSnapshotEntry.getNonStaticFieldInfoMap(), addedNonStaticFieldInfoMap, sameNonStaticFieldInfoNameSet);
                 if (addedNonStaticFieldInfoSize != sameNonStaticFieldInfoNameSet.size()) {
                     equals = false;
                 }
@@ -124,7 +124,7 @@ public class FrameSnapshotsOfIhs {
 
             if (addedStaticFieldInfoSize != sameStaticFieldInfoNameSet.size()) {
                 // 本地变量还不是每个元素都存在相同的信息，还需要比较
-                FieldInformation.compareLooseMode(frameSnapshotEntry.getStaticFieldInfo(), addedStaticFieldInfo, sameStaticFieldInfoNameSet);
+                FieldInformationMap.compareLooseMode(frameSnapshotEntry.getStaticFieldInfoMap(), addedStaticFieldInfoMap, sameStaticFieldInfoNameSet);
                 if (addedStaticFieldInfoSize != sameStaticFieldInfoNameSet.size()) {
                     equals = false;
                 }

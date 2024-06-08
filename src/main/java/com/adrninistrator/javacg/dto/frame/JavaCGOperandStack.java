@@ -3,7 +3,8 @@ package com.adrninistrator.javacg.dto.frame;
 import com.adrninistrator.javacg.dto.element.BaseElement;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 import com.adrninistrator.javacg.util.JavaCGElementUtil;
-import com.adrninistrator.javacg.util.JavaCGLogUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
@@ -13,6 +14,8 @@ import java.util.Set;
  * @description: 操作数栈
  */
 public class JavaCGOperandStack {
+
+    private static final Logger logger = LoggerFactory.getLogger(JavaCGOperandStack.class);
 
     private final BaseElement[] elements;
 
@@ -36,33 +39,29 @@ public class JavaCGOperandStack {
 
     public void push(BaseElement element) {
         if (element == null) {
-            System.err.println("eee push的元素为null " + head);
+            logger.error("push的元素为null {}", head);
             throw new JavaCGRuntimeException("push的元素为null");
         }
 
         if (head >= capacity) {
-            System.err.println("eee 栈已满 " + head + " " + element);
+            logger.error("栈已满 {} {}", head, element);
             throw new JavaCGRuntimeException("栈已满");
         }
 
         elements[head++] = element;
 
-        if (JavaCGLogUtil.isDebugPrintFlag()) {
-            JavaCGLogUtil.debugPrint("### 入操作数栈后 size: " + head + " " + element);
-        }
+        logger.debug("入操作数栈后 size: {} {}", head, element);
     }
 
     public BaseElement pop() {
         if (head == 0) {
-            System.err.println("eee 栈为空，不支持pop");
+            logger.error("栈为空，不支持pop");
             throw new JavaCGRuntimeException("栈为空，不支持pop");
         }
 
         BaseElement element = elements[--head];
 
-        if (JavaCGLogUtil.isDebugPrintFlag()) {
-            JavaCGLogUtil.debugPrint("### 出操作数栈后 size: " + head + " " + element);
-        }
+        logger.debug("出操作数栈后 size: {} {}", head, element);
 
         elements[head] = null;
         return element;
@@ -70,7 +69,7 @@ public class JavaCGOperandStack {
 
     public BaseElement peek() {
         if (head == 0) {
-            System.err.println("eee 栈为空，不支持peek");
+            logger.error("栈为空，不支持peek");
             throw new JavaCGRuntimeException("栈为空，不支持peek");
         }
 
@@ -100,10 +99,12 @@ public class JavaCGOperandStack {
     }
 
     public JavaCGOperandStack copy() {
-        JavaCGOperandStack clone = new JavaCGOperandStack(capacity);
-        System.arraycopy(elements, 0, clone.elements, 0, head);
-        clone.head = head;
-        return clone;
+        JavaCGOperandStack javaCGOperandStackCopy = new JavaCGOperandStack(capacity);
+        for (int i = 0; i < this.head; i++) {
+            javaCGOperandStackCopy.elements[i] = this.elements[i].copyElement();
+        }
+        javaCGOperandStackCopy.head = this.head;
+        return javaCGOperandStackCopy;
     }
 
     /**

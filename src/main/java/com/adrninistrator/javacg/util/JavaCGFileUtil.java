@@ -3,6 +3,8 @@ package com.adrninistrator.javacg.util;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -17,6 +19,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -30,11 +33,17 @@ import java.util.Set;
  */
 public class JavaCGFileUtil {
 
+    private static final Logger logger = LoggerFactory.getLogger(JavaCGFileUtil.class);
+
+    public static String getCanonicalPath(String filePath) {
+        return getCanonicalPath(new File(filePath));
+    }
+
     public static String getCanonicalPath(File file) {
         try {
             return file.getCanonicalPath();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("error ", e);
             return null;
         }
     }
@@ -44,9 +53,19 @@ public class JavaCGFileUtil {
             Files.delete(file.toPath());
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("error ", e);
             return false;
         }
+    }
+
+    /**
+     * 拼接需要写入文件的各列数据
+     *
+     * @param data
+     * @return
+     */
+    public static String appendFileColumn(String... data) {
+        return StringUtils.join(data, JavaCGConstants.FLAG_TAB);
     }
 
     /**
@@ -57,7 +76,7 @@ public class JavaCGFileUtil {
      * @throws IOException
      */
     public static void write2FileWithTab(Writer writer, String... data) throws IOException {
-        writer.write(StringUtils.join(data, JavaCGConstants.FILE_COLUMN_SEPARATOR) + JavaCGConstants.NEW_LINE);
+        writer.write(appendFileColumn(data) + JavaCGConstants.NEW_LINE);
     }
 
     /**
@@ -88,49 +107,95 @@ public class JavaCGFileUtil {
      * 判断目录是否存在，不存在时尝试创建
      *
      * @param dirPath 需要判断的目录路径
-     * @param tryMake 是否尝试创建目录
+     * @return true: 指定路径的目录存在（已存在或新创建），false: 目录不存在（指定路径为文件，或创建失败）
+     */
+    public static boolean isDirectoryExists(String dirPath) {
+        return isDirectoryExists(new File(dirPath), true);
+    }
+
+    /**
+     * 判断目录是否存在
+     *
+     * @param dirPath 需要判断的目录路径
+     * @param tryMake 不存在时是否尝试创建
      * @return true: 指定路径的目录存在（已存在或新创建），false: 目录不存在（指定路径为文件，或创建失败）
      */
     public static boolean isDirectoryExists(String dirPath, boolean tryMake) {
-        File file = new File(dirPath);
-        if (file.exists()) {
-            if (file.isDirectory()) {
+        return isDirectoryExists(new File(dirPath), tryMake);
+    }
+
+    /**
+     * 判断目录是否存在，不存在时尝试创建
+     *
+     * @param dirFile 需要判断的目录对象
+     * @return true: 指定路径的目录存在（已存在或新创建），false: 目录不存在（指定路径为文件，或创建失败）
+     */
+    public static boolean isDirectoryExists(File dirFile) {
+        return isDirectoryExists(dirFile, true);
+    }
+
+    /**
+     * 判断目录是否存在
+     *
+     * @param dirFile 需要判断的目录对象
+     * @param tryMake 不存在时是否尝试创建
+     * @return 指定路径的目录存在（已存在或新创建），false: 目录不存在（指定路径为文件，或创建失败）
+     */
+    public static boolean isDirectoryExists(File dirFile, boolean tryMake) {
+        if (dirFile.exists()) {
+            if (dirFile.isDirectory()) {
+                logger.debug("目录已存在: {}", dirFile.getAbsolutePath());
                 return true;
             }
 
-            System.err.println("已存在文件: " + dirPath);
+            logger.error("已存在同名文件: {}", dirFile.getAbsolutePath());
             return false;
         }
 
         if (!tryMake) {
+            logger.info("目录不存在 {}", dirFile.getAbsolutePath());
             return false;
         }
 
-        // 目录不存在，则尝试创建
-        if (file.mkdirs()) {
-            System.out.println("创建目录: " + dirPath);
+        try {
+            Files.createDirectories(dirFile.toPath());
+            logger.info("创建目录: {}", dirFile.getAbsolutePath());
             return true;
+        } catch (FileAlreadyExistsException e) {
+            logger.warn("尝试创建目录但已存在: {}", dirFile.getAbsolutePath());
+            return true;
+        } catch (IOException e) {
+            logger.error("error {} ", dirFile.getAbsolutePath(), e);
+            return false;
         }
-
-        System.err.println("创建目录失败: " + dirPath);
-        return false;
     }
 
     /**
      * 根据文件路径生成Writer对象
      *
-     * @param filePath
+     * @param filePath 文件路径
      * @return
      */
     public static BufferedWriter genBufferedWriter(String filePath) throws FileNotFoundException {
-        return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filePath), StandardCharsets.UTF_8));
+        return genBufferedWriter(filePath, false);
+    }
+
+    /**
+     * 根据文件路径生成Writer对象
+     *
+     * @param filePath 文件路径
+     * @param append   是否在已有文件后追加
+     * @return
+     */
+    public static BufferedWriter genBufferedWriter(String filePath, boolean append) throws FileNotFoundException {
+        return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filePath, append), StandardCharsets.UTF_8));
     }
 
     public static File findFile(String filePath) {
         // 尝试通过文件路径获取文件
         File file = new File(filePath);
         if (file.exists()) {
-            System.out.println("通过文件路径获取文件 " + filePath);
+            logger.info("通过文件路径获取文件 {}", filePath);
             return file;
         }
 
@@ -141,11 +206,11 @@ public class JavaCGFileUtil {
                 当URL中的protocol为"file"时，说明对应的资源为独立文件的形式
                 若为"jar"则说明对应的资源是jar包中的文件，不能通过以下方式处理
              */
-            System.out.println("从classpath中获取文件 " + url);
+            logger.info("从classpath中获取文件 {}", url);
             try {
                 return new File(url.toURI());
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("error ", e);
                 return null;
             }
         }
@@ -168,11 +233,11 @@ public class JavaCGFileUtil {
          */
         InputStream inputStream = JavaCGFileUtil.class.getResourceAsStream("/" + filePath);
         if (inputStream == null) {
-            System.err.println("未找到文件 " + filePath);
+            logger.error("未找到文件 {}", filePath);
             throw new JavaCGRuntimeException("未找到文件 " + filePath);
         }
 
-        System.out.println("从jar包中获取文件 " + JavaCGFileUtil.class.getResource("/" + filePath));
+        logger.info("从jar包中获取文件 {}", JavaCGFileUtil.class.getResource("/" + filePath));
         return inputStream;
     }
 
@@ -209,8 +274,7 @@ public class JavaCGFileUtil {
             }
             return set;
         } catch (Exception e) {
-            System.err.println("处理文件出现异常 " + filePath);
-            e.printStackTrace();
+            logger.error("处理文件出现异常 {} ", filePath, e);
             return null;
         }
     }
@@ -248,8 +312,7 @@ public class JavaCGFileUtil {
             }
             return list;
         } catch (Exception e) {
-            System.err.println("处理文件出现异常 " + filePath);
-            e.printStackTrace();
+            logger.error("处理文件出现异常 {} ", filePath, e);
             return null;
         }
     }

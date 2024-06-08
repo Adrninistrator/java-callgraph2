@@ -1,6 +1,5 @@
 package com.adrninistrator.javacg.dto.output;
 
-import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGOutPutFileTypeEnum;
 import com.adrninistrator.javacg.util.JavaCGUtil;
 

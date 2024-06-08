@@ -15,18 +15,18 @@ public class ClassImplementsMethodInfo {
     private final List<String> interfaceNameList;
 
     // 类中的方法信息
-    private final List<MethodArgReturnTypes> methodWithArgsList;
+    private final List<MethodArgReturnTypes> methodWithArgTypesList;
 
-    public ClassImplementsMethodInfo(List<String> interfaceNameList, List<MethodArgReturnTypes> methodWithArgsList) {
+    public ClassImplementsMethodInfo(List<String> interfaceNameList, List<MethodArgReturnTypes> methodWithArgTypesList) {
         this.interfaceNameList = interfaceNameList;
-        this.methodWithArgsList = methodWithArgsList;
+        this.methodWithArgTypesList = methodWithArgTypesList;
     }
 
     public List<String> getInterfaceNameList() {
         return interfaceNameList;
     }
 
-    public List<MethodArgReturnTypes> getMethodWithArgsList() {
-        return methodWithArgsList;
+    public List<MethodArgReturnTypes> getMethodWithArgTypesList() {
+        return methodWithArgTypesList;
     }
 }

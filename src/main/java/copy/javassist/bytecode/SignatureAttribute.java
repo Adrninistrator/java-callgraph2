@@ -818,6 +818,25 @@ public class SignatureAttribute {
         }
     }
 
+    /**
+     * Parses the given signature string as a field type signature.
+     *
+     * @param  sig                  the signature string obtained from the <code>SignatureAttribute</code>
+     *                              of a <code>FieldInfo</code>.
+     * @return the field type signature.
+     * @throws BadBytecode          thrown when a syntactical error is found.
+     * @see #getSignature()
+     * @since 3.5
+     */
+    public static ObjectType toFieldSignature(String sig) throws BadBytecode {
+        try {
+            return parseObjectType(sig, new Cursor(), false);
+        }
+        catch (IndexOutOfBoundsException e) {
+            throw error(sig);
+        }
+    }
+
     private static MethodSignature parseMethodSig(String sig)
             throws BadBytecode
     {

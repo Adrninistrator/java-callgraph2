@@ -16,23 +16,23 @@ public class FrameSnapshotEntry {
     private final JavaCGLocalVariables localsSnapshot;
 
     // 非静态变量
-    private final FieldInformation nonStaticFieldInfo;
+    private final FieldInformationMap nonStaticFieldInfoMap;
 
     // 静态变量
-    private final FieldInformation staticFieldInfo;
+    private final FieldInformationMap staticFieldInfoMap;
 
     public FrameSnapshotEntry(JavaCGOperandStack stackSnapshot,
                               JavaCGLocalVariables localsSnapshot,
-                              FieldInformation nonStaticFieldInfo,
-                              FieldInformation staticFieldInfo) {
-        if (stackSnapshot == null || localsSnapshot == null || nonStaticFieldInfo == null || staticFieldInfo == null) {
+                              FieldInformationMap nonStaticFieldInfoMap,
+                              FieldInformationMap staticFieldInfoMap) {
+        if (stackSnapshot == null || localsSnapshot == null || nonStaticFieldInfoMap == null || staticFieldInfoMap == null) {
             throw new JavaCGRuntimeException("传入参数为空");
         }
 
         this.stackSnapshot = stackSnapshot;
         this.localsSnapshot = localsSnapshot;
-        this.nonStaticFieldInfo = nonStaticFieldInfo;
-        this.staticFieldInfo = staticFieldInfo;
+        this.nonStaticFieldInfoMap = nonStaticFieldInfoMap;
+        this.staticFieldInfoMap = staticFieldInfoMap;
     }
 
     public JavaCGOperandStack getStackSnapshot() {
@@ -43,12 +43,12 @@ public class FrameSnapshotEntry {
         return localsSnapshot;
     }
 
-    public FieldInformation getNonStaticFieldInfo() {
-        return nonStaticFieldInfo;
+    public FieldInformationMap getNonStaticFieldInfoMap() {
+        return nonStaticFieldInfoMap;
     }
 
-    public FieldInformation getStaticFieldInfo() {
-        return staticFieldInfo;
+    public FieldInformationMap getStaticFieldInfoMap() {
+        return staticFieldInfoMap;
     }
 
     public JavaCGOperandStack copyStackSnapshot() {
@@ -59,19 +59,19 @@ public class FrameSnapshotEntry {
         return localsSnapshot.copy();
     }
 
-    public FieldInformation copyNonStaticFieldInfo() {
-        return nonStaticFieldInfo.copy();
+    public FieldInformationMap copyNonStaticFieldInfo() {
+        return nonStaticFieldInfoMap.copy();
     }
 
-    public FieldInformation copyStaticFieldInfo() {
-        return staticFieldInfo.copy();
+    public FieldInformationMap copyStaticFieldInfo() {
+        return staticFieldInfoMap.copy();
     }
 
     @Override
     public String toString() {
         return "stackSnapshot.size() " + stackSnapshot.size() +
                 " localsSnapshot.size() " + localsSnapshot.size() +
-                " nonStaticFieldInfo.size() " + nonStaticFieldInfo.size() +
-                " staticFieldInfo.size() " + staticFieldInfo.size();
+                " nonStaticFieldInfo.size() " + nonStaticFieldInfoMap.size() +
+                " staticFieldInfo.size() " + staticFieldInfoMap.size();
     }
 }
