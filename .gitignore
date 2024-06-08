@@ -11,3 +11,4 @@ out/
 jar_output_dir/
 log_javacg/
 runlocal/
+config_local/
