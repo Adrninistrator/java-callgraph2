@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg.parser;
 
+import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGYesNoEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
@@ -345,6 +346,15 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
                 SignatureAttribute.ClassType argumentClassType = (SignatureAttribute.ClassType) objectType;
                 JavaCGFileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq),
                         JavaCGSignatureUtil.getClassName(argumentClassType));
+                seq++;
+            } else if (objectType instanceof SignatureAttribute.TypeVariable) {
+                JavaCGFileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq),
+                        JavaCGCommonNameConstants.CLASS_NAME_OBJECT);
+                seq++;
+            } else if (objectType instanceof SignatureAttribute.ArrayType) {
+                SignatureAttribute.ArrayType argumentArrayType = (SignatureAttribute.ArrayType) objectType;
+                JavaCGFileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq),
+                        argumentArrayType.toString());
                 seq++;
             }
         }
