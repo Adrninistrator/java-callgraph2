@@ -3,16 +3,16 @@ package com.adrninistrator.javacg.util;
 import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
-import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
-import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
-import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
+import com.adrninistrator.javacg.dto.classes.ClassExtendsInfo;
 import com.adrninistrator.javacg.dto.method.JavaCGMethodInfo;
+import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -218,123 +218,111 @@ public class JavaCGClassMethodUtil {
     /**
      * 判断childClassName是否直接或间接继承自superClassName
      *
-     * @param childClassName            子类类名
-     * @param superClassName            超类类名
-     * @param classExtendsMethodInfoMap 类涉及继承的信息
+     * @param childClassName      子类类名
+     * @param superClassName      超类类名
+     * @param classExtendsInfoMap 类涉及继承的信息
      * @return
      */
-    public static boolean isChildOf(String childClassName, String superClassName, Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap) {
-        if (childClassName == null || superClassName == null || classExtendsMethodInfoMap == null) {
+    public static boolean isChildOf(String childClassName, String superClassName, Map<String, ClassExtendsInfo> classExtendsInfoMap) {
+        if (childClassName == null || superClassName == null || classExtendsInfoMap == null) {
             throw new JavaCGRuntimeException("传入参数不允许为空");
         }
 
         String currentClassName = childClassName;
         while (true) {
-            ClassExtendsMethodInfo classExtendsMethodInfo = classExtendsMethodInfoMap.get(currentClassName);
-            if (classExtendsMethodInfo == null) {
+            ClassExtendsInfo classExtendsInfo = classExtendsInfoMap.get(currentClassName);
+            if (classExtendsInfo == null) {
                 // 找不到当前类的父类信息
                 return false;
             }
 
-            if (superClassName.equals(classExtendsMethodInfo.getSuperClassName())) {
+            if (superClassName.equals(classExtendsInfo.getSuperClassName())) {
                 // 当前类的父类是指定的父类
                 return true;
             }
 
             // 继续处理父类
-            currentClassName = classExtendsMethodInfo.getSuperClassName();
+            currentClassName = classExtendsInfo.getSuperClassName();
         }
     }
 
     /**
      * 判断childClassName是否直接或间接实现了interfaceName
      *
-     * @param className                     类名
-     * @param interfaceName                 接口名
-     * @param classExtendsMethodInfoMap     类涉及继承的信息
-     * @param classImplementsMethodInfoMap  类实现的接口信息
-     * @param interfaceExtendsMethodInfoMap 接口涉及继承的信息
+     * @param className               类名
+     * @param interfaceName           接口名
+     * @param classExtendsInfoMap     类涉及继承的信息
+     * @param classImplementsInfoMap  类实现的接口信息
+     * @param interfaceExtendsInfoMap 接口涉及继承的信息
      * @return
      */
     public static boolean isImplementationOf(String className,
                                              String interfaceName,
-                                             Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap,
-                                             Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap,
-                                             Map<String, InterfaceExtendsMethodInfo> interfaceExtendsMethodInfoMap
-    ) {
-        if (className == null || interfaceName == null || classExtendsMethodInfoMap == null || classImplementsMethodInfoMap == null || interfaceExtendsMethodInfoMap == null) {
+                                             Map<String, ClassExtendsInfo> classExtendsInfoMap,
+                                             Map<String, List<String>> classImplementsInfoMap,
+                                             Map<String, List<String>> interfaceExtendsInfoMap) {
+        if (className == null || interfaceName == null || classExtendsInfoMap == null || classImplementsInfoMap == null || interfaceExtendsInfoMap == null) {
             throw new JavaCGRuntimeException("传入参数不允许为空");
         }
 
         String currentClassName = className;
         while (true) {
-            ClassImplementsMethodInfo classImplementsMethodInfo = classImplementsMethodInfoMap.get(currentClassName);
-            if (classImplementsMethodInfo != null) {
-                List<String> interfaceNameList = classImplementsMethodInfo.getInterfaceNameList();
-                if (interfaceNameList != null) {
-                    if (interfaceNameList.contains(interfaceName)) {
-                        // 当前类实现的接口中包含指定的接口
-                        return true;
-                    }
+            List<String> interfaceNameList = classImplementsInfoMap.get(currentClassName);
+            if (interfaceNameList != null) {
+                if (interfaceNameList.contains(interfaceName)) {
+                    // 当前类实现的接口中包含指定的接口
+                    return true;
+                }
 
-                    for (String currentInterfaceName : interfaceNameList) {
-                        if (isSuperInterfaceOf(currentInterfaceName, interfaceName, interfaceExtendsMethodInfoMap)) {
-                            // 当前类实现的接口继承了指定的接口
-                            return true;
-                        }
+                for (String currentInterfaceName : interfaceNameList) {
+                    if (isSuperInterfaceOf(currentInterfaceName, interfaceName, interfaceExtendsInfoMap)) {
+                        // 当前类实现的接口继承了指定的接口
+                        return true;
                     }
                 }
             }
 
-            ClassExtendsMethodInfo classExtendsMethodInfo = classExtendsMethodInfoMap.get(currentClassName);
-            if (classExtendsMethodInfo == null) {
+            ClassExtendsInfo classExtendsInfo = classExtendsInfoMap.get(currentClassName);
+            if (classExtendsInfo == null) {
                 // 找不到当前类实现的接口信息
                 return false;
             }
 
             // 继续处理父类
-            currentClassName = classExtendsMethodInfo.getSuperClassName();
+            currentClassName = classExtendsInfo.getSuperClassName();
         }
     }
 
     /**
-     * @param childInterfaceName            子类接口名
-     * @param superInterfaceName            超类接口名
-     * @param interfaceExtendsMethodInfoMap 接口涉及继承的信息
+     * @param childInterfaceName      子类接口名
+     * @param superInterfaceName      超类接口名
+     * @param interfaceExtendsInfoMap 接口涉及继承的信息
      * @return
      */
-    public static boolean isSuperInterfaceOf(String childInterfaceName, String superInterfaceName, Map<String, InterfaceExtendsMethodInfo> interfaceExtendsMethodInfoMap) {
-        if (childInterfaceName == null || superInterfaceName == null || interfaceExtendsMethodInfoMap == null) {
+    public static boolean isSuperInterfaceOf(String childInterfaceName, String superInterfaceName, Map<String, List<String>> interfaceExtendsInfoMap) {
+        if (childInterfaceName == null || superInterfaceName == null || interfaceExtendsInfoMap == null) {
             throw new JavaCGRuntimeException("传入参数不允许为空");
         }
 
-        while (true) {
-            InterfaceExtendsMethodInfo interfaceExtendsMethodInfo = interfaceExtendsMethodInfoMap.get(childInterfaceName);
-            if (interfaceExtendsMethodInfo == null) {
-                // 找不到当前接口继承的接口信息
-                return false;
-            }
-
-            List<String> superInterfaceList = interfaceExtendsMethodInfo.getSuperInterfaceList();
-            if (superInterfaceList.isEmpty()) {
-                // 找不到当前接口继承的接口信息
-                return false;
-            }
-
-            if (superInterfaceList.contains(superInterfaceName)) {
-                // 当前接口继承的接口包含指定接口
-                return true;
-            }
-
-            // 处理当前接口继承的接口，递归调用
-            for (String currentSuperInterfaceName : superInterfaceList) {
-                if (isSuperInterfaceOf(currentSuperInterfaceName, superInterfaceName, interfaceExtendsMethodInfoMap)) {
-                    return true;
-                }
-            }
-            // 当前接口继承的接口也没有继承指定的超类接口
+        List<String> superInterfaceList = interfaceExtendsInfoMap.get(childInterfaceName);
+        if (JavaCGUtil.isCollectionEmpty(superInterfaceList)) {
+            // 找不到当前接口继承的接口信息
             return false;
         }
+
+        if (superInterfaceList.contains(superInterfaceName)) {
+            // 当前接口继承的接口包含指定接口
+            return true;
+        }
+
+        // 处理当前接口继承的接口，递归调用
+        for (String currentSuperInterfaceName : superInterfaceList) {
+            if (isSuperInterfaceOf(currentSuperInterfaceName, superInterfaceName, interfaceExtendsInfoMap)) {
+                return true;
+            }
+        }
+        // 当前接口继承的接口也没有继承指定的超类接口
+        return false;
     }
 
     /**
@@ -428,7 +416,7 @@ public class JavaCGClassMethodUtil {
      * @return
      */
     public static boolean matchesGetMethod(String methodName) {
-        return methodName.startsWith(JavaCGConstants.METHOD_PREFIX_GET);
+        return StringUtils.startsWithAny(methodName, JavaCGConstants.METHOD_PREFIX_GET, JavaCGConstants.METHOD_PREFIX_IS);
     }
 
     /**
@@ -439,6 +427,25 @@ public class JavaCGClassMethodUtil {
      */
     public static boolean matchesSetMethod(String methodName) {
         return methodName.startsWith(JavaCGConstants.METHOD_PREFIX_SET);
+    }
+
+    /**
+     * 拷贝类的方法信息到Map，避免直接覆盖Map
+     *
+     * @param classMethodMap
+     * @param className
+     * @param methodArgReturnTypesMap
+     */
+    public static void copyClassMethodMap(Map<String, Map<MethodArgReturnTypes, Integer>> classMethodMap, String className,
+                                          Map<MethodArgReturnTypes, Integer> methodArgReturnTypesMap) {
+        if (JavaCGUtil.isMapEmpty(methodArgReturnTypesMap)) {
+            return;
+        }
+
+        Map<MethodArgReturnTypes, Integer> existedMethodMap = classMethodMap.computeIfAbsent(className, k -> new HashMap<>());
+        for (Map.Entry<MethodArgReturnTypes, Integer> entry : methodArgReturnTypesMap.entrySet()) {
+            existedMethodMap.putIfAbsent(entry.getKey(), entry.getValue());
+        }
     }
 
     private JavaCGClassMethodUtil() {

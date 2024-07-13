@@ -2,6 +2,7 @@ package com.adrninistrator.javacg.handler;
 
 import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
+import com.adrninistrator.javacg.common.enums.JavaCGArithmeticOperationTypeEnum;
 import com.adrninistrator.javacg.common.enums.JavaCGConstantTypeEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.dto.element.BaseElement;
@@ -29,6 +30,8 @@ import com.adrninistrator.javacg.dto.instruction.parseresult.PutFieldParseResult
 import com.adrninistrator.javacg.dto.instruction.parseresult.PutStaticParseResult;
 import com.adrninistrator.javacg.dto.instruction.parseresult.RetParseResult;
 import com.adrninistrator.javacg.dto.instruction.parseresult.ReturnParseResult;
+import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceArithmeticOperation;
+import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceField;
 import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceMethodArg;
 import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceMethodCallReturn;
 import com.adrninistrator.javacg.exceptions.JavaCGRuntimeException;
@@ -103,17 +106,14 @@ public class InstructionHandler {
 
     private FieldInformationMap staticFieldInfoMap;
 
-    // 需要记录返回对象的可能信息的开关
-    private boolean recordReturnPossibleInfoFlag;
+    // 需要解析方法调用的可能的类型与值的开关
+    protected boolean parseMethodCallTypeValueFlag;
 
     // 解析构造函数以获取非静态字段可能的类型的开关
     private boolean recordFieldPossibleTypeFlag;
 
     // 使用已获取的构造函数非静态字段可能的类型的开关
     private boolean useFieldPossibleTypeFlag;
-
-    // 需要分析dto的字段之间的关联关系的开关
-    private boolean analyseFieldRelationshipFlag;
 
     // 非静态字段字段所有可能的类型
     private FieldPossibleTypes nonStaticFieldPossibleTypes;
@@ -332,38 +332,70 @@ public class InstructionHandler {
                 handleSWAP();
                 break;
             case Const.IADD:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_INT, JavaCGArithmeticOperationTypeEnum.AOTE_ADD);
+                break;
             case Const.ISUB:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_INT, JavaCGArithmeticOperationTypeEnum.AOTE_SUB);
+                break;
             case Const.IMUL:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_INT, JavaCGArithmeticOperationTypeEnum.AOTE_MUL);
+                break;
             case Const.IDIV:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_INT, JavaCGArithmeticOperationTypeEnum.AOTE_DIV);
+                break;
             case Const.IREM:
             case Const.IAND:
             case Const.IOR:
             case Const.IXOR:
-                handleArithmeticOperation2(JavaCGConstantTypeEnum.CONSTTE_INT);
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_INT, null);
                 break;
             case Const.LADD:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_LONG, JavaCGArithmeticOperationTypeEnum.AOTE_ADD);
+                break;
             case Const.LSUB:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_LONG, JavaCGArithmeticOperationTypeEnum.AOTE_SUB);
+                break;
             case Const.LMUL:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_LONG, JavaCGArithmeticOperationTypeEnum.AOTE_MUL);
+                break;
             case Const.LDIV:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_LONG, JavaCGArithmeticOperationTypeEnum.AOTE_DIV);
+                break;
             case Const.LREM:
             case Const.LAND:
             case Const.LOR:
             case Const.LXOR:
-                handleArithmeticOperation2(JavaCGConstantTypeEnum.CONSTTE_LONG);
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_LONG, null);
                 break;
             case Const.FADD:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_FLOAT, JavaCGArithmeticOperationTypeEnum.AOTE_ADD);
+                break;
             case Const.FSUB:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_FLOAT, JavaCGArithmeticOperationTypeEnum.AOTE_SUB);
+                break;
             case Const.FMUL:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_FLOAT, JavaCGArithmeticOperationTypeEnum.AOTE_MUL);
+                break;
             case Const.FDIV:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_FLOAT, JavaCGArithmeticOperationTypeEnum.AOTE_DIV);
+                break;
             case Const.FREM:
-                handleArithmeticOperation2(JavaCGConstantTypeEnum.CONSTTE_FLOAT);
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_FLOAT, null);
                 break;
             case Const.DADD:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_DOUBLE, JavaCGArithmeticOperationTypeEnum.AOTE_ADD);
+                break;
             case Const.DSUB:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_DOUBLE, JavaCGArithmeticOperationTypeEnum.AOTE_SUB);
+                break;
             case Const.DMUL:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_DOUBLE, JavaCGArithmeticOperationTypeEnum.AOTE_MUL);
+                break;
             case Const.DDIV:
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_DOUBLE, JavaCGArithmeticOperationTypeEnum.AOTE_DIV);
+                break;
             case Const.DREM:
-                handleArithmeticOperation2(JavaCGConstantTypeEnum.CONSTTE_DOUBLE);
+                handleArithmeticOperation2(ih, JavaCGConstantTypeEnum.CONSTTE_DOUBLE, null);
                 break;
             case Const.INEG:
                 handleArithmeticOperation1(JavaCGConstantTypeEnum.CONSTTE_INT);
@@ -826,13 +858,20 @@ public class InstructionHandler {
     }
 
     // 处理二元运算
-    private void handleArithmeticOperation2(JavaCGConstantTypeEnum constantTypeEnum) {
+    private void handleArithmeticOperation2(InstructionHandle ih, JavaCGConstantTypeEnum constantTypeEnum, JavaCGArithmeticOperationTypeEnum arithmeticOperationTypeEnum) {
         BaseElement value2 = stack.pop();
         BaseElement value1 = stack.pop();
         value2.checkTypeString(constantTypeEnum.getType());
         value1.checkTypeString(constantTypeEnum.getType());
 
-        stack.push(new VariableElement(constantTypeEnum.getType()));
+        VariableElement variableElement = new VariableElement(constantTypeEnum.getType());
+        if (arithmeticOperationTypeEnum != null) {
+            // 处理算术运算数据来源
+            VariableDataSourceArithmeticOperation dataSourceArithmeticOperation = new VariableDataSourceArithmeticOperation(ih.getPosition(), arithmeticOperationTypeEnum,
+                    value1, value2);
+            variableElement.setVariableDataSource(dataSourceArithmeticOperation);
+        }
+        stack.push(variableElement);
     }
 
     // 处理一元运算
@@ -912,7 +951,7 @@ public class InstructionHandler {
 
     private ReturnParseResult handleReturn() {
         BaseElement baseElement = stack.pop();
-        if (recordReturnPossibleInfoFlag || analyseFieldRelationshipFlag) {
+        if (parseMethodCallTypeValueFlag) {
             return new ReturnParseResult(baseElement);
         }
         return null;
@@ -959,6 +998,13 @@ public class InstructionHandler {
             throw new JavaCGRuntimeException("GETFIELD对象类型与预期不一致: " + object.getClass().getName());
         }
 
+        // 获取字段所在的类的类名
+        String objectClassName = JavaCGElementUtil.getVariableClassNameOrThis((VariableElement) object);
+        // 准备变量的数据来源，类名与字段名称是确定的
+        VariableDataSourceField variableDataSourceField = new VariableDataSourceField();
+        variableDataSourceField.setClassName(objectClassName);
+        variableDataSourceField.setFieldName(fieldName);
+
         if (object instanceof LocalVariableElement) {
             LocalVariableElement objectLocalVariableElement = (LocalVariableElement) object;
             FieldElement fieldElement;
@@ -967,7 +1013,11 @@ public class InstructionHandler {
                 // 尝试从已处理的非静态变量中获取
                 fieldElement = nonStaticFieldInfoMap.get(fieldName);
                 if (fieldElement != null) {
-                    stack.push(fieldElement);
+                    FieldElement newFieldElement = fieldElement.copyFieldElement();
+                    variableDataSourceField.setFieldType(newFieldElement.getType());
+                    // 记录变量的数据来源
+                    newFieldElement.recordVariableDataSource(variableDataSourceField, frEqConversionMethodMap);
+                    stack.push(newFieldElement);
                     return;
                 }
 
@@ -977,8 +1027,10 @@ public class InstructionHandler {
                     if (!JavaCGUtil.isCollectionEmpty(possibleTypeList)) {
                         if (possibleTypeList.size() == 1) {
                             // 字段可能的类型数量为1，则使用
-                            String objectClassName = JavaCGElementUtil.getVariableClassNameOrThis(objectLocalVariableElement);
                             fieldElement = new FieldElement(possibleTypeList.get(0), false, null, fieldName, objectClassName);
+                            variableDataSourceField.setFieldType(fieldElement.getType());
+                            // 记录变量的数据来源
+                            fieldElement.recordVariableDataSource(variableDataSourceField, frEqConversionMethodMap);
                             stack.push(fieldElement);
                             return;
                         }
@@ -991,8 +1043,10 @@ public class InstructionHandler {
 
         // 若以上未得到字段合适的类型，则使用GETFIELD指令对应的类型
         String fieldType = getfield.getFieldType(cpg).toString();
-        String objectClassName = JavaCGElementUtil.getVariableClassNameOrThis((VariableElement) object);
         FieldElement fieldElement = new FieldElement(fieldType, false, null, fieldName, objectClassName);
+        variableDataSourceField.setFieldType(fieldElement.getType());
+        // 记录变量的数据来源
+        fieldElement.recordVariableDataSource(variableDataSourceField, frEqConversionMethodMap);
         stack.push(fieldElement);
     }
 
@@ -1026,7 +1080,7 @@ public class InstructionHandler {
             }
         }
 
-        if (analyseFieldRelationshipFlag && maybeSetMethod) {
+        if (maybeSetMethod) {
             return new PutFieldParseResult(fieldName, putfield.getFieldType(cpg).toString(), value, object);
         }
         return null;
@@ -1152,8 +1206,8 @@ public class InstructionHandler {
         this.staticFieldInfoMap = staticFieldInfoMap;
     }
 
-    public void setRecordReturnPossibleInfoFlag(boolean recordReturnPossibleInfoFlag) {
-        this.recordReturnPossibleInfoFlag = recordReturnPossibleInfoFlag;
+    public void setParseMethodCallTypeValueFlag(boolean parseMethodCallTypeValueFlag) {
+        this.parseMethodCallTypeValueFlag = parseMethodCallTypeValueFlag;
     }
 
     public void setRecordFieldPossibleTypeFlag(boolean recordFieldPossibleTypeFlag) {
@@ -1162,10 +1216,6 @@ public class InstructionHandler {
 
     public void setUseFieldPossibleTypeFlag(boolean useFieldPossibleTypeFlag) {
         this.useFieldPossibleTypeFlag = useFieldPossibleTypeFlag;
-    }
-
-    public void setAnalyseFieldRelationshipFlag(boolean analyseFieldRelationshipFlag) {
-        this.analyseFieldRelationshipFlag = analyseFieldRelationshipFlag;
     }
 
     public void setNonStaticFieldPossibleTypes(FieldPossibleTypes nonStaticFieldPossibleTypes) {

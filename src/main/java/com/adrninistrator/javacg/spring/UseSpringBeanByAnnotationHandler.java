@@ -1,9 +1,7 @@
 package com.adrninistrator.javacg.spring;
 
 import com.adrninistrator.javacg.common.SpringAnnotationConstants;
-import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
-import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
-import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
+import com.adrninistrator.javacg.dto.classes.ClassExtendsInfo;
 import com.adrninistrator.javacg.extensions.codeparser.SpringXmlBeanParserInterface;
 import com.adrninistrator.javacg.util.JavaCGAnnotationUtil;
 import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
@@ -30,14 +28,11 @@ public class UseSpringBeanByAnnotationHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(UseSpringBeanByAnnotationHandler.class);
 
-    // 类涉及继承的信息
-    private final Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap;
+    private final Map<String, ClassExtendsInfo> classExtendsInfoMap;
 
-    // 类实现的接口信息
-    private final Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap;
+    private final Map<String, List<String>> classImplementsInfoMap;
 
-    // 接口涉及继承的信息
-    private final Map<String, InterfaceExtendsMethodInfo> interfaceExtendsMethodInfoMap;
+    private final Map<String, List<String>> interfaceExtendsInfoMap;
 
     private final DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler;
 
@@ -82,14 +77,14 @@ public class UseSpringBeanByAnnotationHandler {
     // 是否有通过注解使用Spring Bean
     private boolean useSpringBean = false;
 
-    public UseSpringBeanByAnnotationHandler(Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap,
-                                            Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap,
-                                            Map<String, InterfaceExtendsMethodInfo> interfaceExtendsMethodInfoMap,
+    public UseSpringBeanByAnnotationHandler(Map<String, ClassExtendsInfo> classExtendsInfoMap,
+                                            Map<String, List<String>> classImplementsInfoMap,
+                                            Map<String, List<String>> interfaceExtendsInfoMap,
                                             DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler,
                                             SpringXmlBeanParserInterface springXmlBeanParser) {
-        this.classExtendsMethodInfoMap = classExtendsMethodInfoMap;
-        this.classImplementsMethodInfoMap = classImplementsMethodInfoMap;
-        this.interfaceExtendsMethodInfoMap = interfaceExtendsMethodInfoMap;
+        this.classExtendsInfoMap = classExtendsInfoMap;
+        this.classImplementsInfoMap = classImplementsInfoMap;
+        this.interfaceExtendsInfoMap = interfaceExtendsInfoMap;
         this.defineSpringBeanByAnnotationHandler = defineSpringBeanByAnnotationHandler;
         this.springXmlBeanParser = springXmlBeanParser;
         if (springXmlBeanParser != null) {
@@ -321,8 +316,8 @@ public class UseSpringBeanByAnnotationHandler {
         List<String> matchedSpringBeanTypeList = new ArrayList<>(springBeanTypeList.size());
         for (String springBeanType : springBeanTypeList) {
             if (springBeanType.equals(fieldType) ||
-                    JavaCGClassMethodUtil.isChildOf(springBeanType, fieldType, classExtendsMethodInfoMap) ||
-                    JavaCGClassMethodUtil.isImplementationOf(springBeanType, fieldType, classExtendsMethodInfoMap, classImplementsMethodInfoMap, interfaceExtendsMethodInfoMap)) {
+                    JavaCGClassMethodUtil.isChildOf(springBeanType, fieldType, classExtendsInfoMap) ||
+                    JavaCGClassMethodUtil.isImplementationOf(springBeanType, fieldType, classExtendsInfoMap, classImplementsInfoMap, interfaceExtendsInfoMap)) {
                 /*
                     若满足以下任意条件，则认为类型匹配
                     当前字段的类型=Spring Bean类型
@@ -359,13 +354,13 @@ public class UseSpringBeanByAnnotationHandler {
         // 尝试从当前类的父类字段中获取
         String currentClassName = className;
         while (true) {
-            ClassExtendsMethodInfo classExtendsMethodInfo = classExtendsMethodInfoMap.get(currentClassName);
-            if (classExtendsMethodInfo == null) {
+            ClassExtendsInfo classExtendsInfo = classExtendsInfoMap.get(currentClassName);
+            if (classExtendsInfo == null) {
                 // 当前类不存在自定义父类
                 break;
             }
 
-            currentClassName = classExtendsMethodInfo.getSuperClassName();
+            currentClassName = classExtendsInfo.getSuperClassName();
             if (JavaCGClassMethodUtil.isClassInJdk(currentClassName)) {
                 // 当前类父类为JDK中的类
                 break;
@@ -416,13 +411,13 @@ public class UseSpringBeanByAnnotationHandler {
         // 尝试从当前类的父类字段中获取
         String currentClassName = className;
         while (true) {
-            ClassExtendsMethodInfo classExtendsMethodInfo = classExtendsMethodInfoMap.get(currentClassName);
-            if (classExtendsMethodInfo == null) {
+            ClassExtendsInfo ClassExtendsInfo = classExtendsInfoMap.get(currentClassName);
+            if (ClassExtendsInfo == null) {
                 // 当前类不存在自定义父类
                 break;
             }
 
-            currentClassName = classExtendsMethodInfo.getSuperClassName();
+            currentClassName = ClassExtendsInfo.getSuperClassName();
             if (JavaCGClassMethodUtil.isClassInJdk(currentClassName)) {
                 // 当前类父类为JDK中的类
                 break;

@@ -135,6 +135,7 @@ public class JavaCGConstants {
     public static final int SIZE_1000 = 1000;
 
     public static final String METHOD_PREFIX_GET = "get";
+    public static final String METHOD_PREFIX_IS = "is";
     public static final String METHOD_PREFIX_SET = "set";
 
     public static final String TRY = "try";

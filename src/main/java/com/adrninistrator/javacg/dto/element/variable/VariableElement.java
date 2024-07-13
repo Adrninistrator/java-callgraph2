@@ -63,10 +63,14 @@ public class VariableElement extends BaseElement {
      */
     public void recordVariableDataSource(AbstractVariableDataSource variableDataSource, Map<String, Map<String, Integer>> frEqConversionMethodMap) {
         this.variableDataSource = variableDataSource;
-        if (!(variableDataSource instanceof VariableDataSourceMethodCallReturn)) {
-            return;
+        if (variableDataSource instanceof VariableDataSourceMethodCallReturn) {
+            // 当变量的数据来源为方法调用返回值时，对等转换的方法进行处理
+            handleVariableDataSourceEQC(variableDataSource, frEqConversionMethodMap);
         }
-        // 当变量的数据来源为方法调用返回值时，对等转换的方法进行处理
+    }
+
+    // 对等转换的方法进行处理
+    private void handleVariableDataSourceEQC(AbstractVariableDataSource variableDataSource, Map<String, Map<String, Integer>> frEqConversionMethodMap) {
         VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = (VariableDataSourceMethodCallReturn) variableDataSource;
         Map<String, Integer> methodMap = frEqConversionMethodMap.get(variableDataSourceMethodCallReturn.getCalleeClassName());
         if (methodMap == null) {

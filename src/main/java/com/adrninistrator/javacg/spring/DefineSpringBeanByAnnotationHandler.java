@@ -119,8 +119,8 @@ public class DefineSpringBeanByAnnotationHandler {
         String callerFullMethod = JavaCGClassMethodUtil.formatFullMethod(javaClass.getClassName(), method.getName(), method.getArgumentTypes());
         MethodHandler4TypeAndValue methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(method, mg, javaClass, callerFullMethod, javaCGConfInfo);
         methodHandler4TypeAndValue.setFailCounter(failCounter);
-        methodHandler4TypeAndValue.setParseMethodCallTypeValueFlag(false);
-        methodHandler4TypeAndValue.setRecordReturnPossibleInfoFlag(true);
+        methodHandler4TypeAndValue.setParseMethodCallTypeValueFlag(true);
+        methodHandler4TypeAndValue.setOnlyAnalyseReturnTypeFlag(true);
         if (!methodHandler4TypeAndValue.handleMethod()) {
             return false;
         }

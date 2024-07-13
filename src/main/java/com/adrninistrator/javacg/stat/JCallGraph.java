@@ -8,10 +8,8 @@ import com.adrninistrator.javacg.common.enums.JavaCGOutPutFileTypeEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
 import com.adrninistrator.javacg.conf.JavaCGConfManager;
 import com.adrninistrator.javacg.conf.JavaCGConfigureWrapper;
-import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
-import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
+import com.adrninistrator.javacg.dto.classes.ClassExtendsInfo;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
-import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
 import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
@@ -136,6 +134,7 @@ public class JCallGraph {
              Writer classInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_INFO));
              Writer classNameWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_NAME));
              Writer classSignatureEI1Writer = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_EI1));
+             Writer classSignatureGenericsWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_GENERICS));
              Writer extendsImplWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_EXTENDS_IMPL));
              Writer fieldAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_FIELD_ANNOTATION));
              Writer fieldInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_FIELD_INFO));
@@ -174,6 +173,7 @@ public class JCallGraph {
             jarEntryHandleParser.setClassInfoWriter(classInfoWriter);
             jarEntryHandleParser.setClassNameWriter(classNameWriter);
             jarEntryHandleParser.setClassSignatureEI1Writer(classSignatureEI1Writer);
+            jarEntryHandleParser.setClassSignatureGenericsWriter(classSignatureGenericsWriter);
             jarEntryHandleParser.setExtendsImplWriter(extendsImplWriter);
             jarEntryHandleParser.setFieldAnnotationWriter(fieldAnnotationWriter);
             jarEntryHandleParser.setFieldInfoWriter(fieldInfoWriter);
@@ -300,22 +300,32 @@ public class JCallGraph {
         /*
             类实现的接口，及类中的方法信息
             key     类名
-            value   类实现的接口，及类中的方法信息
+            value   类实现的接口
          */
-        Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap = new HashMap<>(JavaCGConstants.SIZE_200);
+        Map<String, List<String>> classImplementsInfoMap = new HashMap<>(JavaCGConstants.SIZE_200);
+
+        /*
+            涉及继承（父类非Object）、实现的类中，可能涉及继承（父类与子类）、实现（实现类）的方法
+            key     类名
+            value   相关方法
+                key     方法名称、参数、返回值
+                value   方法access_flags
+         */
+        Map<String, Map<MethodArgReturnTypes, Integer>> classExtendsImplMethodWithArgTypesMap = new HashMap<>(JavaCGConstants.SIZE_100);
 
         /*
             接口中的方法信息
             key     接口名
             value   接口中的方法信息
         */
-        Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgTypesMap = new HashMap<>(JavaCGConstants.SIZE_200);
+        Map<String, Map<MethodArgReturnTypes, Integer>> interfaceMethodWithArgTypesMap = new HashMap<>(JavaCGConstants.SIZE_200);
 
         if (javaCGConfInfo.isParseMethodCallTypeValue()) {
             defineSpringBeanByAnnotationHandler = new DefineSpringBeanByAnnotationHandler(javaCGConfInfo, failCounter);
         }
         jarEntryPreHandle1Parser = new JarEntryPreHandle1Parser(javaCGConfInfo, jarInfoMap, defineSpringBeanByAnnotationHandler, extensionsManager);
-        jarEntryPreHandle1Parser.setClassImplementsMethodInfoMap(classImplementsMethodInfoMap);
+        jarEntryPreHandle1Parser.setClassImplementsInfoMap(classImplementsInfoMap);
+        jarEntryPreHandle1Parser.setClassExtendsImplMethodWithArgTypesMap(classExtendsImplMethodWithArgTypesMap);
         jarEntryPreHandle1Parser.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
         jarEntryPreHandle1Parser.setRunnableImplClassMap(runnableImplClassMap);
         jarEntryPreHandle1Parser.setCallableImplClassMap(callableImplClassMap);
@@ -330,55 +340,49 @@ public class JCallGraph {
         // 第二次预处理相关
         /*
             类涉及继承的信息
-            key
-                类名
-            value
-                类涉及继承的信息，包含类的accessFlags，父类，及类中的方法信息
+            key     类名
+            value   类涉及继承的信息，包含类的accessFlags，父类
         */
-        Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap = new HashMap<>(JavaCGConstants.SIZE_100);
+        Map<String, ClassExtendsInfo> classExtendsInfoMap = new HashMap<>(JavaCGConstants.SIZE_100);
 
         /*
             父类对应的子类信息
-            key
-                父类类名
-            value
-                子类类名列表
+            key     父类类名
+            value   子类类名列表
          */
         Map<String, List<String>> childrenClassMap = new HashMap<>(JavaCGConstants.SIZE_100);
 
         /*
             接口涉及继承的信息
-            key
-                类名
-            value
-                接口继承的信息，包括接口继承的接口，及接口中的方法
+            key     类名
+            value   接口继承的信息
         */
-        Map<String, InterfaceExtendsMethodInfo> interfaceExtendsMethodInfoMap = new HashMap<>(JavaCGConstants.SIZE_100);
+        Map<String, List<String>> interfaceExtendsInfoMap = new HashMap<>(JavaCGConstants.SIZE_100);
 
         /*
             父接口对应的子接口信息
-            key
-                父接口类名
-            value
-                子接口类名列表
+            key     父接口类名
+            value   子接口类名列表
          */
         Map<String, List<String>> childrenInterfaceMap = new HashMap<>(JavaCGConstants.SIZE_100);
 
         if (javaCGConfInfo.isParseMethodCallTypeValue()) {
             useSpringBeanByAnnotationHandler = new UseSpringBeanByAnnotationHandler(
-                    classExtendsMethodInfoMap,
-                    classImplementsMethodInfoMap,
-                    interfaceExtendsMethodInfoMap,
+                    classExtendsInfoMap,
+                    classImplementsInfoMap,
+                    interfaceExtendsInfoMap,
                     defineSpringBeanByAnnotationHandler,
                     extensionsManager.getSpringXmlBeanParser());
         }
         jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCGConfInfo, jarInfoMap, useSpringBeanByAnnotationHandler);
+        jarEntryPreHandle2Parser.setClassExtendsImplMethodWithArgTypesMap(classExtendsImplMethodWithArgTypesMap);
+        jarEntryPreHandle2Parser.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
         jarEntryPreHandle2Parser.setClassAndSuperMap(classAndSuperMap);
-        jarEntryPreHandle2Parser.setClassExtendsMethodInfoMap(classExtendsMethodInfoMap);
+        jarEntryPreHandle2Parser.setClassExtendsInfoMap(classExtendsInfoMap);
         jarEntryPreHandle2Parser.setChildrenClassMap(childrenClassMap);
         jarEntryPreHandle2Parser.setInterfaceExtendsSet(interfaceExtendsSet);
         jarEntryPreHandle2Parser.setAllClassNameSet(allClassNameSet);
-        jarEntryPreHandle2Parser.setInterfaceExtendsMethodInfoMap(interfaceExtendsMethodInfoMap);
+        jarEntryPreHandle2Parser.setInterfaceExtendsInfoMap(interfaceExtendsInfoMap);
         jarEntryPreHandle2Parser.setChildrenInterfaceMap(childrenInterfaceMap);
 
         // 正式处理相关
@@ -402,11 +406,12 @@ public class JCallGraph {
         extendsImplHandler.setJavaCGConfInfo(javaCGConfInfo);
         extendsImplHandler.setCallIdCounter(callIdCounter);
         extendsImplHandler.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
+        extendsImplHandler.setClassExtendsImplMethodWithArgTypesMap(classExtendsImplMethodWithArgTypesMap);
         extendsImplHandler.setChildrenClassMap(childrenClassMap);
-        extendsImplHandler.setInterfaceExtendsMethodInfoMap(interfaceExtendsMethodInfoMap);
+        extendsImplHandler.setInterfaceExtendsInfoMap(interfaceExtendsInfoMap);
         extendsImplHandler.setChildrenInterfaceMap(childrenInterfaceMap);
-        extendsImplHandler.setClassImplementsMethodInfoMap(classImplementsMethodInfoMap);
-        extendsImplHandler.setClassExtendsMethodInfoMap(classExtendsMethodInfoMap);
+        extendsImplHandler.setClassImplementsInfoMap(classImplementsInfoMap);
+        extendsImplHandler.setClassExtendsInfoMap(classExtendsInfoMap);
         extendsImplHandler.setAllClassNameSet(allClassNameSet);
         extendsImplHandler.setClassAndJarNum(classAndJarNum);
         return true;

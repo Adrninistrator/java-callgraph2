@@ -27,16 +27,34 @@ public class JavaCGConfManager {
     private static final Logger logger = LoggerFactory.getLogger(JavaCGConfManager.class);
 
     public static JavaCGConfInfo getConfInfo(JavaCGConfigureWrapper javaCGConfigureWrapper) {
+        String configFileName = JavaCGConstants.DIR_CONFIG + "/" + JavaCGConstants.FILE_CONFIG;
         JavaCGConfInfo confInfo = new JavaCGConfInfo();
         // 获取config.properties中的配置参数，路径需要使用"/"
-        String configFilePath = getInputRootPath() + JavaCGConstants.DIR_CONFIG + "/" + JavaCGConstants.FILE_CONFIG;
+        String configFilePath = getInputRootPath() + configFileName;
         try (BufferedReader br = JavaCGFileUtil.genBufferedReader(JavaCGFileUtil.getFileInputStream(configFilePath))) {
             Properties properties = new Properties();
             properties.load(br);
 
-            confInfo.setParseMethodCallTypeValue(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, true)));
-            confInfo.setFirstParseInitMethodType(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE, true)));
-            confInfo.setAnalyseFieldRelationship(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP, true)));
+            boolean parseMethodCallTypeValue = Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, true));
+            boolean firstParseInitMethodType = Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE, true));
+            boolean analyseFieldRelationship = Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP, true));
+
+            if (!parseMethodCallTypeValue) {
+                if (firstParseInitMethodType) {
+                    logger.error("配置文件 {} 中的 {} 参数值为true时， {} 参数值也需要为true", configFileName, JavaCGConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE.getKey(),
+                            JavaCGConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey());
+                    return null;
+                }
+                if (analyseFieldRelationship) {
+                    logger.error("配置文件 {} 中的 {} 参数值为true时， {} 参数值也需要为true", configFileName, JavaCGConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP.getKey(),
+                            JavaCGConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey());
+                    return null;
+                }
+            }
+
+            confInfo.setParseMethodCallTypeValue(parseMethodCallTypeValue);
+            confInfo.setFirstParseInitMethodType(firstParseInitMethodType);
+            confInfo.setAnalyseFieldRelationship(analyseFieldRelationship);
             confInfo.setContinueWhenError(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR, true)));
             confInfo.setLogMethodSpendTime(Boolean.parseBoolean(javaCGConfigureWrapper.getConfig(properties, JavaCGConfigKeyEnum.CKE_LOG_METHOD_SPEND_TIME, true)));
 

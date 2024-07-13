@@ -9,6 +9,7 @@ import com.adrninistrator.javacg.dto.element.variable.LocalVariableElement;
 import com.adrninistrator.javacg.dto.element.variable.StaticFieldElement;
 import com.adrninistrator.javacg.dto.element.variable.VariableElement;
 import com.adrninistrator.javacg.dto.variabledatasource.AbstractVariableDataSource;
+import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceArithmeticOperation;
 import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceMethodArg;
 import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceMethodCallReturn;
 import org.apache.commons.lang3.StringUtils;
@@ -141,6 +142,12 @@ public class JavaCGElementUtil {
         String addedType = added.getClass().getName();
         if (!existedType.equals(addedType)) {
             return false;
+        }
+
+        if (existed instanceof VariableDataSourceArithmeticOperation) {
+            VariableDataSourceArithmeticOperation existedVariableDataSourceArithmeticOperation = (VariableDataSourceArithmeticOperation) existed;
+            VariableDataSourceArithmeticOperation addedVariableDataSourceArithmeticOperation = (VariableDataSourceArithmeticOperation) added;
+            return existedVariableDataSourceArithmeticOperation.compare(addedVariableDataSourceArithmeticOperation);
         }
 
         if (existed instanceof VariableDataSourceMethodArg) {

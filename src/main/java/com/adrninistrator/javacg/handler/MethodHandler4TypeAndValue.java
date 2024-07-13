@@ -145,9 +145,6 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
     // 方法可能的返回信息列表
     private List<BaseElement> returnPossibleInfoList;
 
-    // 需要记录返回对象的可能信息的开关
-    private boolean recordReturnPossibleInfoFlag;
-
     // 解析构造函数以获取非静态字段可能的类型的开关
     private boolean recordFieldPossibleTypeFlag;
 
@@ -156,6 +153,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     // 需要分析dto的字段之间的关联关系的开关
     private boolean analyseFieldRelationshipFlag;
+
+    // 是否只需要获取可能的返回类型的开关
+    private boolean onlyAnalyseReturnTypeFlag;
 
     // 当前方法是否可能为get方法
     private boolean maybeGetMethod;
@@ -314,11 +314,13 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     @Override
     protected boolean lastStep() throws IOException {
-        // 处理get方法
-        handleGetMethod();
+        if (!onlyAnalyseReturnTypeFlag) {
+            // 处理get方法
+            handleGetMethod();
 
-        // 处理set方法
-        handleSetMethod();
+            // 处理set方法
+            handleSetMethod();
+        }
         return true;
     }
 
@@ -337,7 +339,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             instructionStepMap4Branch = new HashMap<>();
         }
 
-        if (analyseFieldRelationshipFlag) {
+        if (parseMethodCallTypeValueFlag) {
             // 需要分析dto的字段之间的关联关系
             if (!mg.isAbstract() && !mg.isStatic() && !javaClass.isEnum()) {
                 // 跳过抽象方法、静态方法、枚举类
@@ -354,14 +356,16 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                     methodArg1Type = callerArgTypes[0].toString();
                 }
             }
+        }
+
+        if (analyseFieldRelationshipFlag) {
             getSetMethodCallMap = new HashMap<>();
         }
 
         instructionHandler = new InstructionHandler(javaCGConfInfo, mg, localVariableTable, stack, locals, nonStaticFieldInfoMap, staticFieldInfoMap);
-        instructionHandler.setRecordReturnPossibleInfoFlag(recordReturnPossibleInfoFlag);
+        instructionHandler.setParseMethodCallTypeValueFlag(parseMethodCallTypeValueFlag);
         instructionHandler.setRecordFieldPossibleTypeFlag(recordFieldPossibleTypeFlag);
         instructionHandler.setUseFieldPossibleTypeFlag(useFieldPossibleTypeFlag);
-        instructionHandler.setAnalyseFieldRelationshipFlag(analyseFieldRelationshipFlag);
         instructionHandler.setNonStaticFieldPossibleTypes(nonStaticFieldPossibleTypes);
         instructionHandler.setMaybeSetMethod(maybeSetMethod);
         instructionHandler.setInClinitMethod(inClinitMethod);
@@ -438,18 +442,19 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
             if (JavaCGInstructionUtil.isReturnWithValueInstruction(opCode)) {
                 ReturnParseResult returnParseResult = (ReturnParseResult) instructionParseResult;
-                if (recordReturnPossibleInfoFlag) {
-                    // 处理带返回值的return类指令，记录对应的返回类型
-                    handleReturnInstructionForType(returnParseResult);
-                }
-                if (analyseFieldRelationshipFlag) {
-                    // 处理带返回值的return类指令，记录对应的方法参数序号或方法调用指令位置
-                    handleReturnInstructionForArgMethodCall(returnParseResult);
+                if (parseMethodCallTypeValueFlag) {
+                    if (!onlyAnalyseReturnTypeFlag) {
+                        // 处理带返回值的return类指令，记录对应的方法参数序号或方法调用指令位置
+                        handleReturnInstructionForArgMethodCall(returnParseResult);
+                    }
 
                     if (maybeGetMethod) {
                         // 处理带返回值的return类指令，处理可能的Get方法
                         handleReturnInstruction4GetMethod(returnParseResult);
                     }
+
+                    // 处理带返回值的return类指令，记录对应的返回类型
+                    handleReturnInstructionForType(returnParseResult);
                 }
             }
 
@@ -469,7 +474,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             return false;
         }
 
-        if (opCode == Const.PUTFIELD && analyseFieldRelationshipFlag && maybeSetMethod) {
+        if (opCode == Const.PUTFIELD && maybeSetMethod) {
             // 为set方法处理PUTFIELD指令
             handlePutField4SetMethod((PutFieldParseResult) instructionParseResult);
         } else if (opCode == Const.PUTSTATIC && inClinitMethod) {
@@ -1188,7 +1193,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     // 处理get方法
     public void handleGetMethod() throws IOException {
-        if (!analyseFieldRelationshipFlag || !maybeGetMethod || returnDataSourceGetFieldMap.size() != 1) {
+        if (!maybeGetMethod || returnDataSourceGetFieldMap.size() != 1) {
             return;
         }
 
@@ -1223,7 +1228,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     // 处理set方法
     public void handleSetMethod() throws IOException {
-        if (!analyseFieldRelationshipFlag || !maybeSetMethod || putFieldClassMap.size() != 1) {
+        if (!maybeSetMethod || putFieldClassMap.size() != 1) {
             return;
         }
 
@@ -1301,10 +1306,6 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
     }
 
     //
-    public void setRecordReturnPossibleInfoFlag(boolean recordReturnPossibleInfoFlag) {
-        this.recordReturnPossibleInfoFlag = recordReturnPossibleInfoFlag;
-    }
-
     public void setRecordFieldPossibleTypeFlag(boolean recordFieldPossibleTypeFlag) {
         this.recordFieldPossibleTypeFlag = recordFieldPossibleTypeFlag;
     }
@@ -1315,5 +1316,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     public void setAnalyseFieldRelationshipFlag(boolean analyseFieldRelationshipFlag) {
         this.analyseFieldRelationshipFlag = analyseFieldRelationshipFlag;
+    }
+
+    public void setOnlyAnalyseReturnTypeFlag(boolean onlyAnalyseReturnTypeFlag) {
+        this.onlyAnalyseReturnTypeFlag = onlyAnalyseReturnTypeFlag;
     }
 }

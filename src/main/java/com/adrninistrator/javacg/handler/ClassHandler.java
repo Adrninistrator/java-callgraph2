@@ -141,11 +141,11 @@ public class ClassHandler {
         cpg = new ConstantPoolGen(javaClass.getConstantPool());
         handledMethodNameAndArgs = new HashSet<>();
 
+        if (javaCGConfInfo.isParseMethodCallTypeValue()) {
+            recordedSetMethodSet = new HashSet<>();
+        }
         if (javaCGConfInfo.isFirstParseInitMethodType()) {
             nonStaticFieldPossibleTypes = new FieldPossibleTypes();
-        }
-        if (javaCGConfInfo.isAnalyseFieldRelationship()) {
-            recordedSetMethodSet = new HashSet<>();
         }
     }
 
@@ -270,6 +270,7 @@ public class ClassHandler {
         methodHandler4TypeAndValue.setRecordFieldPossibleTypeFlag(true);
         methodHandler4TypeAndValue.setUseFieldPossibleTypeFlag(false);
         methodHandler4TypeAndValue.setAnalyseFieldRelationshipFlag(false);
+        methodHandler4TypeAndValue.setOnlyAnalyseReturnTypeFlag(false);
         methodHandler4TypeAndValue.setNonStaticFieldPossibleTypes(nonStaticFieldPossibleTypes);
 
         return methodHandler4TypeAndValue.handleMethod();
@@ -293,12 +294,14 @@ public class ClassHandler {
         // 记录字段上的注解信息
         JavaCGAnnotationUtil.writeAnnotationInfo(fieldAnnotationWriter, field.getAnnotationEntries(), annotationAttributesFormatter, className, fieldName);
 
-        if (!javaCGConfInfo.isAnalyseFieldRelationship()) {
-            return;
+        if (javaCGConfInfo.isParseMethodCallTypeValue() && field.isStatic() && field.isFinal()) {
+            // 处理static、final字段
+            sfFieldInvokeInstructionMap.put(fieldName, new ArrayList<>(1));
+            staticFinalFieldNameTypeMap.put(fieldName, field.getType().toString());
         }
-        // 需要分析dto的字段之间的关联关系
-        if (!field.isStatic()) {
-            // 处理非静态字段
+
+        if (javaCGConfInfo.isAnalyseFieldRelationship() && !field.isStatic()) {
+            // 需要分析dto的字段之间的关联关系，处理非静态字段
             try {
                 String fieldGenericSignature = field.getGenericSignature();
                 if (fieldGenericSignature != null) {
@@ -315,13 +318,6 @@ public class ClassHandler {
             }
 
             nonStaticFieldNameTypeMap.put(fieldName, field.getType().toString());
-            return;
-        }
-
-        if (field.isFinal()) {
-            // 处理static、final字段
-            sfFieldInvokeInstructionMap.put(fieldName, new ArrayList<>(1));
-            staticFinalFieldNameTypeMap.put(fieldName, field.getType().toString());
         }
     }
 
@@ -441,6 +437,13 @@ public class ClassHandler {
             methodHandler4Invoke.setMethodFinallyWriter(methodFinallyWriter);
             methodHandler4Invoke.setMethodThrowWriter(methodThrowWriter);
             methodHandler4Invoke.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
+            methodHandler4Invoke.setGetMethodWriter(getMethodWriter);
+            methodHandler4Invoke.setSetMethodWriter(setMethodWriter);
+            methodHandler4Invoke.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
+            methodHandler4Invoke.setRecordedSetMethodSet(recordedSetMethodSet);
+            methodHandler4Invoke.setNonStaticFieldNameTypeMap(nonStaticFieldNameTypeMap);
+            methodHandler4Invoke.setNonStaticFieldNameGenericsTypeMap(nonStaticFieldNameGenericsTypeMap);
+            methodHandler4Invoke.setRecordedFieldWithGenericsTypeSet(recordedFieldWithGenericsTypeSet);
             if (JavaCGCommonNameConstants.METHOD_NAME_CLINIT.equals(method.getName())) {
                 // 当前方法为静态代码块
                 methodHandler4Invoke.setInClinitMethod(true);
@@ -451,15 +454,8 @@ public class ClassHandler {
                 methodHandler4Invoke.setNonStaticFieldPossibleTypes(nonStaticFieldPossibleTypes);
             }
             if (javaCGConfInfo.isAnalyseFieldRelationship()) {
-                methodHandler4Invoke.setGetMethodWriter(getMethodWriter);
-                methodHandler4Invoke.setSetMethodWriter(setMethodWriter);
-                methodHandler4Invoke.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
                 methodHandler4Invoke.setFieldRelationshipWriter(fieldRelationshipWriter);
-                methodHandler4Invoke.setRecordedSetMethodSet(recordedSetMethodSet);
                 methodHandler4Invoke.setFieldRelationshipCounter(fieldRelationshipCounter);
-                methodHandler4Invoke.setNonStaticFieldNameTypeMap(nonStaticFieldNameTypeMap);
-                methodHandler4Invoke.setNonStaticFieldNameGenericsTypeMap(nonStaticFieldNameGenericsTypeMap);
-                methodHandler4Invoke.setRecordedFieldWithGenericsTypeSet(recordedFieldWithGenericsTypeSet);
             }
         }
 

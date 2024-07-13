@@ -2,8 +2,7 @@ package com.adrninistrator.javacg.parser;
 
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
-import com.adrninistrator.javacg.dto.classes.ClassExtendsMethodInfo;
-import com.adrninistrator.javacg.dto.interfaces.InterfaceExtendsMethodInfo;
+import com.adrninistrator.javacg.dto.classes.ClassExtendsInfo;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg.spring.UseSpringBeanByAnnotationHandler;
@@ -12,6 +11,7 @@ import com.adrninistrator.javacg.util.JavaCGClassMethodUtil;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,11 +31,13 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
 
     private final Set<String> classExtendsSet = new HashSet<>(JavaCGConstants.SIZE_100);
 
+    private Map<String, Map<MethodArgReturnTypes, Integer>> classExtendsImplMethodWithArgTypesMap;
+    private Map<String, Map<MethodArgReturnTypes, Integer>> interfaceMethodWithArgTypesMap;
     private Map<String, String> classAndSuperMap;
-    private Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap;
+    private Map<String, ClassExtendsInfo> classExtendsInfoMap;
     private Map<String, List<String>> childrenClassMap;
     private Set<String> interfaceExtendsSet;
-    private Map<String, InterfaceExtendsMethodInfo> interfaceExtendsMethodInfoMap;
+    private Map<String, List<String>> interfaceExtendsInfoMap;
     private Map<String, List<String>> childrenInterfaceMap;
     private Set<String> allClassNameSet;
 
@@ -91,7 +93,7 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
     // 查找涉及继承的类的信息
     private void findClassExtendsInfo(JavaClass javaClass) {
         String className = javaClass.getClassName();
-        if (!classExtendsSet.contains(className) || classExtendsMethodInfoMap.get(className) != null) {
+        if (!classExtendsSet.contains(className) || classExtendsInfoMap.containsKey(className)) {
             // 假如当前类不涉及继承，或当前类已处理过，则不处理
             return;
         }
@@ -100,17 +102,13 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         List<String> childrenClassList = childrenClassMap.computeIfAbsent(superClassName, k -> new ArrayList<>());
         childrenClassList.add(className);
 
-        Map<MethodArgReturnTypes, Integer> methodAttributeMap = new HashMap<>();
-        // 遍历类的方法
-        for (Method method : javaClass.getMethods()) {
-            String methodName = method.getName();
-            if (JavaCGByteCodeUtil.checkExtendsMethod(methodName, method)) {
-                // 对于可能涉及继承的方法进行记录
-                MethodArgReturnTypes methodArgReturnTypes = new MethodArgReturnTypes(methodName, method.getArgumentTypes(), method.getReturnType());
-                methodAttributeMap.put(methodArgReturnTypes, method.getAccessFlags());
-            }
+        classExtendsInfoMap.put(className, new ClassExtendsInfo(javaClass.getAccessFlags(), superClassName));
+        // 记录类中可能涉及继承的方法
+        Method[] methods = javaClass.getMethods();
+        if (ArrayUtils.isNotEmpty(methods)) {
+            Map<MethodArgReturnTypes, Integer> methodArgReturnTypesMap = JavaCGByteCodeUtil.genExtendsClassMethodWithArgTypes(javaClass.getMethods());
+            JavaCGClassMethodUtil.copyClassMethodMap(classExtendsImplMethodWithArgTypesMap, className, methodArgReturnTypesMap);
         }
-        classExtendsMethodInfoMap.put(className, new ClassExtendsMethodInfo(javaClass.getAccessFlags(), superClassName, methodAttributeMap));
     }
 
     // 查找涉及继承的接口的信息
@@ -118,33 +116,41 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         String interfaceName = interfaceClass.getClassName();
         if (interfaceClass.isAnnotation() ||
                 !interfaceExtendsSet.contains(interfaceName) ||
-                interfaceExtendsMethodInfoMap.get(interfaceName) != null) {
-            // 假如为水底有，或当前接口不涉及继承，或当前接口已处理过，则不处理
+                interfaceExtendsInfoMap.containsKey(interfaceName)) {
+            // 假如接口为注解，或当前接口不涉及继承，或当前接口已处理过，则不处理
             return;
         }
 
         String[] superInterfaceNames = interfaceClass.getInterfaceNames();
         for (String superInterfaceName : superInterfaceNames) {
-            // 记录父类及其子类，忽略以"java."开头的父类
             List<String> childrenInterfaceList = childrenInterfaceMap.computeIfAbsent(superInterfaceName, k -> new ArrayList<>());
             childrenInterfaceList.add(interfaceName);
         }
 
         // 记录当前接口的方法信息
-        List<MethodArgReturnTypes> methodAttributeList = new ArrayList<>();
+        Map<MethodArgReturnTypes, Integer> methodAttributeMap = new HashMap<>();
         for (Method method : interfaceClass.getMethods()) {
-            methodAttributeList.add(new MethodArgReturnTypes(method.getName(), method.getArgumentTypes(), method.getReturnType()));
+            methodAttributeMap.put(new MethodArgReturnTypes(method.getName(), method.getArgumentTypes(), method.getReturnType()), method.getAccessFlags());
         }
-        interfaceExtendsMethodInfoMap.put(interfaceName, new InterfaceExtendsMethodInfo(Arrays.asList(superInterfaceNames), methodAttributeList));
+        interfaceExtendsInfoMap.put(interfaceName, Arrays.asList(superInterfaceNames));
+        interfaceMethodWithArgTypesMap.put(interfaceName, methodAttributeMap);
     }
 
     //
+    public void setClassExtendsImplMethodWithArgTypesMap(Map<String, Map<MethodArgReturnTypes, Integer>> classExtendsImplMethodWithArgTypesMap) {
+        this.classExtendsImplMethodWithArgTypesMap = classExtendsImplMethodWithArgTypesMap;
+    }
+
+    public void setInterfaceMethodWithArgTypesMap(Map<String, Map<MethodArgReturnTypes, Integer>> interfaceMethodWithArgTypesMap) {
+        this.interfaceMethodWithArgTypesMap = interfaceMethodWithArgTypesMap;
+    }
+
     public void setClassAndSuperMap(Map<String, String> classAndSuperMap) {
         this.classAndSuperMap = classAndSuperMap;
     }
 
-    public void setClassExtendsMethodInfoMap(Map<String, ClassExtendsMethodInfo> classExtendsMethodInfoMap) {
-        this.classExtendsMethodInfoMap = classExtendsMethodInfoMap;
+    public void setClassExtendsInfoMap(Map<String, ClassExtendsInfo> classExtendsInfoMap) {
+        this.classExtendsInfoMap = classExtendsInfoMap;
     }
 
     public void setChildrenClassMap(Map<String, List<String>> childrenClassMap) {
@@ -155,8 +161,8 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         this.interfaceExtendsSet = interfaceExtendsSet;
     }
 
-    public void setInterfaceExtendsMethodInfoMap(Map<String, InterfaceExtendsMethodInfo> interfaceExtendsMethodInfoMap) {
-        this.interfaceExtendsMethodInfoMap = interfaceExtendsMethodInfoMap;
+    public void setInterfaceExtendsInfoMap(Map<String, List<String>> interfaceExtendsInfoMap) {
+        this.interfaceExtendsInfoMap = interfaceExtendsInfoMap;
     }
 
     public void setChildrenInterfaceMap(Map<String, List<String>> childrenInterfaceMap) {

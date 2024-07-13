@@ -11,6 +11,7 @@ public enum JavaCGOutPutFileTypeEnum {
     OPFTE_CLASS_INFO("class_info", "类的信息"),
     OPFTE_CLASS_NAME("class_name", "引用的类"),
     OPFTE_CLASS_SIGNATURE_EI1("class_signature_ei1", "类继承父类与实现接口时签名中的泛型类型"),
+    OPFTE_CLASS_SIGNATURE_GENERICS("class_signature_generics", "类的签名中的泛型信息"),
     OPFTE_EXTENDS_IMPL("extends_impl", "继承与实现相关信息"),
     OPFTE_FIELD_ANNOTATION("field_annotation", "字段的注解"),
     OPFTE_FIELD_INFO("field_info", "字段信息"),

@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -201,6 +202,15 @@ public class JavaCGUtil {
      */
     public static <T> boolean isCollectionEmpty(Collection<T> collection) {
         return collection == null || collection.isEmpty();
+    }
+
+    /**
+     * 判断Map是否为空
+     * @param map
+     * @return
+     */
+    public static boolean isMapEmpty(Map map) {
+        return (map == null || map.isEmpty());
     }
 
     /**

@@ -4,7 +4,6 @@ import com.adrninistrator.javacg.common.JavaCGCommonNameConstants;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGOtherConfigFileUseListEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
-import com.adrninistrator.javacg.dto.classes.ClassImplementsMethodInfo;
 import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg.dto.jar.JarInfo;
 import com.adrninistrator.javacg.dto.method.MethodArgReturnTypes;
@@ -17,6 +16,7 @@ import com.adrninistrator.javacg.util.JavaCGUtil;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +38,10 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     private static final Logger logger = LoggerFactory.getLogger(JarEntryPreHandle1Parser.class);
 
-    private Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap;
+    private Map<String, List<String>> classImplementsInfoMap;
 
-    private Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgTypesMap;
+    private Map<String, Map<MethodArgReturnTypes, Integer>> classExtendsImplMethodWithArgTypesMap;
+    private Map<String, Map<MethodArgReturnTypes, Integer>> interfaceMethodWithArgTypesMap;
 
     private Map<String, Boolean> runnableImplClassMap;
     private Map<String, Boolean> callableImplClassMap;
@@ -133,10 +134,10 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         String interfaceName = interfaceClass.getClassName();
         // 记录接口的方法
         Method[] methods = interfaceClass.getMethods();
-        if (methods != null && methods.length > 0 &&
-                interfaceMethodWithArgTypesMap.get(interfaceName) == null) {
-            List<MethodArgReturnTypes> interfaceMethodWithArgTypesList = JavaCGByteCodeUtil.genInterfaceMethodWithArgTypes(methods);
-            interfaceMethodWithArgTypesMap.put(interfaceName, interfaceMethodWithArgTypesList);
+        if (ArrayUtils.isNotEmpty(methods) &&
+                !interfaceMethodWithArgTypesMap.containsKey(interfaceName)) {
+            Map<MethodArgReturnTypes, Integer> currentInterfaceMethodWithArgTypesMap = JavaCGByteCodeUtil.genInterfaceMethodWithArgTypes(methods);
+            interfaceMethodWithArgTypesMap.put(interfaceName, currentInterfaceMethodWithArgTypesMap);
         }
 
         String[] superInterfaceNames = interfaceClass.getInterfaceNames();
@@ -157,17 +158,20 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         allClassNameSet.add(className);
 
         String[] interfaceNames = javaClass.getInterfaceNames();
-        Method[] methods = javaClass.getMethods();
 
         if (interfaceNames.length > 0 &&
-                methods != null && methods.length > 0 &&
-                classImplementsMethodInfoMap.get(className) == null) {
+                !classImplementsInfoMap.containsKey(className)) {
             List<String> interfaceNameList = new ArrayList<>(interfaceNames.length);
             interfaceNameList.addAll(Arrays.asList(interfaceNames));
 
-            // 记录类实现的接口，及类中可能涉及实现的相关方法
-            List<MethodArgReturnTypes> implClassMethodWithArgTypesList = JavaCGByteCodeUtil.genImplClassMethodWithArgTypes(methods);
-            classImplementsMethodInfoMap.put(className, new ClassImplementsMethodInfo(interfaceNameList, implClassMethodWithArgTypesList));
+            // 记录类实现的接口
+            classImplementsInfoMap.put(className, interfaceNameList);
+            // 记录类中可能涉及实现的相关方法
+            Method[] methods = javaClass.getMethods();
+            if (ArrayUtils.isNotEmpty(methods)) {
+                Map<MethodArgReturnTypes, Integer> implClassMethodWithArgTypesMap = JavaCGByteCodeUtil.genImplClassMethodWithArgTypes(methods);
+                JavaCGClassMethodUtil.copyClassMethodMap(classExtendsImplMethodWithArgTypesMap, className, implClassMethodWithArgTypesMap);
+            }
 
             if (!javaClass.isAbstract()) {
                 if (interfaceNameList.contains(JavaCGCommonNameConstants.CLASS_NAME_RUNNABLE)) {
@@ -205,11 +209,15 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         return true;
     }
 
-    public void setClassImplementsMethodInfoMap(Map<String, ClassImplementsMethodInfo> classImplementsMethodInfoMap) {
-        this.classImplementsMethodInfoMap = classImplementsMethodInfoMap;
+    public void setClassImplementsInfoMap(Map<String, List<String>> classImplementsInfoMap) {
+        this.classImplementsInfoMap = classImplementsInfoMap;
     }
 
-    public void setInterfaceMethodWithArgTypesMap(Map<String, List<MethodArgReturnTypes>> interfaceMethodWithArgTypesMap) {
+    public void setClassExtendsImplMethodWithArgTypesMap(Map<String, Map<MethodArgReturnTypes, Integer>> classExtendsImplMethodWithArgTypesMap) {
+        this.classExtendsImplMethodWithArgTypesMap = classExtendsImplMethodWithArgTypesMap;
+    }
+
+    public void setInterfaceMethodWithArgTypesMap(Map<String, Map<MethodArgReturnTypes, Integer>> interfaceMethodWithArgTypesMap) {
         this.interfaceMethodWithArgTypesMap = interfaceMethodWithArgTypesMap;
     }
 

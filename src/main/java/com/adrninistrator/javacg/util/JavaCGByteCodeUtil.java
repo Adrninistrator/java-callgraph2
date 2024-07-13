@@ -23,7 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author adrninistrator
@@ -75,21 +77,41 @@ public class JavaCGByteCodeUtil {
     }
 
     /**
+     * 获取可能涉及继承的相关方法，包含参数
+     *
+     * @param methods
+     * @return
+     */
+    public static Map<MethodArgReturnTypes, Integer> genExtendsClassMethodWithArgTypes(Method[] methods) {
+        Map<MethodArgReturnTypes, Integer> methodArgReturnTypesMap = new HashMap<>();
+        // 遍历类的方法
+        for (Method method : methods) {
+            String methodName = method.getName();
+            if (JavaCGByteCodeUtil.checkExtendsMethod(methodName, method)) {
+                // 对于可能涉及继承的方法进行记录
+                MethodArgReturnTypes methodArgReturnTypes = new MethodArgReturnTypes(methodName, method.getArgumentTypes(), method.getReturnType());
+                methodArgReturnTypesMap.put(methodArgReturnTypes, method.getAccessFlags());
+            }
+        }
+        return methodArgReturnTypesMap;
+    }
+
+    /**
      * 获取可能涉及实现的相关方法，包含参数
      *
      * @param methods
      * @return
      */
-    public static List<MethodArgReturnTypes> genImplClassMethodWithArgTypes(Method[] methods) {
-        List<MethodArgReturnTypes> methodInfoList = new ArrayList<>(methods.length);
+    public static Map<MethodArgReturnTypes, Integer> genImplClassMethodWithArgTypes(Method[] methods) {
+        Map<MethodArgReturnTypes, Integer> methodInfoMap = new HashMap<>(methods.length);
         for (Method method : methods) {
             String methodName = method.getName();
             if (checkImplMethod(methodName, method)) {
                 // 记录可能涉及实现的方法
-                methodInfoList.add(new MethodArgReturnTypes(methodName, method.getArgumentTypes(), method.getReturnType()));
+                methodInfoMap.put(new MethodArgReturnTypes(methodName, method.getArgumentTypes(), method.getReturnType()), method.getAccessFlags());
             }
         }
-        return methodInfoList;
+        return methodInfoMap;
     }
 
     /**
@@ -98,12 +120,12 @@ public class JavaCGByteCodeUtil {
      * @param methods
      * @return
      */
-    public static List<MethodArgReturnTypes> genInterfaceMethodWithArgTypes(Method[] methods) {
-        List<MethodArgReturnTypes> methodInfoList = new ArrayList<>(methods.length);
+    public static Map<MethodArgReturnTypes, Integer> genInterfaceMethodWithArgTypes(Method[] methods) {
+        Map<MethodArgReturnTypes, Integer> methodInfoMap = new HashMap<>(methods.length);
         for (Method method : methods) {
-            methodInfoList.add(new MethodArgReturnTypes(method.getName(), method.getArgumentTypes(), method.getReturnType()));
+            methodInfoMap.put(new MethodArgReturnTypes(method.getName(), method.getArgumentTypes(), method.getReturnType()), method.getAccessFlags());
         }
-        return methodInfoList;
+        return methodInfoMap;
     }
 
     /**

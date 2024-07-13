@@ -247,7 +247,18 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(method, mg, javaClass, callerFullMethod, javaCGConfInfo);
             methodHandler4TypeAndValue.setFailCounter(failCounter);
             methodHandler4TypeAndValue.setParseMethodCallTypeValueFlag(true);
-            methodHandler4TypeAndValue.setRecordReturnPossibleInfoFlag(false);
+            methodHandler4TypeAndValue.setGetMethodWriter(getMethodWriter);
+            methodHandler4TypeAndValue.setSetMethodWriter(setMethodWriter);
+            methodHandler4TypeAndValue.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
+            methodHandler4TypeAndValue.setRecordedSetMethodSet(recordedSetMethodSet);
+            methodHandler4TypeAndValue.setNonStaticFieldNameTypeMap(nonStaticFieldNameTypeMap);
+            methodHandler4TypeAndValue.setNonStaticFieldNameGenericsTypeMap(nonStaticFieldNameGenericsTypeMap);
+            methodHandler4TypeAndValue.setRecordedFieldWithGenericsTypeSet(recordedFieldWithGenericsTypeSet);
+            methodHandler4TypeAndValue.setMethodReturnArgSeqList(methodReturnArgSeqList);
+            methodHandler4TypeAndValue.setMethodReturnPositionList(methodReturnPositionList);
+            methodHandler4TypeAndValue.setMethodReturnArgSeqEQCList(methodReturnArgSeqEQCList);
+            methodHandler4TypeAndValue.setMethodReturnPositionEQCList(methodReturnPositionEQCList);
+            methodHandler4TypeAndValue.setOnlyAnalyseReturnTypeFlag(false);
             if (inClinitMethod) {
                 methodHandler4TypeAndValue.setInClinitMethod(true);
                 methodHandler4TypeAndValue.setSfFieldInvokeInstructionMap(sfFieldInvokeInstructionMap);
@@ -261,18 +272,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             if (javaCGConfInfo.isAnalyseFieldRelationship()) {
                 // 需要分析dto的字段之间的关联关系
                 methodHandler4TypeAndValue.setAnalyseFieldRelationshipFlag(true);
-                methodHandler4TypeAndValue.setGetMethodWriter(getMethodWriter);
-                methodHandler4TypeAndValue.setSetMethodWriter(setMethodWriter);
-                methodHandler4TypeAndValue.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
-                methodHandler4TypeAndValue.setRecordedSetMethodSet(recordedSetMethodSet);
-                methodHandler4TypeAndValue.setNonStaticFieldNameTypeMap(nonStaticFieldNameTypeMap);
-                methodHandler4TypeAndValue.setNonStaticFieldNameGenericsTypeMap(nonStaticFieldNameGenericsTypeMap);
-                methodHandler4TypeAndValue.setRecordedFieldWithGenericsTypeSet(recordedFieldWithGenericsTypeSet);
                 methodHandler4TypeAndValue.setFieldRelationshipCounter(fieldRelationshipCounter);
-                methodHandler4TypeAndValue.setMethodReturnArgSeqList(methodReturnArgSeqList);
-                methodHandler4TypeAndValue.setMethodReturnPositionList(methodReturnPositionList);
-                methodHandler4TypeAndValue.setMethodReturnArgSeqEQCList(methodReturnArgSeqEQCList);
-                methodHandler4TypeAndValue.setMethodReturnPositionEQCList(methodReturnPositionEQCList);
                 methodHandler4TypeAndValue.setGetSetFieldRelationshipList(getSetFieldRelationshipList);
             }
             // 获取方法调用指令对应的类型与值
