@@ -73,9 +73,9 @@ class_signature_ei1
 
 类在继承类或实现接口时，在签名中指定的泛型类型
 
-例如：“TestClassWithSignature1 implements TestInterfaceWithSignature<String, Integer>”，包含 String、Integer
+例如：“TestClassWithSignature1 implements TestInterfaceWithSignature<String, Integer>”，对应信息中会包含 String、Integer
 
-例如：“TestClassWithSignature2 extends TestAbstractClassWithSignature<TestArgument1, TestArgument2>”，包含 TestArgument1、TestArgument2
+例如：“TestClassWithSignature2 extends TestAbstractClassWithSignature<TestArgument1, TestArgument2>”，对应信息中会包含 TestArgument1、TestArgument2
 
 - 文件各列内容说明
 
@@ -85,9 +85,31 @@ class_signature_ei1
 |2|类型，e:继承，i:实现|
 |3|父类或接口的类名|
 |4|序号，从0开始|
-|5|签名中的完整类名|
+|5|1:下面的字段代表完整类名，0:下面的字段代表泛型名称|
+|6|签名中的完整类名或泛型名称|
 
-## 1.5. 继承与实现相关信息
+## 1.5. 类的签名中的泛型信息
+
+- 文件名
+
+class_signature_generics
+
+- 文件说明
+
+类的签名中的泛型信息
+
+例如：“interface CommonMapper<S, T1> extends BaseMapper<T1>”，对应信息中会包含 S、T1
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|完整类名|
+|2|序号，从0开始|
+|3|签名中的泛型名称|
+|4|签名中的泛型的父类类名|
+
+## 1.6. 继承与实现相关信息
 
 - 文件名
 
@@ -106,7 +128,7 @@ extends_impl
 |3|类型，e:继承，i:实现|
 |4|父类或接口的完整类名|
 
-## 1.6. 字段的注解
+## 1.7. 字段的注解
 
 - 文件名
 
@@ -131,7 +153,7 @@ field_annotation
 |5|注解属性类型，参考AnnotationAttributesTypeEnum类|
 |6|注解属性值|
 
-## 1.7. dto的非静态字段集合中涉及的泛型类型
+## 1.8. dto的非静态字段集合中涉及的泛型类型
 
 - 文件名
 
@@ -151,7 +173,7 @@ dto的非静态字段集合中涉及的泛型类型，每个字段的集合中�
 |4|字段集合中的泛型类型分类，J:JDK中的类型，C:自定义类型|
 |5|字段集合中的泛型类型|
 
-## 1.8. 字段信息
+## 1.9. 字段信息
 
 - 文件名
 
@@ -173,7 +195,7 @@ field_info
 |6|static标志，1:是，0:否|
 |7|final标志，1:是，0:否|
 
-## 1.9. 通过get/set方法关联的字段关系
+## 1.10. 通过get/set方法关联的字段关系
 
 - 文件名
 
@@ -199,7 +221,7 @@ field_relationship
 |10|关联关系是否有效，1:是，0:否|
 |11|关联关系类型，参考 java-callgraph2 项目 JavaCGFieldRelationshipTypeEnum 类|
 
-## 1.10. dto的get方法及字段
+## 1.11. dto的get方法及字段
 
 - 文件名
 
@@ -220,7 +242,7 @@ dto的get方法的信息，包含对应的字段信息
 |5|字段类型|
 |6|完整方法（类名+方法名+参数）|
 
-## 1.11. 内部类信息
+## 1.12. 内部类信息
 
 - 文件名
 
@@ -238,7 +260,7 @@ inner_class
 |2|外部类完整类名|
 |3|是否为匿名内部类，1:是，0:否|
 
-## 1.12. jar包信息
+## 1.13. jar包信息
 
 - 文件名
 
@@ -256,7 +278,7 @@ jar_info
 |2|Jar包序号|
 |3|Jar包完整路径|
 
-## 1.13. Lambda表达式方法信息
+## 1.14. Lambda表达式方法信息
 
 - 文件名
 
@@ -274,7 +296,7 @@ Lambda表达式方法调用相关信息
 |2|Lambda表达式被调用方完整方法（类名+方法名+参数）|
 |3|Lambda表达式下一个被调用完整方法（类名+方法名+参数）|
 
-## 1.14. 方法的注解
+## 1.15. 方法的注解
 
 - 文件名
 
@@ -298,7 +320,7 @@ method_annotation
 |4|注解属性类型，参考AnnotationAttributesTypeEnum类|
 |5|注解属性值|
 
-## 1.15. 方法参数的注解
+## 1.16. 方法参数的注解
 
 - 文件名
 
@@ -323,7 +345,7 @@ method_arg_annotation
 |5|注解属性类型，参考AnnotationAttributesTypeEnum类|
 |6|注解属性值|
 
-## 1.16. 方法参数集合中涉及的泛型类型
+## 1.17. 方法参数集合中涉及的泛型类型
 
 - 文件名
 
@@ -347,7 +369,7 @@ method_arg_generics_type
 |4|类型序号，参数类型固定为0，参数泛型类型从0开始|
 |5|泛型类型或参数类型类名|
 
-## 1.17. 方法参数
+## 1.18. 方法参数
 
 - 文件名
 
@@ -366,7 +388,7 @@ method_argument
 |3|参数类型|
 |4|参数名称，可能为空|
 
-## 1.18. 方法调用
+## 1.19. 方法调用
 
 - 文件名
 
@@ -393,7 +415,7 @@ method_call
 |9|调用方法Jar包序号|
 |10|被调用方法Jar包序号|
 
-## 1.19. 方法调用的信息
+## 1.20. 方法调用的信息
 
 - 文件名
 
@@ -416,7 +438,7 @@ method_call_info
 |7|对应的值|
 |8|调用方，完整方法（类名+方法名+参数）|
 
-## 1.20. 方法调用使用方法调用返回值
+## 1.21. 方法调用使用方法调用返回值
 
 - 文件名
 
@@ -439,7 +461,7 @@ method_call_method_call_return
 |5|返回值被使用的方法调用序号，从1开始|
 |6|被调用方，完整方法（类名+方法名+参数）|
 
-## 1.21. 方法调用使用静态字段信息
+## 1.22. 方法调用使用静态字段信息
 
 - 文件名
 
@@ -463,7 +485,7 @@ method_call_static_field
 |6|静态字段类型|
 |7|调用方，完整方法（类名+方法名+参数）|
 
-## 1.22. 方法的catch信息
+## 1.23. 方法的catch信息
 
 - 文件名
 
@@ -491,7 +513,7 @@ method_catch
 |12|catch代码块最小方法调用ID|
 |13|catch代码块最大方法调用ID|
 
-## 1.23. 方法的finally信息
+## 1.24. 方法的finally信息
 
 - 文件名
 
@@ -513,7 +535,7 @@ method_finally
 |6|try或catch代码块最大方法调用ID|
 |7|finally代码块开始代码行号|
 
-## 1.24. 方法的信息
+## 1.25. 方法的信息
 
 - 文件名
 
@@ -533,7 +555,7 @@ method_info
 |4|方法指令的HASH值（MD5），可能为空字符串|
 |5|方法所在的Jar包序号|
 
-## 1.25. 方法代码行号
+## 1.26. 方法代码行号
 
 - 文件名
 
@@ -551,7 +573,7 @@ method_line_number
 |2|起始代码行号|
 |3|结束代码行号|
 
-## 1.26. 方法返回值对应的方法序号
+## 1.27. 方法返回值对应的方法序号
 
 - 文件名
 
@@ -569,7 +591,7 @@ method_return_arg_seq
 |2|方法返回值对应的方法参数序号，从0开始|
 |3|是否返回等值转换前的方法参数，1:是，0:否|
 
-## 1.27. 方法返回值对应的方法调用ID
+## 1.28. 方法返回值对应的方法调用ID
 
 - 文件名
 
@@ -587,7 +609,7 @@ method_return_call_id
 |2|方法返回值对应的方法调用序号，从1开始|
 |3|是否返回等值转换前的方法调用，1:是，0:否|
 
-## 1.28. 方法返回集合中涉及的泛型类型
+## 1.29. 方法返回集合中涉及的泛型类型
 
 - 文件名
 
@@ -610,7 +632,7 @@ method_return_generics_type
 |3|类型序号，参数类型固定为0，参数泛型类型从0开始|
 |4|泛型类型或参数类型类名|
 
-## 1.29. 方法通过throw抛出的异常信息
+## 1.30. 方法通过throw抛出的异常信息
 
 - 文件名
 
@@ -634,7 +656,7 @@ method_throw
 |8|抛出异常对应的catch的异常对象变量名称|
 |9|抛出异常属于方法调用返回值时，对应的方法调用ID|
 
-## 1.30. MyBatis的Entity与数据库字段名信息（使用MySQL）
+## 1.31. MyBatis的Entity与数据库字段名信息（使用MySQL）
 
 - 文件名
 
@@ -653,7 +675,7 @@ mybatis_ms_column
 |3|数据库表中的字段名称|
 |4|MyBatis XML文件路径|
 
-## 1.31. MyBatis的Entity与Mapper、表名（使用MySQL）
+## 1.32. MyBatis的Entity与Mapper、表名（使用MySQL）
 
 - 文件名
 
@@ -672,7 +694,7 @@ mybatis_ms_entity
 |3|数据库表名|
 |4|MyBatis XML文件路径|
 
-## 1.32. 使用MyBatis时get/set方法所关联的数据库信息（使用MySQL）
+## 1.33. 使用MyBatis时get/set方法所关联的数据库信息（使用MySQL）
 
 - 文件名
 
@@ -696,7 +718,7 @@ mybatis_ms_get_set
 |8|数据库字段名（MyBatis XML中可能使用函数，长度需要长一些）|
 |9|MyBatis字段与Java代码字段关联方式描述，参考 MyBatisColumnRelateDescEnum 枚举类|
 
-## 1.33. MyBatis的XML中select的字段信息（使用MySQL）
+## 1.34. MyBatis的XML中select的字段信息（使用MySQL）
 
 - 文件名
 
@@ -717,7 +739,7 @@ mybatis_ms_select_column
 |5|数据库字段赋值的参数名称|
 |6|MyBatis XML文件路径|
 
-## 1.34. MyBatis的XML中update set子句的字段信息（使用MySQL）
+## 1.35. MyBatis的XML中update set子句的字段信息（使用MySQL）
 
 - 文件名
 
@@ -738,7 +760,7 @@ mybatis_ms_set_column
 |5|数据库字段赋值的参数名称|
 |6|MyBatis XML文件路径|
 
-## 1.35. MyBatis Mapper方法操作的数据库表信息（使用MySQL）
+## 1.36. MyBatis Mapper方法操作的数据库表信息（使用MySQL）
 
 - 文件名
 
@@ -759,7 +781,7 @@ mybatis_ms_table
 |5|数据库表名|
 |6|MyBatis XML文件路径|
 
-## 1.36. MyBatis的XML中where子句的字段信息（使用MySQL）
+## 1.37. MyBatis的XML中where子句的字段信息（使用MySQL）
 
 - 文件名
 
@@ -782,7 +804,7 @@ mybatis_ms_where_column
 |7|数据库字段用于比较的参数的使用方式，#/$|
 |8|MyBatis XML文件路径|
 
-## 1.37. MyBatis Mapper方法写的数据库表信息（使用MySQL）
+## 1.38. MyBatis Mapper方法写的数据库表信息（使用MySQL）
 
 - 文件名
 
@@ -802,7 +824,7 @@ mybatis_ms_write_table
 |4|数据库表名|
 |5|MyBatis XML文件路径|
 
-## 1.38. properties文件配置信息
+## 1.39. properties文件配置信息
 
 - 文件名
 
@@ -821,7 +843,7 @@ properties_conf
 |3|properties配置名称|
 |4|properties配置内容|
 
-## 1.39. dto的set方法及字段
+## 1.40. dto的set方法及字段
 
 - 文件名
 
@@ -842,7 +864,7 @@ dto的set方法的信息，包含对应的字段信息
 |5|字段类型|
 |6|完整方法（类名+方法名+参数）|
 
-## 1.40. dto的set方法被调用时的赋值信息
+## 1.41. dto的set方法被调用时的赋值信息
 
 - 文件名
 
@@ -874,7 +896,7 @@ set_method_assign_info
 |16|set方法被调用时的赋值信息|
 |17|是否属于等值转换前的数据，1:是，0:否|
 
-## 1.41. static、final字段初始化方法信息
+## 1.42. static、final字段初始化方法信息
 
 - 文件名
 
@@ -900,7 +922,7 @@ static、final字段在初始化时使用方法调用的返回值，保存这些
 |6|初始化方法被调类名|
 |7|初始化方法被调用方法名|
 
-## 1.42. Spring Bean信息
+## 1.43. Spring Bean信息
 
 - 文件名
 
@@ -919,7 +941,7 @@ Spring Bean信息，包括Bean的名称及完整类名
 |3|完整类名|
 |4|Spring Bean的定义方式，j: 在Java代码中定义，x: 在XML文件中定义|
 
-## 1.43. Spring Controller信息
+## 1.44. Spring Controller信息
 
 - 文件名
 
@@ -942,7 +964,7 @@ spring_controller
 |7|唯一类名|
 |8|完整方法（类名+方法名+参数）|
 
-## 1.44. Spring定时任务信息，通过注解定义
+## 1.45. Spring定时任务信息，通过注解定义
 
 - 文件名
 
@@ -964,7 +986,7 @@ spring_task_annotation
 |6|类型，XML: 在XML文件中定义，annotation: 通过注解定义|
 |7|完整方法（类名+方法名+参数）|
 
-## 1.45. Spring定时任务信息，通过XML定义
+## 1.46. Spring定时任务信息，通过XML定义
 
 - 文件名
 
