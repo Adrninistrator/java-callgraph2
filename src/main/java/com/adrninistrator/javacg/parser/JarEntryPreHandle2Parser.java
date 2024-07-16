@@ -54,7 +54,7 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         for (Map.Entry<String, String> entry : classAndSuperMap.entrySet()) {
             String superClassName = entry.getValue();
             if (JavaCGClassMethodUtil.isClassInJdk(superClassName) && !allClassNameSet.contains(superClassName)) {
-                // 若父类是JDK中的类，且在已指定的jar包中未找到，则不添加
+                // 若父类是JDK中的类，且在指定的jar包中未找到，则不添加
                 continue;
             }
             String className = entry.getKey();

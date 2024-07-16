@@ -135,6 +135,7 @@ public class JCallGraph {
              Writer classNameWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_NAME));
              Writer classSignatureEI1Writer = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_EI1));
              Writer classSignatureGenericsWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_GENERICS));
+             Writer classSigExtImplGenericsWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIG_EXT_IMPL_GENERICS));
              Writer extendsImplWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_EXTENDS_IMPL));
              Writer fieldAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_FIELD_ANNOTATION));
              Writer fieldInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_FIELD_INFO));
@@ -174,6 +175,7 @@ public class JCallGraph {
             jarEntryHandleParser.setClassNameWriter(classNameWriter);
             jarEntryHandleParser.setClassSignatureEI1Writer(classSignatureEI1Writer);
             jarEntryHandleParser.setClassSignatureGenericsWriter(classSignatureGenericsWriter);
+            jarEntryHandleParser.setClassSigExtImplGenericsWriter(classSigExtImplGenericsWriter);
             jarEntryHandleParser.setExtendsImplWriter(extendsImplWriter);
             jarEntryHandleParser.setFieldAnnotationWriter(fieldAnnotationWriter);
             jarEntryHandleParser.setFieldInfoWriter(fieldInfoWriter);

@@ -3,6 +3,7 @@ package com.adrninistrator.javacg.parser;
 import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.common.enums.JavaCGYesNoEnum;
 import com.adrninistrator.javacg.conf.JavaCGConfInfo;
+import com.adrninistrator.javacg.dto.classes.ClassSignatureGenericsInfo;
 import com.adrninistrator.javacg.dto.classes.InnerClassInfo;
 import com.adrninistrator.javacg.dto.counter.JavaCGCounter;
 import com.adrninistrator.javacg.dto.jar.ClassAndJarNum;
@@ -23,6 +24,7 @@ import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Signature;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,6 +74,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer extendsImplWriter;
     private Writer classSignatureEI1Writer;
     private Writer classSignatureGenericsWriter;
+    private Writer classSigExtImplGenericsWriter;
     private Writer methodArgumentWriter;
     private Writer methodArgAnnotationWriter;
     private Writer methodArgGenericsTypeWriter;
@@ -295,6 +298,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         try {
             SignatureAttribute.ClassSignature signatureAttribute = SignatureAttribute.toClassSignature(signature.getSignature());
 
+            // 类涉及继承与实现的签名信息Map
+            Map<String, ClassSignatureGenericsInfo> signatureInfoMap = new HashMap<>();
             SignatureAttribute.TypeParameter[] params = signatureAttribute.getParameters();
             if (ArrayUtils.isNotEmpty(params)) {
                 // 处理类签名中的泛型类型
@@ -306,34 +311,35 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
                     if (paramClassBound != null) {
                         // 泛型类型继承了特定类的处理
                         String extendsClassName = paramClassBound.jvmTypeName();
-                        JavaCGFileUtil.write2FileWithTab(classSignatureGenericsWriter, className, String.valueOf(seq),
-                                paramName, extendsClassName);
+                        JavaCGFileUtil.write2FileWithTab(classSignatureGenericsWriter, className, String.valueOf(seq), paramName, extendsClassName);
+                        signatureInfoMap.put(paramName, new ClassSignatureGenericsInfo(extendsClassName, seq));
                         continue;
                     }
                     SignatureAttribute.ObjectType[] paramInterfaceBounds = param.getInterfaceBound();
                     if (ArrayUtils.isNotEmpty(paramInterfaceBounds)) {
                         // 泛型类型继承了特定接口的处理
-                        JavaCGFileUtil.write2FileWithTab(classSignatureGenericsWriter, className, String.valueOf(seq),
-                                paramName, paramInterfaceBounds[0].jvmTypeName());
+                        String extendsClassName = paramInterfaceBounds[0].jvmTypeName();
+                        JavaCGFileUtil.write2FileWithTab(classSignatureGenericsWriter, className, String.valueOf(seq), paramName, extendsClassName);
+                        signatureInfoMap.put(paramName, new ClassSignatureGenericsInfo(extendsClassName, seq));
                     }
                 }
             }
 
             // 处理父类相关的签名
             SignatureAttribute.ClassType superClassType = signatureAttribute.getSuperClass();
-            if (superClassType != null && !JavaCGClassMethodUtil.isClassInJdk(superClassType.getName())) {
+            if (superClassType != null) {
+                String superClassName = JavaCGSignatureUtil.getClassName(superClassType);
                 // 记录类签名中的参数信息
-                recordSignatureArgumentInfo(className, JavaCGConstants.FILE_KEY_EXTENDS, JavaCGSignatureUtil.getClassName(superClassType), superClassType);
+                recordSignatureArgumentInfo(true, className, JavaCGConstants.FILE_KEY_EXTENDS, superClassName, superClassType, signatureInfoMap);
             }
 
             // 处理接口相关的签名
             SignatureAttribute.ClassType[] interfaceClassTypes = signatureAttribute.getInterfaces();
             if (interfaceClassTypes != null) {
                 for (SignatureAttribute.ClassType interfaceClassType : interfaceClassTypes) {
-                    if (!JavaCGClassMethodUtil.isClassInJdk(interfaceClassType.getName())) {
-                        // 记录类签名中的参数信息
-                        recordSignatureArgumentInfo(className, JavaCGConstants.FILE_KEY_IMPLEMENTS, JavaCGSignatureUtil.getClassName(interfaceClassType), interfaceClassType);
-                    }
+                    String interfaceClassName = JavaCGSignatureUtil.getClassName(interfaceClassType);
+                    // 记录类签名中的参数信息
+                    recordSignatureArgumentInfo(false, className, JavaCGConstants.FILE_KEY_IMPLEMENTS, interfaceClassName, interfaceClassType, signatureInfoMap);
                 }
             }
         } catch (BadBytecode e) {
@@ -354,12 +360,15 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     /**
      * 记录类签名中的参数信息
      *
+     * @param extendsOrImpl
      * @param className
      * @param type
      * @param superOrInterfaceName
      * @param classType
+     * @param signatureInfoMap
      */
-    private void recordSignatureArgumentInfo(String className, String type, String superOrInterfaceName, SignatureAttribute.ClassType classType) throws IOException {
+    private void recordSignatureArgumentInfo(boolean extendsOrImpl, String className, String type, String superOrInterfaceName, SignatureAttribute.ClassType classType,
+                                             Map<String, ClassSignatureGenericsInfo> signatureInfoMap) throws IOException {
         SignatureAttribute.TypeArgument[] arguments = classType.getTypeArguments();
         if (arguments == null) {
             return;
@@ -368,22 +377,30 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         int seq = 0;
         for (SignatureAttribute.TypeArgument typeArgument : arguments) {
             SignatureAttribute.ObjectType objectType = typeArgument.getType();
+            String genericsName = null;
             if (objectType instanceof SignatureAttribute.ClassType) {
                 SignatureAttribute.ClassType argumentClassType = (SignatureAttribute.ClassType) objectType;
                 JavaCGFileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq),
-                        JavaCGYesNoEnum.YES.getStrValue(), JavaCGSignatureUtil.getClassName(argumentClassType));
-                seq++;
+                        JavaCGSignatureUtil.getClassName(argumentClassType), "");
             } else if (objectType instanceof SignatureAttribute.TypeVariable) {
                 SignatureAttribute.TypeVariable typeVariable = (SignatureAttribute.TypeVariable) objectType;
-                JavaCGFileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq),
-                        JavaCGYesNoEnum.NO.getStrValue(), typeVariable.getName());
-                seq++;
+                JavaCGFileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq), "", typeVariable.getName());
+                genericsName = typeVariable.getName();
             } else if (objectType instanceof SignatureAttribute.ArrayType) {
                 SignatureAttribute.ArrayType argumentArrayType = (SignatureAttribute.ArrayType) objectType;
-                JavaCGFileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq),
-                        JavaCGYesNoEnum.YES.getStrValue(), argumentArrayType.toString());
-                seq++;
+                JavaCGFileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq), argumentArrayType.toString(), "");
+                genericsName = argumentArrayType.toString();
             }
+            if (StringUtils.isNotBlank(genericsName)) {
+                ClassSignatureGenericsInfo genericsInfo = signatureInfoMap.get(genericsName);
+                if (genericsInfo != null) {
+                    // 记录当前类/接口继承或实现时与父类或接口相同的泛型名称
+                    JavaCGFileUtil.write2FileWithTab(classSigExtImplGenericsWriter, className, genericsName, String.valueOf(genericsInfo.getSeq()), (extendsOrImpl ?
+                                    JavaCGConstants.FILE_KEY_EXTENDS : JavaCGConstants.FILE_KEY_IMPLEMENTS), superOrInterfaceName, genericsInfo.getExtendsClassName(),
+                            String.valueOf(seq));
+                }
+            }
+            seq++;
         }
     }
 
@@ -490,6 +507,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setClassSignatureGenericsWriter(Writer classSignatureGenericsWriter) {
         this.classSignatureGenericsWriter = classSignatureGenericsWriter;
+    }
+
+    public void setClassSigExtImplGenericsWriter(Writer classSigExtImplGenericsWriter) {
+        this.classSigExtImplGenericsWriter = classSigExtImplGenericsWriter;
     }
 
     public void setMethodArgumentWriter(Writer methodArgumentWriter) {
