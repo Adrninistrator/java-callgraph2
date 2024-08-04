@@ -365,6 +365,16 @@ public class JavaCGByteCodeUtil {
     }
 
     /**
+     * 判断是否为interface
+     *
+     * @param accessFlags
+     * @return
+     */
+    public static boolean isInterfaceFlag(int accessFlags) {
+        return (accessFlags & Const.ACC_INTERFACE) != 0;
+    }
+
+    /**
      * 判断是否有ACC_BRIDGE标志
      *
      * @param accessFlags

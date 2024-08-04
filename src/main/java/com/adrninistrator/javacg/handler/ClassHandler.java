@@ -195,14 +195,11 @@ public class ClassHandler {
         // 记录类之间引用关系
         recordReferencedClass();
 
-        if (!javaClass.isAnnotation()) {
-            // 不是注解类型的类
-            // 记录类上的注解信息
-            JavaCGAnnotationUtil.writeAnnotationInfo(classAnnotationWriter,
-                    javaClass.getAnnotationEntries(),
-                    annotationAttributesFormatter,
-                    className);
-        }
+        // 记录类上的注解信息
+        JavaCGAnnotationUtil.writeAnnotationInfo(classAnnotationWriter,
+                javaClass.getAnnotationEntries(),
+                annotationAttributesFormatter,
+                className);
 
         if (javaCGConfInfo.isFirstParseInitMethodType()) {
             for (Method method : javaClass.getMethods()) {

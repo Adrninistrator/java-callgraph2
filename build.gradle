@@ -4,7 +4,7 @@ apply plugin: 'java-library'
 apply plugin: 'idea'
 
 group 'com.github.adrninistrator'
-version = "2.0.4"
+version = "2.0.5"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
