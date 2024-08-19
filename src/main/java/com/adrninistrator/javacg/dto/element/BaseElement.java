@@ -115,6 +115,6 @@ public abstract class BaseElement {
 
     @Override
     public String toString() {
-        return simpleClassName + " type: " + getType() + " value: " + value + String.format(" (%x)", System.identityHashCode(this));
+        return simpleClassName + " type: " + getType() + " value: " + value;
     }
 }

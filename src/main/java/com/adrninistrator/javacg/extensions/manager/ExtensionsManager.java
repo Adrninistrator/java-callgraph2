@@ -59,6 +59,7 @@ public class ExtensionsManager {
     // 对注解属性的元素值进行格式化的类
     private AnnotationAttributesFormatterInterface annotationAttributesFormatter;
 
+    // Spring XML Bean信息解析类
     private SpringXmlBeanParserInterface springXmlBeanParser;
 
     private JavaCGOutputInfo javaCGOutputInfo;
@@ -143,6 +144,19 @@ public class ExtensionsManager {
         if (!inited) {
             throw new JavaCGRuntimeException("还未完成初始化");
         }
+    }
+
+    /**
+     * 获得所有代码解析扩展类名列表
+     *
+     * @return
+     */
+    public List<String> getAllCodeParserNameList() {
+        List<String> allCodeParserNameList = new ArrayList<>();
+        for (CodeParserInterface codeParserInterface : allCodeParserList) {
+            allCodeParserNameList.add(codeParserInterface.getClass().getName());
+        }
+        return allCodeParserNameList;
     }
 
     public List<JarEntryOtherFileParser> getJarEntryOtherFileParserList(String fileExtension) {

@@ -91,7 +91,7 @@ public class ClassHandler {
     private JavaCGCounter failCounter;
     private JavaCGCounter fieldRelationshipCounter;
 
-    private Writer classNameWriter;
+    private Writer classReferenceWriter;
     private Writer methodCallWriter;
     private Writer lambdaMethodInfoWriter;
     private Writer classAnnotationWriter;
@@ -175,19 +175,18 @@ public class ClassHandler {
             }
         }
 
-        // 首先写入当前类的类名
-        JavaCGFileUtil.write2FileWithTab(classNameWriter, JavaCGConstants.FLAG_HASHTAG);
-        JavaCGFileUtil.write2FileWithTab(classNameWriter, className);
-
         List<String> referencedClassList = new ArrayList<>(referencedClassSet);
         Collections.sort(referencedClassList);
         // 写入其他被类的类名
         for (String referencedClass : referencedClassList) {
-            if (JavaCGUtil.checkSkipClass(referencedClass, javaCGConfInfo.getNeedHandlePackageSet()) ||
-                    className.equals(referencedClass)) {
+            if (JavaCGUtil.checkSkipClass(referencedClass, javaCGConfInfo.getNeedHandlePackageSet())) {
                 continue;
             }
-            JavaCGFileUtil.write2FileWithTab(classNameWriter, referencedClass);
+            JavaCGFileUtil.write2FileWithTab(classReferenceWriter, className, referencedClass);
+        }
+        if (referencedClassList.isEmpty()) {
+            // 假如当前类未引用其他类，则写入当前类引用自己，避免漏掉当前类
+            JavaCGFileUtil.write2FileWithTab(classReferenceWriter, className, className);
         }
     }
 
@@ -297,8 +296,8 @@ public class ClassHandler {
             staticFinalFieldNameTypeMap.put(fieldName, field.getType().toString());
         }
 
-        if (javaCGConfInfo.isAnalyseFieldRelationship() && !field.isStatic()) {
-            // 需要分析dto的字段之间的关联关系，处理非静态字段
+        if (!field.isStatic()) {
+            // 处理非静态字段
             try {
                 String fieldGenericSignature = field.getGenericSignature();
                 if (fieldGenericSignature != null) {
@@ -590,8 +589,8 @@ public class ClassHandler {
         this.callIdCounter = callIdCounter;
     }
 
-    public void setClassNameWriter(Writer classNameWriter) {
-        this.classNameWriter = classNameWriter;
+    public void setClassReferenceWriter(Writer classReferenceWriter) {
+        this.classReferenceWriter = classReferenceWriter;
     }
 
     public void setMethodCallWriter(Writer methodCallWriter) {

@@ -132,7 +132,7 @@ public class JCallGraph {
 
         try (Writer classAnnotationWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_ANNOTATION));
              Writer classInfoWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_INFO));
-             Writer classNameWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_NAME));
+             Writer classReferenceWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_REFERENCE));
              Writer classSignatureEI1Writer = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_EI1));
              Writer classSignatureGenericsWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_GENERICS));
              Writer classSigExtImplGenericsWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_CLASS_SIG_EXT_IMPL_GENERICS));
@@ -165,14 +165,14 @@ public class JCallGraph {
              Writer setMethodWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_SET_METHOD));
              Writer springBeanWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_SPRING_BEAN));
              Writer staticFinalFieldMethodCallIdWriter = JavaCGFileUtil.genBufferedWriter(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_SF_FIELD_METHOD_CALL));
-             WriterSupportSkip logMethodSpendTimeWriter = new WriterSupportSkip(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LOG_METHOD_SPEND_TIME))
+             WriterSupportSkip logMethodSpendTimeWriter = new WriterSupportSkip(javaCGOutputInfo.getMainFilePath(JavaCGOutPutFileTypeEnum.OPFTE_LOG_METHOD_SPEND_TIME), false)
         ) {
             JavaCGFileUtil.write2FileWithTab(jarInfoWriter, JavaCGConstants.FILE_KEY_RESULT_DIR_INFO_PREFIX, String.valueOf(JavaCGConstants.RECORD_ID_MIN),
                     javaCGOutputInfo.getOutputDirPath());
 
             jarEntryHandleParser.setClassAnnotationWriter(classAnnotationWriter);
             jarEntryHandleParser.setClassInfoWriter(classInfoWriter);
-            jarEntryHandleParser.setClassNameWriter(classNameWriter);
+            jarEntryHandleParser.setClassReferenceWriter(classReferenceWriter);
             jarEntryHandleParser.setClassSignatureEI1Writer(classSignatureEI1Writer);
             jarEntryHandleParser.setClassSignatureGenericsWriter(classSignatureGenericsWriter);
             jarEntryHandleParser.setClassSigExtImplGenericsWriter(classSigExtImplGenericsWriter);
@@ -555,7 +555,7 @@ public class JCallGraph {
     }
 
     /**
-     * 添加自定义代码解析类
+     * 添加代码解析扩展类
      * 需要在调用run()方法之前调用当前方法
      *
      * @param codeParser
@@ -567,6 +567,15 @@ public class JCallGraph {
             return;
         }
         extensionsManager.addCodeParser(codeParser);
+    }
+
+    /**
+     * 获得所有代码解析扩展类名列表
+     *
+     * @return
+     */
+    public List<String> getAllCodeParserNameList() {
+        return extensionsManager.getAllCodeParserNameList();
     }
 
     // 获取java-callgraph2处理结果信息

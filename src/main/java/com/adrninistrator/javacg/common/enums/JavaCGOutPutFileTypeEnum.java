@@ -9,7 +9,7 @@ public enum JavaCGOutPutFileTypeEnum {
 
     OPFTE_CLASS_ANNOTATION("class_annotation", "类的注解"),
     OPFTE_CLASS_INFO("class_info", "类的信息"),
-    OPFTE_CLASS_NAME("class_name", "引用的类"),
+    OPFTE_CLASS_REFERENCE("class_reference", "引用的类"),
     OPFTE_CLASS_SIGNATURE_EI1("class_signature_ei1", "类的签名中涉及继承与实现的信息1"),
     OPFTE_CLASS_SIGNATURE_GENERICS("class_signature_generics", "类的签名中的泛型信息"),
     OPFTE_CLASS_SIG_EXT_IMPL_GENERICS("class_sig_ext_impl_generics", "类的签名中继承或实现的泛型关系"),

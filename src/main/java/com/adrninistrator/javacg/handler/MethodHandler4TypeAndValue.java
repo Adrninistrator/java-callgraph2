@@ -1279,7 +1279,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         }
 
         // 若当前字段集合中涉及的泛型类型已记录则不再重复记录
-        boolean recorded = recordedFieldWithGenericsTypeSet.add(fieldName);
+        boolean notRecorded = recordedFieldWithGenericsTypeSet.add(fieldName);
         int seq = 0;
         for (String fieldGenericsType : fieldGenericsTypeList) {
             boolean isCustomType = JavaCGClassMethodUtil.isCustomType(fieldGenericsType);
@@ -1288,7 +1288,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                 fieldCategory = JavaCGConstants.FILE_KEY_CATEGORY_GENERICS_CUSTOM;
             }
 
-            if (!recorded) {
+            if (notRecorded) {
                 // 当前字段未记录时进行记录
                 JavaCGFileUtil.write2FileWithTab(fieldGenericsTypeWriter,
                         callerClassName,

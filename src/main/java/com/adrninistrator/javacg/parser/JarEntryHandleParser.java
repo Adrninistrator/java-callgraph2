@@ -56,7 +56,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Map<String, Boolean> threadChildClassMap;
 
     private Writer jarInfoWriter;
-    private Writer classNameWriter;
+    private Writer classReferenceWriter;
     private Writer methodCallWriter;
     private Writer lambdaMethodInfoWriter;
     private Writer classAnnotationWriter;
@@ -185,7 +185,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         classHandler.setTransactionCallbackWithoutResultChildClassMap(transactionCallbackWithoutResultChildClassMap);
         classHandler.setThreadChildClassMap(threadChildClassMap);
         classHandler.setCallIdCounter(callIdCounter);
-        classHandler.setClassNameWriter(classNameWriter);
+        classHandler.setClassReferenceWriter(classReferenceWriter);
         classHandler.setClassAnnotationWriter(classAnnotationWriter);
         classHandler.setMethodAnnotationWriter(methodAnnotationWriter);
         classHandler.setFieldAnnotationWriter(fieldAnnotationWriter);
@@ -437,8 +437,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.jarInfoWriter = jarInfoWriter;
     }
 
-    public void setClassNameWriter(Writer classNameWriter) {
-        this.classNameWriter = classNameWriter;
+    public void setClassReferenceWriter(Writer classReferenceWriter) {
+        this.classReferenceWriter = classReferenceWriter;
     }
 
     public void setMethodCallWriter(Writer methodCallWriter) {

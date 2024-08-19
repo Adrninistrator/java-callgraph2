@@ -4,7 +4,7 @@ apply plugin: 'java-library'
 apply plugin: 'idea'
 
 group 'com.github.adrninistrator'
-version = "2.0.5"
+version = "2.0.6"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
@@ -75,6 +75,10 @@ dependencies {
 compileJava.options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 
 processResources {
+    setDuplicatesStrategy(DuplicatesStrategy.INCLUDE)
+}
+
+processTestResources {
     setDuplicatesStrategy(DuplicatesStrategy.INCLUDE)
 }
 

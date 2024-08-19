@@ -33,8 +33,8 @@ public class MethodCallParseResult extends BaseInstructionParseResult {
     @Override
     public String toString() {
         return "MethodCallObjRefAndArgs{" +
-                "\nobjectReference=" + objectElement +
-                "\n, argumentList=" + argumentList +
+                "objectReference=" + objectElement +
+                ", argumentList=" + argumentList +
                 '}';
     }
 }

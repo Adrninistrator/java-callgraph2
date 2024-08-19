@@ -44,7 +44,6 @@ public class FieldElement extends LocalVariableElement {
                 "type='" + getType() + '\'' +
                 ", value=" + value +
                 ", name='" + getName() + '\'' +
-                ", className='" + className + '\'' +
-                '}' + String.format(" (%x)", System.identityHashCode(this));
+                ", className='" + className + '\'';
     }
 }

@@ -13,6 +13,7 @@ import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.generic.ArrayType;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +31,9 @@ public class JavaCGLocalVariables {
     private static final Logger logger = LoggerFactory.getLogger(JavaCGLocalVariables.class);
 
     private List<LocalVariableElement> localVariableElementList;
+
+    private JavaCGLocalVariables() {
+    }
 
     /**
      * 初始化方法的本地变量
@@ -77,7 +81,7 @@ public class JavaCGLocalVariables {
                 javaCGLocalVariablesCopy.localVariableElementList.add(null);
                 continue;
             }
-            javaCGLocalVariablesCopy.localVariableElementList.add(localVariableElement.copyLocalVariableElement());
+            javaCGLocalVariablesCopy.localVariableElementList.add((LocalVariableElement)localVariableElement.copyElement());
         }
         return javaCGLocalVariablesCopy;
     }
@@ -186,12 +190,24 @@ public class JavaCGLocalVariables {
         localVariableElementList.set(index, localVariableElement.copyWithNullValue());
     }
 
-    private JavaCGLocalVariables() {
+    /**
+     * 生成内容的HASH值
+     *
+     * @return
+     */
+    public String genHash() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < localVariableElementList.size(); i++) {
+            LocalVariableElement variableElement = localVariableElementList.get(i);
+            stringBuilder.append(variableElement).append("\n");
+        }
+        return DigestUtils.md5Hex(stringBuilder.toString());
     }
 
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("hash: ").append(genHash()).append("\n");
         stringBuilder.append("num: ").append(localVariableElementList.size()).append("\n");
 
         for (int i = 0; i < localVariableElementList.size(); i++) {

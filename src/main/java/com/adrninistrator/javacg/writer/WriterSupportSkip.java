@@ -14,11 +14,17 @@ import java.io.Writer;
 public class WriterSupportSkip implements Closeable {
 
     private final String filePath;
+    private final boolean buffered;
 
     private Writer writer;
 
     public WriterSupportSkip(String filePath) {
+        this(filePath, true);
+    }
+
+    public WriterSupportSkip(String filePath, boolean buffered) {
         this.filePath = filePath;
+        this.buffered = buffered;
     }
 
     @Override
@@ -33,5 +39,9 @@ public class WriterSupportSkip implements Closeable {
             writer = JavaCGFileUtil.genBufferedWriter(filePath);
         }
         writer.write(data);
+        if (!buffered) {
+            // 不缓存时，每次写文件后flush
+            writer.flush();
+        }
     }
 }

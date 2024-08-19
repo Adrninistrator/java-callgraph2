@@ -15,6 +15,9 @@ public enum JavaCGOtherConfigFileUseListEnum {
                     + JavaCGConstants.NEW_LINE + "(示例) build/libs/test.jar"
                     + JavaCGConstants.NEW_LINE + "(示例) D:/test/build/libs/test.jar"
     ),
+    OCFULE_CODE_PARSER_ONLY_4SHOW("代码解析扩展类名（仅用于显示）",
+            "对代码进行解析的扩展类完整类名"
+    ),
     ;
 
     private final String fileName;

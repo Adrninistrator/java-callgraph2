@@ -51,8 +51,8 @@ public class InstructionStepList {
      * @return
      */
     public String genInstructionStepHash() {
-        String instructionPositionList = StringUtils.join(positionList, " ");
-        return DigestUtils.md5Hex(instructionPositionList);
+        String instructionPositionStr = StringUtils.join(positionList, " ");
+        return DigestUtils.md5Hex(instructionPositionStr);
     }
 
     @Override

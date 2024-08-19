@@ -69,7 +69,8 @@ public class FrameSnapshotEntry {
 
     @Override
     public String toString() {
-        return "stackSnapshot.size() " + stackSnapshot.size() +
+        return "localsHash " + localsSnapshot.genHash() +
+                " stackSnapshot.size() " + stackSnapshot.size() +
                 " localsSnapshot.size() " + localsSnapshot.size() +
                 " nonStaticFieldInfo.size() " + nonStaticFieldInfoMap.size() +
                 " staticFieldInfo.size() " + staticFieldInfoMap.size();

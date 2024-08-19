@@ -4,7 +4,9 @@ import com.adrninistrator.javacg.common.JavaCGConstants;
 import com.adrninistrator.javacg.dto.element.BaseElement;
 import com.adrninistrator.javacg.dto.variabledatasource.AbstractVariableDataSource;
 import com.adrninistrator.javacg.dto.variabledatasource.VariableDataSourceMethodCallReturn;
+import com.adrninistrator.javacg.util.JavaCGUtil;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -89,7 +91,13 @@ public class VariableElement extends BaseElement {
             return;
         }
         // 使用被调用参数作为等值转换前的数据来源
-        BaseElement argElement = variableDataSourceMethodCallReturn.getArgElementList().get(objArgSeq - 1);
+        List<BaseElement> argElementList = variableDataSourceMethodCallReturn.getArgElementList();
+        if (JavaCGUtil.isCollectionEmpty(argElementList) || argElementList.size() < objArgSeq) {
+            // 若未找到对应参数则不处理
+            return;
+        }
+
+        BaseElement argElement = argElementList.get(objArgSeq - 1);
         // 记录变量等值转换前的数据来源
         recordVariableDataSourceEQC(argElement);
     }
