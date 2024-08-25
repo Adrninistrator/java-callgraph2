@@ -96,6 +96,10 @@ task gen_run_jar(type: Jar) {
         into '/'
     }
 
+    doFirst {
+        delete "${jar_output_dir}"
+    }
+    
     doLast {
         copy {
             from 'build/libs/run_javacg2.jar'
