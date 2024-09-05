@@ -1,5 +1,4 @@
 build/
-dist/
 bin/
 out/
 .project
@@ -9,6 +8,6 @@ out/
 *.iml
 .classpath
 jar_output_dir/
-log_javacg/
+log_javacg2/
 runlocal/
 config_local/

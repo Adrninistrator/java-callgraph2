@@ -10,7 +10,9 @@ java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](h
 
 # 2. 使用说明
 
-## 2.1. 编译方式
+## 2.1. 通过源码编译
+
+### 2.1.1. 编译方式
 
 执行以下命令
 
@@ -18,25 +20,33 @@ java-callgraph2项目原本fork自[https://github.com/gousiosg/java-callgraph](h
 gradlew jar
 ```
 
-## 2.2. 执行方式
+### 2.1.2. 执行方式
 
 执行命令可参考脚本文件`run.bat`、`run.sh`
 
-### 2.2.1. 程序主类
+#### 2.1.2.1. 程序主类
 
 ```java
-com.adrninistrator.javacg.stat.JCallGraph
+com.adrninistrator.javacg2.stat.JCallGraph2
 ```
 
-### 2.2.2. 配置参数
+#### 2.1.2.2. 配置参数
 
-参考 _javacg_config 目录的配置文件
+参考 _javacg2_config 目录的配置文件
 
 主要配置文件为 config.properties
 
 需要分析的jar包或目录路径对应的配置文件为 jar_dir.properties
 
 假如仅分析特定包名的类，可在配置文件 packages.properties 中配置
+
+## 2.2. 通过组件引用
+
+可在其他项目中通过组件方式引用当前项目，添加的Gradle格式的组件依赖如下：
+
+```
+com.github.adrninistrator:java-callgraph2:
+```
 
 # 3. 生成可以直接执行的文件
 
@@ -86,7 +96,7 @@ b. 对于指定目录中的后缀非.jar/.war的文件进行合并
 
 保存在指定的第一个jar/war包所在目录中（若第一个是目录则在该目录中）
 
-文件名为第一个jar/war包加上“-javacg_merged.jar”
+文件名为第一个jar/war包加上“-javacg2_merged.jar”
 
 第一层目录为每个被合并的.jar/.war文件或目录的名称
 
@@ -162,6 +172,21 @@ packages.properties
 ## 6.11. (1.0.16)临时说明
 
 在输出的`method_call`文件中，增加增加调用方法返回类型，使被调用方法返回类型更准确
+
+## 6.12. (2.0.7)临时说明
+
+支持分析同名的jar包、目录
+
+为了使代码及配置文件与“jacg”更容易区分，对代码及配置文件进行以下名称修改
+
+|内容|修改前的名称|修改后的名称|
+|---|---|---|
+|包名|com.adrninistrator.javacg|com.adrninistrator.javacg2|
+|主类|com.adrninistrator.javacg.stat.JCallGraph|com.adrninistrator.javacg2.entry.JavaCG2Entry|
+|目录、文件名称|javacg|javacg2|
+|类名前缀|JavaCG|JavaCG2|
+
+`当升级到该版本时，假如之前有对目录进行过分析，则相关目录中的“-javacg_merged.jar”文件需要删除`
 
 # 7. 原始java-callgraph调用关系缺失的场景
 

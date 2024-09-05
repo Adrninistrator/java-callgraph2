@@ -6,7 +6,7 @@
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %C{1}.%M(%L) - %m%n"/>
         </Console>
 
-        <RollingFile name="file" fileName="log_javacg/javacg2.log" filePattern="log_javacg/javacg2.log.%d{yyyy-MM-dd}.%i.log.gz">
+        <RollingFile name="file" fileName="log_javacg2/javacg2.log" filePattern="log_javacg2/javacg2.log.%d{yyyy-MM-dd}.%i.log.gz">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %c{1}.%M(%F:%L) - %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy/>
