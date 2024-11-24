@@ -27,7 +27,7 @@ gradlew jar
 #### 2.1.2.1. 程序主类
 
 ```java
-com.adrninistrator.javacg2.stat.JCallGraph2
+com.adrninistrator.javacg2.entry.JavaCG2Entry
 ```
 
 #### 2.1.2.2. 配置参数
