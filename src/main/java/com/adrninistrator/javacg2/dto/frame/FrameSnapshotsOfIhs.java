@@ -1,5 +1,9 @@
 package com.adrninistrator.javacg2.dto.frame;
 
+import com.adrninistrator.javacg2.common.JavaCG2Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,6 +17,13 @@ import java.util.Set;
  * @description: 指令与对应的栈桢信息快照列表
  */
 public class FrameSnapshotsOfIhs {
+    private static final Logger logger = LoggerFactory.getLogger(FrameSnapshotsOfIhs.class);
+
+    private final String fullMethod;
+
+    private final String usage;
+
+    private final Set<String> frameSnapshotNumExceedMethodSet;
 
     /*
         指令对应的栈桢信息快照
@@ -23,7 +34,16 @@ public class FrameSnapshotsOfIhs {
      */
     private final Map<Integer, List<FrameSnapshotEntry>> frameSnapshotOfIhsMap;
 
-    public FrameSnapshotsOfIhs() {
+    // 栈桢快照信息数量
+    private int frameSnapshotNum = 0;
+
+    // 栈桢快照信息数量是否超过允许的最大值
+    private boolean exceedFrameSnapshotNum = false;
+
+    public FrameSnapshotsOfIhs(String fullMethod, String usage, Set<String> frameSnapshotNumExceedMethodSet) {
+        this.fullMethod = fullMethod;
+        this.usage = usage;
+        this.frameSnapshotNumExceedMethodSet = frameSnapshotNumExceedMethodSet;
         frameSnapshotOfIhsMap = new HashMap<>();
     }
 
@@ -32,7 +52,7 @@ public class FrameSnapshotsOfIhs {
     }
 
     /**
-     * 添加信息快照
+     * 添加栈桢信息快照
      *
      * @param position
      * @param addedStack
@@ -46,24 +66,44 @@ public class FrameSnapshotsOfIhs {
                                JavaCG2LocalVariables addedLocals,
                                FieldInformationMap addedNonStaticFieldInfoMap,
                                FieldInformationMap addedStaticFieldInfoMap) {
+        if (exceedFrameSnapshotNum) {
+            // 方法的栈桢信息快照数量超过允许的最大数量，固定返回已存在相同的信息快照
+            return false;
+        }
+
         List<FrameSnapshotEntry> frameSnapshotEntryList = frameSnapshotOfIhsMap.get(position);
         if (frameSnapshotEntryList == null) {
             // 当前跳转目标指令处理过的栈桢信息快照为空，记录信息快照
             frameSnapshotEntryList = new ArrayList<>();
             frameSnapshotEntryList.add(new FrameSnapshotEntry(addedStack.copy(), addedLocals.copy(), addedNonStaticFieldInfoMap.copy(), addedStaticFieldInfoMap.copy()));
             frameSnapshotOfIhsMap.put(position, frameSnapshotEntryList);
+            // 处理栈桢信息快照数量
+            handleFrameSnapshotEntryNum();
             return true;
         }
 
         // 判断当前栈桢对应的信息快照是否存在相同的记录
         if (checkExistSnapshotLooseMode(frameSnapshotEntryList, addedStack, addedLocals, addedNonStaticFieldInfoMap, addedStaticFieldInfoMap)) {
-            // 已存在相同的信息快照，未添加
+            // 已存在相同的信息快照，不需要添加
             return false;
         }
 
         // 不存在相同的信息快照，需要添加
         frameSnapshotEntryList.add(new FrameSnapshotEntry(addedStack.copy(), addedLocals.copy(), addedNonStaticFieldInfoMap.copy(), addedStaticFieldInfoMap.copy()));
+        // 处理栈桢信息快照数量
+        handleFrameSnapshotEntryNum();
         return true;
+    }
+
+    // 处理栈桢信息快照数量
+    private void handleFrameSnapshotEntryNum() {
+        frameSnapshotNum++;
+
+        if (frameSnapshotNum >= JavaCG2Constants.MAX_FRAME_SNAP_SHOTS_NUM) {
+            logger.warn("方法的栈桢信息快照数量超过允许的最大数量 {} {} {}", usage, fullMethod, frameSnapshotNum);
+            exceedFrameSnapshotNum = true;
+            frameSnapshotNumExceedMethodSet.add(fullMethod);
+        }
     }
 
     /**

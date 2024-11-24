@@ -35,9 +35,9 @@ public class JavaCG2Constants {
     public static final String FILE_KEY_CATEGORY_JDK = "J";
     // 自定义类型
     public static final String FILE_KEY_CATEGORY_CUSTOM = "C";
-    // 集合的泛型类型，只涉及JDK中的类型
+    // 泛型类型，只涉及JDK中的类型
     public static final String FILE_KEY_CATEGORY_GENERICS_JDK = "GJ";
-    // 集合的泛型类型，涉及自定义类型
+    // 泛型类型，涉及自定义类型
     public static final String FILE_KEY_CATEGORY_GENERICS_CUSTOM = "GC";
     // 方法中通过catch捕获的异常标志，编译器为switch生成的catch代码块
     public static final String FILE_KEY_CATCH_FLAG_SWITCH = "switch";
@@ -53,6 +53,11 @@ public class JavaCG2Constants {
     public static final String FILE_KEY_SPRING_BEAN_IN_JAVA = "j";
     // Spring Bean的定义方式，XML文件中定义
     public static final String FILE_KEY_SPRING_BEAN_IN_XML = "x";
+
+    // 配置类型
+    public static final String CONFIG_PROPERTIES = "properties";
+    public static final String CONFIG_LIST = "list";
+    public static final String CONFIG_SET = "set";
 
     public static final String FLAG_HASHTAG = "#";
     public static final String FLAG_ARRAY = "[]";
@@ -83,6 +88,7 @@ public class JavaCG2Constants {
     public static final String DIR_FAIL_CLASSES = "javacg2_fail_classes";
 
     public static final String FILE_CONFIG = "config.properties";
+    public static final String FILE_PATH_CONFIG = DIR_CONFIG + "/" + FILE_CONFIG;
 
     public static final String FILE_TYPE_CLASS = "class";
 
@@ -143,6 +149,8 @@ public class JavaCG2Constants {
 
     public static final String TRY = "try";
     public static final String CATCH = "catch";
+
+    public static final int MAX_FRAME_SNAP_SHOTS_NUM = 50000;
 
     private JavaCG2Constants() {
         throw new IllegalStateException("illegal");

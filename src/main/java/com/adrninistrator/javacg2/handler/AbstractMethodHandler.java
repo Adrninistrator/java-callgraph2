@@ -7,6 +7,8 @@ import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
 import com.adrninistrator.javacg2.dto.field.FieldPossibleTypes;
 import com.adrninistrator.javacg2.dto.fieldrelationship.GetSetFieldRelationship;
 import com.adrninistrator.javacg2.dto.instruction.InvokeInstructionPosAndCallee;
+import com.adrninistrator.javacg2.dto.type.JavaCG2GenericsType;
+import com.adrninistrator.javacg2.dto.type.JavaCG2Type;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.Method;
@@ -19,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,7 +72,6 @@ public abstract class AbstractMethodHandler {
 
     protected Writer getMethodWriter;
     protected Writer setMethodWriter;
-    protected Writer fieldGenericsTypeWriter;
 
     // 非静态字段字段所有可能的类型
     protected FieldPossibleTypes nonStaticFieldPossibleTypes;
@@ -79,14 +81,14 @@ public abstract class AbstractMethodHandler {
         key     字段名称
         value   字段类型
      */
-    protected Map<String, String> nonStaticFieldNameTypeMap;
+    protected Map<String, JavaCG2Type> nonStaticFieldNameTypeMap;
 
     /*
         记录当前类非静态的字段名称及集合类型中的泛型类型Map
         key     字段名称
         value   集合类型中的泛型类型
      */
-    protected Map<String, List<String>> nonStaticFieldNameGenericsTypeMap;
+    protected Map<String, List<JavaCG2GenericsType>> nonStaticFieldNameGenericsTypeMap;
 
     /*
         记录当前类的static、final字段名称及初始化方法指令位置的Map
@@ -94,9 +96,6 @@ public abstract class AbstractMethodHandler {
         value   初始化方法指令位置列表
      */
     protected Map<String, List<InvokeInstructionPosAndCallee>> sfFieldInvokeInstructionMap;
-
-    // dto的非静态字段集合中涉及的泛型类型已记录的字段名称Set
-    protected Set<String> recordedFieldWithGenericsTypeSet;
 
     // 保存作为当前方法返回的方法参数序号
     protected List<Integer> methodReturnArgSeqList;
@@ -112,6 +111,12 @@ public abstract class AbstractMethodHandler {
 
     // 记录通过get/set方法关联的字段关系信息
     protected List<GetSetFieldRelationship> getSetFieldRelationshipList;
+
+    // 存在get方法的字段名称Set
+    protected Set<String> fieldWithGetMethodNameSet = new HashSet<>();
+
+    // 存在set方法的字段名称Set
+    protected Set<String> fieldWithSetMethodNameSet = new HashSet<>();
 
     protected JavaCG2Counter fieldRelationshipCounter;
 
@@ -211,7 +216,7 @@ public abstract class AbstractMethodHandler {
             if (continueWhenError) {
                 return true;
             }
-            logger.info("假如在处理方法出现异常时需要继续执行，请在配置文件 {} 中指定参数 {}", JavaCG2Constants.FILE_CONFIG,
+            logger.info("假如在处理方法出现异常时需要继续执行，请在配置文件 {} 中指定参数 {}", JavaCG2Constants.FILE_PATH_CONFIG,
                     JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR.getKey() + JavaCG2Constants.FLAG_EQUAL + Boolean.TRUE);
             return false;
         }
@@ -256,28 +261,20 @@ public abstract class AbstractMethodHandler {
         this.setMethodWriter = setMethodWriter;
     }
 
-    public void setFieldGenericsTypeWriter(Writer fieldGenericsTypeWriter) {
-        this.fieldGenericsTypeWriter = fieldGenericsTypeWriter;
-    }
-
     public void setNonStaticFieldPossibleTypes(FieldPossibleTypes nonStaticFieldPossibleTypes) {
         this.nonStaticFieldPossibleTypes = nonStaticFieldPossibleTypes;
     }
 
-    public void setNonStaticFieldNameTypeMap(Map<String, String> nonStaticFieldNameTypeMap) {
+    public void setNonStaticFieldNameTypeMap(Map<String, JavaCG2Type> nonStaticFieldNameTypeMap) {
         this.nonStaticFieldNameTypeMap = nonStaticFieldNameTypeMap;
     }
 
-    public void setNonStaticFieldNameGenericsTypeMap(Map<String, List<String>> nonStaticFieldNameGenericsTypeMap) {
+    public void setNonStaticFieldNameGenericsTypeMap(Map<String, List<JavaCG2GenericsType>> nonStaticFieldNameGenericsTypeMap) {
         this.nonStaticFieldNameGenericsTypeMap = nonStaticFieldNameGenericsTypeMap;
     }
 
     public void setSfFieldInvokeInstructionMap(Map<String, List<InvokeInstructionPosAndCallee>> sfFieldInvokeInstructionMap) {
         this.sfFieldInvokeInstructionMap = sfFieldInvokeInstructionMap;
-    }
-
-    public void setRecordedFieldWithGenericsTypeSet(Set<String> recordedFieldWithGenericsTypeSet) {
-        this.recordedFieldWithGenericsTypeSet = recordedFieldWithGenericsTypeSet;
     }
 
     public void setMethodReturnArgSeqList(List<Integer> methodReturnArgSeqList) {
@@ -302,5 +299,13 @@ public abstract class AbstractMethodHandler {
 
     public void setFieldRelationshipCounter(JavaCG2Counter fieldRelationshipCounter) {
         this.fieldRelationshipCounter = fieldRelationshipCounter;
+    }
+
+    public void setFieldWithGetMethodNameSet(Set<String> fieldWithGetMethodNameSet) {
+        this.fieldWithGetMethodNameSet = fieldWithGetMethodNameSet;
+    }
+
+    public void setFieldWithSetMethodNameSet(Set<String> fieldWithSetMethodNameSet) {
+        this.fieldWithSetMethodNameSet = fieldWithSetMethodNameSet;
     }
 }

@@ -6,6 +6,7 @@ import com.adrninistrator.javacg2.common.TypeConstants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2ConstantTypeEnum;
 import com.adrninistrator.javacg2.dto.classes.InnerClassInfo;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
+import com.adrninistrator.javacg2.dto.type.JavaCG2Type;
 import org.apache.bcel.Const;
 import org.apache.bcel.classfile.AccessFlags;
 import org.apache.bcel.classfile.Attribute;
@@ -17,7 +18,11 @@ import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.classfile.Signature;
 import org.apache.bcel.classfile.Utility;
+import org.apache.bcel.generic.ArrayType;
+import org.apache.bcel.generic.BasicType;
 import org.apache.bcel.generic.MethodGen;
+import org.apache.bcel.generic.ObjectType;
+import org.apache.bcel.generic.Type;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -571,6 +576,47 @@ public class JavaCG2ByteCodeUtil {
      */
     public static int getLocalVariableTableIndex(MethodGen mg, int argIndex) {
         return argIndex + (mg.isStatic() ? 0 : 1);
+    }
+
+    /**
+     * 获得字段类型，以及属于数组类型时的数组维度
+     *
+     * @param type
+     * @return
+     */
+    public static JavaCG2Type genJavaCG2Type(Type type) {
+        JavaCG2Type javaCG2Type = new JavaCG2Type();
+        String typeStr;
+        int arrayDimensions = 0;
+        if (type instanceof BasicType) {
+            // 字段类型为基本类型
+            BasicType basicType = (BasicType) type;
+            typeStr = basicType.getClassName();
+        } else if (type instanceof ObjectType) {
+            // 字段类型为类类型
+            ObjectType objectType = (ObjectType) type;
+            typeStr = objectType.getClassName();
+        } else if (type instanceof ArrayType) {
+            // 字段类型为数组
+            ArrayType arrayType = (ArrayType) type;
+            arrayDimensions = arrayType.getDimensions();
+            typeStr = arrayType.getBasicType().toString();
+        } else {
+            typeStr = type.toString();
+        }
+        javaCG2Type.setType(typeStr);
+        javaCG2Type.setArrayDimensions(arrayDimensions);
+        return javaCG2Type;
+    }
+
+    /**
+     * 生成文件中多列形式的泛型信息字符串，用于固定类型
+     *
+     * @param javaCG2Type
+     * @return
+     */
+    public static String genGenericsTypeStr4Fixed(JavaCG2Type javaCG2Type) {
+        return JavaCG2FileUtil.appendFileColumn("0", javaCG2Type.getType(), String.valueOf(javaCG2Type.getArrayDimensions()), "", "", "", "");
     }
 
     private JavaCG2ByteCodeUtil() {

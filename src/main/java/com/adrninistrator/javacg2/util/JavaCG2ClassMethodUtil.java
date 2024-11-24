@@ -352,7 +352,7 @@ public class JavaCG2ClassMethodUtil {
      * @return
      */
     public static boolean isClassInJdk(String className) {
-        return StringUtils.startsWith(className, JavaCG2CommonNameConstants.PACKAGE_JAVA);
+        return StringUtils.startsWithAny(className, JavaCG2CommonNameConstants.PACKAGE_JAVA, JavaCG2CommonNameConstants.PACKAGE_JAVAX);
     }
 
     /**
@@ -365,6 +365,19 @@ public class JavaCG2ClassMethodUtil {
         // 去掉数组形式中全部的[]
         String typeWithoutArray = JavaCG2ByteCodeUtil.removeAllArrayFlag(type);
         return !isClassInJdk(typeWithoutArray) && !JavaCG2ConstantTypeEnum.isConstantType(typeWithoutArray);
+    }
+
+    /**
+     * 获得类对应的类型，自定义类型，或JDK中的类
+     *
+     * @param className
+     * @return
+     */
+    public static String getClassCategory(String className) {
+        if (StringUtils.isBlank(className)) {
+            return "";
+        }
+        return isCustomType(className) ? JavaCG2Constants.FILE_KEY_CATEGORY_CUSTOM : JavaCG2Constants.FILE_KEY_CATEGORY_JDK;
     }
 
     /**

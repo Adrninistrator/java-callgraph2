@@ -24,10 +24,6 @@ public class LocalVariableElement extends VariableElement {
 
     @Override
     public BaseElement copyElement() {
-        return copyLocalVariableElement();
-    }
-
-    public LocalVariableElement copyLocalVariableElement() {
         LocalVariableElement localVariableElementCopy = new LocalVariableElement(getType(), arrayElement, value, index, name);
         localVariableElementCopy.copyVariableDataSource(this);
         return localVariableElementCopy;

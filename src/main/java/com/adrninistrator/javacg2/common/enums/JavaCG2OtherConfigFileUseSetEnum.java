@@ -21,6 +21,10 @@ public enum JavaCG2OtherConfigFileUseSetEnum {
                     + JavaCG2Constants.NEW_LINE + "(示例) .xml"
                     + JavaCG2Constants.NEW_LINE + "(示例) .properties"
     ),
+    OCFUSE_IGNORE_CLASS_NAME(JavaCG2Constants.DIR_CONFIG + "/ignore_class_name.properties",
+            "# (作用) 在处理jar包中的文件时，假如class文件对应类名在当前文件中，则不处理对应的类（每行代表一个类，支持多行）"
+                    + JavaCG2Constants.NEW_LINE + "# (示例) a.b.Class1"
+    ),
     OCFUSE_IGNORE_JAR_FILE_KEYWORD(JavaCG2Constants.DIR_CONFIG + "/ignore_jar_file_keyword.properties",
             "(作用) 在处理jar包中的文件时，文件名在当前文件中时就忽略（每行代表一个文件名，支持多行）"
                     + JavaCG2Constants.NEW_LINE + "(格式) 文件名区分大小写，需要包含文件后缀"

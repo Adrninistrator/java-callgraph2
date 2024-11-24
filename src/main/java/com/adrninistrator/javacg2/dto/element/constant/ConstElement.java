@@ -8,17 +8,12 @@ import com.adrninistrator.javacg2.dto.element.BaseElement;
  * @date 2022/5/13
  * @description: 常量基类
  */
-public class ConstElement extends BaseElement {
+public abstract class ConstElement extends BaseElement {
 
     ConstElement(Object value) {
         if (value != null) {
             this.value = value;
         }
-    }
-
-    @Override
-    public BaseElement copyElement() {
-        return new ConstElement(value);
     }
 
     /**

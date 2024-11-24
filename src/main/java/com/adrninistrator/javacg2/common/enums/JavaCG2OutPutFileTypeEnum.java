@@ -7,16 +7,16 @@ package com.adrninistrator.javacg2.common.enums;
  */
 public enum JavaCG2OutPutFileTypeEnum {
 
+    OPFTE_JAVACG2_CONFIG("javacg2_config", "java-callgraph2组件使用的配置参数"),
     OPFTE_CLASS_ANNOTATION("class_annotation", "类的注解"),
     OPFTE_CLASS_INFO("class_info", "类的信息"),
     OPFTE_CLASS_REFERENCE("class_reference", "引用的类"),
-    OPFTE_CLASS_SIGNATURE_EI1("class_signature_ei1", "类的签名中涉及继承与实现的信息1"),
-    OPFTE_CLASS_SIGNATURE_GENERICS("class_signature_generics", "类的签名中的泛型信息"),
-    OPFTE_CLASS_SIG_EXT_IMPL_GENERICS("class_sig_ext_impl_generics", "类的签名中继承或实现的泛型关系"),
+    OPFTE_CLASS_SIGNATURE_GENERICS_TYPE("class_signature_generics_type", "类的签名中的泛型信息"),
+    OPFTE_CLASS_EXT_IMPL_GENERICS_TYPE("class_ext_impl_generics_type", "类的继承或实现的泛型信息"),
     OPFTE_EXTENDS_IMPL("extends_impl", "继承与实现相关信息"),
     OPFTE_FIELD_ANNOTATION("field_annotation", "字段的注解"),
     OPFTE_FIELD_INFO("field_info", "字段信息"),
-    OPFTE_FIELD_GENERICS_TYPE("field_generics_type", "dto的非静态字段集合中涉及的泛型类型"),
+    OPFTE_FIELD_GENERICS_TYPE("field_generics_type", "非静态字段集合中涉及的泛型类型"),
     OPFTE_FIELD_RELATIONSHIP("field_relationship", "通过get/set方法关联的字段关系"),
     OPFTE_GET_METHOD("get_method", "dto的get方法及字段"),
     OPFTE_INNER_CLASS("inner_class", "内部类信息"),

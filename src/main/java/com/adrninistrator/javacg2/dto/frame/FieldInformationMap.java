@@ -51,7 +51,7 @@ public class FieldInformationMap {
         FieldInformationMap fieldInformationMapCopy = new FieldInformationMap();
         fieldInformationMapCopy.map = new HashMap<>(this.map.size());
         for (Map.Entry<String, FieldElement> entry : this.map.entrySet()) {
-            fieldInformationMapCopy.map.put(entry.getKey(), entry.getValue().copyFieldElement());
+            fieldInformationMapCopy.map.put(entry.getKey(), (FieldElement) entry.getValue().copyElement());
         }
         return fieldInformationMapCopy;
     }

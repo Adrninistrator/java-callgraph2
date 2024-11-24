@@ -3,17 +3,17 @@ package com.adrninistrator.javacg2.parser;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
 import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
-import com.adrninistrator.javacg2.dto.classes.ClassSignatureGenericsInfo;
 import com.adrninistrator.javacg2.dto.classes.InnerClassInfo;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
+import com.adrninistrator.javacg2.dto.type.JavaCG2GenericsType;
 import com.adrninistrator.javacg2.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg2.handler.ClassHandler;
 import com.adrninistrator.javacg2.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
-import com.adrninistrator.javacg2.util.JavaCG2SignatureUtil;
+import com.adrninistrator.javacg2.util.JavaCG2GenericsTypeUtil;
 import com.adrninistrator.javacg2.writer.WriterSupportSkip;
 import copy.javassist.bytecode.BadBytecode;
 import copy.javassist.bytecode.SignatureAttribute;
@@ -23,7 +23,6 @@ import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Signature;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,9 +70,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer classInfoWriter;
     private Writer methodInfoWriter;
     private Writer extendsImplWriter;
-    private Writer classSignatureEI1Writer;
-    private Writer classSignatureGenericsWriter;
-    private Writer classSigExtImplGenericsWriter;
+    private Writer classSignatureGenericsTypeWriter;
+    private Writer classExtImplGenericsTypeWriter;
     private Writer methodArgumentWriter;
     private Writer methodArgAnnotationWriter;
     private Writer methodArgGenericsTypeWriter;
@@ -283,7 +281,6 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
             SignatureAttribute.ClassSignature signatureAttribute = SignatureAttribute.toClassSignature(signature.getSignature());
 
             // 类涉及继承与实现的签名信息Map
-            Map<String, ClassSignatureGenericsInfo> signatureInfoMap = new HashMap<>();
             SignatureAttribute.TypeParameter[] params = signatureAttribute.getParameters();
             if (ArrayUtils.isNotEmpty(params)) {
                 // 处理类签名中的泛型类型
@@ -295,16 +292,14 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
                     if (paramClassBound != null) {
                         // 泛型类型继承了特定类的处理
                         String extendsClassName = paramClassBound.jvmTypeName();
-                        JavaCG2FileUtil.write2FileWithTab(classSignatureGenericsWriter, className, String.valueOf(seq), paramName, extendsClassName);
-                        signatureInfoMap.put(paramName, new ClassSignatureGenericsInfo(extendsClassName, seq));
+                        JavaCG2FileUtil.write2FileWithTab(classSignatureGenericsTypeWriter, className, String.valueOf(seq), paramName, extendsClassName);
                         continue;
                     }
                     SignatureAttribute.ObjectType[] paramInterfaceBounds = param.getInterfaceBound();
                     if (ArrayUtils.isNotEmpty(paramInterfaceBounds)) {
                         // 泛型类型继承了特定接口的处理
                         String extendsClassName = paramInterfaceBounds[0].jvmTypeName();
-                        JavaCG2FileUtil.write2FileWithTab(classSignatureGenericsWriter, className, String.valueOf(seq), paramName, extendsClassName);
-                        signatureInfoMap.put(paramName, new ClassSignatureGenericsInfo(extendsClassName, seq));
+                        JavaCG2FileUtil.write2FileWithTab(classSignatureGenericsTypeWriter, className, String.valueOf(seq), paramName, extendsClassName);
                     }
                 }
             }
@@ -312,18 +307,18 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
             // 处理父类相关的签名
             SignatureAttribute.ClassType superClassType = signatureAttribute.getSuperClass();
             if (superClassType != null) {
-                String superClassName = JavaCG2SignatureUtil.getClassName(superClassType);
-                // 记录类签名中的参数信息
-                recordSignatureArgumentInfo(true, className, JavaCG2Constants.FILE_KEY_EXTENDS, superClassName, superClassType, signatureInfoMap);
+                String superClassName = JavaCG2GenericsTypeUtil.getClassName(superClassType);
+                // 记录类继承中的泛型信息
+                recordExtImplGenericsInfo(JavaCG2Constants.FILE_KEY_EXTENDS, className, superClassName, superClassType);
             }
 
             // 处理接口相关的签名
             SignatureAttribute.ClassType[] interfaceClassTypes = signatureAttribute.getInterfaces();
             if (interfaceClassTypes != null) {
                 for (SignatureAttribute.ClassType interfaceClassType : interfaceClassTypes) {
-                    String interfaceClassName = JavaCG2SignatureUtil.getClassName(interfaceClassType);
-                    // 记录类签名中的参数信息
-                    recordSignatureArgumentInfo(false, className, JavaCG2Constants.FILE_KEY_IMPLEMENTS, interfaceClassName, interfaceClassType, signatureInfoMap);
+                    String interfaceClassName = JavaCG2GenericsTypeUtil.getClassName(interfaceClassType);
+                    // 记录类实现中的泛型信息
+                    recordExtImplGenericsInfo(JavaCG2Constants.FILE_KEY_IMPLEMENTS, className, interfaceClassName, interfaceClassType);
                 }
             }
         } catch (BadBytecode e) {
@@ -342,17 +337,14 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     }
 
     /**
-     * 记录类签名中的参数信息
+     * 记录类继承或实现中的泛型信息
      *
-     * @param extendsOrImpl
+     * @param extendsOrImplStr
      * @param className
-     * @param type
      * @param superOrInterfaceName
      * @param classType
-     * @param signatureInfoMap
      */
-    private void recordSignatureArgumentInfo(boolean extendsOrImpl, String className, String type, String superOrInterfaceName, SignatureAttribute.ClassType classType,
-                                             Map<String, ClassSignatureGenericsInfo> signatureInfoMap) throws IOException {
+    private void recordExtImplGenericsInfo(String extendsOrImplStr, String className, String superOrInterfaceName, SignatureAttribute.ClassType classType) throws IOException {
         SignatureAttribute.TypeArgument[] arguments = classType.getTypeArguments();
         if (arguments == null) {
             return;
@@ -361,28 +353,21 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         int seq = 0;
         for (SignatureAttribute.TypeArgument typeArgument : arguments) {
             SignatureAttribute.ObjectType objectType = typeArgument.getType();
-            String genericsName = null;
-            if (objectType instanceof SignatureAttribute.ClassType) {
-                SignatureAttribute.ClassType argumentClassType = (SignatureAttribute.ClassType) objectType;
-                JavaCG2FileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq),
-                        JavaCG2SignatureUtil.getClassName(argumentClassType), "");
-            } else if (objectType instanceof SignatureAttribute.TypeVariable) {
-                SignatureAttribute.TypeVariable typeVariable = (SignatureAttribute.TypeVariable) objectType;
-                JavaCG2FileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq), "", typeVariable.getName());
-                genericsName = typeVariable.getName();
-            } else if (objectType instanceof SignatureAttribute.ArrayType) {
-                SignatureAttribute.ArrayType argumentArrayType = (SignatureAttribute.ArrayType) objectType;
-                JavaCG2FileUtil.write2FileWithTab(classSignatureEI1Writer, className, type, superOrInterfaceName, String.valueOf(seq), argumentArrayType.toString(), "");
-                genericsName = argumentArrayType.toString();
-            }
-            if (StringUtils.isNotBlank(genericsName)) {
-                ClassSignatureGenericsInfo genericsInfo = signatureInfoMap.get(genericsName);
-                if (genericsInfo != null) {
-                    // 记录当前类/接口继承或实现时与父类或接口相同的泛型名称
-                    JavaCG2FileUtil.write2FileWithTab(classSigExtImplGenericsWriter, className, genericsName, String.valueOf(genericsInfo.getSeq()), (extendsOrImpl ?
-                                    JavaCG2Constants.FILE_KEY_EXTENDS : JavaCG2Constants.FILE_KEY_IMPLEMENTS), superOrInterfaceName, genericsInfo.getExtendsClassName(),
-                            String.valueOf(seq));
-                }
+
+            List<JavaCG2GenericsType> classGenericsTypeList = new ArrayList<>();
+            // 解析类签名中的泛型类型
+            JavaCG2GenericsTypeUtil.parseTypeDefineGenericsType(objectType, true, classGenericsTypeList);
+
+            String seqStr = String.valueOf(seq);
+            for (int genericsSeq = 0; genericsSeq < classGenericsTypeList.size(); genericsSeq++) {
+                JavaCG2GenericsType javaCG2GenericsType = classGenericsTypeList.get(genericsSeq);
+                // 记录当前类/接口继承或实现时与父类或接口相同的泛型信息
+                JavaCG2FileUtil.write2FileWithTab(classExtImplGenericsTypeWriter,
+                        className,
+                        extendsOrImplStr,
+                        seqStr,
+                        superOrInterfaceName,
+                        JavaCG2GenericsTypeUtil.genGenericsTypeStr4ClassExtImpl(genericsSeq, javaCG2GenericsType));
             }
             seq++;
         }
@@ -485,16 +470,12 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.extendsImplWriter = extendsImplWriter;
     }
 
-    public void setClassSignatureEI1Writer(Writer classSignatureEI1Writer) {
-        this.classSignatureEI1Writer = classSignatureEI1Writer;
+    public void setClassSignatureGenericsTypeWriter(Writer classSignatureGenericsTypeWriter) {
+        this.classSignatureGenericsTypeWriter = classSignatureGenericsTypeWriter;
     }
 
-    public void setClassSignatureGenericsWriter(Writer classSignatureGenericsWriter) {
-        this.classSignatureGenericsWriter = classSignatureGenericsWriter;
-    }
-
-    public void setClassSigExtImplGenericsWriter(Writer classSigExtImplGenericsWriter) {
-        this.classSigExtImplGenericsWriter = classSigExtImplGenericsWriter;
+    public void setClassExtImplGenericsTypeWriter(Writer classExtImplGenericsTypeWriter) {
+        this.classExtImplGenericsTypeWriter = classExtImplGenericsTypeWriter;
     }
 
     public void setMethodArgumentWriter(Writer methodArgumentWriter) {

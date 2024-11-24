@@ -33,6 +33,12 @@ public class FieldTypeAndName {
         return Objects.hash(fieldName);
     }
 
+    @Override
+    public String toString() {
+        return "fieldType=" + fieldType +
+                ", fieldName=" + fieldName;
+    }
+
     //
     public String getFieldType() {
         return fieldType;

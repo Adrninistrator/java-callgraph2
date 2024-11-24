@@ -2,6 +2,7 @@ package com.adrninistrator.javacg2.entry;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2CallTypeEnum;
+import com.adrninistrator.javacg2.common.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2OtherConfigFileUseListEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2OtherConfigFileUseSetEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2OutPutFileTypeEnum;
@@ -12,6 +13,7 @@ import com.adrninistrator.javacg2.dto.classes.ClassExtendsInfo;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
+import com.adrninistrator.javacg2.dto.output.JavaCG2OtherRunResult;
 import com.adrninistrator.javacg2.dto.output.JavaCG2OutputInfo;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
@@ -149,12 +151,13 @@ public class JavaCG2Entry {
         printOutputFileInfo();
 
         try (Writer classAnnotationWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_ANNOTATION));
+             Writer javaCG2ConfigWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_JAVACG2_CONFIG));
              Writer classInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_INFO));
              Writer classReferenceWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_REFERENCE));
-             Writer classSignatureEI1Writer = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_EI1));
-             Writer classSignatureGenericsWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_GENERICS));
-             Writer classSigExtImplGenericsWriter =
-                     JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_SIG_EXT_IMPL_GENERICS));
+             Writer classSignatureGenericsTypeWriter =
+                     JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_GENERICS_TYPE));
+             Writer classExtImplGenericsTypeWriter =
+                     JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_EXT_IMPL_GENERICS_TYPE));
              Writer extendsImplWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_EXTENDS_IMPL));
              Writer fieldAnnotationWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_FIELD_ANNOTATION));
              Writer fieldInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_FIELD_INFO));
@@ -190,9 +193,8 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setClassAnnotationWriter(classAnnotationWriter);
             jarEntryHandleParser.setClassInfoWriter(classInfoWriter);
             jarEntryHandleParser.setClassReferenceWriter(classReferenceWriter);
-            jarEntryHandleParser.setClassSignatureEI1Writer(classSignatureEI1Writer);
-            jarEntryHandleParser.setClassSignatureGenericsWriter(classSignatureGenericsWriter);
-            jarEntryHandleParser.setClassSigExtImplGenericsWriter(classSigExtImplGenericsWriter);
+            jarEntryHandleParser.setClassSignatureGenericsTypeWriter(classSignatureGenericsTypeWriter);
+            jarEntryHandleParser.setClassExtImplGenericsTypeWriter(classExtImplGenericsTypeWriter);
             jarEntryHandleParser.setExtendsImplWriter(extendsImplWriter);
             jarEntryHandleParser.setFieldAnnotationWriter(fieldAnnotationWriter);
             jarEntryHandleParser.setFieldInfoWriter(fieldInfoWriter);
@@ -243,6 +245,9 @@ public class JavaCG2Entry {
 
             JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_RESULT_DIR_INFO_PREFIX, String.valueOf(jarNumPathMap.size() + 1),
                     javaCG2OutputInfo.getOutputDirPath());
+
+            // 记录java-callgraph2组件使用的配置参数
+            recordJavaCG2Config(javaCG2ConfigWriter);
 
             long spendTime = System.currentTimeMillis() - startTime;
             logger.info("执行完毕，处理数量，类： {} 方法: {} 方法调用: {} 耗时: {} 秒", classNumCounter.getCount(), methodNumCounter.getCount(), callIdCounter.getCount(), spendTime / 1000.0D);
@@ -561,7 +566,11 @@ public class JavaCG2Entry {
             List<String> springBeanNameInXmlList = new ArrayList<>(springBeanMapInXml.keySet());
             for (String springBeanNameInXml : springBeanNameInXmlList) {
                 String springBeanTypeInXml = springBeanMapInXml.get(springBeanNameInXml);
-                JavaCG2FileUtil.write2FileWithTab(springBeanWriter, springBeanNameInXml, "0", springBeanTypeInXml, JavaCG2Constants.FILE_KEY_SPRING_BEAN_IN_XML);
+                JavaCG2FileUtil.write2FileWithTab(springBeanWriter,
+                        springBeanNameInXml,
+                        "0",
+                        springBeanTypeInXml,
+                        JavaCG2Constants.FILE_KEY_SPRING_BEAN_IN_XML);
             }
         }
     }
@@ -581,6 +590,38 @@ public class JavaCG2Entry {
             logger.info("重复的类名 {} 使用的class文件 {}", duplicateClassName, classFilePathList.get(0));
             for (int i = 1; i < classFilePathList.size(); i++) {
                 logger.info("重复的类名 {} 跳过的class文件 {}", duplicateClassName, classFilePathList.get(i));
+            }
+        }
+    }
+
+    // 记录java-callgraph2组件使用的配置参数
+    private void recordJavaCG2Config(Writer javaCG2ConfigWriter) throws IOException {
+        for (JavaCG2ConfigKeyEnum javaCG2ConfigKeyEnum : JavaCG2ConfigKeyEnum.values()) {
+            String value = javaCG2ConfigureWrapper.getConfig(null, javaCG2ConfigKeyEnum, false);
+            JavaCG2FileUtil.write2FileWithTab(javaCG2ConfigWriter, JavaCG2Constants.FILE_PATH_CONFIG, javaCG2ConfigKeyEnum.getKey(), (value == null ? "" : value),
+                    JavaCG2Constants.CONFIG_PROPERTIES);
+        }
+
+        JavaCG2OtherConfigFileUseListEnum[] javaCG2OtherConfigFileUseListEnums = JavaCG2OtherConfigFileUseListEnum.values();
+        for (JavaCG2OtherConfigFileUseListEnum currentConfig : javaCG2OtherConfigFileUseListEnums) {
+            List<String> configValueList = javaCG2ConfigureWrapper.getOtherConfigList(currentConfig, false);
+            int seq = 0;
+            for (String configValue : configValueList) {
+                JavaCG2FileUtil.write2FileWithTab(javaCG2ConfigWriter, currentConfig.getFileName(), String.valueOf(seq), configValue, JavaCG2Constants.CONFIG_LIST);
+                seq++;
+            }
+        }
+
+        JavaCG2OtherConfigFileUseSetEnum[] javaCG2OtherConfigFileUseSetEnums = JavaCG2OtherConfigFileUseSetEnum.values();
+        for (JavaCG2OtherConfigFileUseSetEnum currentConfig : javaCG2OtherConfigFileUseSetEnums) {
+            Set<String> configSet = javaCG2ConfigureWrapper.getOtherConfigSet(currentConfig, false);
+            List<String> configValueList = new ArrayList<>(configSet);
+            // 排序后打印
+            Collections.sort(configValueList);
+            int seq = 0;
+            for (String configValue : configValueList) {
+                JavaCG2FileUtil.write2FileWithTab(javaCG2ConfigWriter, currentConfig.getFileName(), String.valueOf(seq), configValue, JavaCG2Constants.CONFIG_SET);
+                seq++;
             }
         }
     }
@@ -612,6 +653,11 @@ public class JavaCG2Entry {
     // 获取java-callgraph2处理结果信息
     public JavaCG2OutputInfo getJavaCG2OutputInfo() {
         return javaCG2OutputInfo;
+    }
+
+    // 获取java-callgraph2其他执行结果
+    public JavaCG2OtherRunResult getJavaCG2OtherRunResult() {
+        return javaCG2ConfInfo.getJavaCG2OtherRunResult();
     }
 
     /**

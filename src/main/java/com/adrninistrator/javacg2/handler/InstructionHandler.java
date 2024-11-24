@@ -607,8 +607,13 @@ public class InstructionHandler {
         } else if (JavaCG2CommonNameConstants.CLASS_NAME_STRING.equals(typeString)) {
             stack.push(new ConstElementString(value));
         } else if (JavaCG2CommonNameConstants.CLASS_NAME_CLASS.equals(typeString)) {
-            ObjectType objectType = (ObjectType) value;
-            stack.push(new VariableElement(objectType.getClassName()));
+            if (value instanceof ArrayType) {
+                ArrayType arrayType = (ArrayType) value;
+                stack.push(new VariableElement(arrayType.toString()));
+            } else {
+                ObjectType objectType = (ObjectType) value;
+                stack.push(new VariableElement(objectType.getClassName()));
+            }
         } else {
             logger.error("LDC 暂不支持的情况 {} {}", typeString, value);
         }
@@ -1013,7 +1018,7 @@ public class InstructionHandler {
                 // 尝试从已处理的非静态变量中获取
                 fieldElement = nonStaticFieldInfoMap.get(fieldName);
                 if (fieldElement != null) {
-                    FieldElement newFieldElement = fieldElement.copyFieldElement();
+                    FieldElement newFieldElement = (FieldElement) fieldElement.copyElement();
                     variableDataSourceField.setFieldType(newFieldElement.getType());
                     // 记录变量的数据来源
                     newFieldElement.recordVariableDataSource(variableDataSourceField, frEqConversionMethodMap);

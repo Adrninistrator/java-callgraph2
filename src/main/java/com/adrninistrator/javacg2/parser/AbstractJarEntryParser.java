@@ -201,7 +201,8 @@ public abstract class AbstractJarEntryParser {
      * @return true: 忽略当前类 false: 不忽略当前类
      */
     protected boolean ignoreCurrentClass(String className) {
-        if (JavaCG2Util.checkSkipClass(className, javaCG2ConfInfo.getNeedHandlePackageSet())) {
+        if (JavaCG2Util.checkSkipClassWhiteList(className, javaCG2ConfInfo.getNeedHandlePackageSet()) ||
+                JavaCG2Util.checkSkipClassBlackList(className, javaCG2ConfInfo.getIgnoreClassNameSet())) {
             logger.debug("跳过不需要处理的类: {}", className);
             return true;
         }

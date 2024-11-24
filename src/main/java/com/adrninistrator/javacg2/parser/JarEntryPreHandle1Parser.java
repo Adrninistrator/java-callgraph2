@@ -93,8 +93,14 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
         // 调用扩展类的方法
         for (JarEntryOtherFileParser jarEntryOtherFileParser : jarEntryOtherFileParserList) {
-            // 处理一个jar包中的文件
-            jarEntryOtherFileParser.parseJarEntryOtherFile(cachedInputStream, jarEntryPath);
+            try {
+                // 处理一个jar包中的文件
+                jarEntryOtherFileParser.parseJarEntryOtherFile(cachedInputStream, jarEntryPath);
+            } catch (Throwable e) {
+                // 内部有可能抛出Error等非Exception异常，需要捕获
+                logger.error("处理文件出现未知异常 {} ", jarEntryPath, e);
+                return false;
+            }
             // 重置缓存的InputStream，使下次能够从头开始继续读取
             cachedInputStream.reset();
         }

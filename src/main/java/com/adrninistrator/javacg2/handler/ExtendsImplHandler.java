@@ -469,8 +469,8 @@ public class ExtendsImplHandler {
                                     String calleeMethodName,
                                     String calleeMethodArgTypes,
                                     String calleeMethodReturnType) throws IOException {
-        if (JavaCG2Util.checkSkipClass(callerClassName, javaCG2ConfInfo.getNeedHandlePackageSet()) ||
-                JavaCG2Util.checkSkipClass(calleeClassName, javaCG2ConfInfo.getNeedHandlePackageSet())) {
+        if (JavaCG2Util.checkSkipClassWhiteList(callerClassName, javaCG2ConfInfo.getNeedHandlePackageSet()) ||
+                JavaCG2Util.checkSkipClassWhiteList(calleeClassName, javaCG2ConfInfo.getNeedHandlePackageSet())) {
             return;
         }
 

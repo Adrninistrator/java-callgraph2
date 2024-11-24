@@ -8,6 +8,7 @@ package com.adrninistrator.javacg2.common.enums;
 public enum JavaCG2YesNoEnum {
     YES("1", 1, "是"),
     NO("0", 0, "否"),
+    NOT_SURE("2", 2, "不确定"),
     ;
 
     private final String strValue;
@@ -42,6 +43,18 @@ public enum JavaCG2YesNoEnum {
 
     public static boolean isYesDesc(String desc) {
         return YES.desc.equals(desc);
+    }
+
+    public static boolean isNotSure(String value) {
+        return NOT_SURE.strValue.equals(value);
+    }
+
+    public static boolean isNotSure(int value) {
+        return NOT_SURE.intValue == value;
+    }
+
+    public static boolean isNotSureDesc(String desc) {
+        return NOT_SURE.desc.equals(desc);
     }
 
     public String getStrValue() {

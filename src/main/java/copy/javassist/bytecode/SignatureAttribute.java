@@ -489,6 +489,14 @@ public class SignatureAttribute {
         void encode(StringBuffer sb) {
             sb.append(descriptor);
         }
+
+        // javassist-3.30.2-GA中增加的方法
+        /**
+         * Returns the descriptor representing this primitive type.
+         *
+         * @see javassist.bytecode.Descriptor
+         */
+        public char getDescriptor() { return descriptor; }
     }
 
     /**

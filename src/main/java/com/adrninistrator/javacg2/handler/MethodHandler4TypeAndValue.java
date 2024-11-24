@@ -31,6 +31,8 @@ import com.adrninistrator.javacg2.dto.instruction.parseresult.RetParseResult;
 import com.adrninistrator.javacg2.dto.instruction.parseresult.ReturnParseResult;
 import com.adrninistrator.javacg2.dto.method.JavaCG2MethodInfo;
 import com.adrninistrator.javacg2.dto.stack.ListAsStack;
+import com.adrninistrator.javacg2.dto.type.JavaCG2GenericsType;
+import com.adrninistrator.javacg2.dto.type.JavaCG2Type;
 import com.adrninistrator.javacg2.dto.variabledatasource.AbstractVariableDataSource;
 import com.adrninistrator.javacg2.dto.variabledatasource.VariableDataSourceMethodArg;
 import com.adrninistrator.javacg2.dto.variabledatasource.VariableDataSourceMethodCallReturn;
@@ -187,6 +189,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
      */
     private Map<Integer, Set<Integer>> getSetMethodCallMap;
 
+    // 栈桢信息快照数量超过允许的最大数量的方法Set
+    private final Set<String> frameSnapshotNumExceedMethodSet = new HashSet<>();
+
     public MethodHandler4TypeAndValue(Method method, MethodGen mg, JavaClass javaClass, String callerFullMethod, JavaCG2ConfInfo javaCG2ConfInfo) {
         super(method, mg, javaClass, callerFullMethod, javaCG2ConfInfo);
     }
@@ -234,7 +239,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         }
 
         if (jumpTargetIhPositionSet != null) {
-            frameSnapshotsOfIhs4JumpTargets = new FrameSnapshotsOfIhs();
+            frameSnapshotsOfIhs4JumpTargets = new FrameSnapshotsOfIhs(callerFullMethod, "跳转目标指令与对应的栈桢信息快照列表", frameSnapshotNumExceedMethodSet);
         }
     }
 
@@ -248,7 +253,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
     // 记录异常处理的跳转信息
     private void recordExceptionJumpInfo() {
         CodeExceptionGen[] codeExceptionGens = mg.getExceptionHandlers();
-        if (codeExceptionGens.length <= 0) {
+        if (codeExceptionGens.length == 0) {
             return;
         }
 
@@ -286,7 +291,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             exceptionTargetList.add(exceptionTargetInfo);
         }
 
-        frameSnapshotsOfIhs4Exceptions = new FrameSnapshotsOfIhs();
+        frameSnapshotsOfIhs4Exceptions = new FrameSnapshotsOfIhs(callerFullMethod, "异常对应的栈桢信息快照", frameSnapshotNumExceedMethodSet);
     }
 
     // 判断当前处理的指令是否为Exception table的结束指令
@@ -314,6 +319,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     @Override
     protected boolean lastStep() throws IOException {
+        // 在其他执行结果中记录栈桢信息快照数量超过允许的最大数量的方法Set
+        javaCG2ConfInfo.getJavaCG2OtherRunResult().addFrameSnapshotNumExceedMethodSet(frameSnapshotNumExceedMethodSet);
+
         if (!onlyAnalyseReturnTypeFlag) {
             // 处理get方法
             handleGetMethod();
@@ -395,8 +403,8 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
             // 判断当前处理的指令是否为Exception table的结束指令
             if (checkExceptionEnd(position)) {
-                // 当前指令有对应的异常处理，添加信息快照
-                logger.debug("异常处理，添加信息快照 {}", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih));
+                // 当前指令有对应的异常处理，添加栈桢信息快照
+                logger.debug("异常处理，添加栈桢信息快照 {}", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih));
                 frameSnapshotsOfIhs4Exceptions.addSnapshot(position, stack, locals, nonStaticFieldInfoMap, staticFieldInfoMap);
             }
 
@@ -580,7 +588,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             return false;
         }
 
-        // 添加信息快照，若有添加，则不跳过当前指令的处理；若未添加，则跳过当前指令的处理
+        // 添加栈桢信息快照，若有添加，则不跳过当前指令的处理；若未添加，则跳过当前指令的处理
         if (!frameSnapshotsOfIhs4JumpTargets.addSnapshot(position, stack, locals, nonStaticFieldInfoMap, staticFieldInfoMap)) {
             logger.debug("跳转目标指令[跳过]处理 {}", position);
             return true;
@@ -865,7 +873,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         JavaCG2MethodInfo calleeMethodInfo = JavaCG2InstructionUtil.getCalleeMethodInfo(invokeInstruction, cpg);
         // 获取被调用类名
         String calleeClassName = calleeMethodInfo.getClassName();
-        if (JavaCG2Util.checkSkipClass(calleeClassName, javaCG2ConfInfo.getNeedHandlePackageSet())) {
+        if (JavaCG2Util.checkSkipClassWhiteList(calleeClassName, javaCG2ConfInfo.getNeedHandlePackageSet())) {
             return;
         }
 
@@ -928,7 +936,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         if (dataSource instanceof VariableDataSourceMethodCallReturn) {
             // 当前抛出的异常是方法调用的返回值
             VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = (VariableDataSourceMethodCallReturn) dataSource;
-            if (!JavaCG2Util.checkSkipClass(variableDataSourceMethodCallReturn.getCalleeClassName(), javaCG2ConfInfo.getNeedHandlePackageSet())) {
+            if (!JavaCG2Util.checkSkipClassWhiteList(variableDataSourceMethodCallReturn.getCalleeClassName(), javaCG2ConfInfo.getNeedHandlePackageSet())) {
                 // 仅当被调用类需要处理时才执行
                 int invokeInstructionPosition = variableDataSourceMethodCallReturn.getInvokeInstructionPosition();
                 throwInfoList.addThrowInfo(new ThrowInfo(throwElement.getType(), JavaCG2Constants.FILE_KEY_THROW_TYPE_METHOD_CALL_RETURN, null, null, invokeInstructionPosition));
@@ -990,8 +998,8 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         }
 
         String getClassName = arg0VariableDataSourceMethodCallReturn.getCalleeClassName();
-        if (JavaCG2Util.checkSkipClass(getClassName, javaCG2ConfInfo.getNeedHandlePackageSet()) ||
-                JavaCG2Util.checkSkipClass(setClassName, javaCG2ConfInfo.getNeedHandlePackageSet())) {
+        if (JavaCG2Util.checkSkipClassWhiteList(getClassName, javaCG2ConfInfo.getNeedHandlePackageSet()) ||
+                JavaCG2Util.checkSkipClassWhiteList(setClassName, javaCG2ConfInfo.getNeedHandlePackageSet())) {
             // get或set方法对应的类需要跳过，不处理
             return false;
         }
@@ -1055,7 +1063,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         } else if (variableDataSource instanceof VariableDataSourceMethodCallReturn) {
             // 方法返回的数据来源是方法调用
             VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = (VariableDataSourceMethodCallReturn) variableDataSource;
-            if (!JavaCG2Util.checkSkipClass(variableDataSourceMethodCallReturn.getCalleeClassName(), javaCG2ConfInfo.getNeedHandlePackageSet()) &&
+            if (!JavaCG2Util.checkSkipClassWhiteList(variableDataSourceMethodCallReturn.getCalleeClassName(), javaCG2ConfInfo.getNeedHandlePackageSet()) &&
                     !methodReturnPositionList.contains(variableDataSourceMethodCallReturn.getInvokeInstructionPosition())) {
                 // 假如被调用方法的类不需要忽略，则记录当前的方法调用指令位置
                 // 当返回值的数据来源为方法调用时，记录对应的指令位置，避免重复添加同一个方法的返回结果
@@ -1075,7 +1083,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         } else if (variableDataSourceEQC instanceof VariableDataSourceMethodCallReturn) {
             // 方法返回的数据来源是方法调用
             VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturnEQC = (VariableDataSourceMethodCallReturn) variableDataSourceEQC;
-            if (!JavaCG2Util.checkSkipClass(variableDataSourceMethodCallReturnEQC.getCalleeClassName(), javaCG2ConfInfo.getNeedHandlePackageSet()) &&
+            if (!JavaCG2Util.checkSkipClassWhiteList(variableDataSourceMethodCallReturnEQC.getCalleeClassName(), javaCG2ConfInfo.getNeedHandlePackageSet()) &&
                     !methodReturnPositionEQCList.contains(variableDataSourceMethodCallReturnEQC.getInvokeInstructionPosition())) {
                 /*
                     假如被调用方法的类不需要忽略，则记录当前的方法调用指令位置
@@ -1213,16 +1221,19 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                 返回对象的数据来源GETFIELD相关Map中key为this的Set非空，且数量为1（没有多个）
          */
         for (String getFieldFieldName : getFieldFieldNameSet) {
-            // 记录dto的非静态字段集合中涉及的泛型类型
-            String fieldCategory = recordFieldGenericsType(getFieldFieldName);
-
             // 记录get方法
-            String fieldClassType = nonStaticFieldNameTypeMap.get(getFieldFieldName);
-            if (fieldCategory == null) {
-                fieldCategory = JavaCG2ClassMethodUtil.isCustomType(fieldClassType) ? JavaCG2Constants.FILE_KEY_CATEGORY_CUSTOM : JavaCG2Constants.FILE_KEY_CATEGORY_JDK;
+            JavaCG2Type javaCG2Type = nonStaticFieldNameTypeMap.get(getFieldFieldName);
+            if (javaCG2Type == null) {
+                logger.warn("{} 类的get方法对应字段 {} 未找到，可能定义在父类中", callerClassName, getFieldFieldName);
+                continue;
             }
+            // 判断非静态字段集合中涉及的泛型类型
+            String fieldCategory = judgeFieldGenericsType(getFieldFieldName, javaCG2Type.getType());
             String getFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(callerClassName, callerMethodName, mg.getArgumentTypes());
-            JavaCG2FileUtil.write2FileWithTab(getMethodWriter, callerClassName, callerMethodName, getFieldFieldName, fieldCategory, fieldClassType, getFullMethod);
+            JavaCG2FileUtil.write2FileWithTab(getMethodWriter, callerClassName, callerMethodName, getFieldFieldName, fieldCategory, javaCG2Type.getType(),
+                    String.valueOf(javaCG2Type.getArrayDimensions()), getFullMethod);
+            // 记录存在get方法的字段名称
+            fieldWithGetMethodNameSet.add(getFieldFieldName);
         }
     }
 
@@ -1248,61 +1259,46 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                 PUTFIELD相关Map中key为this的Set非空，且数量为1（没有多个）
          */
         for (String putFieldFieldName : putFieldFieldNameSet) {
-            // 记录dto的非静态字段集合中涉及的泛型类型
-            String fieldCategory = recordFieldGenericsType(putFieldFieldName);
-
             // 记录set方法
-            String fieldClassType = nonStaticFieldNameTypeMap.get(putFieldFieldName);
-            if (fieldCategory == null) {
-                fieldCategory = JavaCG2ClassMethodUtil.isCustomType(fieldClassType) ? JavaCG2Constants.FILE_KEY_CATEGORY_CUSTOM : JavaCG2Constants.FILE_KEY_CATEGORY_JDK;
+            JavaCG2Type javaCG2Type = nonStaticFieldNameTypeMap.get(putFieldFieldName);
+            if (javaCG2Type == null) {
+                logger.warn("{} 类的set方法对应字段 {} 未找到，可能定义在父类中", callerClassName, putFieldFieldName);
+                continue;
             }
+            // 判断非静态字段集合中涉及的泛型类型
+            String fieldCategory = judgeFieldGenericsType(putFieldFieldName, javaCG2Type.getType());
             if (recordedSetMethodSet.add(callerMethodName)) {
                 // 若当前类的当前set方法未被记录时，才写入文件，避免一个类存在多个同名set方法时重复记录（get方法无参数，不会出现同名）
                 String setFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(callerClassName, callerMethodName, mg.getArgumentTypes());
-                JavaCG2FileUtil.write2FileWithTab(setMethodWriter, callerClassName, callerMethodName, putFieldFieldName, fieldCategory, fieldClassType, setFullMethod);
+                JavaCG2FileUtil.write2FileWithTab(setMethodWriter, callerClassName, callerMethodName, putFieldFieldName, fieldCategory, javaCG2Type.getType(),
+                        String.valueOf(javaCG2Type.getArrayDimensions()), setFullMethod);
+                // 记录存在set方法的字段名称
+                fieldWithSetMethodNameSet.add(putFieldFieldName);
             }
         }
     }
 
     /**
-     * 记录dto的非静态字段集合中涉及的泛型类型
+     * 判断非静态字段集合中涉及的泛型类型
      *
      * @param fieldName
-     * @return null: 当前字段不涉及集合 非null: 当前字段涉及集合时对应的类型
-     * @throws IOException
+     * @param fieldClassType
+     * @return
      */
-    private String recordFieldGenericsType(String fieldName) throws IOException {
-        String fieldCategory = null;
-        List<String> fieldGenericsTypeList = nonStaticFieldNameGenericsTypeMap.get(fieldName);
+    private String judgeFieldGenericsType(String fieldName, String fieldClassType) {
+        List<JavaCG2GenericsType> fieldGenericsTypeList = nonStaticFieldNameGenericsTypeMap.get(fieldName);
         if (fieldGenericsTypeList == null) {
-            return null;
+            // 当前字段不涉及泛型
+            return JavaCG2ClassMethodUtil.getClassCategory(fieldClassType);
         }
-
-        // 若当前字段集合中涉及的泛型类型已记录则不再重复记录
-        boolean notRecorded = recordedFieldWithGenericsTypeSet.add(fieldName);
-        int seq = 0;
-        for (String fieldGenericsType : fieldGenericsTypeList) {
-            boolean isCustomType = JavaCG2ClassMethodUtil.isCustomType(fieldGenericsType);
-            if (isCustomType) {
-                // 集合的泛型类型，出现了自定义类型
-                fieldCategory = JavaCG2Constants.FILE_KEY_CATEGORY_GENERICS_CUSTOM;
-            }
-
-            if (notRecorded) {
-                // 当前字段未记录时进行记录
-                JavaCG2FileUtil.write2FileWithTab(fieldGenericsTypeWriter,
-                        callerClassName,
-                        fieldName,
-                        String.valueOf(seq),
-                        (isCustomType ? JavaCG2Constants.FILE_KEY_CATEGORY_CUSTOM : JavaCG2Constants.FILE_KEY_CATEGORY_JDK),
-                        fieldGenericsType);
-                seq++;
+        for (JavaCG2GenericsType fieldGenericsType : fieldGenericsTypeList) {
+            if (JavaCG2ClassMethodUtil.isCustomType(fieldGenericsType.getType())) {
+                // 当前字段为泛型类型，出现了自定义类型
+                return JavaCG2Constants.FILE_KEY_CATEGORY_GENERICS_CUSTOM;
             }
         }
-        if (fieldCategory == null) {
-            fieldCategory = JavaCG2Constants.FILE_KEY_CATEGORY_GENERICS_JDK;
-        }
-        return fieldCategory;
+        // 当前字段为泛型类型，没有出现自定义类型
+        return JavaCG2Constants.FILE_KEY_CATEGORY_GENERICS_JDK;
     }
 
     //

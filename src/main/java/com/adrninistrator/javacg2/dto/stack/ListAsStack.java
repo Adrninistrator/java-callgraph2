@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * @author adrninistrator
  * @date 2022/12/1
- * @description: 當作棧使用的List
+ * @description: 当作栈使用的List
  */
 public class ListAsStack<E> {
     // 栈的当前位置，初始值-1

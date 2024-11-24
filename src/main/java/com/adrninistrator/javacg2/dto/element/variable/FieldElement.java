@@ -25,10 +25,6 @@ public class FieldElement extends LocalVariableElement {
 
     @Override
     public BaseElement copyElement() {
-        return copyFieldElement();
-    }
-
-    public FieldElement copyFieldElement() {
         FieldElement fieldElementCopy = new FieldElement(getType(), arrayElement, value, getIndex(), getName(), className);
         fieldElementCopy.copyVariableDataSource(this);
         return fieldElementCopy;

@@ -1,5 +1,7 @@
 package com.adrninistrator.javacg2.conf;
 
+import com.adrninistrator.javacg2.dto.output.JavaCG2OtherRunResult;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,6 +21,9 @@ public class JavaCG2ConfInfo {
 
     // 合并jar包、目录时需要处理的文件类型
     private Set<String> jarDirMergeFileTypeSet;
+
+    // 在处理在处理class文件时，class文件对应类名在当前Set中时就忽略
+    private Set<String> ignoreClassNameSet;
 
     // 在处理jar包中的文件时，文件路径包含当前Set中的关键字时就忽略
     private Set<String> ignoreJarFileKeywordSet;
@@ -59,6 +64,9 @@ public class JavaCG2ConfInfo {
     // 生成文件后缀名
     private String outputFileExt;
 
+    // 其他执行结果
+    private final JavaCG2OtherRunResult javaCG2OtherRunResult = new JavaCG2OtherRunResult();
+
     public List<String> getJarDirList() {
         return jarDirList;
     }
@@ -81,6 +89,14 @@ public class JavaCG2ConfInfo {
 
     public void setJarDirMergeFileTypeSet(Set<String> jarDirMergeFileTypeSet) {
         this.jarDirMergeFileTypeSet = jarDirMergeFileTypeSet;
+    }
+
+    public Set<String> getIgnoreClassNameSet() {
+        return ignoreClassNameSet;
+    }
+
+    public void setIgnoreClassNameSet(Set<String> ignoreClassNameSet) {
+        this.ignoreClassNameSet = ignoreClassNameSet;
     }
 
     public Set<String> getIgnoreJarFileKeywordSet() {
@@ -169,5 +185,9 @@ public class JavaCG2ConfInfo {
 
     public void setOutputFileExt(String outputFileExt) {
         this.outputFileExt = outputFileExt;
+    }
+
+    public JavaCG2OtherRunResult getJavaCG2OtherRunResult() {
+        return javaCG2OtherRunResult;
     }
 }

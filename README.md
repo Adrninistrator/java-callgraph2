@@ -188,6 +188,47 @@ packages.properties
 
 `当升级到该版本时，假如之前有对目录进行过分析，则相关目录中的“-javacg_merged.jar”文件需要删除`
 
+## 6.13. (2.0.8)
+
+### 6.13.1. 增加配置文件
+
+_javacg2_config/ignore_class_name.properties
+
+在处理class文件时，假如class文件对应类名在当前文件中，则不处理对应的类
+
+### 6.13.2. 增加生成的文件
+
+```
+类的继承或实现的泛型信息	class_ext_impl_generics_type
+类的签名中的泛型信息	class_signature_generics_type
+java-callgraph2组件使用的配置参数   javacg2_config
+```
+
+### 6.13.3. 删除生成的文件
+
+```
+类的签名中继承或实现的泛型关系	class_sig_ext_impl_generics
+类的签名中涉及继承与实现的信息1	class_signature_ei1
+类的签名中的泛型信息	class_signature_generics
+```
+
+### 6.13.4. 生成的文件增加字段
+
+主要涉及内容：是否数组、泛型相关的数据、Spring Controller方法是否可能用于文件/上传下载
+
+```
+非静态字段集合中涉及的泛型类型	field_generics_type
+字段信息	field_info
+dto的get方法及字段	get_method
+方法参数集合中涉及的泛型类型	method_arg_generics_type
+方法参数	method_argument
+方法的信息	method_info
+方法返回集合中涉及的泛型类型	method_return_generics_type
+dto的set方法及字段	set_method
+static、final字段初始化方法信息	sf_field_method_call
+Spring Controller信息	spring_controller
+```
+
 # 7. 原始java-callgraph调用关系缺失的场景
 
 原始java-callgraph在多数场景下能够获取到Java方法调用关系，但以下场景的调用关系会缺失：

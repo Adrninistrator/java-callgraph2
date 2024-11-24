@@ -32,6 +32,7 @@ public class JavaCG2CommonNameConstants {
     public static final String SIMPLE_CLASS_NAME_OBJECT = Object.class.getSimpleName();
 
     public static final String PACKAGE_JAVA = "java.";
+    public static final String PACKAGE_JAVAX = "javax.";
 
     public static final String METHOD_NAME_INIT = "<init>";
     public static final String METHOD_NAME_CLINIT = "<clinit>";

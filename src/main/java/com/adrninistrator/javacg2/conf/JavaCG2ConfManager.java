@@ -27,7 +27,7 @@ public class JavaCG2ConfManager {
     private static final Logger logger = LoggerFactory.getLogger(JavaCG2ConfManager.class);
 
     public static JavaCG2ConfInfo getConfInfo(JavaCG2ConfigureWrapper javaCG2ConfigureWrapper) {
-        String configFileName = JavaCG2Constants.DIR_CONFIG + JavaCG2Constants.FLAG_SLASH + JavaCG2Constants.FILE_CONFIG;
+        String configFileName = JavaCG2Constants.FILE_PATH_CONFIG;
         JavaCG2ConfInfo confInfo = new JavaCG2ConfInfo();
         // 获取config.properties中的配置参数，路径需要使用JavaCG2Constants.FLAG_SLASH
         String configFilePath = getInputRootPath() + configFileName;
@@ -41,12 +41,12 @@ public class JavaCG2ConfManager {
 
             if (!parseMethodCallTypeValue) {
                 if (firstParseInitMethodType) {
-                    logger.error("配置文件 {} 中的 {} 参数值为true时， {} 参数值也需要为true", configFileName, JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE.getKey(),
+                    logger.error("配置文件 {} 中的 {} 参数值为true时， {} 参数值也需要为true。假如不需要使用，请都设置为false", configFileName, JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE.getKey(),
                             JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey());
                     return null;
                 }
                 if (analyseFieldRelationship) {
-                    logger.error("配置文件 {} 中的 {} 参数值为true时， {} 参数值也需要为true", configFileName, JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP.getKey(),
+                    logger.error("配置文件 {} 中的 {} 参数值为true时， {} 参数值也需要为true。假如不需要使用，请都设置为false", configFileName, JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP.getKey(),
                             JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey());
                     return null;
                 }
@@ -89,6 +89,10 @@ public class JavaCG2ConfManager {
             jarDirMergeFileTypeSet.add(tmpJarDirMergeFileType.toLowerCase());
         }
         confInfo.setJarDirMergeFileTypeSet(jarDirMergeFileTypeSet);
+
+        // 获取ignore_class_name.properties中的配置参数
+        Set<String> ignoreClassNameSet = javaCG2ConfigureWrapper.getOtherConfigSet(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_IGNORE_CLASS_NAME, true);
+        confInfo.setIgnoreClassNameSet(ignoreClassNameSet);
 
         // 获取ignore_jar_file_keyword.properties中的配置参数
         Set<String> ignoreJarFileKeywordSet = javaCG2ConfigureWrapper.getOtherConfigSet(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_IGNORE_JAR_FILE_KEYWORD, true);

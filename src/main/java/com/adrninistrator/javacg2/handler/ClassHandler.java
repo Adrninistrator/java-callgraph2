@@ -9,6 +9,8 @@ import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
 import com.adrninistrator.javacg2.dto.field.FieldPossibleTypes;
 import com.adrninistrator.javacg2.dto.instruction.InvokeInstructionPosAndCallee;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
+import com.adrninistrator.javacg2.dto.type.JavaCG2GenericsType;
+import com.adrninistrator.javacg2.dto.type.JavaCG2Type;
 import com.adrninistrator.javacg2.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
 import com.adrninistrator.javacg2.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg2.spring.UseSpringBeanByAnnotationHandler;
@@ -16,7 +18,7 @@ import com.adrninistrator.javacg2.util.JavaCG2AnnotationUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
-import com.adrninistrator.javacg2.util.JavaCG2SignatureUtil;
+import com.adrninistrator.javacg2.util.JavaCG2GenericsTypeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2Util;
 import com.adrninistrator.javacg2.writer.WriterSupportSkip;
 import copy.javassist.bytecode.BadBytecode;
@@ -179,7 +181,7 @@ public class ClassHandler {
         Collections.sort(referencedClassList);
         // 写入其他被类的类名
         for (String referencedClass : referencedClassList) {
-            if (JavaCG2Util.checkSkipClass(referencedClass, javaCG2ConfInfo.getNeedHandlePackageSet())) {
+            if (JavaCG2Util.checkSkipClassWhiteList(referencedClass, javaCG2ConfInfo.getNeedHandlePackageSet())) {
                 continue;
             }
             JavaCG2FileUtil.write2FileWithTab(classReferenceWriter, className, referencedClass);
@@ -215,14 +217,14 @@ public class ClassHandler {
             key     字段名称
             value   字段类型
          */
-        Map<String, String> nonStaticFieldNameTypeMap = new HashMap<>();
+        Map<String, JavaCG2Type> nonStaticFieldNameTypeMap = new HashMap<>();
 
         /*
             记录当前类非静态的字段名称及集合类型中的泛型类型Map
             key     字段名称
             value   集合类型中的泛型类型
          */
-        Map<String, List<String>> nonStaticFieldNameGenericsTypeMap = new HashMap<>();
+        Map<String, List<JavaCG2GenericsType>> nonStaticFieldNameGenericsTypeMap = new HashMap<>();
 
         /*
             记录当前类的static、final字段名称及初始化方法call_id的Map
@@ -236,24 +238,31 @@ public class ClassHandler {
             key     当前类的static、final字段名称
             value   当前类的static、final字段类型
          */
-        Map<String, String> staticFinalFieldNameTypeMap = new HashMap<>();
+        Map<String, Type> staticFinalFieldNameTypeMap = new HashMap<>();
 
-        // dto的非静态字段集合中涉及的泛型类型已记录的字段名称Set
-        Set<String> recordedFieldWithGenericsTypeSet = new HashSet<>();
+        // 存在get方法的字段名称Set
+        Set<String> fieldWithGetMethodNameSet = new HashSet<>();
 
-        // 处理字段
+        // 存在set方法的字段名称Set
+        Set<String> fieldWithSetMethodNameSet = new HashSet<>();
+
+        // 预处理字段
         for (Field field : javaClass.getFields()) {
-            handleField(field, nonStaticFieldNameTypeMap, nonStaticFieldNameGenericsTypeMap, sfFieldInvokeInstructionMap, staticFinalFieldNameTypeMap);
+            preHandleField(field, nonStaticFieldNameTypeMap, nonStaticFieldNameGenericsTypeMap, sfFieldInvokeInstructionMap, staticFinalFieldNameTypeMap);
         }
 
         // 处理方法
         for (Method method : javaClass.getMethods()) {
             if (!handleMethod(method, nonStaticFieldNameTypeMap, nonStaticFieldNameGenericsTypeMap, sfFieldInvokeInstructionMap, staticFinalFieldNameTypeMap,
-                    recordedFieldWithGenericsTypeSet)) {
+                    fieldWithGetMethodNameSet, fieldWithSetMethodNameSet)) {
                 return false;
             }
         }
 
+        // 处理字段
+        for (Field field : javaClass.getFields()) {
+            handleField(field, nonStaticFieldNameGenericsTypeMap, fieldWithGetMethodNameSet, fieldWithSetMethodNameSet);
+        }
         return true;
     }
 
@@ -272,28 +281,19 @@ public class ClassHandler {
         return methodHandler4TypeAndValue.handleMethod();
     }
 
-    // 处理字段
-    private void handleField(Field field,
-                             Map<String, String> nonStaticFieldNameTypeMap,
-                             Map<String, List<String>> nonStaticFieldNameGenericsTypeMap,
-                             Map<String, List<InvokeInstructionPosAndCallee>> sfFieldInvokeInstructionMap,
-                             Map<String, String> staticFinalFieldNameTypeMap) throws IOException {
+    // 预处理字段
+    private void preHandleField(Field field,
+                                Map<String, JavaCG2Type> nonStaticFieldNameTypeMap,
+                                Map<String, List<JavaCG2GenericsType>> nonStaticFieldNameGenericsTypeMap,
+                                Map<String, List<InvokeInstructionPosAndCallee>> sfFieldInvokeInstructionMap,
+                                Map<String, Type> staticFinalFieldNameTypeMap) {
         String fieldName = field.getName();
-        String fieldTypeStr = field.getType().toString();
-        String fieldModifiers = JavaCG2ByteCodeUtil.getModifiersString(field.getAccessFlags());
-        String primitiveType = JavaCG2YesNoEnum.parseStrValue(JavaCG2ConstantTypeEnum.isPrimitiveType(fieldTypeStr));
-        String staticFlag = JavaCG2YesNoEnum.parseStrValue(field.isStatic());
-        String finalFlag = JavaCG2YesNoEnum.parseStrValue(field.isFinal());
-        // 记录字段信息
-        JavaCG2FileUtil.write2FileWithTab(fieldInfoWriter, className, fieldName, fieldTypeStr, fieldModifiers, primitiveType, staticFlag, finalFlag);
-
-        // 记录字段上的注解信息
-        JavaCG2AnnotationUtil.writeAnnotationInfo(fieldAnnotationWriter, field.getAnnotationEntries(), annotationAttributesFormatter, className, fieldName);
+        Type fieldType = field.getType();
 
         if (javaCG2ConfInfo.isParseMethodCallTypeValue() && field.isStatic() && field.isFinal()) {
             // 处理static、final字段
             sfFieldInvokeInstructionMap.put(fieldName, new ArrayList<>(1));
-            staticFinalFieldNameTypeMap.put(fieldName, field.getType().toString());
+            staticFinalFieldNameTypeMap.put(fieldName, fieldType);
         }
 
         if (!field.isStatic()) {
@@ -301,10 +301,10 @@ public class ClassHandler {
             try {
                 String fieldGenericSignature = field.getGenericSignature();
                 if (fieldGenericSignature != null) {
-                    List<String> fieldGenericsTypeList = new ArrayList<>();
-                    SignatureAttribute.ObjectType fieldType = SignatureAttribute.toFieldSignature(fieldGenericSignature);
+                    SignatureAttribute.ObjectType javassistFieldType = SignatureAttribute.toFieldSignature(fieldGenericSignature);
+                    List<JavaCG2GenericsType> fieldGenericsTypeList = new ArrayList<>();
                     // 解析字段定义中的泛型类型
-                    JavaCG2SignatureUtil.parseTypeDefineGenericsType(fieldType, true, fieldGenericsTypeList);
+                    JavaCG2GenericsTypeUtil.parseTypeDefineGenericsType(javassistFieldType, false, fieldGenericsTypeList);
                     if (!fieldGenericsTypeList.isEmpty()) {
                         nonStaticFieldNameGenericsTypeMap.put(fieldName, fieldGenericsTypeList);
                     }
@@ -313,8 +313,67 @@ public class ClassHandler {
                 logger.error("处理字段出现异常 {} {}", className, fieldName, e);
             }
 
-            nonStaticFieldNameTypeMap.put(fieldName, field.getType().toString());
+            JavaCG2Type javaCG2Type = JavaCG2ByteCodeUtil.genJavaCG2Type(field.getType());
+            nonStaticFieldNameTypeMap.put(fieldName, javaCG2Type);
         }
+    }
+
+    // 处理字段
+    private void handleField(Field field, Map<String, List<JavaCG2GenericsType>> nonStaticFieldNameGenericsTypeMap,
+                             Set<String> fieldWithGetMethodNameSet, Set<String> fieldWithSetMethodNameSet) throws IOException {
+        String fieldName = field.getName();
+        JavaCG2Type javaCG2Type = JavaCG2ByteCodeUtil.genJavaCG2Type(field.getType());
+        String fieldModifiers = JavaCG2ByteCodeUtil.getModifiersString(field.getAccessFlags());
+        String primitiveType = JavaCG2YesNoEnum.parseStrValue(JavaCG2ConstantTypeEnum.isPrimitiveType(javaCG2Type.getType()));
+        String staticFlag = JavaCG2YesNoEnum.parseStrValue(field.isStatic());
+        String finalFlag = JavaCG2YesNoEnum.parseStrValue(field.isFinal());
+        // 判断当前字段是否存在对应的get/set方法
+        String existsGetMethod = JavaCG2YesNoEnum.parseStrValue(fieldWithGetMethodNameSet.contains(fieldName));
+        String existsSetMethod = JavaCG2YesNoEnum.parseStrValue(fieldWithSetMethodNameSet.contains(fieldName));
+
+        boolean existsGenericsType = false;
+        if (!field.isStatic()) {
+            // 当前字段为非静态字段，判断是否为涉及泛型类型的集合
+            List<JavaCG2GenericsType> fieldGenericsTypeList = nonStaticFieldNameGenericsTypeMap.get(fieldName);
+            if (fieldGenericsTypeList != null) {
+                // 当前字段为涉及泛型类型的集合
+                existsGenericsType = true;
+                // 记录非静态字段集合中涉及的泛型类型
+                JavaCG2FileUtil.write2FileWithTab(fieldGenericsTypeWriter,
+                        className,
+                        fieldName,
+                        JavaCG2Constants.FILE_KEY_CLASS_TYPE,
+                        JavaCG2ByteCodeUtil.genGenericsTypeStr4Fixed(javaCG2Type));
+
+                int genericsSeq = 0;
+                for (JavaCG2GenericsType fieldGenericsType : fieldGenericsTypeList) {
+                    JavaCG2FileUtil.write2FileWithTab(fieldGenericsTypeWriter,
+                            className,
+                            fieldName,
+                            JavaCG2Constants.FILE_KEY_GENERICS_TYPE,
+                            JavaCG2GenericsTypeUtil.genGenericsTypeStr(genericsSeq, fieldGenericsType));
+                    genericsSeq++;
+                }
+            }
+        }
+
+        // 记录字段信息
+        JavaCG2FileUtil.write2FileWithTab(fieldInfoWriter,
+                className,
+                fieldName,
+                javaCG2Type.getType(),
+                String.valueOf(javaCG2Type.getArrayDimensions()),
+                JavaCG2ClassMethodUtil.getClassCategory(javaCG2Type.getType()),
+                fieldModifiers,
+                primitiveType,
+                staticFlag,
+                finalFlag,
+                existsGetMethod,
+                existsSetMethod,
+                JavaCG2YesNoEnum.parseStrValue(existsGenericsType));
+
+        // 记录字段上的注解信息
+        JavaCG2AnnotationUtil.writeAnnotationInfo(fieldAnnotationWriter, field.getAnnotationEntries(), annotationAttributesFormatter, className, fieldName);
     }
 
     /**
@@ -325,15 +384,17 @@ public class ClassHandler {
      * @param nonStaticFieldNameGenericsTypeMap
      * @param sfFieldInvokeInstructionMap
      * @param staticFinalFieldNameTypeMap
-     * @param recordedFieldWithGenericsTypeSet
+     * @param fieldWithGetMethodNameSet
+     * @param fieldWithSetMethodNameSet
      * @return false: 处理失败 true: 处理成功
      */
     private boolean handleMethod(Method method,
-                                 Map<String, String> nonStaticFieldNameTypeMap,
-                                 Map<String, List<String>> nonStaticFieldNameGenericsTypeMap,
+                                 Map<String, JavaCG2Type> nonStaticFieldNameTypeMap,
+                                 Map<String, List<JavaCG2GenericsType>> nonStaticFieldNameGenericsTypeMap,
                                  Map<String, List<InvokeInstructionPosAndCallee>> sfFieldInvokeInstructionMap,
-                                 Map<String, String> staticFinalFieldNameTypeMap,
-                                 Set<String> recordedFieldWithGenericsTypeSet) throws IOException {
+                                 Map<String, Type> staticFinalFieldNameTypeMap,
+                                 Set<String> fieldWithGetMethodNameSet,
+                                 Set<String> fieldWithSetMethodNameSet) throws IOException {
         methodNumCounter.addAndGet();
 
         // 是否出现方法名+参数类型均相同的方法标记
@@ -353,20 +414,44 @@ public class ClassHandler {
 
         logger.debug("处理Method: {}", fullMethod);
 
+        boolean returnExistsGenericsType = false;
+        Set<Integer> methodArgsGenericsTypeSeqSet = new HashSet<>();
+        String methodGenericSignature = method.getGenericSignature();
+        if (methodGenericSignature != null) {
+            try {
+                SignatureAttribute.MethodSignature methodSignature = SignatureAttribute.toMethodSignature(methodGenericSignature);
+                // 记录方法返回泛型类型
+                returnExistsGenericsType = recordMethodReturnGenericsType(fullMethod, method.getReturnType(), methodSignature);
+
+                // 记录方法参数中泛型类型
+                recordMethodArgsGenericsType(fullMethod, method.getArgumentTypes(), methodSignature, methodArgsGenericsTypeSeqSet);
+            } catch (BadBytecode e) {
+                logger.error("处理方法签名出现异常 {}", fullMethod, e);
+            }
+        }
+
         // 返回类型
-        String returnType = method.getReturnType().toString();
         String methodNameAndArgs = method.getName() + methodArgTypes;
         if (handledMethodNameAndArgs.add(methodNameAndArgs)) {
             // 获取方法指令的HASH
             Code code = method.getCode();
-            String methodHash = "";
+            String methodInstructionsHash = "";
             if (code != null) {
                 String methodCode = Utility.codeToString(code.getCode(), method.getConstantPool(), 0, -1, false);
-                methodHash = DigestUtils.md5Hex(methodCode);
+                methodInstructionsHash = DigestUtils.md5Hex(methodCode);
             }
 
+            JavaCG2Type javaCG2Type = JavaCG2ByteCodeUtil.genJavaCG2Type(method.getReturnType());
             // 记录方法的信息
-            JavaCG2FileUtil.write2FileWithTab(methodInfoWriter, fullMethod, String.valueOf(method.getAccessFlags()), returnType, methodHash, classJarNum);
+            JavaCG2FileUtil.write2FileWithTab(methodInfoWriter,
+                    fullMethod,
+                    String.valueOf(method.getAccessFlags()),
+                    javaCG2Type.getType(),
+                    String.valueOf(javaCG2Type.getArrayDimensions()),
+                    JavaCG2ClassMethodUtil.getClassCategory(javaCG2Type.getType()),
+                    JavaCG2YesNoEnum.parseStrValue(returnExistsGenericsType),
+                    methodInstructionsHash,
+                    classJarNum);
         } else {
             // 出现方法名+参数类型均相同的方法
             existsSameMethodNameAndArgs = true;
@@ -375,26 +460,12 @@ public class ClassHandler {
             }
         }
 
-        String methodGenericSignature = method.getGenericSignature();
-        if (methodGenericSignature != null) {
-            try {
-                SignatureAttribute.MethodSignature methodSignature = SignatureAttribute.toMethodSignature(methodGenericSignature);
-                // 记录方法返回泛型类型
-                recordMethodReturnGenericsType(fullMethod, methodSignature);
-
-                // 记录方法参数中泛型类型
-                recordMethodArgsGenericsType(fullMethod, methodSignature);
-            } catch (BadBytecode e) {
-                logger.error("处理方法签名出现异常 {}", fullMethod, e);
-            }
-        }
-
         MethodGen mg = new MethodGen(method, className, cpg);
         if (!existsSameMethodNameAndArgs) {
             /*
                 对于方法名+参数类型相同的方法，不处理方法参数
             */
-            recordMethodArgument(fullMethod, mg);
+            recordMethodArgument(fullMethod, mg, methodArgsGenericsTypeSeqSet);
         }
 
         // 处理方法调用
@@ -435,11 +506,11 @@ public class ClassHandler {
             methodHandler4Invoke.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
             methodHandler4Invoke.setGetMethodWriter(getMethodWriter);
             methodHandler4Invoke.setSetMethodWriter(setMethodWriter);
-            methodHandler4Invoke.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
             methodHandler4Invoke.setRecordedSetMethodSet(recordedSetMethodSet);
             methodHandler4Invoke.setNonStaticFieldNameTypeMap(nonStaticFieldNameTypeMap);
             methodHandler4Invoke.setNonStaticFieldNameGenericsTypeMap(nonStaticFieldNameGenericsTypeMap);
-            methodHandler4Invoke.setRecordedFieldWithGenericsTypeSet(recordedFieldWithGenericsTypeSet);
+            methodHandler4Invoke.setFieldWithGetMethodNameSet(fieldWithGetMethodNameSet);
+            methodHandler4Invoke.setFieldWithSetMethodNameSet(fieldWithSetMethodNameSet);
             if (JavaCG2CommonNameConstants.METHOD_NAME_CLINIT.equals(method.getName())) {
                 // 当前方法为静态代码块
                 methodHandler4Invoke.setInClinitMethod(true);
@@ -465,71 +536,89 @@ public class ClassHandler {
     }
 
     // 记录方法返回泛型类型
-    private void recordMethodReturnGenericsType(String fullMethod, SignatureAttribute.MethodSignature methodSignature) {
+    private boolean recordMethodReturnGenericsType(String fullMethod, Type methodReturnType, SignatureAttribute.MethodSignature methodSignature) {
         try {
             SignatureAttribute.Type returnType = methodSignature.getReturnType();
             if (!(returnType instanceof SignatureAttribute.ClassType)) {
-                return;
+                return false;
             }
 
             SignatureAttribute.ClassType classType = (SignatureAttribute.ClassType) returnType;
-            List<String> methodReturnGenericsTypeList = new ArrayList<>();
+            List<JavaCG2GenericsType> methodReturnGenericsTypeList = new ArrayList<>();
             // 解析方法返回中泛型类型，外层处理
-            JavaCG2SignatureUtil.parseTypeDefineGenericsType(classType, true, methodReturnGenericsTypeList);
+            JavaCG2GenericsTypeUtil.parseTypeDefineGenericsType(classType, false, methodReturnGenericsTypeList);
             if (methodReturnGenericsTypeList.isEmpty()) {
                 // 未获取到方法返回中泛型类型
-                return;
+                return false;
             }
 
             // 记录返回类型，序号固定为0
-            JavaCG2FileUtil.write2FileWithTab(methodReturnGenericsTypeWriter, fullMethod, JavaCG2Constants.FILE_KEY_CLASS_TYPE, "0",
-                    JavaCG2SignatureUtil.getClassName(classType));
+            JavaCG2Type javaCG2Type = JavaCG2ByteCodeUtil.genJavaCG2Type(methodReturnType);
+            JavaCG2FileUtil.write2FileWithTab(methodReturnGenericsTypeWriter,
+                    fullMethod,
+                    JavaCG2Constants.FILE_KEY_CLASS_TYPE,
+                    JavaCG2ByteCodeUtil.genGenericsTypeStr4Fixed(javaCG2Type));
 
             // 获取到方法返回中泛型类型，记录
-            for (int i = 0; i < methodReturnGenericsTypeList.size(); i++) {
-                JavaCG2FileUtil.write2FileWithTab(methodReturnGenericsTypeWriter, fullMethod, JavaCG2Constants.FILE_KEY_GENERICS_TYPE, String.valueOf(i),
-                        methodReturnGenericsTypeList.get(i));
+            for (int genericsSeq = 0; genericsSeq < methodReturnGenericsTypeList.size(); genericsSeq++) {
+                JavaCG2GenericsType methodReturnGenericsType = methodReturnGenericsTypeList.get(genericsSeq);
+                JavaCG2FileUtil.write2FileWithTab(methodReturnGenericsTypeWriter,
+                        fullMethod,
+                        JavaCG2Constants.FILE_KEY_GENERICS_TYPE,
+                        JavaCG2GenericsTypeUtil.genGenericsTypeStr(genericsSeq, methodReturnGenericsType));
             }
+            return true;
         } catch (Exception e) {
             logger.error("error ", e);
+            return false;
         }
     }
 
     // 记录方法参数中泛型类型
-    private void recordMethodArgsGenericsType(String fullMethod, SignatureAttribute.MethodSignature methodSignature) throws IOException {
+    private void recordMethodArgsGenericsType(String fullMethod, Type[] argTypes, SignatureAttribute.MethodSignature methodSignature, Set<Integer> methodArgsGenericsTypeSeqSet) throws IOException {
         SignatureAttribute.Type[] parameterTypes = methodSignature.getParameterTypes();
         if (ArrayUtils.isEmpty(parameterTypes)) {
             return;
         }
-        for (int i = 0; i < parameterTypes.length; i++) {
-            SignatureAttribute.Type argType = parameterTypes[i];
+        for (int argSeq = 0; argSeq < parameterTypes.length; argSeq++) {
+            SignatureAttribute.Type argType = parameterTypes[argSeq];
             if (!(argType instanceof SignatureAttribute.ClassType)) {
                 continue;
             }
 
+            // 当前方法参数存在泛型类型
+            methodArgsGenericsTypeSeqSet.add(argSeq);
             SignatureAttribute.ClassType classType = (SignatureAttribute.ClassType) argType;
-            List<String> methodArgsGenericsTypeList = new ArrayList<>();
+            List<JavaCG2GenericsType> methodArgsGenericsTypeList = new ArrayList<>();
             // 解析方法参数中泛型类型，外层处理
-            JavaCG2SignatureUtil.parseTypeDefineGenericsType(classType, true, methodArgsGenericsTypeList);
+            JavaCG2GenericsTypeUtil.parseTypeDefineGenericsType(classType, false, methodArgsGenericsTypeList);
             if (methodArgsGenericsTypeList.isEmpty()) {
                 // 未获取到方法参数中泛型类型
                 continue;
             }
 
             // 记录参数类型，序号固定为0
-            JavaCG2FileUtil.write2FileWithTab(methodArgGenericsTypeWriter, fullMethod, String.valueOf(i), JavaCG2Constants.FILE_KEY_CLASS_TYPE, "0",
-                    JavaCG2SignatureUtil.getClassName(classType));
+            JavaCG2Type javaCG2Type = JavaCG2ByteCodeUtil.genJavaCG2Type(argTypes[argSeq]);
+            JavaCG2FileUtil.write2FileWithTab(methodArgGenericsTypeWriter,
+                    fullMethod,
+                    String.valueOf(argSeq),
+                    JavaCG2Constants.FILE_KEY_CLASS_TYPE,
+                    JavaCG2ByteCodeUtil.genGenericsTypeStr4Fixed(javaCG2Type));
 
             // 获取到方法参数中泛型类型，记录
-            for (int j = 0; j < methodArgsGenericsTypeList.size(); j++) {
-                JavaCG2FileUtil.write2FileWithTab(methodArgGenericsTypeWriter, fullMethod, String.valueOf(i), JavaCG2Constants.FILE_KEY_GENERICS_TYPE,
-                        String.valueOf(j), methodArgsGenericsTypeList.get(j));
+            for (int genericsSeq = 0; genericsSeq < methodArgsGenericsTypeList.size(); genericsSeq++) {
+                JavaCG2GenericsType methodArgsGenericsType = methodArgsGenericsTypeList.get(genericsSeq);
+                JavaCG2FileUtil.write2FileWithTab(methodArgGenericsTypeWriter,
+                        fullMethod,
+                        String.valueOf(argSeq),
+                        JavaCG2Constants.FILE_KEY_GENERICS_TYPE,
+                        JavaCG2GenericsTypeUtil.genGenericsTypeStr(genericsSeq, methodArgsGenericsType));
             }
         }
     }
 
     // 处理方法参数
-    private void recordMethodArgument(String fullMethod, MethodGen mg) throws IOException {
+    private void recordMethodArgument(String fullMethod, MethodGen mg, Set<Integer> methodArgsGenericsTypeSeqSet) throws IOException {
         Type[] argTypes = mg.getArgumentTypes();
 
         for (Attribute attribute : mg.getAttributes()) {
@@ -541,7 +630,7 @@ public class ClassHandler {
             MethodParameter[] parameters = methodParameters.getParameters();
             for (int i = 0; i < parameters.length; i++) {
                 String argName = parameters[i].getParameterName(constantPool);
-                JavaCG2FileUtil.write2FileWithTab(methodArgumentWriter, fullMethod, String.valueOf(i), argTypes[i].toString(), argName);
+                doRecordMethodArgument(fullMethod, i, argTypes[i], argName, methodArgsGenericsTypeSeqSet);
             }
             return;
         }
@@ -551,8 +640,21 @@ public class ClassHandler {
             int argIndex = JavaCG2ByteCodeUtil.getLocalVariableTableIndex(mg, i);
             LocalVariable localVariable = localVariableTable.getLocalVariable(argIndex, 0);
             String argName = (localVariable == null ? "" : localVariable.getName());
-            JavaCG2FileUtil.write2FileWithTab(methodArgumentWriter, fullMethod, String.valueOf(i), argTypes[i].toString(), argName);
+            doRecordMethodArgument(fullMethod, i, argTypes[i], argName, methodArgsGenericsTypeSeqSet);
         }
+    }
+
+    private void doRecordMethodArgument(String fullMethod, int seq, Type argType, String argName, Set<Integer> methodArgsGenericsTypeSeqSet) throws IOException {
+        JavaCG2Type javaCG2Type = JavaCG2ByteCodeUtil.genJavaCG2Type(argType);
+        String existsGenericsType = JavaCG2YesNoEnum.parseStrValue(methodArgsGenericsTypeSeqSet.contains(seq));
+        JavaCG2FileUtil.write2FileWithTab(methodArgumentWriter,
+                fullMethod,
+                String.valueOf(seq),
+                argName,
+                javaCG2Type.getType(),
+                String.valueOf(javaCG2Type.getArrayDimensions()),
+                JavaCG2ClassMethodUtil.getClassCategory(javaCG2Type.getType()),
+                existsGenericsType);
     }
 
     //

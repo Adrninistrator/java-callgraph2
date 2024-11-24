@@ -108,13 +108,13 @@ public class JavaCG2Util {
     }
 
     /**
-     * 判断是否需要跳过当前类的处理
+     * 判断是否需要跳过当前类的处理，白名单方式
      *
      * @param className
      * @param needHandlePackageSet
      * @return true: 跳过 false: 不跳过
      */
-    public static boolean checkSkipClass(String className, Set<String> needHandlePackageSet) {
+    public static boolean checkSkipClassWhiteList(String className, Set<String> needHandlePackageSet) {
         if (isCollectionEmpty(needHandlePackageSet)) {
             return false;
         }
@@ -124,6 +124,20 @@ public class JavaCG2Util {
             }
         }
         return true;
+    }
+
+    /**
+     * 判断是否需要跳过当前类的处理，黑名单方式
+     *
+     * @param className
+     * @param ignoreClassNameSet
+     * @return true: 跳过 false: 不跳过
+     */
+    public static boolean checkSkipClassBlackList(String className, Set<String> ignoreClassNameSet) {
+        if (isCollectionEmpty(ignoreClassNameSet)) {
+            return false;
+        }
+        return ignoreClassNameSet.contains(className);
     }
 
     /**
