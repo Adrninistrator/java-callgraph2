@@ -604,7 +604,12 @@ public class JavaCG2Entry {
 
         JavaCG2OtherConfigFileUseListEnum[] javaCG2OtherConfigFileUseListEnums = JavaCG2OtherConfigFileUseListEnum.values();
         for (JavaCG2OtherConfigFileUseListEnum currentConfig : javaCG2OtherConfigFileUseListEnums) {
-            List<String> configValueList = javaCG2ConfigureWrapper.getOtherConfigList(currentConfig, false);
+            List<String> configValueList;
+            if (JavaCG2OtherConfigFileUseListEnum.OCFULE_CODE_PARSER_ONLY_4SHOW == currentConfig) {
+                configValueList = getAllCodeParserNameList();
+            } else {
+                configValueList = javaCG2ConfigureWrapper.getOtherConfigList(currentConfig, false);
+            }
             int seq = 0;
             for (String configValue : configValueList) {
                 JavaCG2FileUtil.write2FileWithTab(javaCG2ConfigWriter, currentConfig.getFileName(), String.valueOf(seq), configValue, JavaCG2Constants.CONFIG_LIST);
