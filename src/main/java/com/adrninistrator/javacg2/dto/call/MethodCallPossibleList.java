@@ -155,7 +155,7 @@ public class MethodCallPossibleList {
         }
 
         // 判断是否属于数组
-        if (baseElement.isArrayElement()) {
+        if (baseElement.checkArrayElement()) {
             arrayElement = true;
             // 处理数组中的元素
             Map<Integer, BaseElement> map = baseElement.getArrayValueMap();
@@ -176,7 +176,7 @@ public class MethodCallPossibleList {
                             仅当参数类型属于数组时，才尝试去掉后面的[]
                             例如方法中参数定义的类型为Object，实际调用时指定的参数类型为Object[]
                          */
-                        arrayElementType = JavaCG2ByteCodeUtil.removeArrayFlag(definedType);
+                        arrayElementType = JavaCG2ByteCodeUtil.removeOneArrayFlag(definedType);
                     } else {
                         arrayElementType = definedType;
                     }

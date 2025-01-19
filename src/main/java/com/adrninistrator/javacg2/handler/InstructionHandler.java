@@ -96,6 +96,8 @@ public class InstructionHandler {
 
     private final ConstantPoolGen cpg;
 
+    private final String callerFullMethod;
+
     private final LocalVariableTable localVariableTable;
 
     private JavaCG2OperandStack stack;
@@ -107,10 +109,13 @@ public class InstructionHandler {
     private FieldInformationMap staticFieldInfoMap;
 
     // 需要解析方法调用的可能的类型与值的开关
-    protected boolean parseMethodCallTypeValueFlag;
+    private boolean parseMethodCallTypeValueFlag;
 
     // 解析构造函数以获取非静态字段可能的类型的开关
     private boolean recordFieldPossibleTypeFlag;
+
+    // 当前处理的是否为枚举的构造函数
+    private boolean enumInitMethodFlag;
 
     // 使用已获取的构造函数非静态字段可能的类型的开关
     private boolean useFieldPossibleTypeFlag;
@@ -124,6 +129,13 @@ public class InstructionHandler {
     // 当前方法是否为静态代码块
     private boolean inClinitMethod;
 
+    // 以下两个字段不修改为本地变量
+    // 当前处理的指令偏移量
+    private int instructionPosition;
+
+    // 当前处理的指令代码行号
+    private int sourceLineNumber;
+
     public InstructionHandler(JavaCG2ConfInfo javaCG2ConfInfo,
                               MethodGen mg,
                               LocalVariableTable localVariableTable,
@@ -134,6 +146,7 @@ public class InstructionHandler {
         this.frEqConversionMethodMap = javaCG2ConfInfo.getFrEqConversionMethodMap();
         this.mg = mg;
         this.cpg = mg.getConstantPool();
+        this.callerFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(mg.getClassName(), mg.getName(), mg.getArgumentTypes());
         this.localVariableTable = localVariableTable;
         this.stack = stack;
         this.locals = locals;
@@ -142,6 +155,12 @@ public class InstructionHandler {
     }
 
     public BaseInstructionParseResult parse(InstructionHandle ih) {
+        instructionPosition = ih.getPosition();
+        sourceLineNumber = JavaCG2ByteCodeUtil.getSourceLine(instructionPosition, mg.getLineNumberTable(cpg));
+        if (logger.isDebugEnabled()) {
+            logger.debug("当前解析的方法 {} 指令位置 {} 代码行号 {}", callerFullMethod, instructionPosition, sourceLineNumber);
+        }
+
         Instruction i = ih.getInstruction();
         short opCode = i.getOpcode();
         BaseInstructionParseResult instructionParseResult = null;
@@ -637,7 +656,7 @@ public class InstructionHandler {
         int loadIndex = loadInstruction.getIndex();
         if (locals.size() > loadIndex) {
             LocalVariableElement local = locals.get(loadIndex);
-            // 获取LOAD指令对应的方法参数下标
+            // 获取LOAD指令对应的方法参数序号
             int argIndex = JavaCG2ByteCodeUtil.getArgIndexInMethod(mg, loadIndex);
             if (argIndex >= 0) {
                 // 当前LOAD指令是获取方法参数
@@ -658,29 +677,26 @@ public class InstructionHandler {
         handleArrayLoad(typeEnum.getType(), false);
     }
 
-    private void handleArrayLoad(String elementType, boolean isAaload) {
+    private void handleArrayLoad(String expectedElementType, boolean isAaload) {
         // 出栈，数组索引
         BaseElement indexVariable = stack.pop();
         // 出栈，数组对象
         BaseElement arrayVariable = stack.pop();
 
-        String usedElementType;
-        if (!isAaload) {
-            usedElementType = elementType;
-        } else {
-            String arrayType = arrayVariable.getType();
-            if (!JavaCG2ByteCodeUtil.isNullType(arrayType) && !JavaCG2ByteCodeUtil.isArrayType(arrayType)) {
-                throw new JavaCG2RuntimeException("当前类型不是数组 " + arrayType);
-            }
-            usedElementType = JavaCG2ByteCodeUtil.removeArrayFlag(arrayType);
+        String arrayType = arrayVariable.getType();
+        if (isAaload && !JavaCG2ByteCodeUtil.isNullType(arrayType) && !JavaCG2ByteCodeUtil.isArrayType(arrayType)) {
+            throw new JavaCG2RuntimeException("当前类型不是数组 " + arrayType);
         }
 
         // 入栈，数组元素
-        stack.push(new VariableElement(usedElementType, true));
+        stack.push(new VariableElement(arrayType, -1));
 
         indexVariable.checkTypeString(JavaCG2ConstantTypeEnum.CONSTTE_INT.getType());
         if (!isAaload) {
-            arrayVariable.checkTypeString(JavaCG2ByteCodeUtil.addArrayFlag(usedElementType));
+            String actualElementType = JavaCG2ByteCodeUtil.removeAllArrayFlag(arrayType);
+            if (!JavaCG2ByteCodeUtil.checkTypeString(actualElementType, expectedElementType)) {
+                throw new JavaCG2RuntimeException("预期的数组类型 " + expectedElementType + " 与实际的不同 " + actualElementType);
+            }
         }
     }
 
@@ -720,7 +736,7 @@ public class InstructionHandler {
         handleArrayStore(typeEnum.getType(), false);
     }
 
-    private void handleArrayStore(String arrayType, boolean isAastore) {
+    private void handleArrayStore(String expectedElementType, boolean isAastore) {
         BaseElement valueVariable = stack.pop();
         BaseElement indexVariable = stack.pop();
         BaseElement arrayVariable = stack.pop();
@@ -728,20 +744,25 @@ public class InstructionHandler {
         indexVariable.checkTypeString(JavaCG2ConstantTypeEnum.CONSTTE_INT.getType());
 
         if (!isAastore) {
-            valueVariable.checkTypeString(arrayType);
-            arrayVariable.checkTypeString(JavaCG2ByteCodeUtil.addArrayFlag(arrayType));
+            valueVariable.checkTypeString(expectedElementType);
+            String actualElementType = JavaCG2ByteCodeUtil.removeAllArrayFlag(arrayVariable.getType());
+            if (!JavaCG2ByteCodeUtil.checkTypeString(actualElementType, expectedElementType)) {
+                throw new JavaCG2RuntimeException(callerFullMethod + " 预期的数组类型 " + expectedElementType + " 与实际的不同 " + actualElementType);
+            }
         }
 
-        if (!arrayVariable.isArrayElement()) {
-            logger.error("不是数组类型 {}", arrayVariable.getClass().getName());
+        if (!arrayVariable.checkArrayElement()) {
+            if (!JavaCG2ConstantTypeEnum.CONSTTE_NULL.getType().equals(arrayVariable.getType())) {
+                logger.error("{} 数组操作指令操作的变量不是数组类型 {}", callerFullMethod, arrayVariable.getClass().getName());
+            }
             return;
         }
 
         Object indexObj = indexVariable.getValue();
         if (indexObj instanceof Integer) {
-            // 数组赋值的元素下标是常量
+            // 数组赋值的元素序号是常量
             Integer index = (Integer) indexObj;
-            // 记录数组指定下标的元素
+            // 记录数组指定序号的元素
             arrayVariable.setElement(index, valueVariable);
         }
     }
@@ -970,7 +991,7 @@ public class InstructionHandler {
         if (fieldElement == null) {
             // 假如是静态字段定义的类型与实际初始化类型不一致，则以上获取的fieldElement会是null，因为代码中没有对静态初始化方法进行处理（意义不大）
             String fieldType = getstatic.getFieldType(cpg).toString();
-            fieldElement = new StaticFieldElement(fieldType, false, null, fieldName, classType.getClassName());
+            fieldElement = new StaticFieldElement(fieldType, 0, null, fieldName, classType.getClassName());
         }
         stack.push(fieldElement);
     }
@@ -981,9 +1002,9 @@ public class InstructionHandler {
         BaseElement value = stack.pop();
 
         String putStaticClassName = classType.getClassName();
-        StaticFieldElement staticFieldElement = new StaticFieldElement(value.getType(), value.isArrayElement(), value.getValue(), fieldName, putStaticClassName);
+        StaticFieldElement staticFieldElement = new StaticFieldElement(value.getType(), 0, value.getValue(), fieldName, putStaticClassName);
         // 数组类型的处理
-        if (value.isArrayElement()) {
+        if (value.checkArrayElement()) {
             staticFieldElement.setArrayValueMap(value.getArrayValueMap());
         }
 
@@ -999,6 +1020,15 @@ public class InstructionHandler {
     private void handleGETFIELD(GETFIELD getfield) {
         String fieldName = getfield.getFieldName(cpg);
         BaseElement object = stack.pop();
+        if (object instanceof ConstElementString && JavaCG2CommonNameConstants.CLASS_NAME_STRING.equals(mg.getClassName())) {
+            // String类中获取字符串中的字段
+            String fieldType = getfield.getFieldType(cpg).toString();
+            ConstElementString constElementString = (ConstElementString) object;
+            FieldElement fieldElement = new FieldElement(fieldType, 0, constElementString.getValue(), fieldName, JavaCG2CommonNameConstants.CLASS_NAME_STRING);
+            stack.push(fieldElement);
+            return;
+        }
+
         if (!(object instanceof VariableElement)) {
             throw new JavaCG2RuntimeException("GETFIELD对象类型与预期不一致: " + object.getClass().getName());
         }
@@ -1032,7 +1062,7 @@ public class InstructionHandler {
                     if (!JavaCG2Util.isCollectionEmpty(possibleTypeList)) {
                         if (possibleTypeList.size() == 1) {
                             // 字段可能的类型数量为1，则使用
-                            fieldElement = new FieldElement(possibleTypeList.get(0), false, null, fieldName, objectClassName);
+                            fieldElement = new FieldElement(possibleTypeList.get(0), 0, null, fieldName, objectClassName);
                             variableDataSourceField.setFieldType(fieldElement.getType());
                             // 记录变量的数据来源
                             fieldElement.recordVariableDataSource(variableDataSourceField, frEqConversionMethodMap);
@@ -1048,7 +1078,7 @@ public class InstructionHandler {
 
         // 若以上未得到字段合适的类型，则使用GETFIELD指令对应的类型
         String fieldType = getfield.getFieldType(cpg).toString();
-        FieldElement fieldElement = new FieldElement(fieldType, false, null, fieldName, objectClassName);
+        FieldElement fieldElement = new FieldElement(fieldType, 0, null, fieldName, objectClassName);
         variableDataSourceField.setFieldType(fieldElement.getType());
         // 记录变量的数据来源
         fieldElement.recordVariableDataSource(variableDataSourceField, frEqConversionMethodMap);
@@ -1068,9 +1098,9 @@ public class InstructionHandler {
             if (objectLocalVariableElement.isThis()) {
                 // 仅处理对this的变量赋值
                 String objectClassName = JavaCG2ElementUtil.getVariableClassNameOrThis(objectLocalVariableElement);
-                FieldElement fieldElement = new FieldElement(value.getType(), value.isArrayElement(), value.getValue(), fieldName, objectClassName);
+                FieldElement fieldElement = new FieldElement(value.getType(), 0, value.getValue(), fieldName, objectClassName);
                 // 数组类型的处理
-                if (value.isArrayElement()) {
+                if (value.checkArrayElement()) {
                     fieldElement.setArrayValueMap(value.getArrayValueMap());
                 }
 
@@ -1085,7 +1115,7 @@ public class InstructionHandler {
             }
         }
 
-        if (maybeSetMethod) {
+        if (maybeSetMethod || enumInitMethodFlag) {
             return new PutFieldParseResult(fieldName, putfield.getFieldType(cpg).toString(), value, object);
         }
         return null;
@@ -1118,7 +1148,7 @@ public class InstructionHandler {
             if (objectElement instanceof StaticFieldElement) {
                 // 被调用对象属于静态字段
                 StaticFieldElement staticFieldElement = (StaticFieldElement) objectElement;
-                variableElement = new StaticFieldMethodCallElement(returnType.toString(), (returnType instanceof ArrayType), staticFieldElement.getClassName(),
+                variableElement = new StaticFieldMethodCallElement(returnType.toString(), 0, staticFieldElement.getClassName(),
                         staticFieldElement.getName(), calleeMethodName);
             } else {
                 variableElement = new VariableElement(returnType.toString());
@@ -1149,7 +1179,8 @@ public class InstructionHandler {
 
     private void handleNEWARRAY(NEWARRAY newarray) {
         BaseElement countVariable = stack.pop();
-        VariableElement arrayElement = new VariableElement(newarray.getType().toString(), true);
+        String arrayType = newarray.getType().toString();
+        VariableElement arrayElement = new VariableElement(arrayType);
         stack.push(arrayElement);
 
         countVariable.checkTypeString(JavaCG2ConstantTypeEnum.CONSTTE_INT.getType());
@@ -1157,7 +1188,8 @@ public class InstructionHandler {
 
     private void handleANEWARRAY(ANEWARRAY anewarray) {
         BaseElement countVariable = stack.pop();
-        VariableElement arrayElement = new VariableElement(JavaCG2ByteCodeUtil.addArrayFlag(JavaCG2InstructionUtil.getTypeString(anewarray, cpg)), true);
+        String arrayType = JavaCG2InstructionUtil.getTypeString(anewarray, cpg);
+        VariableElement arrayElement = new VariableElement(arrayType, 1);
         stack.push(arrayElement);
 
         countVariable.checkTypeString(JavaCG2ConstantTypeEnum.CONSTTE_INT.getType());
@@ -1187,10 +1219,12 @@ public class InstructionHandler {
     }
 
     private void handleMULTIANEWARRAY(MULTIANEWARRAY multianewarray) {
-        for (int i = 0; i < multianewarray.getDimensions(); i++) {
+        int arrayDimensions = multianewarray.getDimensions();
+        for (int i = 0; i < arrayDimensions; i++) {
             stack.pop();
         }
-        VariableElement arrayElement = new VariableElement(JavaCG2InstructionUtil.getTypeString(multianewarray, cpg), true);
+        String arrayType = JavaCG2InstructionUtil.getTypeString(multianewarray, cpg);
+        VariableElement arrayElement = new VariableElement(arrayType);
         stack.push(arrayElement);
     }
 
@@ -1217,6 +1251,10 @@ public class InstructionHandler {
 
     public void setRecordFieldPossibleTypeFlag(boolean recordFieldPossibleTypeFlag) {
         this.recordFieldPossibleTypeFlag = recordFieldPossibleTypeFlag;
+    }
+
+    public void setEnumInitMethodFlag(boolean enumInitMethodFlag) {
+        this.enumInitMethodFlag = enumInitMethodFlag;
     }
 
     public void setUseFieldPossibleTypeFlag(boolean useFieldPossibleTypeFlag) {

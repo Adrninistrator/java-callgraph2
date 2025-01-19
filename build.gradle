@@ -3,8 +3,10 @@ apply plugin: 'java'
 apply plugin: 'java-library'
 apply plugin: 'idea'
 
+apply from: 'unittest.gradle'
+
 group 'com.github.adrninistrator'
-version = "2.0.8"
+version = "2.1.0"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8

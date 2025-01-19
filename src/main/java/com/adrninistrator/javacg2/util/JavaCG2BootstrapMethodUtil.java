@@ -27,7 +27,7 @@ public class JavaCG2BootstrapMethodUtil {
     private static final Logger logger = LoggerFactory.getLogger(JavaCG2BootstrapMethodUtil.class);
 
     /**
-     * 获得JavaClass中指定下标的BootstrapMethod
+     * 获得JavaClass中指定序号的BootstrapMethod
      *
      * @param javaClass
      * @param index

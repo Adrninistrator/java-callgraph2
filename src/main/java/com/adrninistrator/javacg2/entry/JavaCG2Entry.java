@@ -88,8 +88,6 @@ public class JavaCG2Entry {
 
     private UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
 
-    private Map<String, List<String>> duplicateClassNameMap = new HashMap<>();
-
     public static void main(String[] args) {
         new JavaCG2Entry().run();
     }
@@ -153,6 +151,7 @@ public class JavaCG2Entry {
         try (Writer classAnnotationWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_ANNOTATION));
              Writer javaCG2ConfigWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_JAVACG2_CONFIG));
              Writer classInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_INFO));
+             Writer dupClassInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_DUP_CLASS_INFO));
              Writer classReferenceWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_REFERENCE));
              Writer classSignatureGenericsTypeWriter =
                      JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_GENERICS_TYPE));
@@ -177,8 +176,13 @@ public class JavaCG2Entry {
              Writer methodCallStaticFieldWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_STATIC_FIELD));
              Writer methodReturnArgSeqWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_ARG_SEQ));
              Writer methodReturnCallIdWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_CALL_ID));
+             Writer methodReturnConstValueWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_CONST_VALUE));
+             Writer methodReturnFieldInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_FIELD_INFO));
              Writer methodCallWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL));
              Writer methodInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_INFO));
+             Writer dupMethodInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_DUP_METHOD_INFO));
+             Writer enumInitArgFieldWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_ENUM_INIT_ARG_FIELD));
+             Writer enumInitAssignInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_ENUM_INIT_ASSIGN_INFO));
              Writer methodLineNumberWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_LINE_NUMBER));
              Writer methodReturnGenericsTypeWriter =
                      JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_GENERICS_TYPE));
@@ -192,6 +196,7 @@ public class JavaCG2Entry {
         ) {
             jarEntryHandleParser.setClassAnnotationWriter(classAnnotationWriter);
             jarEntryHandleParser.setClassInfoWriter(classInfoWriter);
+            jarEntryHandleParser.setDupClassInfoWriter(dupClassInfoWriter);
             jarEntryHandleParser.setClassReferenceWriter(classReferenceWriter);
             jarEntryHandleParser.setClassSignatureGenericsTypeWriter(classSignatureGenericsTypeWriter);
             jarEntryHandleParser.setClassExtImplGenericsTypeWriter(classExtImplGenericsTypeWriter);
@@ -202,7 +207,6 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setFieldRelationshipWriter(fieldRelationshipWriter);
             jarEntryHandleParser.setGetMethodWriter(getMethodWriter);
             jarEntryHandleParser.setInnerClassWriter(innerClassWriter);
-            jarEntryHandleParser.setJarInfoWriter(jarInfoWriter);
             jarEntryHandleParser.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
             jarEntryHandleParser.setMethodAnnotationWriter(methodAnnotationWriter);
             jarEntryHandleParser.setMethodArgumentWriter(methodArgumentWriter);
@@ -213,8 +217,13 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
             jarEntryHandleParser.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
             jarEntryHandleParser.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
+            jarEntryHandleParser.setMethodReturnConstValueWriter(methodReturnConstValueWriter);
+            jarEntryHandleParser.setMethodReturnFieldInfoWriter(methodReturnFieldInfoWriter);
             jarEntryHandleParser.setMethodCallWriter(methodCallWriter);
             jarEntryHandleParser.setMethodInfoWriter(methodInfoWriter);
+            jarEntryHandleParser.setDupMethodInfoWriter(dupMethodInfoWriter);
+            jarEntryHandleParser.setEnumInitArgFieldWriter(enumInitArgFieldWriter);
+            jarEntryHandleParser.setEnumInitAssignInfoWriter(enumInitAssignInfoWriter);
             jarEntryHandleParser.setMethodLineNumberWriter(methodLineNumberWriter);
             jarEntryHandleParser.setMethodReturnGenericsTypeWriter(methodReturnGenericsTypeWriter);
             jarEntryHandleParser.setMethodCatchWriter(methodCatchWriter);
@@ -226,7 +235,7 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
 
             // 处理jar包
-            if (!handleJar(newJarFilePath, methodCallWriter, springBeanWriter) || failCounter.getCount() > 0) {
+            if (!handleJar(newJarFilePath, methodCallWriter,  springBeanWriter) || failCounter.getCount() > 0) {
                 logger.error("处理失败，出错次数 {}", failCounter.getCount());
                 return false;
             }
@@ -519,12 +528,9 @@ public class JavaCG2Entry {
                 return false;
             }
 
-            duplicateClassNameMap = jarEntryHandleParser.getDuplicateClassNameMap();
-            // 打印重复的类名
-            printDuplicateClasses();
-
             // 处理继承及实现相关的方法
-            extendsImplHandler.handle(methodCallWriter);
+            extendsImplHandler.setMethodCallWriter(methodCallWriter);
+            extendsImplHandler.handle();
 
             // 记录Spring Bean的名称及类型
             recordSpringBeanNameAndType(springBeanWriter);
@@ -571,25 +577,6 @@ public class JavaCG2Entry {
                         "0",
                         springBeanTypeInXml,
                         JavaCG2Constants.FILE_KEY_SPRING_BEAN_IN_XML);
-            }
-        }
-    }
-
-    // 打印重复的类名
-    private void printDuplicateClasses() {
-        if (duplicateClassNameMap.isEmpty()) {
-            logger.info("不存在重复的类名");
-            return;
-        }
-
-        List<String> duplicateClassNameList = new ArrayList<>(duplicateClassNameMap.keySet());
-        Collections.sort(duplicateClassNameList);
-
-        for (String duplicateClassName : duplicateClassNameList) {
-            List<String> classFilePathList = duplicateClassNameMap.get(duplicateClassName);
-            logger.info("重复的类名 {} 使用的class文件 {}", duplicateClassName, classFilePathList.get(0));
-            for (int i = 1; i < classFilePathList.size(); i++) {
-                logger.info("重复的类名 {} 跳过的class文件 {}", duplicateClassName, classFilePathList.get(i));
             }
         }
     }
@@ -663,15 +650,6 @@ public class JavaCG2Entry {
     // 获取java-callgraph2其他执行结果
     public JavaCG2OtherRunResult getJavaCG2OtherRunResult() {
         return javaCG2ConfInfo.getJavaCG2OtherRunResult();
-    }
-
-    /**
-     * 获取重复类名Map
-     *
-     * @return
-     */
-    public Map<String, List<String>> getDuplicateClassNameMap() {
-        return duplicateClassNameMap;
     }
 
     /**

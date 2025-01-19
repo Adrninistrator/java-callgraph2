@@ -33,6 +33,11 @@ public class JavaCG2CommonNameConstants {
 
     public static final String PACKAGE_JAVA = "java.";
     public static final String PACKAGE_JAVAX = "javax.";
+    public static final String PACKAGE_JAVAFX = "javafx.";
+    public static final String PACKAGE_SUN = "sun.";
+    public static final String PACKAGE_COM_SUN = "com.sun.";
+
+    public static final String[] PACKAGES_JDK = new String[]{PACKAGE_JAVA, PACKAGE_JAVAX, PACKAGE_JAVAFX, PACKAGE_SUN, PACKAGE_COM_SUN};
 
     public static final String METHOD_NAME_INIT = "<init>";
     public static final String METHOD_NAME_CLINIT = "<clinit>";

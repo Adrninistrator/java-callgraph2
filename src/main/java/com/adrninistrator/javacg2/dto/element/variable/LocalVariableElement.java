@@ -15,8 +15,8 @@ public class LocalVariableElement extends VariableElement {
     // 名称
     private final String name;
 
-    public LocalVariableElement(String type, boolean arrayElement, Object value, int index, String name) {
-        super(type, arrayElement);
+    public LocalVariableElement(String type, int addArrayDimensions, Object value, int index, String name) {
+        super(type, addArrayDimensions);
         this.value = value;
         this.index = index;
         this.name = name;
@@ -24,14 +24,17 @@ public class LocalVariableElement extends VariableElement {
 
     @Override
     public BaseElement copyElement() {
-        LocalVariableElement localVariableElementCopy = new LocalVariableElement(getType(), arrayElement, value, index, name);
+        LocalVariableElement localVariableElementCopy = new LocalVariableElement(getType(), 0, value, index, name);
         localVariableElementCopy.copyVariableDataSource(this);
+        localVariableElementCopy.setArrayValueMap(getArrayValueMap());
         return localVariableElementCopy;
     }
 
     // 复制一个值为null，其他字段相同的本地变量
     public LocalVariableElement copyWithNullValue() {
-        return new LocalVariableElement(getType(), arrayElement, null, index, name);
+        LocalVariableElement localVariableElementCopy = new LocalVariableElement(getType(), 0, null, index, name);
+        localVariableElementCopy.setArrayValueMap(getArrayValueMap());
+        return localVariableElementCopy;
     }
 
     // 判断是否为this

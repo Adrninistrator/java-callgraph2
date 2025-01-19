@@ -25,17 +25,25 @@ public class VariableElement extends BaseElement {
     // catch代码块的开始指令偏移量，当前值非null时代表当前元素是catch的异常对象
     private Integer catchExceptionStartPosition;
 
-    public VariableElement(String type) {
-        super(type, false);
+    private VariableElement() {
     }
 
-    public VariableElement(String type, boolean arrayElement) {
-        super(type, arrayElement);
+    public VariableElement(String type) {
+        super(type, 0);
+    }
+
+    public VariableElement(String type, int addArrayDimensions) {
+        super(type, addArrayDimensions);
     }
 
     @Override
     public BaseElement copyElement() {
-        return new VariableElement(getType(), arrayElement);
+        VariableElement copyVariableElement = new VariableElement();
+        copyVariableElement.setType(getType());
+        copyVariableElement.setArrayDimensions(getArrayDimensions());
+        copyVariableElement.setArrayValueMap(getArrayValueMap());
+        copyVariableElement.setValue(getValue());
+        return copyVariableElement;
     }
 
     /**

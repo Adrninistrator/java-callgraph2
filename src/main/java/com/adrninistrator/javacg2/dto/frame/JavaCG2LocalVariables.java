@@ -10,7 +10,6 @@ import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ElementUtil;
 import org.apache.bcel.classfile.LocalVariable;
 import org.apache.bcel.classfile.LocalVariableTable;
-import org.apache.bcel.generic.ArrayType;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -47,7 +46,7 @@ public class JavaCG2LocalVariables {
         int index = 0;
         if (!mg.isStatic()) {
             // 非静态方法，将this加入本地变量
-            LocalVariableElement thisLocalVariableElement = new LocalVariableElement(mg.getClassName(), false, null, index, JavaCG2Constants.THIS);
+            LocalVariableElement thisLocalVariableElement = new LocalVariableElement(mg.getClassName(), 0, null, index, JavaCG2Constants.THIS);
             localVariableElementList.add(thisLocalVariableElement);
             index++;
         }
@@ -56,7 +55,7 @@ public class JavaCG2LocalVariables {
         for (Type arg : mg.getArgumentTypes()) {
             // 获取参数对应的本地变量值，pc使用0就能获取到
             LocalVariable localVariable = localVariableTable.getLocalVariable(index, 0);
-            LocalVariableElement localVariableElement = new LocalVariableElement(arg.toString(), (arg instanceof ArrayType), null, index,
+            LocalVariableElement localVariableElement = new LocalVariableElement(arg.toString(), 0, null, index,
                     (localVariable != null) ? localVariable.getName() : null);
             localVariableElementList.add(localVariableElement);
             index++;
@@ -81,7 +80,7 @@ public class JavaCG2LocalVariables {
                 javaCG2LocalVariablesCopy.localVariableElementList.add(null);
                 continue;
             }
-            javaCG2LocalVariablesCopy.localVariableElementList.add((LocalVariableElement)localVariableElement.copyElement());
+            javaCG2LocalVariablesCopy.localVariableElementList.add((LocalVariableElement) localVariableElement.copyElement());
         }
         return javaCG2LocalVariablesCopy;
     }
@@ -133,13 +132,13 @@ public class JavaCG2LocalVariables {
         LocalVariableElement localVariableElement;
         if (baseElement instanceof StaticFieldElement) {
             StaticFieldElement staticFieldElement = (StaticFieldElement) baseElement;
-            localVariableElement = new StaticFieldElement(type, staticFieldElement.isArrayElement(), staticFieldElement.getValue(), index, staticFieldElement.getName(),
+            localVariableElement = new StaticFieldElement(type, 0, staticFieldElement.getValue(), index, staticFieldElement.getName(),
                     staticFieldElement.getClassName());
         } else if (baseElement instanceof FieldElement) {
             FieldElement fieldElement = (FieldElement) baseElement;
-            localVariableElement = new FieldElement(type, fieldElement.isArrayElement(), fieldElement.getValue(), index, fieldElement.getName(), fieldElement.getClassName());
+            localVariableElement = new FieldElement(type, 0, fieldElement.getValue(), index, fieldElement.getName(), fieldElement.getClassName());
         } else {
-            localVariableElement = new LocalVariableElement(type, baseElement.isArrayElement(), baseElement.getValue(), index, variableName);
+            localVariableElement = new LocalVariableElement(type, 0, baseElement.getValue(), index, variableName);
             // 非FieldElement，且非StaticFieldElement时，拷贝数据来源
             localVariableElement.copyVariableDataSource(baseElement);
         }
@@ -149,7 +148,7 @@ public class JavaCG2LocalVariables {
         }
 
         // 数组类型的处理
-        if (baseElement.isArrayElement()) {
+        if (baseElement.checkArrayElement()) {
             localVariableElement.setArrayValueMap(baseElement.getArrayValueMap());
         }
 

@@ -20,8 +20,8 @@ public class StaticFieldMethodCallElement extends VariableElement {
     // 调用的方法名称
     private final String methodName;
 
-    public StaticFieldMethodCallElement(String type, boolean arrayElement, String className, String fieldName, String methodName) {
-        super(type, arrayElement);
+    public StaticFieldMethodCallElement(String type, int addArrayDimensions, String className, String fieldName, String methodName) {
+        super(type, addArrayDimensions);
         this.className = className;
         this.fieldName = fieldName;
         this.methodName = methodName;
@@ -29,8 +29,9 @@ public class StaticFieldMethodCallElement extends VariableElement {
 
     @Override
     public BaseElement copyElement() {
-        StaticFieldMethodCallElement staticFieldMethodCallElementCopy = new StaticFieldMethodCallElement(getType(), arrayElement, className, fieldName, methodName);
+        StaticFieldMethodCallElement staticFieldMethodCallElementCopy = new StaticFieldMethodCallElement(getType(), 0, className, fieldName, methodName);
         staticFieldMethodCallElementCopy.copyVariableDataSource(this);
+        staticFieldMethodCallElementCopy.setArrayValueMap(getArrayValueMap());
         return staticFieldMethodCallElementCopy;
     }
 

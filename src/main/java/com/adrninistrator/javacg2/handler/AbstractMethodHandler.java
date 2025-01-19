@@ -9,6 +9,7 @@ import com.adrninistrator.javacg2.dto.fieldrelationship.GetSetFieldRelationship;
 import com.adrninistrator.javacg2.dto.instruction.InvokeInstructionPosAndCallee;
 import com.adrninistrator.javacg2.dto.type.JavaCG2GenericsType;
 import com.adrninistrator.javacg2.dto.type.JavaCG2Type;
+import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LineNumberTable;
 import org.apache.bcel.classfile.Method;
@@ -70,8 +71,12 @@ public abstract class AbstractMethodHandler {
 
     protected JavaCG2Counter failCounter;
 
+    protected Writer enumInitArgFieldWriter;
+    protected Writer enumInitAssignInfoWriter;
     protected Writer getMethodWriter;
     protected Writer setMethodWriter;
+    protected Writer methodReturnConstValueWriter;
+    protected Writer methodReturnFieldInfoWriter;
 
     // 非静态字段字段所有可能的类型
     protected FieldPossibleTypes nonStaticFieldPossibleTypes;
@@ -210,7 +215,7 @@ public abstract class AbstractMethodHandler {
             }
             return success;
         } catch (Exception e) {
-            logger.error("处理方法出现异常，需要分析原因 {} {}", callerClassName, callerMethodName, e);
+            logger.error("处理方法出现异常，需要分析原因 {} ", callerFullMethod, e);
             // 增加失败次数
             failCounter.addAndGet();
             if (continueWhenError) {
@@ -224,16 +229,12 @@ public abstract class AbstractMethodHandler {
 
     // 获取源代码行号
     protected int getSourceLine() {
-        return getSourceLine(ih.getPosition());
+        return JavaCG2ByteCodeUtil.getSourceLine(ih.getPosition(), lineNumberTable);
     }
 
     // 获取源代码行号
     protected int getSourceLine(int instructionPosition) {
-        if (lineNumberTable == null) {
-            return JavaCG2Constants.DEFAULT_LINE_NUMBER;
-        }
-        int sourceLine = lineNumberTable.getSourceLine(instructionPosition);
-        return Math.max(sourceLine, 0);
+        return JavaCG2ByteCodeUtil.getSourceLine(instructionPosition, lineNumberTable);
     }
 
     // 设置需要记录方法调用的可能的类型与值的开关
@@ -253,12 +254,28 @@ public abstract class AbstractMethodHandler {
         this.failCounter = failCounter;
     }
 
+    public void setEnumInitArgFieldWriter(Writer enumInitArgFieldWriter) {
+        this.enumInitArgFieldWriter = enumInitArgFieldWriter;
+    }
+
+    public void setEnumInitAssignInfoWriter(Writer enumInitAssignInfoWriter) {
+        this.enumInitAssignInfoWriter = enumInitAssignInfoWriter;
+    }
+
     public void setGetMethodWriter(Writer getMethodWriter) {
         this.getMethodWriter = getMethodWriter;
     }
 
     public void setSetMethodWriter(Writer setMethodWriter) {
         this.setMethodWriter = setMethodWriter;
+    }
+
+    public void setMethodReturnConstValueWriter(Writer methodReturnConstValueWriter) {
+        this.methodReturnConstValueWriter = methodReturnConstValueWriter;
+    }
+
+    public void setMethodReturnFieldInfoWriter(Writer methodReturnFieldInfoWriter) {
+        this.methodReturnFieldInfoWriter = methodReturnFieldInfoWriter;
     }
 
     public void setNonStaticFieldPossibleTypes(FieldPossibleTypes nonStaticFieldPossibleTypes) {

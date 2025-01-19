@@ -41,14 +41,14 @@ public class JavaCG2ConfManager {
 
             if (!parseMethodCallTypeValue) {
                 if (firstParseInitMethodType) {
-                    logger.error("配置文件 {} 中的 {} 参数值为true时， {} 参数值也需要为true。假如不需要使用，请都设置为false", configFileName, JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE.getKey(),
-                            JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey());
-                    return null;
+                    logger.error("配置文件 {} 中的 {} 参数值为false时， {} 参数值不会生效", configFileName, JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey(),
+                            JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE.getKey());
+                    firstParseInitMethodType = false;
                 }
                 if (analyseFieldRelationship) {
-                    logger.error("配置文件 {} 中的 {} 参数值为true时， {} 参数值也需要为true。假如不需要使用，请都设置为false", configFileName, JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP.getKey(),
-                            JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey());
-                    return null;
+                    logger.error("配置文件 {} 中的 {} 参数值为false时， {} 参数值不会生效", configFileName, JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey(),
+                            JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP.getKey());
+                    analyseFieldRelationship = false;
                 }
             }
 

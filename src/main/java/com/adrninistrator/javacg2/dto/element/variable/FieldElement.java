@@ -13,20 +13,21 @@ public class FieldElement extends LocalVariableElement {
     // 类名或this
     protected final String className;
 
-    public FieldElement(String type, boolean arrayElement, Object value, String name, String className) {
-        super(type, arrayElement, value, JavaCG2Constants.LOCAL_VARIABLE_INDEX_NOT_USED, name);
+    public FieldElement(String type, int addArrayDimensions, Object value, String name, String className) {
+        super(type, addArrayDimensions, value, JavaCG2Constants.LOCAL_VARIABLE_INDEX_NOT_USED, name);
         this.className = className;
     }
 
-    public FieldElement(String type, boolean arrayElement, Object value, int index, String name, String className) {
-        super(type, arrayElement, value, index, name);
+    public FieldElement(String type, int addArrayDimensions, Object value, int index, String name, String className) {
+        super(type, addArrayDimensions, value, index, name);
         this.className = className;
     }
 
     @Override
     public BaseElement copyElement() {
-        FieldElement fieldElementCopy = new FieldElement(getType(), arrayElement, value, getIndex(), getName(), className);
+        FieldElement fieldElementCopy = new FieldElement(getType(), 0, value, getIndex(), getName(), className);
         fieldElementCopy.copyVariableDataSource(this);
+        fieldElementCopy.setArrayValueMap(getArrayValueMap());
         return fieldElementCopy;
     }
 

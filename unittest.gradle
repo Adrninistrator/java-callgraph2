@@ -1,0 +1,16 @@
+test {
+    doFirst {
+        minHeapSize = "256m"
+        maxHeapSize = "1g"
+
+        maxParallelForks = 1
+
+        forkEvery = 1
+
+        jvmArgs "-XX:MetaspaceSize=64m", "-XX:MaxMetaspaceSize=256m"
+
+        testLogging {
+            events "PASSED", "STARTED", "FAILED", "SKIPPED"
+        }
+    }
+}

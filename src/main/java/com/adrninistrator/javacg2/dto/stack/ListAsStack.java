@@ -58,7 +58,7 @@ public class ListAsStack<E> {
     }
 
     /**
-     * 获取指定下标的元素
+     * 获取指定序号的元素
      *
      * @param index
      * @return

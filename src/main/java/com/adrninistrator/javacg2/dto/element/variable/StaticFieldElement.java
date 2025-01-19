@@ -9,18 +9,19 @@ import com.adrninistrator.javacg2.dto.element.BaseElement;
  */
 public class StaticFieldElement extends FieldElement {
 
-    public StaticFieldElement(String type, boolean arrayElement, Object value, String variableName, String className) {
-        super(type, arrayElement, value, variableName, className);
+    public StaticFieldElement(String type, int addArrayDimensions, Object value, String variableName, String className) {
+        super(type, addArrayDimensions, value, variableName, className);
     }
 
-    public StaticFieldElement(String type, boolean arrayElement, Object value, int index, String variableName, String className) {
-        super(type, arrayElement, value, index, variableName, className);
+    public StaticFieldElement(String type, int addArrayDimensions, Object value, int index, String variableName, String className) {
+        super(type, addArrayDimensions, value, index, variableName, className);
     }
 
     @Override
     public BaseElement copyElement() {
-        StaticFieldElement staticFieldElementCopy = new StaticFieldElement(getType(), arrayElement, value, getIndex(), getName(), className);
+        StaticFieldElement staticFieldElementCopy = new StaticFieldElement(getType(), 0, value, getIndex(), getName(), className);
         staticFieldElementCopy.copyVariableDataSource(this);
+        staticFieldElementCopy.setArrayValueMap(getArrayValueMap());
         return staticFieldElementCopy;
     }
 

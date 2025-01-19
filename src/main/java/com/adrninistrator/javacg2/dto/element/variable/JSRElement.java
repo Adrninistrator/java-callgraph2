@@ -12,6 +12,6 @@ public class JSRElement extends LocalVariableElement {
 
     // 使用value保存JSR下一条指令
     public JSRElement(InstructionHandle nextIh) {
-        super(JavaCG2Constants.JSR_TYPE, false, nextIh, JavaCG2Constants.LOCAL_VARIABLE_INDEX_NOT_USED, null);
+        super(JavaCG2Constants.JSR_TYPE, 0, nextIh, JavaCG2Constants.LOCAL_VARIABLE_INDEX_NOT_USED, null);
     }
 }

@@ -147,7 +147,7 @@ public abstract class AbstractJarEntryParser {
         if (jarPathNumMap.size() == 1) {
             // 只有一个jar包
             if (lastJarNum == null) {
-                lastJarNum = JavaCG2Constants.JAR_NUM_MIN_BEFORE;
+                lastJarNum = JavaCG2Constants.JAR_NUM_MIN;
             }
             return true;
         }

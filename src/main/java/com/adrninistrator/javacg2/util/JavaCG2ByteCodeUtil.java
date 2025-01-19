@@ -182,26 +182,32 @@ public class JavaCG2ByteCodeUtil {
 
         // 处理数组格式
         String tmpClassName = Utility.typeSignatureToString(className, false);
-        return removeArrayFlag(tmpClassName);
+        return removeOneArrayFlag(tmpClassName);
     }
 
     /**
-     * 获取对象对应的数组类型
+     * 为类型增加数组类型
      *
      * @param className
+     * @param arrayDimensions
      * @return
      */
-    public static String addArrayFlag(String className) {
-        return className + JavaCG2Constants.FLAG_ARRAY;
+    public static String addArrayFlag(String className, int arrayDimensions) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(className);
+        for (int i = 0; i < arrayDimensions; i++) {
+            stringBuilder.append(JavaCG2Constants.FLAG_ARRAY);
+        }
+        return stringBuilder.toString();
     }
 
     /**
-     * 去掉数组形式最后的[]
+     * 去掉数组形式最后的一个[]
      *
      * @param arrayType
      * @return
      */
-    public static String removeArrayFlag(String arrayType) {
+    public static String removeOneArrayFlag(String arrayType) {
         if (arrayType == null) {
             return null;
         }
@@ -235,6 +241,16 @@ public class JavaCG2ByteCodeUtil {
     }
 
     /**
+     * 根据类型获取数组维度
+     *
+     * @param type
+     * @return
+     */
+    public static int getTypeArrayDimensions(String type) {
+        return StringUtils.countMatches(type, JavaCG2Constants.FLAG_ARRAY);
+    }
+
+    /**
      * 获取指定类型的长度
      *
      * @param typeString
@@ -259,6 +275,26 @@ public class JavaCG2ByteCodeUtil {
                 return true;
             }
         }
+        return false;
+    }
+
+    /**
+     * 检查实际的类型与预期的是否相符
+     *
+     * @param actualType
+     * @param expectedType
+     * @return true: 相符 false: 不相符
+     */
+    public static boolean checkTypeString(String actualType, String expectedType) {
+        if (JavaCG2ByteCodeUtil.isNullType(actualType)) {
+            return true;
+        }
+
+        if (JavaCG2ByteCodeUtil.compareType(actualType, expectedType)) {
+            return true;
+        }
+
+        logger.error("类型与预期的不一致 actualType: {} expectedType: {}", actualType, expectedType);
         return false;
     }
 
@@ -387,6 +423,16 @@ public class JavaCG2ByteCodeUtil {
      */
     public static boolean isBridgeFlag(int accessFlags) {
         return (accessFlags & Const.ACC_BRIDGE) != 0;
+    }
+
+    /**
+     * 判断是否有ACC_SYNTHETIC标志
+     *
+     * @param accessFlags
+     * @return
+     */
+    public static boolean isSyntheticFlag(int accessFlags) {
+        return (accessFlags & Const.ACC_SYNTHETIC) != 0;
     }
 
     /**
@@ -556,11 +602,11 @@ public class JavaCG2ByteCodeUtil {
     }
 
     /**
-     * 获取指定的变量下标在当前方法中的参数下标
+     * 获取指定的变量序号在当前方法中的参数序号
      *
      * @param mg
-     * @param variableIndex 变量下标
-     * @return -1: 不是获取方法参数 >=0: 方法参数下标（从0开始）
+     * @param variableIndex 变量序号
+     * @return -1: 不是获取方法参数 >=0: 方法参数序号（从0开始）
      */
     public static int getArgIndexInMethod(MethodGen mg, int variableIndex) {
         int argIndex = variableIndex - (mg.isStatic() ? 0 : 1);
@@ -568,7 +614,7 @@ public class JavaCG2ByteCodeUtil {
     }
 
     /**
-     * 获取指定的方法参数在LocalVariableTable中的下标
+     * 获取指定的方法参数在LocalVariableTable中的序号
      *
      * @param mg
      * @param argIndex
@@ -617,6 +663,21 @@ public class JavaCG2ByteCodeUtil {
      */
     public static String genGenericsTypeStr4Fixed(JavaCG2Type javaCG2Type) {
         return JavaCG2FileUtil.appendFileColumn("0", javaCG2Type.getType(), String.valueOf(javaCG2Type.getArrayDimensions()), "", "", "", "");
+    }
+
+    /**
+     * 获取源代码行号
+     *
+     * @param instructionPosition
+     * @param lineNumberTable
+     * @return
+     */
+    public static int getSourceLine(int instructionPosition, LineNumberTable lineNumberTable) {
+        if (lineNumberTable == null) {
+            return JavaCG2Constants.DEFAULT_LINE_NUMBER;
+        }
+        int sourceLine = lineNumberTable.getSourceLine(instructionPosition);
+        return Math.max(sourceLine, 0);
     }
 
     private JavaCG2ByteCodeUtil() {

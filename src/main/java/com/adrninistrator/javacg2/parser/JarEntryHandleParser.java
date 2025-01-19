@@ -14,6 +14,7 @@ import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import com.adrninistrator.javacg2.util.JavaCG2GenericsTypeUtil;
+import com.adrninistrator.javacg2.util.JavaCG2JarUtil;
 import com.adrninistrator.javacg2.writer.WriterSupportSkip;
 import copy.javassist.bytecode.BadBytecode;
 import copy.javassist.bytecode.SignatureAttribute;
@@ -31,10 +32,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author adrninistrator
@@ -53,37 +52,42 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Map<String, Boolean> transactionCallbackWithoutResultChildClassMap;
     private Map<String, Boolean> threadChildClassMap;
 
-    private Writer jarInfoWriter;
-    private Writer classReferenceWriter;
-    private Writer methodCallWriter;
-    private Writer lambdaMethodInfoWriter;
     private Writer classAnnotationWriter;
-    private Writer methodAnnotationWriter;
+    private Writer classExtImplGenericsTypeWriter;
+    private Writer classInfoWriter;
+    private Writer classReferenceWriter;
+    private Writer classSignatureGenericsTypeWriter;
+    private Writer dupClassInfoWriter;
+    private Writer dupMethodInfoWriter;
+    private Writer enumInitArgFieldWriter;
+    private Writer enumInitAssignInfoWriter;
+    private Writer extendsImplWriter;
     private Writer fieldAnnotationWriter;
+    private Writer fieldGenericsTypeWriter;
     private Writer fieldInfoWriter;
-    private Writer methodLineNumberWriter;
+    private Writer fieldRelationshipWriter;
+    private Writer getMethodWriter;
+    private Writer innerClassWriter;
+    private Writer lambdaMethodInfoWriter;
+    private Writer methodAnnotationWriter;
+    private Writer methodArgAnnotationWriter;
+    private Writer methodArgGenericsTypeWriter;
+    private Writer methodArgumentWriter;
     private Writer methodCallInfoWriter;
     private Writer methodCallMethodCallReturnWriter;
     private Writer methodCallStaticFieldWriter;
-    private Writer methodReturnArgSeqWriter;
-    private Writer methodReturnCallIdWriter;
-    private Writer classInfoWriter;
-    private Writer methodInfoWriter;
-    private Writer extendsImplWriter;
-    private Writer classSignatureGenericsTypeWriter;
-    private Writer classExtImplGenericsTypeWriter;
-    private Writer methodArgumentWriter;
-    private Writer methodArgAnnotationWriter;
-    private Writer methodArgGenericsTypeWriter;
-    private Writer methodReturnGenericsTypeWriter;
+    private Writer methodCallWriter;
     private Writer methodCatchWriter;
     private Writer methodFinallyWriter;
+    private Writer methodInfoWriter;
+    private Writer methodLineNumberWriter;
+    private Writer methodReturnArgSeqWriter;
+    private Writer methodReturnCallIdWriter;
+    private Writer methodReturnConstValueWriter;
+    private Writer methodReturnFieldInfoWriter;
+    private Writer methodReturnGenericsTypeWriter;
     private Writer methodThrowWriter;
-    private Writer innerClassWriter;
-    private Writer getMethodWriter;
     private Writer setMethodWriter;
-    private Writer fieldGenericsTypeWriter;
-    private Writer fieldRelationshipWriter;
     private Writer staticFinalFieldMethodCallIdWriter;
 
     private WriterSupportSkip logMethodSpendTimeWriter;
@@ -91,20 +95,14 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     // 扩展类管理类
     private ExtensionsManager extensionsManager;
 
-    // 已经记录过的jar序号
-    private final Set<Integer> recordedJarNum = new HashSet<>();
-
     /*
         记录已处理过的类名
         key
             类名
         value
-            class文件路径
+            处理次数
      */
-    private final Map<String, List<String>> handledClassNameMap = new HashMap<>();
-
-    // 重复的类名，结构同上
-    private final Map<String, List<String>> duplicateClassNameMap = new HashMap<>();
+    private final Map<String, JavaCG2Counter> handledClassNameTimesMap = new HashMap<>();
 
     private JavaCG2Counter callIdCounter;
     private JavaCG2Counter classNumCounter;
@@ -143,22 +141,25 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     // 处理Java类
     private boolean handleJavaClass(JavaClass javaClass, String jarEntryPath) throws IOException {
         String className = javaClass.getClassName();
-        List<String> classFilePathList = handledClassNameMap.get(className);
-        if (classFilePathList != null) {
-            // 记录已处理过的类名
-            classFilePathList.add(jarEntryPath);
-            // 记录重复的类名
-            duplicateClassNameMap.put(className, classFilePathList);
-            logger.debug("跳过处理重复同名Class: {}", className);
-            return true;
-        }
 
-        classFilePathList = new ArrayList<>();
-        classFilePathList.add(jarEntryPath);
-        handledClassNameMap.put(className, classFilePathList);
+        JavaCG2Counter classHandledTimes = handledClassNameTimesMap.computeIfAbsent(className, k -> new JavaCG2Counter());
+        // 判断是否为重复的类
+        boolean duplicateClass = false;
+        if (classHandledTimes.getCount() > 0) {
+            logger.debug("处理重复同名Class: {}", className);
+            duplicateClass = true;
+        }
+        classHandledTimes.addAndGet();
+
         logger.debug("处理Class: {}", className);
 
-        String classJarNum = classAndJarNum.getJarNum(className);
+        int classJarNum;
+        if (jarPathNumMap.size() == 1) {
+            classJarNum = JavaCG2Constants.JAR_NUM_MIN;
+        } else {
+            classJarNum = JavaCG2JarUtil.getJarNumFromDirName(jarEntryPath);
+        }
+
         ClassHandler classHandler = new ClassHandler(javaClass, jarEntryPath, javaCG2ConfInfo, classJarNum);
         classHandler.setUseSpringBeanByAnnotationHandler(useSpringBeanByAnnotationHandler);
         classHandler.setRunnableImplClassMap(runnableImplClassMap);
@@ -167,55 +168,71 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         classHandler.setTransactionCallbackWithoutResultChildClassMap(transactionCallbackWithoutResultChildClassMap);
         classHandler.setThreadChildClassMap(threadChildClassMap);
         classHandler.setCallIdCounter(callIdCounter);
-        classHandler.setClassReferenceWriter(classReferenceWriter);
         classHandler.setClassAnnotationWriter(classAnnotationWriter);
-        classHandler.setMethodAnnotationWriter(methodAnnotationWriter);
+        classHandler.setClassReferenceWriter(classReferenceWriter);
+        classHandler.setDupMethodInfoWriter(dupMethodInfoWriter);
+        classHandler.setEnumInitArgFieldWriter(enumInitArgFieldWriter);
+        classHandler.setEnumInitAssignInfoWriter(enumInitAssignInfoWriter);
         classHandler.setFieldAnnotationWriter(fieldAnnotationWriter);
-        classHandler.setFieldInfoWriter(fieldInfoWriter);
-        classHandler.setMethodLineNumberWriter(methodLineNumberWriter);
-        classHandler.setMethodCallWriter(methodCallWriter);
-        classHandler.setGetMethodWriter(getMethodWriter);
-        classHandler.setSetMethodWriter(setMethodWriter);
         classHandler.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
+        classHandler.setFieldInfoWriter(fieldInfoWriter);
         classHandler.setFieldRelationshipWriter(fieldRelationshipWriter);
-        classHandler.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
+        classHandler.setGetMethodWriter(getMethodWriter);
         classHandler.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
+        classHandler.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
+        classHandler.setMethodAnnotationWriter(methodAnnotationWriter);
+        classHandler.setMethodArgAnnotationWriter(methodArgAnnotationWriter);
+        classHandler.setMethodArgGenericsTypeWriter(methodArgGenericsTypeWriter);
+        classHandler.setMethodArgumentWriter(methodArgumentWriter);
         classHandler.setMethodCallInfoWriter(methodCallInfoWriter);
         classHandler.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
         classHandler.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
-        classHandler.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
-        classHandler.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
-        classHandler.setMethodInfoWriter(methodInfoWriter);
-        classHandler.setMethodArgumentWriter(methodArgumentWriter);
-        classHandler.setMethodArgAnnotationWriter(methodArgAnnotationWriter);
-        classHandler.setMethodArgGenericsTypeWriter(methodArgGenericsTypeWriter);
-        classHandler.setMethodReturnGenericsTypeWriter(methodReturnGenericsTypeWriter);
+        classHandler.setMethodCallWriter(methodCallWriter);
         classHandler.setMethodCatchWriter(methodCatchWriter);
         classHandler.setMethodFinallyWriter(methodFinallyWriter);
+        classHandler.setMethodInfoWriter(methodInfoWriter);
+        classHandler.setMethodLineNumberWriter(methodLineNumberWriter);
+        classHandler.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
+        classHandler.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
+        classHandler.setMethodReturnConstValueWriter(methodReturnConstValueWriter);
+        classHandler.setMethodReturnFieldInfoWriter(methodReturnFieldInfoWriter);
+        classHandler.setMethodReturnGenericsTypeWriter(methodReturnGenericsTypeWriter);
         classHandler.setMethodThrowWriter(methodThrowWriter);
-        classHandler.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
+        classHandler.setSetMethodWriter(setMethodWriter);
+        classHandler.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
         classHandler.setExtensionsManager(extensionsManager);
         classHandler.setMethodNumCounter(methodNumCounter);
         classHandler.setFailCounter(failCounter);
         classHandler.setFieldRelationshipCounter(fieldRelationshipCounter);
-        classHandler.setLastJarNum(lastJarNum);
         classHandler.setClassAndJarNum(classAndJarNum);
 
         classNumCounter.addAndGet();
         int failCountBefore = failCounter.getCount();
         // 处理当前类
-        boolean success = classHandler.handleClass();
+        boolean success;
+        if (duplicateClass) {
+            success = true;
+            // 处理重复类中的方法
+            classHandler.handleDuplicateClassMethod();
+        } else {
+            // 处理非重复的类
+            success = classHandler.handleClass();
+        }
         if (failCounter.getCount() > failCountBefore) {
             // 将处理失败的类保存到目录中
             saveHandleFailClass(javaClass);
         }
-        if (!success) {
-            return false;
-        }
 
         String classMd5 = DigestUtils.md5Hex(javaClass.getBytes());
+
+        Writer usedClassInfoWriter = duplicateClass ? dupClassInfoWriter : classInfoWriter;
         // 记录类的信息
-        JavaCG2FileUtil.write2FileWithTab(classInfoWriter, className, String.valueOf(javaClass.getAccessFlags()), classMd5, classJarNum);
+        JavaCG2FileUtil.write2FileWithTab(usedClassInfoWriter, className, String.valueOf(javaClass.getAccessFlags()), classMd5, String.valueOf(classJarNum), jarEntryPath);
+
+        if (duplicateClass) {
+            // 重复类不执行后续处理
+            return true;
+        }
 
         // 记录继承及实现相关信息
         recordExtendsAndImplInfo(javaClass, className);
@@ -225,7 +242,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
         // 处理内部类信息
         handleInnerClass(javaClass);
-        return true;
+        return success;
     }
 
     // 将处理失败的类保存到目录中
@@ -287,19 +304,19 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
                 int seq = -1;
                 for (SignatureAttribute.TypeParameter param : params) {
                     seq++;
-                    String paramName = param.getName();
+                    String typeVariablesName = param.getName();
                     SignatureAttribute.ObjectType paramClassBound = param.getClassBound();
                     if (paramClassBound != null) {
                         // 泛型类型继承了特定类的处理
                         String extendsClassName = paramClassBound.jvmTypeName();
-                        JavaCG2FileUtil.write2FileWithTab(classSignatureGenericsTypeWriter, className, String.valueOf(seq), paramName, extendsClassName);
+                        JavaCG2FileUtil.write2FileWithTab(classSignatureGenericsTypeWriter, className, String.valueOf(seq), typeVariablesName, extendsClassName);
                         continue;
                     }
                     SignatureAttribute.ObjectType[] paramInterfaceBounds = param.getInterfaceBound();
                     if (ArrayUtils.isNotEmpty(paramInterfaceBounds)) {
                         // 泛型类型继承了特定接口的处理
                         String extendsClassName = paramInterfaceBounds[0].jvmTypeName();
-                        JavaCG2FileUtil.write2FileWithTab(classSignatureGenericsTypeWriter, className, String.valueOf(seq), paramName, extendsClassName);
+                        JavaCG2FileUtil.write2FileWithTab(classSignatureGenericsTypeWriter, className, String.valueOf(seq), typeVariablesName, extendsClassName);
                     }
                 }
             }
@@ -374,10 +391,6 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     }
 
     //
-    public Map<String, List<String>> getDuplicateClassNameMap() {
-        return duplicateClassNameMap;
-    }
-
     public void setUseSpringBeanByAnnotationHandler(UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler) {
         this.useSpringBeanByAnnotationHandler = useSpringBeanByAnnotationHandler;
     }
@@ -402,40 +415,88 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.threadChildClassMap = threadChildClassMap;
     }
 
-    public void setJarInfoWriter(Writer jarInfoWriter) {
-        this.jarInfoWriter = jarInfoWriter;
+    public void setClassAnnotationWriter(Writer classAnnotationWriter) {
+        this.classAnnotationWriter = classAnnotationWriter;
+    }
+
+    public void setClassExtImplGenericsTypeWriter(Writer classExtImplGenericsTypeWriter) {
+        this.classExtImplGenericsTypeWriter = classExtImplGenericsTypeWriter;
+    }
+
+    public void setClassInfoWriter(Writer classInfoWriter) {
+        this.classInfoWriter = classInfoWriter;
     }
 
     public void setClassReferenceWriter(Writer classReferenceWriter) {
         this.classReferenceWriter = classReferenceWriter;
     }
 
-    public void setMethodCallWriter(Writer methodCallWriter) {
-        this.methodCallWriter = methodCallWriter;
+    public void setClassSignatureGenericsTypeWriter(Writer classSignatureGenericsTypeWriter) {
+        this.classSignatureGenericsTypeWriter = classSignatureGenericsTypeWriter;
     }
 
-    public void setLambdaMethodInfoWriter(Writer lambdaMethodInfoWriter) {
-        this.lambdaMethodInfoWriter = lambdaMethodInfoWriter;
+    public void setDupClassInfoWriter(Writer dupClassInfoWriter) {
+        this.dupClassInfoWriter = dupClassInfoWriter;
     }
 
-    public void setClassAnnotationWriter(Writer classAnnotationWriter) {
-        this.classAnnotationWriter = classAnnotationWriter;
+    public void setDupMethodInfoWriter(Writer dupMethodInfoWriter) {
+        this.dupMethodInfoWriter = dupMethodInfoWriter;
     }
 
-    public void setMethodAnnotationWriter(Writer methodAnnotationWriter) {
-        this.methodAnnotationWriter = methodAnnotationWriter;
+    public void setEnumInitArgFieldWriter(Writer enumInitArgFieldWriter) {
+        this.enumInitArgFieldWriter = enumInitArgFieldWriter;
+    }
+
+    public void setEnumInitAssignInfoWriter(Writer enumInitAssignInfoWriter) {
+        this.enumInitAssignInfoWriter = enumInitAssignInfoWriter;
+    }
+
+    public void setExtendsImplWriter(Writer extendsImplWriter) {
+        this.extendsImplWriter = extendsImplWriter;
     }
 
     public void setFieldAnnotationWriter(Writer fieldAnnotationWriter) {
         this.fieldAnnotationWriter = fieldAnnotationWriter;
     }
 
+    public void setFieldGenericsTypeWriter(Writer fieldGenericsTypeWriter) {
+        this.fieldGenericsTypeWriter = fieldGenericsTypeWriter;
+    }
+
     public void setFieldInfoWriter(Writer fieldInfoWriter) {
         this.fieldInfoWriter = fieldInfoWriter;
     }
 
-    public void setMethodLineNumberWriter(Writer methodLineNumberWriter) {
-        this.methodLineNumberWriter = methodLineNumberWriter;
+    public void setFieldRelationshipWriter(Writer fieldRelationshipWriter) {
+        this.fieldRelationshipWriter = fieldRelationshipWriter;
+    }
+
+    public void setGetMethodWriter(Writer getMethodWriter) {
+        this.getMethodWriter = getMethodWriter;
+    }
+
+    public void setInnerClassWriter(Writer innerClassWriter) {
+        this.innerClassWriter = innerClassWriter;
+    }
+
+    public void setLambdaMethodInfoWriter(Writer lambdaMethodInfoWriter) {
+        this.lambdaMethodInfoWriter = lambdaMethodInfoWriter;
+    }
+
+    public void setMethodAnnotationWriter(Writer methodAnnotationWriter) {
+        this.methodAnnotationWriter = methodAnnotationWriter;
+    }
+
+    public void setMethodArgAnnotationWriter(Writer methodArgAnnotationWriter) {
+        this.methodArgAnnotationWriter = methodArgAnnotationWriter;
+    }
+
+    public void setMethodArgGenericsTypeWriter(Writer methodArgGenericsTypeWriter) {
+        this.methodArgGenericsTypeWriter = methodArgGenericsTypeWriter;
+    }
+
+    public void setMethodArgumentWriter(Writer methodArgumentWriter) {
+        this.methodArgumentWriter = methodArgumentWriter;
     }
 
     public void setMethodCallInfoWriter(Writer methodCallInfoWriter) {
@@ -450,48 +511,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.methodCallStaticFieldWriter = methodCallStaticFieldWriter;
     }
 
-    public void setMethodReturnArgSeqWriter(Writer methodReturnArgSeqWriter) {
-        this.methodReturnArgSeqWriter = methodReturnArgSeqWriter;
-    }
-
-    public void setMethodReturnCallIdWriter(Writer methodReturnCallIdWriter) {
-        this.methodReturnCallIdWriter = methodReturnCallIdWriter;
-    }
-
-    public void setClassInfoWriter(Writer classInfoWriter) {
-        this.classInfoWriter = classInfoWriter;
-    }
-
-    public void setMethodInfoWriter(Writer methodInfoWriter) {
-        this.methodInfoWriter = methodInfoWriter;
-    }
-
-    public void setExtendsImplWriter(Writer extendsImplWriter) {
-        this.extendsImplWriter = extendsImplWriter;
-    }
-
-    public void setClassSignatureGenericsTypeWriter(Writer classSignatureGenericsTypeWriter) {
-        this.classSignatureGenericsTypeWriter = classSignatureGenericsTypeWriter;
-    }
-
-    public void setClassExtImplGenericsTypeWriter(Writer classExtImplGenericsTypeWriter) {
-        this.classExtImplGenericsTypeWriter = classExtImplGenericsTypeWriter;
-    }
-
-    public void setMethodArgumentWriter(Writer methodArgumentWriter) {
-        this.methodArgumentWriter = methodArgumentWriter;
-    }
-
-    public void setMethodArgAnnotationWriter(Writer methodArgAnnotationWriter) {
-        this.methodArgAnnotationWriter = methodArgAnnotationWriter;
-    }
-
-    public void setMethodArgGenericsTypeWriter(Writer methodArgGenericsTypeWriter) {
-        this.methodArgGenericsTypeWriter = methodArgGenericsTypeWriter;
-    }
-
-    public void setMethodReturnGenericsTypeWriter(Writer methodReturnGenericsTypeWriter) {
-        this.methodReturnGenericsTypeWriter = methodReturnGenericsTypeWriter;
+    public void setMethodCallWriter(Writer methodCallWriter) {
+        this.methodCallWriter = methodCallWriter;
     }
 
     public void setMethodCatchWriter(Writer methodCatchWriter) {
@@ -502,28 +523,40 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.methodFinallyWriter = methodFinallyWriter;
     }
 
+    public void setMethodInfoWriter(Writer methodInfoWriter) {
+        this.methodInfoWriter = methodInfoWriter;
+    }
+
+    public void setMethodLineNumberWriter(Writer methodLineNumberWriter) {
+        this.methodLineNumberWriter = methodLineNumberWriter;
+    }
+
+    public void setMethodReturnArgSeqWriter(Writer methodReturnArgSeqWriter) {
+        this.methodReturnArgSeqWriter = methodReturnArgSeqWriter;
+    }
+
+    public void setMethodReturnCallIdWriter(Writer methodReturnCallIdWriter) {
+        this.methodReturnCallIdWriter = methodReturnCallIdWriter;
+    }
+
+    public void setMethodReturnConstValueWriter(Writer methodReturnConstValueWriter) {
+        this.methodReturnConstValueWriter = methodReturnConstValueWriter;
+    }
+
+    public void setMethodReturnFieldInfoWriter(Writer methodReturnFieldInfoWriter) {
+        this.methodReturnFieldInfoWriter = methodReturnFieldInfoWriter;
+    }
+
+    public void setMethodReturnGenericsTypeWriter(Writer methodReturnGenericsTypeWriter) {
+        this.methodReturnGenericsTypeWriter = methodReturnGenericsTypeWriter;
+    }
+
     public void setMethodThrowWriter(Writer methodThrowWriter) {
         this.methodThrowWriter = methodThrowWriter;
     }
 
-    public void setInnerClassWriter(Writer innerClassWriter) {
-        this.innerClassWriter = innerClassWriter;
-    }
-
-    public void setGetMethodWriter(Writer getMethodWriter) {
-        this.getMethodWriter = getMethodWriter;
-    }
-
     public void setSetMethodWriter(Writer setMethodWriter) {
         this.setMethodWriter = setMethodWriter;
-    }
-
-    public void setFieldGenericsTypeWriter(Writer fieldGenericsTypeWriter) {
-        this.fieldGenericsTypeWriter = fieldGenericsTypeWriter;
-    }
-
-    public void setFieldRelationshipWriter(Writer fieldRelationshipWriter) {
-        this.fieldRelationshipWriter = fieldRelationshipWriter;
     }
 
     public void setStaticFinalFieldMethodCallIdWriter(Writer staticFinalFieldMethodCallIdWriter) {

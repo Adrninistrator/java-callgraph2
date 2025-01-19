@@ -189,6 +189,16 @@ public class JavaCG2Util {
     }
 
     /**
+     * 判断字符串是否需要base64编码
+     *
+     * @param data
+     * @return
+     */
+    public static boolean checkNeedBase64(String data) {
+        return StringUtils.containsAny(data, "\r", "\n", "\t");
+    }
+
+    /**
      * base64编码
      *
      * @param data

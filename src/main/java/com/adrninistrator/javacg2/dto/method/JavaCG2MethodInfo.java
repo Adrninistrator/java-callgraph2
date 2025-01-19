@@ -20,11 +20,23 @@ public class JavaCG2MethodInfo {
     // 方法返回类型
     private final Type methodReturnType;
 
+    // 类的数组维，0代表非数组
+    private final int arrayDimensions;
+
+    public JavaCG2MethodInfo(String className, String methodName, Type[] methodArgumentTypes, Type methodReturnType, int arrayDimensions) {
+        this.className = className;
+        this.methodName = methodName;
+        this.methodArgumentTypes = methodArgumentTypes;
+        this.methodReturnType = methodReturnType;
+        this.arrayDimensions = arrayDimensions;
+    }
+
     public JavaCG2MethodInfo(String className, String methodName, Type[] methodArgumentTypes, Type methodReturnType) {
         this.className = className;
         this.methodName = methodName;
         this.methodArgumentTypes = methodArgumentTypes;
         this.methodReturnType = methodReturnType;
+        this.arrayDimensions = 0;
     }
 
     public String getClassName() {
@@ -41,5 +53,9 @@ public class JavaCG2MethodInfo {
 
     public Type getMethodReturnType() {
         return methodReturnType;
+    }
+
+    public int getArrayDimensions() {
+        return arrayDimensions;
     }
 }

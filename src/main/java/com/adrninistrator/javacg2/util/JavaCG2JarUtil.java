@@ -358,8 +358,10 @@ public class JavaCG2JarUtil {
 
         for (File file : files) {
             if (file.isDirectory()) {
-                // 递归处理目录
-                findFileInSubDir(file, dirPathHeader, nonJarFileList, fileRelativelyPathList, jarFileInDirList);
+                // 递归处理目录，需要跳过保存处理失败class文件的子目录
+                if (!JavaCG2Constants.DIR_FAIL_CLASSES.equals(file.getName())) {
+                    findFileInSubDir(file, dirPathHeader, nonJarFileList, fileRelativelyPathList, jarFileInDirList);
+                }
                 continue;
             }
 
@@ -409,7 +411,7 @@ public class JavaCG2JarUtil {
      * @return
      */
     private static String genDirNameInJar(int jarNum, String jarDirName) {
-        String dirName = String.format("%03d%s%s", jarNum, JavaCG2Constants.JAR_SEQ_FLAG, jarDirName);
+        String dirName = String.format("%04d%s%s", jarNum, JavaCG2Constants.JAR_SEQ_FLAG, jarDirName);
         logger.info("获得生成的jar包中的目录名称 {}", dirName);
         return dirName;
     }

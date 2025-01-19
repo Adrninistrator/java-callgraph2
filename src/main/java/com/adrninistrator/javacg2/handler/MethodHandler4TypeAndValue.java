@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg2.handler;
 
+import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2FieldRelationshipTypeEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
@@ -7,8 +8,10 @@ import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.dto.branch.BranchStackEntry;
 import com.adrninistrator.javacg2.dto.call.MethodCallPossibleInfo;
 import com.adrninistrator.javacg2.dto.element.BaseElement;
+import com.adrninistrator.javacg2.dto.element.constant.ConstElement;
 import com.adrninistrator.javacg2.dto.element.variable.FieldElement;
 import com.adrninistrator.javacg2.dto.element.variable.LocalVariableElement;
+import com.adrninistrator.javacg2.dto.element.variable.StaticFieldElement;
 import com.adrninistrator.javacg2.dto.element.variable.VariableElement;
 import com.adrninistrator.javacg2.dto.exception.ExceptionTargetInfo;
 import com.adrninistrator.javacg2.dto.exception.ThrowInfo;
@@ -37,6 +40,7 @@ import com.adrninistrator.javacg2.dto.variabledatasource.AbstractVariableDataSou
 import com.adrninistrator.javacg2.dto.variabledatasource.VariableDataSourceMethodArg;
 import com.adrninistrator.javacg2.dto.variabledatasource.VariableDataSourceMethodCallReturn;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
+import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ElementUtil;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
@@ -58,6 +62,7 @@ import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.ObjectType;
 import org.apache.bcel.generic.Select;
 import org.apache.bcel.generic.Type;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +83,9 @@ import java.util.Set;
 public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(MethodHandler4TypeAndValue.class);
+
+    // 栈桢信息快照数量超过允许的最大数量的方法Set
+    private final Set<String> frameSnapshotNumExceedMethodSet = new HashSet<>();
 
     // 指令处理类
     private InstructionHandler instructionHandler;
@@ -159,6 +167,12 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
     // 是否只需要获取可能的返回类型的开关
     private boolean onlyAnalyseReturnTypeFlag;
 
+    // 当前处理的是否为枚举的clinit方法
+    private boolean enumClinitMethodFlag;
+
+    // 当前处理的是否为枚举的构造函数
+    private boolean enumInitMethodFlag;
+
     // 当前方法是否可能为get方法
     private boolean maybeGetMethod;
 
@@ -188,9 +202,6 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         value   get方法对应的数据来源指令位置
      */
     private Map<Integer, Set<Integer>> getSetMethodCallMap;
-
-    // 栈桢信息快照数量超过允许的最大数量的方法Set
-    private final Set<String> frameSnapshotNumExceedMethodSet = new HashSet<>();
 
     public MethodHandler4TypeAndValue(Method method, MethodGen mg, JavaClass javaClass, String callerFullMethod, JavaCG2ConfInfo javaCG2ConfInfo) {
         super(method, mg, javaClass, callerFullMethod, javaCG2ConfInfo);
@@ -323,11 +334,15 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         javaCG2ConfInfo.getJavaCG2OtherRunResult().addFrameSnapshotNumExceedMethodSet(frameSnapshotNumExceedMethodSet);
 
         if (!onlyAnalyseReturnTypeFlag) {
+            // 不是只需要获取可能的返回类型
             // 处理get方法
             handleGetMethod();
 
             // 处理set方法
             handleSetMethod();
+
+            // 记录方法返回值
+            recordMethodReturnValue();
         }
         return true;
     }
@@ -348,6 +363,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         }
 
         if (parseMethodCallTypeValueFlag) {
+            enumInitMethodFlag = javaClass.isEnum() && JavaCG2CommonNameConstants.METHOD_NAME_INIT.equals(method.getName());
+            enumClinitMethodFlag = javaClass.isEnum() && JavaCG2CommonNameConstants.METHOD_NAME_CLINIT.equals(method.getName());
+
             // 需要分析dto的字段之间的关联关系
             if (!mg.isAbstract() && !mg.isStatic() && !javaClass.isEnum()) {
                 // 跳过抽象方法、静态方法、枚举类
@@ -373,6 +391,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         instructionHandler = new InstructionHandler(javaCG2ConfInfo, mg, localVariableTable, stack, locals, nonStaticFieldInfoMap, staticFieldInfoMap);
         instructionHandler.setParseMethodCallTypeValueFlag(parseMethodCallTypeValueFlag);
         instructionHandler.setRecordFieldPossibleTypeFlag(recordFieldPossibleTypeFlag);
+        instructionHandler.setEnumInitMethodFlag(enumInitMethodFlag);
         instructionHandler.setUseFieldPossibleTypeFlag(useFieldPossibleTypeFlag);
         instructionHandler.setNonStaticFieldPossibleTypes(nonStaticFieldPossibleTypes);
         instructionHandler.setMaybeSetMethod(maybeSetMethod);
@@ -461,8 +480,8 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                         handleReturnInstruction4GetMethod(returnParseResult);
                     }
 
-                    // 处理带返回值的return类指令，记录对应的返回类型
-                    handleReturnInstructionForType(returnParseResult);
+                    // 处理带返回值的return类指令，记录返回信息
+                    handleReturnInstruction(returnParseResult);
                 }
             }
 
@@ -482,9 +501,15 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             return false;
         }
 
-        if (opCode == Const.PUTFIELD && maybeSetMethod) {
-            // 为set方法处理PUTFIELD指令
-            handlePutField4SetMethod((PutFieldParseResult) instructionParseResult);
+        if (opCode == Const.PUTFIELD) {
+            PutFieldParseResult putFieldParseResult = (PutFieldParseResult) instructionParseResult;
+            if (maybeSetMethod) {
+                // 为set方法处理PUTFIELD指令
+                handlePutField4SetMethod(putFieldParseResult);
+            } else if (enumInitMethodFlag) {
+                // 处理枚举的构造函数
+                handlePutField4EnumInitMethod(putFieldParseResult);
+            }
         } else if (opCode == Const.PUTSTATIC && inClinitMethod) {
             // 为静态代码块处理PUTSTATIC指令
             handlePutStatic4Clinit((PutStaticParseResult) instructionParseResult);
@@ -524,7 +549,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             }
 
             for (ExceptionTargetInfo exceptionTargetInfo : exceptionTargetList) {
-                // 由于exceptionEndFrameSnapshotList的数量会变化，以下for循环需要使用下标遍历
+                // 由于exceptionEndFrameSnapshotList的数量会变化，以下for循环需要使用序号遍历
                 for (int i = 0; i < exceptionEndFrameSnapshotList.size(); i++) {
                     FrameSnapshotEntry exceptionEndFrameSnapshot = exceptionEndFrameSnapshotList.get(i);
                     ih = exceptionTargetInfo.getTarget();
@@ -795,6 +820,20 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         putFieldFieldNameSet.add(putFieldParseResult.getFieldName());
     }
 
+    // 处理枚举的构造函数
+    private void handlePutField4EnumInitMethod(PutFieldParseResult putFieldParseResult) throws IOException {
+        // 处理字段赋值对应的方法参数序号
+        BaseElement value = putFieldParseResult.getValue();
+        if (!(value instanceof LocalVariableElement)) {
+            return;
+        }
+        LocalVariableElement valueLocalVariableElement = (LocalVariableElement) value;
+        int argSeq = valueLocalVariableElement.getIndex();
+        String fieldType = putFieldParseResult.getFieldType();
+        String fieldName = putFieldParseResult.getFieldName();
+        JavaCG2FileUtil.write2FileWithTab(enumInitArgFieldWriter, callerFullMethod, String.valueOf(argSeq), fieldType, fieldName);
+    }
+
     // 判断PUTFIELD指令是否来自方法参数
     private boolean checkLegalSetMethod(PutFieldParseResult putFieldParseResult) {
         BaseElement value = putFieldParseResult.getValue();
@@ -862,7 +901,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
     }
 
     // 处理方法调用指令
-    private void handleInvokeInstruction(MethodCallParseResult methodCallParseResult) {
+    private void handleInvokeInstruction(MethodCallParseResult methodCallParseResult) throws IOException {
         InvokeInstruction invokeInstruction = (InvokeInstruction) ih.getInstruction();
         // 添加方法调用可能的信息
         if (methodCallPossibleInfoMap == null) {
@@ -880,7 +919,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         // 获取被调用方法
         String calleeMethodName = calleeMethodInfo.getMethodName();
         Type[] calleeArgTypes = calleeMethodInfo.getMethodArgumentTypes();
-        logger.debug("被调用方法: {}", JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes));
+        if (logger.isDebugEnabled()) {
+            logger.debug("被调用方法: {}", JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes));
+        }
 
         BaseElement objectElement = methodCallParseResult.getObjectElement();
         // 处理被调用对象类型
@@ -894,11 +935,38 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             methodCallPossibleInfo.addPossibleInfo4Object(objectElement, calleeClassName);
         }
 
+        // 判断是否为枚举类静态代码块中调用当前枚举类的构造函数
+        boolean enumClinitCallInitFlag = enumClinitMethodFlag &&
+                callerClassName.equals(calleeClassName) &&
+                JavaCG2CommonNameConstants.METHOD_NAME_INIT.equals(calleeMethodName);
+
+        String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes);
         // 处理参数，序号从0开始
         List<BaseElement> argElementList = methodCallParseResult.getArgumentList();
+        String enum1Name = "";
+        String enum2Ordinal = "";
         for (int i = 0; i < argElementList.size(); i++) {
             BaseElement argElement = argElementList.get(i);
             methodCallPossibleInfo.addPossibleInfo4Args(i, argElement, calleeArgTypes[i].toString());
+            if (enumClinitCallInitFlag) {
+                // 处理枚举字段初始化赋值
+                if (i == 0 && argElement instanceof ConstElement) {
+                    // 枚举类静态代码块中调用构造函数时，前两个参数是固定的
+                    enum1Name = String.valueOf(argElement.getValue());
+                } else if (i == 1 && argElement instanceof ConstElement) {
+                    enum2Ordinal = String.valueOf(argElement.getValue());
+                } else if (i > 1) {
+                    String enumInitType = "";
+                    String enumInitValue = "";
+                    if (argElement instanceof ConstElement) {
+                        ConstElement argConstElement = (ConstElement) argElement;
+                        enumInitType = argConstElement.getType();
+                        enumInitValue = String.valueOf(argConstElement.getValue());
+                    }
+                    JavaCG2FileUtil.write2FileWithTab(enumInitAssignInfoWriter, calleeFullMethod, enum1Name, enum2Ordinal, String.valueOf(i + 1), enumInitType,
+                            enumInitValue);
+                }
+            }
         }
 
 //        logger.debug("方法调用: " + JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih) + " (" + getSourceLine() + ")" +
@@ -1026,8 +1094,8 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         return true;
     }
 
-    // 处理带返回值的return类指令，记录对应的返回类型
-    private void handleReturnInstructionForType(ReturnParseResult returnParseResult) {
+    // 处理带返回值的return类指令，记录返回信息
+    private void handleReturnInstruction(ReturnParseResult returnParseResult) {
         BaseElement returnInfo = returnParseResult.getReturnElement();
         // 记录对应的返回类型
         if (returnPossibleInfoList == null) {
@@ -1299,6 +1367,52 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         }
         // 当前字段为泛型类型，没有出现自定义类型
         return JavaCG2Constants.FILE_KEY_CATEGORY_GENERICS_JDK;
+    }
+
+    // 记录方法返回值
+    private void recordMethodReturnValue() throws IOException {
+        if (JavaCG2Util.isCollectionEmpty(returnPossibleInfoList)) {
+            return;
+        }
+
+        Set<String> recordedSet = new HashSet<>();
+        int returnConstSeq = -1;
+        int returnFieldSeq = -1;
+
+        for (BaseElement baseElement : returnPossibleInfoList) {
+            if (baseElement instanceof ConstElement) {
+                // 处理方法返回常量
+                ConstElement constElement = (ConstElement) baseElement;
+                String constInfo = StringUtils.joinWith(JavaCG2Constants.FLAG_COLON, constElement.getClass().getSimpleName(), constElement.getType(), constElement.getValue());
+                if (recordedSet.add(constInfo)) {
+                    returnConstSeq++;
+                    String constValue = String.valueOf(constElement.getValue());
+                    boolean needBase64 = JavaCG2Util.checkNeedBase64(constValue);
+                    if (needBase64) {
+                        constValue = JavaCG2Util.base64Encode(constValue);
+                    }
+                    JavaCG2FileUtil.write2FileWithTab(methodReturnConstValueWriter, callerFullMethod, String.valueOf(returnConstSeq), constElement.getType(),
+                            JavaCG2YesNoEnum.parseStrValue(needBase64), constValue);
+                }
+                continue;
+            }
+            if (baseElement instanceof FieldElement) {
+                // 处理方法返回字段
+                FieldElement fieldElement = (FieldElement) baseElement;
+                String fieldInfo = StringUtils.joinWith(JavaCG2Constants.FLAG_COLON, fieldElement.getClass().getSimpleName(), fieldElement.getClassName(), fieldElement.getType(),
+                        fieldElement.getName());
+                if (recordedSet.add(fieldInfo)) {
+                    returnFieldSeq++;
+                    boolean staticField = (fieldElement instanceof StaticFieldElement);
+                    boolean fieldOfThis = JavaCG2Constants.THIS.equals(fieldElement.getClassName());
+                    int arrayDimensions = JavaCG2ByteCodeUtil.getTypeArrayDimensions(fieldElement.getType());
+                    String fieldType = JavaCG2ByteCodeUtil.removeAllArrayFlag(fieldElement.getType());
+                    String fieldInClassName = fieldOfThis ? callerClassName : fieldElement.getClassName();
+                    JavaCG2FileUtil.write2FileWithTab(methodReturnFieldInfoWriter, callerFullMethod, String.valueOf(returnFieldSeq), JavaCG2YesNoEnum.parseStrValue(staticField),
+                            JavaCG2YesNoEnum.parseStrValue(fieldOfThis), fieldInClassName, fieldType, String.valueOf(arrayDimensions), fieldElement.getName());
+                }
+            }
+        }
     }
 
     //

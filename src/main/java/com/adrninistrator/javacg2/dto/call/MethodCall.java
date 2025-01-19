@@ -3,6 +3,7 @@ package com.adrninistrator.javacg2.dto.call;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2CallTypeEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2CalleeObjTypeEnum;
+import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import org.apache.bcel.generic.Type;
@@ -17,6 +18,12 @@ public class MethodCall {
     // 方法调用序号
     private int callId;
 
+    // 方法调用是否启用
+    private boolean enabled;
+
+    // 方法调用类型
+    private JavaCG2CallTypeEnum methodCallType;
+
     // 调用者类名
     private String callerClassName;
 
@@ -26,11 +33,11 @@ public class MethodCall {
     // 调用者方法参数类型
     private String callerMethodArgTypes;
 
+    // 调用者源代码行号
+    private int callerSourceLine;
+
     // 调用者方法返回类型
     private String callerReturnType;
-
-    // 方法调用类型
-    private JavaCG2CallTypeEnum methodCallType;
 
     // 被调用者类名
     private String calleeClassName;
@@ -41,11 +48,14 @@ public class MethodCall {
     // 被调用者方法参数类型
     private String calleeMethodArgTypes;
 
-    // 调用者源代码行号
-    private int callerSourceLine;
+    // 被调用方法的参数类型数组
+    private Type[] calleeArgTypes;
+
+    // 被调用者类的数组维度，0代表非数组
+    private int calleeArrayDimensions;
 
     // 被调用类型
-    private JavaCG2CalleeObjTypeEnum objTypeEnum;
+    private JavaCG2CalleeObjTypeEnum calleeObjTypeEnum;
 
     // 原始返回类型
     private String rawReturnType;
@@ -53,9 +63,10 @@ public class MethodCall {
     // 实际返回类型
     private String actualReturnType;
 
-    // 被调用方法的参数类型数组
-    private Type[] argTypes;
+    // 描述
+    private String description;
 
+    //
     // 返回调用者完整方法
     public String genCallerFullMethod() {
         return JavaCG2ClassMethodUtil.formatFullMethod(callerClassName, callerMethodName, callerMethodArgTypes);
@@ -63,10 +74,10 @@ public class MethodCall {
 
     // 返回被调用类型对应的字符串
     public String genObjTypeEnum() {
-        if (objTypeEnum == null) {
+        if (calleeObjTypeEnum == null) {
             return "";
         }
-        return objTypeEnum.getType();
+        return calleeObjTypeEnum.getType();
     }
 
     // 返回被调用者完整方法
@@ -78,24 +89,44 @@ public class MethodCall {
     public String genMethodCallContent(String callerJarNum, String calleeJarNum) {
         return JavaCG2FileUtil.appendFileColumn(
                 String.valueOf(callId),
+                enabled ? JavaCG2YesNoEnum.YES.getStrValue() : JavaCG2YesNoEnum.NO.getStrValue(),
                 genCallerFullMethod(),
                 JavaCG2Constants.FILE_KEY_CALL_TYPE_FLAG1 + methodCallType.getType() + JavaCG2Constants.FILE_KEY_CALL_TYPE_FLAG2 + genCalleeFullMethod(),
                 String.valueOf(callerSourceLine),
                 callerReturnType,
+                String.valueOf(calleeArrayDimensions),
                 genObjTypeEnum(),
                 rawReturnType,
                 actualReturnType,
                 callerJarNum,
-                calleeJarNum
+                calleeJarNum,
+                description == null ? "" : description
         );
     }
 
+    //
     public int getCallId() {
         return callId;
     }
 
     public void setCallId(int callId) {
         this.callId = callId;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    public JavaCG2CallTypeEnum getMethodCallType() {
+        return methodCallType;
+    }
+
+    public void setMethodCallType(JavaCG2CallTypeEnum methodCallType) {
+        this.methodCallType = methodCallType;
     }
 
     public String getCallerClassName() {
@@ -122,20 +153,20 @@ public class MethodCall {
         this.callerMethodArgTypes = callerMethodArgTypes;
     }
 
+    public int getCallerSourceLine() {
+        return callerSourceLine;
+    }
+
+    public void setCallerSourceLine(int callerSourceLine) {
+        this.callerSourceLine = callerSourceLine;
+    }
+
     public String getCallerReturnType() {
         return callerReturnType;
     }
 
     public void setCallerReturnType(String callerReturnType) {
         this.callerReturnType = callerReturnType;
-    }
-
-    public JavaCG2CallTypeEnum getMethodCallType() {
-        return methodCallType;
-    }
-
-    public void setMethodCallType(JavaCG2CallTypeEnum methodCallType) {
-        this.methodCallType = methodCallType;
     }
 
     public String getCalleeClassName() {
@@ -162,20 +193,28 @@ public class MethodCall {
         this.calleeMethodArgTypes = calleeMethodArgTypes;
     }
 
-    public int getCallerSourceLine() {
-        return callerSourceLine;
+    public Type[] getCalleeArgTypes() {
+        return calleeArgTypes;
     }
 
-    public void setCallerSourceLine(int callerSourceLine) {
-        this.callerSourceLine = callerSourceLine;
+    public void setCalleeArgTypes(Type[] calleeArgTypes) {
+        this.calleeArgTypes = calleeArgTypes;
     }
 
-    public JavaCG2CalleeObjTypeEnum getObjTypeEnum() {
-        return objTypeEnum;
+    public int getCalleeArrayDimensions() {
+        return calleeArrayDimensions;
     }
 
-    public void setObjTypeEnum(JavaCG2CalleeObjTypeEnum objTypeEnum) {
-        this.objTypeEnum = objTypeEnum;
+    public void setCalleeArrayDimensions(int calleeArrayDimensions) {
+        this.calleeArrayDimensions = calleeArrayDimensions;
+    }
+
+    public JavaCG2CalleeObjTypeEnum getCalleeObjTypeEnum() {
+        return calleeObjTypeEnum;
+    }
+
+    public void setCalleeObjTypeEnum(JavaCG2CalleeObjTypeEnum calleeObjTypeEnum) {
+        this.calleeObjTypeEnum = calleeObjTypeEnum;
     }
 
     public String getRawReturnType() {
@@ -194,11 +233,11 @@ public class MethodCall {
         this.actualReturnType = actualReturnType;
     }
 
-    public Type[] getArgTypes() {
-        return argTypes;
+    public String getDescription() {
+        return description;
     }
 
-    public void setArgTypes(Type[] argTypes) {
-        this.argTypes = argTypes;
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

@@ -352,7 +352,7 @@ public class JavaCG2ClassMethodUtil {
      * @return
      */
     public static boolean isClassInJdk(String className) {
-        return StringUtils.startsWithAny(className, JavaCG2CommonNameConstants.PACKAGE_JAVA, JavaCG2CommonNameConstants.PACKAGE_JAVAX);
+        return StringUtils.startsWithAny(className, JavaCG2CommonNameConstants.PACKAGES_JDK);
     }
 
     /**

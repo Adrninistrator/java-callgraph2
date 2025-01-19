@@ -9,7 +9,7 @@ import com.adrninistrator.javacg2.common.JavaCG2Constants;
  */
 public enum JavaCG2OtherConfigFileUseListEnum {
     OCFULE_JAR_DIR(JavaCG2Constants.DIR_CONFIG + "/jar_dir.properties",
-            "(作用) 指定需要处理的jar包路径，或保存class、jar文件的目录路径（每行代表一个jar包或目录路径，支持多行）"
+            "(作用) 指定需要处理的jar、war包路径，或保存class、jar、war文件的目录路径（每行代表一条记录，支持多行）"
                     + JavaCG2Constants.NEW_LINE + "(格式) 路径中的分隔符使用/或\\均可，目录最后指定或不指定分隔符均可"
                     + JavaCG2Constants.NEW_LINE + "(示例) build/libs/"
                     + JavaCG2Constants.NEW_LINE + "(示例) build/libs/test.jar"

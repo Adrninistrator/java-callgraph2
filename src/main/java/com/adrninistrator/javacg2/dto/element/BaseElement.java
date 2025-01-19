@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg2.dto.element;
 
+import com.adrninistrator.javacg2.common.enums.JavaCG2ConstantTypeEnum;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import org.slf4j.Logger;
@@ -24,13 +25,13 @@ public abstract class BaseElement {
      */
     private String type;
 
-    // 当前变量是否属于数组类型
-    protected boolean arrayElement = false;
+    // 当前变量的数组维度，0代表不属于数组
+    private int arrayDimensions = 0;
 
     /*
         数组对应的值
         key
-            数组下标
+            数组序号
         value
             数组的值
      */
@@ -42,15 +43,28 @@ public abstract class BaseElement {
     protected BaseElement() {
     }
 
-    protected BaseElement(String type, boolean arrayElement) {
-        this.type = type;
-        /*
-            当外部参数指定当前属于数组类型，或类型字符串属于数组形式时，都认为是数组类型
-            由于当前构造函数中会根据类型字符串判断是否属于数组形式，因此外层可以不判断类型字符串
-         */
-        this.arrayElement = arrayElement || JavaCG2ByteCodeUtil.isArrayType(type);
-        if (this.arrayElement) {
+    /**
+     * 被操作元素的基类构造函数，由于当前构造函数中会根据类型字符串判断是否属于数组形式，因此外层可以不判断类型字符串
+     *
+     * @param type               类型
+     * @param addArrayDimensions 需要增加的数组维度值，正数代表增加数组维度，0代表不不改变数组维度，负数代表减少数组维度
+     */
+    protected BaseElement(String type, int addArrayDimensions) {
+        arrayDimensions = JavaCG2ByteCodeUtil.getTypeArrayDimensions(type) + addArrayDimensions;
+        if (arrayDimensions < 0 && !JavaCG2ConstantTypeEnum.CONSTTE_NULL.getType().equals(type)) {
+            throw new JavaCG2RuntimeException("数组维度非法 " + arrayDimensions);
+        }
+        if (arrayDimensions > 0) {
             arrayValueMap = new HashMap<>();
+        }
+        if (addArrayDimensions == 0) {
+            this.type = type;
+        } else if (addArrayDimensions > 0) {
+            // 增加数组维度
+            this.type = JavaCG2ByteCodeUtil.addArrayFlag(type, addArrayDimensions);
+        } else {
+            // 减少数组维度
+            this.type = JavaCG2ByteCodeUtil.removeOneArrayFlag(type);
         }
     }
 
@@ -65,48 +79,58 @@ public abstract class BaseElement {
             return;
         }
 
-        String actualType = getType();
-        if (JavaCG2ByteCodeUtil.isNullType(actualType)) {
-            return;
-        }
-
-        if (JavaCG2ByteCodeUtil.compareType(actualType, expectedType)) {
-            return;
-        }
-
-        logger.error("类型与预期的不一致 {} expectedType: {}", this, expectedType);
+        JavaCG2ByteCodeUtil.checkTypeString(getType(), expectedType);
     }
 
     /**
-     * 记录数组指定下标的元素
+     * 判断是否为数组类型
+     *
+     * @return
+     */
+    public boolean checkArrayElement() {
+        return arrayDimensions > 0;
+    }
+
+    /**
+     * 记录数组指定序号的元素
      *
      * @param index
      * @param value
      */
     public void setElement(int index, BaseElement value) {
-        if (!arrayElement) {
+        if (!checkArrayElement()) {
             throw new JavaCG2RuntimeException("当前类不是数组类型");
         }
         arrayValueMap.put(index, value);
     }
 
+    protected void setType(String type) {
+        this.type = type;
+    }
+
+    protected void setArrayDimensions(int arrayDimensions) {
+        this.arrayDimensions = arrayDimensions;
+    }
+
+    protected void setValue(Object value) {
+        this.value = value;
+    }
+
+    //
+    public String getType() {
+        return type;
+    }
+
+    public int getArrayDimensions() {
+        return arrayDimensions;
+    }
+
     public Map<Integer, BaseElement> getArrayValueMap() {
-        if (!arrayElement) {
-            throw new JavaCG2RuntimeException("当前类不是数组类型");
-        }
         return arrayValueMap;
     }
 
     public void setArrayValueMap(Map<Integer, BaseElement> arrayValueMap) {
         this.arrayValueMap = arrayValueMap;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public boolean isArrayElement() {
-        return arrayElement;
     }
 
     public Object getValue() {

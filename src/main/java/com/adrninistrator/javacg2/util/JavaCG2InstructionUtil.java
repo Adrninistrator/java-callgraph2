@@ -2,6 +2,7 @@ package com.adrninistrator.javacg2.util;
 
 import com.adrninistrator.javacg2.dto.method.JavaCG2MethodInfo;
 import org.apache.bcel.Const;
+import org.apache.bcel.generic.ArrayType;
 import org.apache.bcel.generic.BranchInstruction;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.INVOKEDYNAMIC;
@@ -11,6 +12,7 @@ import org.apache.bcel.generic.InstructionHandle;
 import org.apache.bcel.generic.InstructionList;
 import org.apache.bcel.generic.InvokeInstruction;
 import org.apache.bcel.generic.MethodGen;
+import org.apache.bcel.generic.ReferenceType;
 import org.apache.bcel.generic.Type;
 import org.apache.bcel.generic.TypedInstruction;
 
@@ -191,8 +193,18 @@ public class JavaCG2InstructionUtil {
             return new JavaCG2MethodInfo(calleeClassName, calleeMethodName, calleeArgTypes, invokeInstruction.getReturnType(cpg));
         }
 
-        String calleeClassName = invokeInstruction.getReferenceType(cpg).toString();
-        return new JavaCG2MethodInfo(calleeClassName, calleeMethodName, calleeArgTypes, invokeInstruction.getReturnType(cpg));
+        ReferenceType referenceType = invokeInstruction.getReferenceType(cpg);
+        String calleeClassName;
+        int calleeArrayDimensions = 0;
+        if (referenceType instanceof ArrayType) {
+            ArrayType arrayType = (ArrayType) referenceType;
+            calleeClassName = arrayType.getBasicType().getClassName();
+            calleeArrayDimensions = arrayType.getDimensions();
+        } else {
+            calleeClassName = referenceType.toString();
+        }
+
+        return new JavaCG2MethodInfo(calleeClassName, calleeMethodName, calleeArgTypes, invokeInstruction.getReturnType(cpg), calleeArrayDimensions);
     }
 
     /**
