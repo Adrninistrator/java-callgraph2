@@ -958,13 +958,18 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                 } else if (i > 1) {
                     String enumInitType = "";
                     String enumInitValue = "";
+                    boolean needBase64 = false;
                     if (argElement instanceof ConstElement) {
                         ConstElement argConstElement = (ConstElement) argElement;
                         enumInitType = argConstElement.getType();
                         enumInitValue = String.valueOf(argConstElement.getValue());
+                        needBase64 = JavaCG2Util.checkNeedBase64(enumInitValue);
+                        if (needBase64) {
+                            enumInitValue = JavaCG2Util.base64Encode(enumInitValue);
+                        }
                     }
                     JavaCG2FileUtil.write2FileWithTab(enumInitAssignInfoWriter, calleeFullMethod, enum1Name, enum2Ordinal, String.valueOf(i + 1), enumInitType,
-                            enumInitValue);
+                            JavaCG2YesNoEnum.parseStrValue(needBase64), enumInitValue);
                 }
             }
         }
