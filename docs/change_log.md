@@ -193,3 +193,7 @@ method_return_field_info    方法返回的字段（含枚举）
 ### 1.15.3. 配置参数使用方式修改
 
 文档暂未完成
+
+### 1.15.4. 支持解析 .jar 文件中的 .jar 文件
+
+支持解析 .jar 文件中的 .jar 文件，例如 spring-boot 等打包方式生成的 .jar 文件中 BOOT-INF/lib 目录中的 .jar 文件
