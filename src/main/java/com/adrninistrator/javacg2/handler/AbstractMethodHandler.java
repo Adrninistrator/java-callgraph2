@@ -1,14 +1,16 @@
 package com.adrninistrator.javacg2.handler;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
-import com.adrninistrator.javacg2.common.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
+import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
 import com.adrninistrator.javacg2.dto.field.FieldPossibleTypes;
 import com.adrninistrator.javacg2.dto.fieldrelationship.GetSetFieldRelationship;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.instruction.InvokeInstructionPosAndCallee;
 import com.adrninistrator.javacg2.dto.type.JavaCG2GenericsType;
 import com.adrninistrator.javacg2.dto.type.JavaCG2Type;
+import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.LineNumberTable;
@@ -50,13 +52,17 @@ public abstract class AbstractMethodHandler {
 
     protected final JavaClass javaClass;
 
+    protected final JavaCG2InputAndOutput javaCG2InputAndOutput;
+
     protected final JavaCG2ConfInfo javaCG2ConfInfo;
 
     protected final ConstantPoolGen cpg;
 
     protected final LineNumberTable lineNumberTable;
 
-    protected final boolean continueWhenError;
+    protected final Boolean continueWhenError;
+
+    protected final JavaCG2ElManager javaCG2ElManager;
 
     protected InstructionHandle ih;
 
@@ -128,20 +134,22 @@ public abstract class AbstractMethodHandler {
     // 当前方法的返回类型
     protected String methodReturnType;
 
-    protected AbstractMethodHandler(Method method, MethodGen mg, JavaClass javaClass, String callerFullMethod, JavaCG2ConfInfo javaCG2ConfInfo) {
+    protected AbstractMethodHandler(Method method, MethodGen mg, JavaClass javaClass, String callerFullMethod, JavaCG2InputAndOutput javaCG2InputAndOutput) {
         this.method = method;
         this.mg = mg;
         this.javaClass = javaClass;
         this.callerFullMethod = callerFullMethod;
-        this.javaCG2ConfInfo = javaCG2ConfInfo;
+        this.javaCG2InputAndOutput = javaCG2InputAndOutput;
 
+        javaCG2ConfInfo = javaCG2InputAndOutput.getJavaCG2ConfInfo();
         callerClassName = javaClass.getClassName();
         callerMethodName = mg.getName();
         callerArgTypes = mg.getArgumentTypes();
         cpg = mg.getConstantPool();
         lineNumberTable = mg.getLineNumberTable(cpg);
         methodReturnType = mg.getReturnType().toString();
-        continueWhenError = (javaCG2ConfInfo != null && javaCG2ConfInfo.isContinueWhenError());
+        continueWhenError = javaCG2InputAndOutput.getJavaCG2ConfigureWrapper().getMainConfig(JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR);
+        javaCG2ElManager = javaCG2InputAndOutput.getJavaCG2ElManager();
     }
 
     /**
@@ -218,10 +226,11 @@ public abstract class AbstractMethodHandler {
             logger.error("处理方法出现异常，需要分析原因 {} ", callerFullMethod, e);
             // 增加失败次数
             failCounter.addAndGet();
-            if (continueWhenError) {
+
+            if (Boolean.TRUE.equals(continueWhenError)) {
                 return true;
             }
-            logger.info("假如在处理方法出现异常时需要继续执行，请在配置文件 {} 中指定参数 {}", JavaCG2Constants.FILE_PATH_CONFIG,
+            logger.info("假如在处理方法出现异常时需要继续执行，请在配置文件 {} 中指定参数 {}", JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR.getFileName(),
                     JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR.getKey() + JavaCG2Constants.FLAG_EQUAL + Boolean.TRUE);
             return false;
         }

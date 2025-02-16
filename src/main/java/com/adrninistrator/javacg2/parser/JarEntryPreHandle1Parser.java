@@ -2,8 +2,8 @@ package com.adrninistrator.javacg2.parser;
 
 import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
-import com.adrninistrator.javacg2.common.enums.JavaCG2OtherConfigFileUseListEnum;
-import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
+import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg2.extensions.codeparser.JarEntryOtherFileParser;
@@ -59,9 +59,9 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     private final DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler;
 
-    public JarEntryPreHandle1Parser(JavaCG2ConfInfo javaCG2ConfInfo, Map<String, Integer> jarPathNumMap, DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler,
+    public JarEntryPreHandle1Parser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar, DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler,
                                     ExtensionsManager extensionsManager) {
-        super(javaCG2ConfInfo, jarPathNumMap);
+        super(javaCG2InputAndOutput, onlyOneJar);
         this.defineSpringBeanByAnnotationHandler = defineSpringBeanByAnnotationHandler;
         this.extensionsManager = extensionsManager;
     }
@@ -122,7 +122,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         // 对一个类进行预处理
         preHandle1Class(javaClass);
 
-        if (javaCG2ConfInfo.isParseMethodCallTypeValue()) {
+        if (javaCG2InputAndOutput.getJavaCG2ConfInfo().isParseMethodCallTypeValue()) {
             // 处理Spring Bean相关注解
             return defineSpringBeanByAnnotationHandler.recordSpringBeanInfo(javaClass);
         }
@@ -157,7 +157,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
     private boolean preHandle1Class(JavaClass javaClass) {
         String className = javaClass.getClassName();
         if (JavaCG2ClassMethodUtil.isObjectClass(className)) {
-            logger.error("Object类所在jar包不需要添加到需要分析的jar包参数中，假如需要添加JDK中的类，可以解压相关的class文件到目录中并在 {} 中指定", JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR.getFileName());
+            logger.error("Object类所在jar包不需要添加到需要分析的jar包参数中，假如需要添加JDK中的类，可以解压相关的class文件到目录中并在 {} 中指定", JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR.getKey());
             return false;
         }
         allClassNameSet.add(className);

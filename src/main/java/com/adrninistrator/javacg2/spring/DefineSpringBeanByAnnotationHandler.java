@@ -1,8 +1,8 @@
 package com.adrninistrator.javacg2.spring;
 
 import com.adrninistrator.javacg2.common.SpringAnnotationConstants;
-import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.handler.MethodHandler4TypeAndValue;
 import com.adrninistrator.javacg2.util.JavaCG2AnnotationUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
@@ -26,7 +26,7 @@ import java.util.Set;
  */
 public class DefineSpringBeanByAnnotationHandler {
 
-    private final JavaCG2ConfInfo javaCG2ConfInfo;
+    private final JavaCG2InputAndOutput javaCG2InputAndOutput;
 
     private final JavaCG2Counter failCounter;
 
@@ -37,8 +37,8 @@ public class DefineSpringBeanByAnnotationHandler {
      */
     private final Map<String, List<String>> stringBeanNameAndTypeMap = new HashMap<>(100);
 
-    public DefineSpringBeanByAnnotationHandler(JavaCG2ConfInfo javaCG2ConfInfo, JavaCG2Counter failCounter) {
-        this.javaCG2ConfInfo = javaCG2ConfInfo;
+    public DefineSpringBeanByAnnotationHandler(JavaCG2InputAndOutput javaCG2InputAndOutput, JavaCG2Counter failCounter) {
+        this.javaCG2InputAndOutput = javaCG2InputAndOutput;
         this.failCounter = failCounter;
     }
 
@@ -117,7 +117,7 @@ public class DefineSpringBeanByAnnotationHandler {
     private boolean handleSpringBeanAnnotation(JavaClass javaClass, Method method, AnnotationEntry beanAnnotation) {
         MethodGen mg = new MethodGen(method, javaClass.getClassName(), new ConstantPoolGen(javaClass.getConstantPool()));
         String callerFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(javaClass.getClassName(), method.getName(), method.getArgumentTypes());
-        MethodHandler4TypeAndValue methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(method, mg, javaClass, callerFullMethod, javaCG2ConfInfo);
+        MethodHandler4TypeAndValue methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(method, mg, javaClass, callerFullMethod, javaCG2InputAndOutput);
         methodHandler4TypeAndValue.setFailCounter(failCounter);
         methodHandler4TypeAndValue.setParseMethodCallTypeValueFlag(true);
         methodHandler4TypeAndValue.setOnlyAnalyseReturnTypeFlag(true);

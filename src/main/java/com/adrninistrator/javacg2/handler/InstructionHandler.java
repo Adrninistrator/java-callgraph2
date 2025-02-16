@@ -4,7 +4,6 @@ import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2ArithmeticOperationTypeEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2ConstantTypeEnum;
-import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.dto.element.BaseElement;
 import com.adrninistrator.javacg2.dto.element.constant.ConstElementDouble;
 import com.adrninistrator.javacg2.dto.element.constant.ConstElementFloat;
@@ -22,6 +21,7 @@ import com.adrninistrator.javacg2.dto.field.FieldPossibleTypes;
 import com.adrninistrator.javacg2.dto.frame.FieldInformationMap;
 import com.adrninistrator.javacg2.dto.frame.JavaCG2LocalVariables;
 import com.adrninistrator.javacg2.dto.frame.JavaCG2OperandStack;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.instruction.parseresult.AThrowNullParseResult;
 import com.adrninistrator.javacg2.dto.instruction.parseresult.AThrowParseResult;
 import com.adrninistrator.javacg2.dto.instruction.parseresult.BaseInstructionParseResult;
@@ -136,14 +136,14 @@ public class InstructionHandler {
     // 当前处理的指令代码行号
     private int sourceLineNumber;
 
-    public InstructionHandler(JavaCG2ConfInfo javaCG2ConfInfo,
+    public InstructionHandler(JavaCG2InputAndOutput javaCG2InputAndOutput,
                               MethodGen mg,
                               LocalVariableTable localVariableTable,
                               JavaCG2OperandStack stack,
                               JavaCG2LocalVariables locals,
                               FieldInformationMap nonStaticFieldInfoMap,
                               FieldInformationMap staticFieldInfoMap) {
-        this.frEqConversionMethodMap = javaCG2ConfInfo.getFrEqConversionMethodMap();
+        this.frEqConversionMethodMap = javaCG2InputAndOutput.getJavaCG2ConfInfo().getFrEqConversionMethodMap();
         this.mg = mg;
         this.cpg = mg.getConstantPool();
         this.callerFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(mg.getClassName(), mg.getName(), mg.getArgumentTypes());

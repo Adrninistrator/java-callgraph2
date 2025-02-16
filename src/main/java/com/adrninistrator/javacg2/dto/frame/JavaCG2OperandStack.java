@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg2.dto.frame;
 
+import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.dto.element.BaseElement;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2ElementUtil;
@@ -132,7 +133,7 @@ public class JavaCG2OperandStack {
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("head: ").append(head).append("\n");
+        stringBuilder.append("head: ").append(head).append(JavaCG2Constants.NEW_LINE);
 
         for (int i = 0; i < head; i++) {
             BaseElement baseElement = elements[i];
@@ -142,7 +143,7 @@ public class JavaCG2OperandStack {
             } else {
                 stringBuilder.append("null");
             }
-            stringBuilder.append("\n");
+            stringBuilder.append(JavaCG2Constants.NEW_LINE);
         }
 
         return stringBuilder.toString();

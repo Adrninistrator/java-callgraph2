@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg2.dto.frame;
 
+import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.util.JavaCG2InstructionUtil;
 import org.apache.bcel.generic.InstructionHandle;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -59,7 +60,7 @@ public class InstructionStepList {
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         for (String instructionPrintInfo : instructionPrintInfoList) {
-            stringBuilder.append(instructionPrintInfo).append("\n");
+            stringBuilder.append(instructionPrintInfo).append(JavaCG2Constants.NEW_LINE);
         }
         return stringBuilder.toString();
     }

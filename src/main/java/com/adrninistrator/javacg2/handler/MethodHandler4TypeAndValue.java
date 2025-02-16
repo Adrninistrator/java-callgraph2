@@ -4,7 +4,6 @@ import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2FieldRelationshipTypeEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
-import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.dto.branch.BranchStackEntry;
 import com.adrninistrator.javacg2.dto.call.MethodCallPossibleInfo;
 import com.adrninistrator.javacg2.dto.element.BaseElement;
@@ -23,6 +22,7 @@ import com.adrninistrator.javacg2.dto.frame.FrameSnapshotsOfIhs;
 import com.adrninistrator.javacg2.dto.frame.InstructionStepList;
 import com.adrninistrator.javacg2.dto.frame.JavaCG2LocalVariables;
 import com.adrninistrator.javacg2.dto.frame.JavaCG2OperandStack;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.instruction.InvokeInstructionPosAndCallee;
 import com.adrninistrator.javacg2.dto.instruction.parseresult.AThrowNullParseResult;
 import com.adrninistrator.javacg2.dto.instruction.parseresult.AThrowParseResult;
@@ -203,8 +203,8 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
      */
     private Map<Integer, Set<Integer>> getSetMethodCallMap;
 
-    public MethodHandler4TypeAndValue(Method method, MethodGen mg, JavaClass javaClass, String callerFullMethod, JavaCG2ConfInfo javaCG2ConfInfo) {
-        super(method, mg, javaClass, callerFullMethod, javaCG2ConfInfo);
+    public MethodHandler4TypeAndValue(Method method, MethodGen mg, JavaClass javaClass, String callerFullMethod, JavaCG2InputAndOutput javaCG2InputAndOutput) {
+        super(method, mg, javaClass, callerFullMethod, javaCG2InputAndOutput);
     }
 
     /**
@@ -330,8 +330,8 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     @Override
     protected boolean lastStep() throws IOException {
-        // 在其他执行结果中记录栈桢信息快照数量超过允许的最大数量的方法Set
-        javaCG2ConfInfo.getJavaCG2OtherRunResult().addFrameSnapshotNumExceedMethodSet(frameSnapshotNumExceedMethodSet);
+        // 在执行结果中记录栈桢信息快照数量超过允许的最大数量的方法Set
+        javaCG2InputAndOutput.getJavaCG2OtherRunResult().addFrameSnapshotNumExceedMethodSet(frameSnapshotNumExceedMethodSet);
 
         if (!onlyAnalyseReturnTypeFlag) {
             // 不是只需要获取可能的返回类型
@@ -388,7 +388,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             getSetMethodCallMap = new HashMap<>();
         }
 
-        instructionHandler = new InstructionHandler(javaCG2ConfInfo, mg, localVariableTable, stack, locals, nonStaticFieldInfoMap, staticFieldInfoMap);
+        instructionHandler = new InstructionHandler(javaCG2InputAndOutput, mg, localVariableTable, stack, locals, nonStaticFieldInfoMap, staticFieldInfoMap);
         instructionHandler.setParseMethodCallTypeValueFlag(parseMethodCallTypeValueFlag);
         instructionHandler.setRecordFieldPossibleTypeFlag(recordFieldPossibleTypeFlag);
         instructionHandler.setEnumInitMethodFlag(enumInitMethodFlag);
@@ -910,17 +910,19 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         MethodCallPossibleInfo methodCallPossibleInfo = methodCallPossibleInfoMap.computeIfAbsent(ih.getPosition(), k -> new MethodCallPossibleInfo());
 
         JavaCG2MethodInfo calleeMethodInfo = JavaCG2InstructionUtil.getCalleeMethodInfo(invokeInstruction, cpg);
-        // 获取被调用类名
         String calleeClassName = calleeMethodInfo.getClassName();
-        if (JavaCG2Util.checkSkipClassWhiteList(calleeClassName, javaCG2ConfInfo.getNeedHandlePackageSet())) {
+        String calleeMethodName = calleeMethodInfo.getMethodName();
+        Type[] calleeArgTypes = calleeMethodInfo.getMethodArgumentTypes();
+        String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes);
+
+        // 判断当前方法调用是否需要忽略
+        if (javaCG2ElManager.checkIgnoreMethodCallByEe(calleeFullMethod) ||
+                javaCG2ElManager.checkIgnoreMethodCallByErEe(callerFullMethod, calleeFullMethod)) {
             return;
         }
 
-        // 获取被调用方法
-        String calleeMethodName = calleeMethodInfo.getMethodName();
-        Type[] calleeArgTypes = calleeMethodInfo.getMethodArgumentTypes();
         if (logger.isDebugEnabled()) {
-            logger.debug("被调用方法: {}", JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes));
+            logger.debug("被调用方法: {}", calleeFullMethod);
         }
 
         BaseElement objectElement = methodCallParseResult.getObjectElement();
@@ -935,12 +937,25 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             methodCallPossibleInfo.addPossibleInfo4Object(objectElement, calleeClassName);
         }
 
+        // 处理方法调用参数
+        List<BaseElement> argElementList = handleMethodCallArg(calleeClassName, calleeMethodName, methodCallParseResult, methodCallPossibleInfo, calleeArgTypes, calleeFullMethod);
+
+        // 处理get/set方法关联的字段关系
+        recordGetSetMethodFieldRelationship(invokeInstruction, calleeClassName, calleeMethodName, calleeArgTypes, argElementList);
+
+//        logger.debug("方法调用: " + JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih) + " (" + getSourceLine() + ")" +
+//                "\n被调用对象与参数: " + methodCallParseResult);
+    }
+
+    // 处理方法调用参数
+    private List<BaseElement> handleMethodCallArg(String calleeClassName, String calleeMethodName, MethodCallParseResult methodCallParseResult,
+                                                  MethodCallPossibleInfo methodCallPossibleInfo,
+                                                  Type[] calleeArgTypes, String calleeFullMethod) throws IOException {
         // 判断是否为枚举类静态代码块中调用当前枚举类的构造函数
         boolean enumClinitCallInitFlag = enumClinitMethodFlag &&
                 callerClassName.equals(calleeClassName) &&
                 JavaCG2CommonNameConstants.METHOD_NAME_INIT.equals(calleeMethodName);
 
-        String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes);
         // 处理参数，序号从0开始
         List<BaseElement> argElementList = methodCallParseResult.getArgumentList();
         String enum1Name = "";
@@ -973,12 +988,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                 }
             }
         }
-
-//        logger.debug("方法调用: " + JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih) + " (" + getSourceLine() + ")" +
-//                "\n被调用对象与参数: " + methodCallParseResult);
-
-        // 处理get/set方法关联的字段关系
-        recordGetSetMethodFieldRelationship(invokeInstruction, calleeClassName, calleeMethodName, calleeArgTypes, argElementList);
+        return argElementList;
     }
 
     // 处理athrow指令
@@ -1009,11 +1019,8 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         if (dataSource instanceof VariableDataSourceMethodCallReturn) {
             // 当前抛出的异常是方法调用的返回值
             VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = (VariableDataSourceMethodCallReturn) dataSource;
-            if (!JavaCG2Util.checkSkipClassWhiteList(variableDataSourceMethodCallReturn.getCalleeClassName(), javaCG2ConfInfo.getNeedHandlePackageSet())) {
-                // 仅当被调用类需要处理时才执行
-                int invokeInstructionPosition = variableDataSourceMethodCallReturn.getInvokeInstructionPosition();
-                throwInfoList.addThrowInfo(new ThrowInfo(throwElement.getType(), JavaCG2Constants.FILE_KEY_THROW_TYPE_METHOD_CALL_RETURN, null, null, invokeInstructionPosition));
-            }
+            int invokeInstructionPosition = variableDataSourceMethodCallReturn.getInvokeInstructionPosition();
+            throwInfoList.addThrowInfo(new ThrowInfo(throwElement.getType(), JavaCG2Constants.FILE_KEY_THROW_TYPE_METHOD_CALL_RETURN, null, null, invokeInstructionPosition));
             return;
         }
         // 当前抛出的异常情况未知
@@ -1071,12 +1078,6 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         }
 
         String getClassName = arg0VariableDataSourceMethodCallReturn.getCalleeClassName();
-        if (JavaCG2Util.checkSkipClassWhiteList(getClassName, javaCG2ConfInfo.getNeedHandlePackageSet()) ||
-                JavaCG2Util.checkSkipClassWhiteList(setClassName, javaCG2ConfInfo.getNeedHandlePackageSet())) {
-            // get或set方法对应的类需要跳过，不处理
-            return false;
-        }
-
         int position = ih.getPosition();
         // 若被调用方法的参数1的数据来源的方法调用可能是dto的get方法则处理
         Set<Integer> getSetMethodCallSet = getSetMethodCallMap.computeIfAbsent(position, k -> new HashSet<>());
@@ -1136,12 +1137,8 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         } else if (variableDataSource instanceof VariableDataSourceMethodCallReturn) {
             // 方法返回的数据来源是方法调用
             VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = (VariableDataSourceMethodCallReturn) variableDataSource;
-            if (!JavaCG2Util.checkSkipClassWhiteList(variableDataSourceMethodCallReturn.getCalleeClassName(), javaCG2ConfInfo.getNeedHandlePackageSet()) &&
-                    !methodReturnPositionList.contains(variableDataSourceMethodCallReturn.getInvokeInstructionPosition())) {
-                // 假如被调用方法的类不需要忽略，则记录当前的方法调用指令位置
-                // 当返回值的数据来源为方法调用时，记录对应的指令位置，避免重复添加同一个方法的返回结果
-                methodReturnPositionList.add(variableDataSourceMethodCallReturn.getInvokeInstructionPosition());
-            }
+            // 当返回值的数据来源为方法调用时，记录对应的指令位置，避免重复添加同一个方法的返回结果
+            methodReturnPositionList.add(variableDataSourceMethodCallReturn.getInvokeInstructionPosition());
         }
 
         // 处理变量等值转换前的数据来源
@@ -1156,14 +1153,8 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         } else if (variableDataSourceEQC instanceof VariableDataSourceMethodCallReturn) {
             // 方法返回的数据来源是方法调用
             VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturnEQC = (VariableDataSourceMethodCallReturn) variableDataSourceEQC;
-            if (!JavaCG2Util.checkSkipClassWhiteList(variableDataSourceMethodCallReturnEQC.getCalleeClassName(), javaCG2ConfInfo.getNeedHandlePackageSet()) &&
-                    !methodReturnPositionEQCList.contains(variableDataSourceMethodCallReturnEQC.getInvokeInstructionPosition())) {
-                /*
-                    假如被调用方法的类不需要忽略，则记录当前的方法调用指令位置
-                    当返回值的数据来源为方法调用时，记录对应的指令位置，避免重复添加同一个方法的返回结果
-                 */
-                methodReturnPositionEQCList.add(variableDataSourceMethodCallReturnEQC.getInvokeInstructionPosition());
-            }
+            // 当返回值的数据来源为方法调用时，记录对应的指令位置，避免重复添加同一个方法的返回结果
+            methodReturnPositionEQCList.add(variableDataSourceMethodCallReturnEQC.getInvokeInstructionPosition());
         }
     }
 

@@ -198,7 +198,7 @@ public class JavaCG2LocalVariables {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < localVariableElementList.size(); i++) {
             LocalVariableElement variableElement = localVariableElementList.get(i);
-            stringBuilder.append(variableElement).append("\n");
+            stringBuilder.append(variableElement).append(JavaCG2Constants.NEW_LINE);
         }
         return DigestUtils.md5Hex(stringBuilder.toString());
     }
@@ -206,8 +206,8 @@ public class JavaCG2LocalVariables {
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("hash: ").append(genHash()).append("\n");
-        stringBuilder.append("num: ").append(localVariableElementList.size()).append("\n");
+        stringBuilder.append("hash: ").append(genHash()).append(JavaCG2Constants.NEW_LINE);
+        stringBuilder.append("num: ").append(localVariableElementList.size()).append(JavaCG2Constants.NEW_LINE);
 
         for (int i = 0; i < localVariableElementList.size(); i++) {
             LocalVariableElement localVariableElement = localVariableElementList.get(i);
@@ -217,7 +217,7 @@ public class JavaCG2LocalVariables {
             } else {
                 stringBuilder.append("null");
             }
-            stringBuilder.append("\n");
+            stringBuilder.append(JavaCG2Constants.NEW_LINE);
         }
 
         return stringBuilder.toString();

@@ -22,7 +22,7 @@ public class MethodCall {
     private boolean enabled;
 
     // 方法调用类型
-    private JavaCG2CallTypeEnum methodCallType;
+    private String methodCallType;
 
     // 调用者类名
     private String callerClassName;
@@ -91,7 +91,7 @@ public class MethodCall {
                 String.valueOf(callId),
                 enabled ? JavaCG2YesNoEnum.YES.getStrValue() : JavaCG2YesNoEnum.NO.getStrValue(),
                 genCallerFullMethod(),
-                JavaCG2Constants.FILE_KEY_CALL_TYPE_FLAG1 + methodCallType.getType() + JavaCG2Constants.FILE_KEY_CALL_TYPE_FLAG2 + genCalleeFullMethod(),
+                JavaCG2Constants.FILE_KEY_CALL_TYPE_FLAG1 + methodCallType + JavaCG2Constants.FILE_KEY_CALL_TYPE_FLAG2 + genCalleeFullMethod(),
                 String.valueOf(callerSourceLine),
                 callerReturnType,
                 String.valueOf(calleeArrayDimensions),
@@ -121,11 +121,11 @@ public class MethodCall {
         this.enabled = enabled;
     }
 
-    public JavaCG2CallTypeEnum getMethodCallType() {
+    public String getMethodCallType() {
         return methodCallType;
     }
 
-    public void setMethodCallType(JavaCG2CallTypeEnum methodCallType) {
+    public void setMethodCallType(String methodCallType) {
         this.methodCallType = methodCallType;
     }
 

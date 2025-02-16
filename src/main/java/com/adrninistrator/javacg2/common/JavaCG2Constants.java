@@ -13,10 +13,13 @@ public class JavaCG2Constants {
     public static final String PROPERTY_INPUT_ROOT_PATH = "input.root.path";
 
     // 输出文件中的常量
-    // jar/war包
-    public static final String FILE_KEY_JAR_INFO_PREFIX = "J";
+    // jar/war文件
+    public static final String FILE_KEY_JAR = "J";
     // 目录
-    public static final String FILE_KEY_DIR_INFO_PREFIX = "D";
+    public static final String FILE_KEY_DIR = "D";
+    // jar/war文件中的jar文件
+    public static final String FILE_KEY_JAR_IN_JAR = "JIJ";
+
     // 解析结果文件保存目录
     public static final String FILE_KEY_RESULT_DIR_INFO_PREFIX = "R";
     // 方法调用类型左边的标记
@@ -71,6 +74,9 @@ public class JavaCG2Constants {
     public static final String FLAG_TAB = "\t";
     public static final String FLAG_SLASH = "/";
 
+    public static final String COMMENT_PROPERTIES = "# ";
+    public static final String COMMENT_AVIATOR = "## ";
+
     public static final String SEPARATOR_CLASS_FIELD = "@";
 
     public static final String EMPTY_METHOD_ARGS = FLAG_LEFT_BRACKET + FLAG_RIGHT_BRACKET;
@@ -79,16 +85,12 @@ public class JavaCG2Constants {
     public static final String DEFAULT_LINE_NUMBER_STR = String.valueOf(DEFAULT_LINE_NUMBER);
 
     public static final String NEW_LINE = "\n";
+    public static final String NEW_LINE_WINDOWS = "\r\n";
 
     public static final String JAR_SEQ_FLAG = "@";
     public static final String MERGED_JAR_FLAG = "-javacg2_merged.jar";
 
     public static final String DIR_TAIL_OUTPUT = "-output_javacg2";
-    public static final String DIR_CONFIG = "_javacg2_config";
-    public static final String DIR_FAIL_CLASSES = "javacg2_fail_classes";
-
-    public static final String FILE_CONFIG = "config.properties";
-    public static final String FILE_PATH_CONFIG = DIR_CONFIG + "/" + FILE_CONFIG;
 
     public static final String FILE_TYPE_CLASS = "class";
 
@@ -96,10 +98,10 @@ public class JavaCG2Constants {
     public static final String EXT_WAR = ".war";
     public static final String EXT_CLASS = "." + FILE_TYPE_CLASS;
     public static final String EXT_TXT = ".txt";
-    public static final String EXT_LOG = ".log";
+    public static final String EXT_MD = ".md";
 
-    public static final String WEB_INF_CLASSES = "WEB-INF/classes";
-    public static final String BOOT_INF_CLASSES = "BOOT-INF/classes";
+    public static final String WEB_INF_CLASSES = "WEB-INF/classes/";
+    public static final String BOOT_INF_CLASSES = "BOOT-INF/classes/";
 
     public static final String THIS = "this";
 
@@ -151,6 +153,54 @@ public class JavaCG2Constants {
     public static final String CATCH = "catch";
 
     public static final int MAX_FRAME_SNAP_SHOTS_NUM = 50000;
+
+    // 等值转换方法
+    public static final String[] FR_EQ_CONVERSION_METHOD = new String[]{
+            "java.lang.Boolean:<init>=1",
+            "java.lang.Boolean:valueOf=1",
+            "java.lang.Boolean:parseBoolean=1",
+            "java.lang.Integer:<init>=1",
+            "java.lang.Integer:valueOf=1",
+            "java.lang.Integer:parseInt=1",
+            "java.lang.Long:<init>=1",
+            "java.lang.Long:valueOf=1",
+            "java.lang.Long:parseLong=1",
+            "java.lang.Float:<init>=1",
+            "java.lang.Float:valueOf=1",
+            "java.lang.Float:parseFloat=1",
+            "java.lang.Double:<init>=1",
+            "java.lang.Double:valueOf=1",
+            "java.lang.Double:parseDouble=1",
+            "java.lang.String:<init>=1",
+            "java.lang.String:valueOf=1",
+            "java.lang.String:trim=0",
+            "java.math.BigDecimal:<init>=1",
+            "java.math.BigDecimal:valueOf=1",
+            "java.math.BigDecimal:toString=0",
+            "java.math.BigDecimal:=0",
+            "org.apache.commons.lang3.StringUtils:defaultIfBlank=1",
+            "org.apache.commons.lang3.StringUtils:defaultIfEmpty=1",
+            "org.apache.commons.lang3.StringUtils:defaultString=1",
+            "org.apache.commons.lang3.StringUtils:trim=1",
+            "org.apache.commons.lang.StringUtils:defaultIfBlank=1",
+            "org.apache.commons.lang.StringUtils:defaultIfEmpty=1",
+            "org.apache.commons.lang.StringUtils:defaultString=1",
+            "org.apache.commons.lang.StringUtils:trim=1",
+            "org.apache.commons.lang3.math.NumberUtils:createBigDecimal=1",
+            "org.apache.commons.lang3.math.NumberUtils:createBigInteger=1",
+            "org.apache.commons.lang3.math.NumberUtils:createDouble=1",
+            "org.apache.commons.lang3.math.NumberUtils:createFloat=1",
+            "org.apache.commons.lang3.math.NumberUtils:createInteger=1",
+            "org.apache.commons.lang3.math.NumberUtils:createLong=1",
+            "org.apache.commons.lang3.math.NumberUtils:createNumber=1",
+            "org.apache.commons.lang.math.NumberUtils:createBigDecimal=1",
+            "org.apache.commons.lang.math.NumberUtils:createBigInteger=1",
+            "org.apache.commons.lang.math.NumberUtils:createDouble=1",
+            "org.apache.commons.lang.math.NumberUtils:createFloat=1",
+            "org.apache.commons.lang.math.NumberUtils:createInteger=1",
+            "org.apache.commons.lang.math.NumberUtils:createLong=1",
+            "org.apache.commons.lang.math.NumberUtils:createNumber=1"
+    };
 
     private JavaCG2Constants() {
         throw new IllegalStateException("illegal");

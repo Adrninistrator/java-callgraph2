@@ -20,7 +20,9 @@ package copy.javassist.bytecode;
  * Signals that a bad bytecode sequence has been found.
  */
 public class BadBytecode extends Exception {
-    /** default serialVersionUID */
+    /**
+     * default serialVersionUID
+     */
     private static final long serialVersionUID = 1L;
 
     public BadBytecode(String msg) {

@@ -202,7 +202,7 @@ public enum JavaCG2CallTypeEnum {
                 return callTypeEnum;
             }
         }
-        return JavaCG2CallTypeEnum.CTE_ILLEGAL;
+        return null;
     }
 
     /**

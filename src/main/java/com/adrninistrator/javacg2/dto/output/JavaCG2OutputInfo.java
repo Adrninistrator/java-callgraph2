@@ -3,7 +3,9 @@ package com.adrninistrator.javacg2.dto.output;
 import com.adrninistrator.javacg2.common.enums.JavaCG2OutPutFileTypeEnum;
 import com.adrninistrator.javacg2.util.JavaCG2Util;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +30,9 @@ public class JavaCG2OutputInfo {
             文件路径
      */
     private final Map<String, String> otherFilePathMap = new HashMap<>();
+
+    // 栈桢信息快照数量超过允许的最大数量的方法Set
+    private final Set<String> frameSnapshotNumExceedMethodSet = new HashSet<>();
 
     public JavaCG2OutputInfo(String outputDirPath, String outputFileExt) {
         // 路径后面增加路径分隔符
@@ -83,5 +88,17 @@ public class JavaCG2OutputInfo {
      */
     public String getMainFilePath(JavaCG2OutPutFileTypeEnum javaCG2OutPutFileTypeEnum) {
         return outputDirPath + javaCG2OutPutFileTypeEnum.getFileName() + outputFileExt;
+    }
+
+    public void addFrameSnapshotNumExceedMethod(String frameSnapshotNumExceedMethod) {
+        frameSnapshotNumExceedMethodSet.add(frameSnapshotNumExceedMethod);
+    }
+
+    public void addFrameSnapshotNumExceedMethodSet(Set<String> frameSnapshotNumExceedMethodSet) {
+        this.frameSnapshotNumExceedMethodSet.addAll(frameSnapshotNumExceedMethodSet);
+    }
+
+    public Set<String> getFrameSnapshotNumExceedMethodSetReadOnly() {
+        return Collections.unmodifiableSet(frameSnapshotNumExceedMethodSet);
     }
 }

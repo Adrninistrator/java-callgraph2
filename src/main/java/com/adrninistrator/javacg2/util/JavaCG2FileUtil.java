@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -15,6 +16,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URL;
@@ -35,19 +37,37 @@ public class JavaCG2FileUtil {
 
     private static final Logger logger = LoggerFactory.getLogger(JavaCG2FileUtil.class);
 
+    /**
+     * 获取规范的文件路径
+     *
+     * @param filePath
+     * @return
+     */
     public static String getCanonicalPath(String filePath) {
         return getCanonicalPath(new File(filePath));
     }
 
+    /**
+     * 获取规范的文件路径
+     *
+     * @param file
+     * @return
+     */
     public static String getCanonicalPath(File file) {
         try {
             return file.getCanonicalPath();
         } catch (IOException e) {
-            logger.error("error ", e);
-            return null;
+            logger.error("获取文件路径失败 {} ", file.getAbsolutePath(), e);
+            throw new JavaCG2RuntimeException("获取文件路径失败");
         }
     }
 
+    /**
+     * 删除文件
+     *
+     * @param file
+     * @return
+     */
     public static boolean deleteFile(File file) {
         try {
             Files.delete(file.toPath());
@@ -274,8 +294,8 @@ public class JavaCG2FileUtil {
             }
             return set;
         } catch (Exception e) {
-            logger.error("处理文件出现异常 {} ", filePath, e);
-            return null;
+            logger.error("读取文件到Set出现异常 {} ", filePath, e);
+            throw new JavaCG2RuntimeException("读取文件到Set出现异常");
         }
     }
 
@@ -312,8 +332,8 @@ public class JavaCG2FileUtil {
             }
             return list;
         } catch (Exception e) {
-            logger.error("处理文件出现异常 {} ", filePath, e);
-            return null;
+            logger.error("读取文件到List出现异常 {} ", filePath, e);
+            throw new JavaCG2RuntimeException("读取文件到List出现异常");
         }
     }
 
@@ -348,6 +368,142 @@ public class JavaCG2FileUtil {
      */
     public static BufferedReader genBufferedReader(InputStream input) {
         return new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+    }
+
+    /**
+     * 将输入流内容保存到文件，不关闭输入流（避免jar/war包无法再遍历）
+     *
+     * @param inputStream
+     * @param file
+     * @return
+     */
+    public static boolean saveInputToFileNoClose(InputStream inputStream, File file) {
+        String dirPath = file.getParent();
+        if (!isDirectoryExists(dirPath, true)) {
+            return false;
+        }
+
+        try (OutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
+            byte[] data = new byte[8192];
+            int len;
+            while ((len = inputStream.read(data)) > 0) {
+                out.write(data, 0, len);
+            }
+            return true;
+        } catch (Exception e) {
+            logger.error("error ", e);
+            return false;
+        }
+    }
+
+    /**
+     * 判断文件路径中是否包含目录分隔符\、/
+     *
+     * @param filePath
+     * @return
+     */
+    public static boolean checkFilePathContainsSeparator(String filePath) {
+        return StringUtils.containsAny(filePath, "\\", "/");
+    }
+
+    /**
+     * 将文件路径中的反斜杠替换为斜杠
+     *
+     * @param filePath
+     * @return
+     */
+    public static String replaceFilePath2Slash(String filePath) {
+        return StringUtils.replaceChars(filePath, '\\', '/');
+    }
+
+    /**
+     * 根据文件路径获取文件名，支持以斜杠'/'作为分隔符
+     *
+     * @param filePath
+     * @return
+     */
+    public static String getFileNameSupportSlash(String filePath) {
+        return StringUtils.substringAfter(filePath, JavaCG2Constants.FLAG_SLASH);
+    }
+
+    /**
+     * 根据文件路径获取文件名
+     *
+     * @param filePath
+     * @return
+     */
+    public static String getFileNameFromPath(String filePath) {
+        String tmpFilePath = replaceFilePath2Slash(filePath);
+        return getFileNameSupportSlash(tmpFilePath);
+    }
+
+    /**
+     * 获取文件路径或文件名后缀，以.开头
+     *
+     * @param filePathOrName 文件路径或文件名
+     * @return
+     */
+    public static String getFileExt(String filePathOrName) {
+        if (filePathOrName == null) {
+            return null;
+        }
+
+        int lastDotIndex = filePathOrName.lastIndexOf(JavaCG2Constants.FLAG_DOT);
+        if (lastDotIndex == -1) {
+            return "";
+        }
+        return filePathOrName.substring(lastDotIndex);
+    }
+
+    /**
+     * 获取文件路径或文件名后缀小写形式，以.开头
+     *
+     * @param filePathOrName 文件路径或文件名
+     * @return
+     */
+    public static String getFileExtLower(String filePathOrName) {
+        String fileExt = getFileExt(filePathOrName);
+        return StringUtils.lowerCase(fileExt);
+    }
+
+    /**
+     * 检查是否为jar或war文件
+     *
+     * @param filePath
+     * @return
+     */
+    public static boolean checkJarWarFile(String filePath) {
+        return StringUtils.endsWithAny(StringUtils.lowerCase(filePath), JavaCG2Constants.EXT_JAR, JavaCG2Constants.EXT_WAR);
+    }
+
+    /**
+     * 检查是否为jar文件
+     *
+     * @param filePath
+     * @return
+     */
+    public static boolean checkJarFile(String filePath) {
+        return StringUtils.endsWithIgnoreCase(filePath, JavaCG2Constants.EXT_JAR);
+    }
+
+    /**
+     * 检查是否为war文件
+     *
+     * @param filePath
+     * @return
+     */
+    public static boolean checkWarFile(String filePath) {
+        return StringUtils.endsWithIgnoreCase(filePath, JavaCG2Constants.EXT_WAR);
+    }
+
+    /**
+     * 检查是否为class文件
+     *
+     * @param filePath
+     * @return
+     */
+    public static boolean checkClassFile(String filePath) {
+        return StringUtils.endsWithIgnoreCase(filePath, JavaCG2Constants.EXT_CLASS);
     }
 
     private JavaCG2FileUtil() {

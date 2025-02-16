@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg2.extensions.manager;
 
-import com.adrninistrator.javacg2.dto.output.JavaCG2OutputInfo;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
 import com.adrninistrator.javacg2.extensions.annotationattributes.DefaultAnnotationAttributesFormatter;
@@ -9,16 +9,15 @@ import com.adrninistrator.javacg2.extensions.codeparser.CodeParserInterface;
 import com.adrninistrator.javacg2.extensions.codeparser.JarEntryOtherFileParser;
 import com.adrninistrator.javacg2.extensions.codeparser.MethodAnnotationParser;
 import com.adrninistrator.javacg2.extensions.codeparser.SpringXmlBeanParserInterface;
+import com.adrninistrator.javacg2.extensions.methodcall.JavaCG2MethodCallExtensionInterface;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author adrninistrator
@@ -50,11 +49,13 @@ public class ExtensionsManager {
      */
     private final Map<String, MethodAnnotationParser> methodAnnotationParserMap = new HashMap<>();
 
+    // 保存方法调用处理扩展类的列表
+    private final List<JavaCG2MethodCallExtensionInterface> methodCallExtensionList = new ArrayList<>();
+
     // 解析并将结果保存在文件的类
     private final List<AbstractSaveData2FileParser> saveData2FileParserList = new ArrayList<>();
 
-    // 对jar包中的其他文件解析时需要处理的文件类型集合
-    private final Set<String> jarEntryOtherFileTypeSet = new HashSet<>();
+    private JavaCG2InputAndOutput javaCG2InputAndOutput;
 
     // 对注解属性的元素值进行格式化的类
     private AnnotationAttributesFormatterInterface annotationAttributesFormatter;
@@ -62,18 +63,7 @@ public class ExtensionsManager {
     // Spring XML Bean信息解析类
     private SpringXmlBeanParserInterface springXmlBeanParser;
 
-    private JavaCG2OutputInfo javaCG2OutputInfo;
-
     private boolean inited = false;
-
-    /**
-     * 添加代码解析扩展类
-     *
-     * @param codeParser
-     */
-    public void addCodeParser(CodeParserInterface codeParser) {
-        allCodeParserList.add(codeParser);
-    }
 
     // 初始化
     public boolean init() {
@@ -98,8 +88,6 @@ public class ExtensionsManager {
                     for (String otherFileExtension : otherFileExtensions) {
                         List<JarEntryOtherFileParser> otherFileParserList = otherFileParserMap.computeIfAbsent(otherFileExtension, k -> new ArrayList<>());
                         otherFileParserList.add(jarEntryOtherFileParser);
-                        // 记录对jar包中的其他文件解析时需要处理的文件类型
-                        jarEntryOtherFileTypeSet.add(otherFileExtension);
                     }
                 }
 
@@ -107,7 +95,7 @@ public class ExtensionsManager {
                 if (codeParser instanceof AbstractSaveData2FileParser) {
                     AbstractSaveData2FileParser saveData2FileParser = (AbstractSaveData2FileParser) codeParser;
                     // 增加其他文件信息
-                    String outputFilePath = javaCG2OutputInfo.addOtherFileInfo(saveData2FileParser.chooseFileName());
+                    String outputFilePath = javaCG2InputAndOutput.getJavaCG2OutputInfo().addOtherFileInfo(saveData2FileParser.chooseFileName());
                     if (!saveData2FileParser.init(outputFilePath)) {
                         logger.error("初始化失败 {}", codeParser.getClass().getName());
                         return false;
@@ -175,16 +163,36 @@ public class ExtensionsManager {
         return methodAnnotationParserMap.get(methodAnnotationClass);
     }
 
-    public Set<String> getJarEntryOtherFileTypeSet() {
-        return jarEntryOtherFileTypeSet;
-    }
-
     public AnnotationAttributesFormatterInterface getAnnotationAttributesFormatter() {
         if (annotationAttributesFormatter == null) {
             annotationAttributesFormatter = new DefaultAnnotationAttributesFormatter();
         }
 
         return annotationAttributesFormatter;
+    }
+
+    /**
+     * 添加代码解析扩展类
+     * 需要在调用run()方法之前调用当前方法
+     *
+     * @param codeParser
+     */
+    public void addCodeParser(CodeParserInterface codeParser) {
+        allCodeParserList.add(codeParser);
+    }
+
+    /**
+     * 添加方法调用处理扩展类
+     *
+     * @param methodCallExtension
+     */
+    public void addJavaCG2MethodCallExtension(JavaCG2MethodCallExtensionInterface methodCallExtension) {
+        methodCallExtensionList.add(methodCallExtension);
+    }
+
+    //
+    public List<JavaCG2MethodCallExtensionInterface> getMethodCallExtensionList() {
+        return methodCallExtensionList;
     }
 
     public SpringXmlBeanParserInterface getSpringXmlBeanParser() {
@@ -195,11 +203,16 @@ public class ExtensionsManager {
         this.springXmlBeanParser = springXmlBeanParser;
     }
 
+    /**
+     * 设置注解属性格式化类
+     *
+     * @param annotationAttributesFormatter
+     */
     public void setAnnotationAttributesFormatter(AnnotationAttributesFormatterInterface annotationAttributesFormatter) {
         this.annotationAttributesFormatter = annotationAttributesFormatter;
     }
 
-    public void setJavaCG2OutputInfo(JavaCG2OutputInfo javaCG2OutputInfo) {
-        this.javaCG2OutputInfo = javaCG2OutputInfo;
+    public void setJavaCG2InputAndOutput(JavaCG2InputAndOutput javaCG2InputAndOutput) {
+        this.javaCG2InputAndOutput = javaCG2InputAndOutput;
     }
 }

@@ -2,13 +2,13 @@ package com.adrninistrator.javacg2.handler;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2CallTypeEnum;
-import com.adrninistrator.javacg2.comparator.MethodArgReturnTypesComparator;
-import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
+import com.adrninistrator.javacg2.comparator.Comparator4MethodArgReturnTypes;
 import com.adrninistrator.javacg2.dto.accessflag.JavaCG2AccessFlags;
 import com.adrninistrator.javacg2.dto.call.MethodCall;
 import com.adrninistrator.javacg2.dto.classes.ClassExtendsInfo;
 import com.adrninistrator.javacg2.dto.classes.Node4ClassExtendsMethod;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg2.dto.stack.ListAsStack;
@@ -37,7 +37,7 @@ import java.util.Set;
 public class ExtendsImplHandler {
     private static final Logger logger = LoggerFactory.getLogger(ExtendsImplHandler.class);
 
-    private JavaCG2ConfInfo javaCG2ConfInfo;
+    private JavaCG2InputAndOutput javaCG2InputAndOutput;
 
     private JavaCG2Counter callIdCounter;
 
@@ -133,7 +133,7 @@ public class ExtendsImplHandler {
 
         List<MethodArgReturnTypes> superInterfaceMethodAndArgsList = new ArrayList<>(superInterfaceMethodAndArgsMap.keySet());
         // 对父接口中的方法进行排序
-        superInterfaceMethodAndArgsList.sort(MethodArgReturnTypesComparator.getInstance());
+        superInterfaceMethodAndArgsList.sort(Comparator4MethodArgReturnTypes.getInstance());
         // 遍历父接口中的方法
         for (MethodArgReturnTypes superMethodAndArgs : superInterfaceMethodAndArgsList) {
             if (childInterfaceMethodAndArgsMap.containsKey(superMethodAndArgs)) {
@@ -257,7 +257,7 @@ public class ExtendsImplHandler {
                     continue;
                 }
                 List<MethodArgReturnTypes> interfaceMethodArgReturnTypesList = new ArrayList<>(currentInterfaceMethodWithArgTypesMap.keySet());
-                interfaceMethodArgReturnTypesList.sort(MethodArgReturnTypesComparator.getInstance());
+                interfaceMethodArgReturnTypesList.sort(Comparator4MethodArgReturnTypes.getInstance());
                 for (MethodArgReturnTypes interfaceMethodArgReturnTypes : interfaceMethodArgReturnTypesList) {
                     Integer interfaceMethodAccessFlags = currentInterfaceMethodWithArgTypesMap.get(interfaceMethodArgReturnTypes);
                     if (JavaCG2ByteCodeUtil.isAbstractFlag(interfaceMethodAccessFlags)) {
@@ -377,7 +377,7 @@ public class ExtendsImplHandler {
 
         // 对父类方法排序并遍历
         List<MethodArgReturnTypes> superMethodAndArgTypesList = new ArrayList<>(superMethodWithArgTypesMap.keySet());
-        superMethodAndArgTypesList.sort(MethodArgReturnTypesComparator.getInstance());
+        superMethodAndArgTypesList.sort(Comparator4MethodArgReturnTypes.getInstance());
         for (MethodArgReturnTypes superMethodWithArgTypes : superMethodAndArgTypesList) {
             Integer superMethodAccessFlags = superMethodWithArgTypesMap.get(superMethodWithArgTypes);
             if (JavaCG2ByteCodeUtil.isAbstractFlag(superMethodAccessFlags)) {
@@ -436,7 +436,7 @@ public class ExtendsImplHandler {
             }
 
             List<MethodArgReturnTypes> methodWithArgTypesList = new ArrayList<>(classMethodWithArgTypesMap.keySet());
-            methodWithArgTypesList.sort(MethodArgReturnTypesComparator.getInstance());
+            methodWithArgTypesList.sort(Comparator4MethodArgReturnTypes.getInstance());
 
             for (String interfaceName : interfaceNameList) {
                 Map<MethodArgReturnTypes, Integer> currentInterfaceMethodWithArgTypesMap = interfaceMethodWithArgTypesMap.get(interfaceName);
@@ -470,18 +470,13 @@ public class ExtendsImplHandler {
                                     String calleeMethodName,
                                     String calleeMethodArgTypes,
                                     String calleeMethodReturnType) throws IOException {
-        if (JavaCG2Util.checkSkipClassWhiteList(callerClassName, javaCG2ConfInfo.getNeedHandlePackageSet()) ||
-                JavaCG2Util.checkSkipClassWhiteList(calleeClassName, javaCG2ConfInfo.getNeedHandlePackageSet())) {
-            return;
-        }
-
         String callerClassJarNum = classAndJarNum.getJarNum(callerClassName);
         String calleeClassJarNum = classAndJarNum.getJarNum(calleeClassName);
 
         MethodCall methodCall = new MethodCall();
         methodCall.setCallId(callIdCounter.addAndGet());
         methodCall.setEnabled(true);
-        methodCall.setMethodCallType(methodCallType);
+        methodCall.setMethodCallType(methodCallType.getType());
         methodCall.setCallerClassName(callerClassName);
         methodCall.setCallerMethodName(callerMethodName);
         methodCall.setCallerMethodArgTypes(callerMethodArgTypes);
@@ -495,10 +490,6 @@ public class ExtendsImplHandler {
     }
 
     //
-    public void setJavaCG2ConfInfo(JavaCG2ConfInfo javaCG2ConfInfo) {
-        this.javaCG2ConfInfo = javaCG2ConfInfo;
-    }
-
     public void setCallIdCounter(JavaCG2Counter callIdCounter) {
         this.callIdCounter = callIdCounter;
     }
@@ -541,5 +532,9 @@ public class ExtendsImplHandler {
 
     public void setMethodCallWriter(Writer methodCallWriter) {
         this.methodCallWriter = methodCallWriter;
+    }
+
+    public void setJavaCG2InputAndOutput(JavaCG2InputAndOutput javaCG2InputAndOutput) {
+        this.javaCG2InputAndOutput = javaCG2InputAndOutput;
     }
 }

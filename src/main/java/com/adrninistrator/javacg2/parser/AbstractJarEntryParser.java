@@ -1,10 +1,9 @@
 package com.adrninistrator.javacg2.parser;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
-import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import com.adrninistrator.javacg2.util.JavaCG2JarUtil;
-import com.adrninistrator.javacg2.util.JavaCG2Util;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.model.LocalFileHeader;
 import org.apache.bcel.classfile.ClassParser;
@@ -16,7 +15,6 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 /**
  * @author adrninistrator
@@ -29,10 +27,10 @@ public abstract class AbstractJarEntryParser {
 
     protected String simpleClassName = this.getClass().getSimpleName();
 
-    protected JavaCG2ConfInfo javaCG2ConfInfo;
+    protected JavaCG2InputAndOutput javaCG2InputAndOutput;
 
-    // 保存需要处理的jar包/目录的路径及对应的序号
-    protected Map<String, Integer> jarPathNumMap;
+    // 是否只指定了一个需要处理的jar/war文件
+    protected boolean onlyOneJar;
 
     // 处理class文件时，缓存当前处理的文件的第一层目录名及对应jar包信息
     protected String lastFirstDirName;
@@ -40,9 +38,9 @@ public abstract class AbstractJarEntryParser {
     // 最近一次处理的jar包序号
     protected Integer lastJarNum;
 
-    protected AbstractJarEntryParser(JavaCG2ConfInfo javaCG2ConfInfo, Map<String, Integer> jarPathNumMap) {
-        this.javaCG2ConfInfo = javaCG2ConfInfo;
-        this.jarPathNumMap = jarPathNumMap;
+    protected AbstractJarEntryParser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar) {
+        this.javaCG2InputAndOutput = javaCG2InputAndOutput;
+        this.onlyOneJar = onlyOneJar;
     }
 
     /**
@@ -56,7 +54,7 @@ public abstract class AbstractJarEntryParser {
         init();
 
         String jarEntryPath = null;
-        try (ZipInputStream zipInputStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(jarFilePath), 1024 * 8))) {
+        try (ZipInputStream zipInputStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(jarFilePath)))) {
             LocalFileHeader fileHeader;
             while ((fileHeader = zipInputStream.getNextEntry()) != null) {
                 if (fileHeader.isDirectory()) {
@@ -69,12 +67,6 @@ public abstract class AbstractJarEntryParser {
                 // 获取当前处理的jar包信息
                 if (!handleCurrentJarInfo(jarEntryPath)) {
                     return false;
-                }
-
-                // 判断当前文件是否需要忽略
-                if (ignoreCurrentFile(jarEntryPath)) {
-                    // 忽略当前的文件
-                    continue;
                 }
 
                 // 处理jar包中任意类型的文件
@@ -116,11 +108,6 @@ public abstract class AbstractJarEntryParser {
         }
 
         JavaClass javaClass = new ClassParser(inputStream, jarEntryPath).parse();
-        // 判断是否忽略当前类
-        if (ignoreCurrentClass(javaClass.getClassName())) {
-            return true;
-        }
-
         // 处理jar包中的class文件
         handleClassEntry(javaClass, jarEntryPath);
         return true;
@@ -144,7 +131,7 @@ public abstract class AbstractJarEntryParser {
      * @return true: 处理成功 false: 处理失败
      */
     private boolean handleCurrentJarInfo(String jarEntryPath) {
-        if (jarPathNumMap.size() == 1) {
+        if (onlyOneJar) {
             // 只有一个jar包
             if (lastJarNum == null) {
                 lastJarNum = JavaCG2Constants.JAR_NUM_MIN;
@@ -169,43 +156,5 @@ public abstract class AbstractJarEntryParser {
         // 首次处理，或第一层目录名变化时，需要从第一层目录名获取jar包序号
         lastJarNum = JavaCG2JarUtil.getJarNumFromDirName(firstDirName);
         return true;
-    }
-
-    /**
-     * 判断当前处理的文件是否需要忽略
-     *
-     * @param jarEntryPath jar包中的文件路径
-     * @return true: 需要忽略 false: 不忽略
-     */
-    private boolean ignoreCurrentFile(String jarEntryPath) {
-        for (String ignoreJarFileKeyword : javaCG2ConfInfo.getIgnoreJarFileKeywordSet()) {
-            if (jarEntryPath.contains(ignoreJarFileKeyword)) {
-                logger.info("jar包中的当前文件路径包含指定关键字，需要跳过 [{}] [{}]", jarEntryPath, ignoreJarFileKeyword);
-                return true;
-            }
-        }
-        String jarEntryName = JavaCG2JarUtil.getJarEntryNameFromPath(jarEntryPath);
-        for (String ignoreJarFileName : javaCG2ConfInfo.getIgnoreJarFileNameSet()) {
-            if (jarEntryName.equals(ignoreJarFileName)) {
-                logger.info("jar包中的当前文件名已设置为需要跳过 [{}] [{}]", jarEntryPath, ignoreJarFileName);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 根据类名判断当前类是否需要忽略
-     *
-     * @param className 类名
-     * @return true: 忽略当前类 false: 不忽略当前类
-     */
-    protected boolean ignoreCurrentClass(String className) {
-        if (JavaCG2Util.checkSkipClassWhiteList(className, javaCG2ConfInfo.getNeedHandlePackageSet()) ||
-                JavaCG2Util.checkSkipClassBlackList(className, javaCG2ConfInfo.getIgnoreClassNameSet())) {
-            logger.debug("跳过不需要处理的类: {}", className);
-            return true;
-        }
-        return false;
     }
 }

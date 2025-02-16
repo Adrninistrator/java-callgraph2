@@ -47,9 +47,9 @@ public class SignatureAttribute {
         /**
          * Constructs a class signature.
          *
-         * @param params             type parameters.
-         * @param superClass         the super class.
-         * @param interfaces         the interface types.
+         * @param params     type parameters.
+         * @param superClass the super class.
+         * @param interfaces the interface types.
          */
         public ClassSignature(TypeParameter[] params, ClassType superClass, ClassType[] interfaces) {
             this.params = params == null ? new TypeParameter[0] : params;
@@ -60,7 +60,7 @@ public class SignatureAttribute {
         /**
          * Constructs a class signature.
          *
-         * @param p         type parameters.
+         * @param p type parameters.
          */
         public ClassSignature(TypeParameter[] p) {
             this(p, null, null);
@@ -78,14 +78,18 @@ public class SignatureAttribute {
         /**
          * Returns the super class.
          */
-        public ClassType getSuperClass() { return superClass; }
+        public ClassType getSuperClass() {
+            return superClass;
+        }
 
         /**
          * Returns the super interfaces.
          *
          * @return a zero-length array if the super interfaces are not specified.
          */
-        public ClassType[] getInterfaces() { return interfaces; }
+        public ClassType[] getInterfaces() {
+            return interfaces;
+        }
 
         /**
          * Returns the string representation.
@@ -138,10 +142,10 @@ public class SignatureAttribute {
          * Constructs a method type signature.  Any parameter can be null
          * to represent <code>void</code> or nothing.
          *
-         * @param tp        type parameters.
-         * @param params    parameter types.
-         * @param ret       a return type, or null if the return type is <code>void</code>.
-         * @param ex        exception types.
+         * @param tp     type parameters.
+         * @param params parameter types.
+         * @param ret    a return type, or null if the return type is <code>void</code>.
+         * @param ex     exception types.
          */
         public MethodSignature(TypeParameter[] tp, Type[] params, Type ret, ObjectType[] ex) {
             typeParams = tp == null ? new TypeParameter[0] : tp;
@@ -155,19 +159,25 @@ public class SignatureAttribute {
          *
          * @return a zero-length array if the type parameters are not specified.
          */
-        public TypeParameter[] getTypeParameters() { return typeParams; }
+        public TypeParameter[] getTypeParameters() {
+            return typeParams;
+        }
 
         /**
          * Returns the types of the formal parameters.
          *
          * @return a zero-length array if no formal parameter is taken.
          */
-        public Type[] getParameterTypes() { return params; }
+        public Type[] getParameterTypes() {
+            return params;
+        }
 
         /**
          * Returns the type of the returned value.
          */
-        public Type getReturnType() { return retType; }
+        public Type getReturnType() {
+            return retType;
+        }
 
         /**
          * Returns the types of the exceptions that may be thrown.
@@ -175,7 +185,9 @@ public class SignatureAttribute {
          * @return a zero-length array if exceptions are never thrown or
          * the exception types are not parameterized types or type variables.
          */
-        public ObjectType[] getExceptionTypes() { return exceptions; }
+        public ObjectType[] getExceptionTypes() {
+            return exceptions;
+        }
 
         /**
          * Returns the string representation.
@@ -246,9 +258,9 @@ public class SignatureAttribute {
          * Constructs a <code>TypeParameter</code> representing a type parametre
          * like <code>&lt;T extends ... &gt;</code>.
          *
-         * @param name      parameter name.
-         * @param superClass    an upper bound class-type (or null).
-         * @param superInterfaces   an upper bound interface-type (or null).
+         * @param name            parameter name.
+         * @param superClass      an upper bound class-type (or null).
+         * @param superInterfaces an upper bound interface-type (or null).
          */
         public TypeParameter(String name, ObjectType superClass, ObjectType[] superInterfaces) {
             this.name = name;
@@ -263,7 +275,7 @@ public class SignatureAttribute {
          * Constructs a <code>TypeParameter</code> representing a type parameter
          * like <code>&lt;T&gt;</code>.
          *
-         * @param name          parameter name.
+         * @param name parameter name.
          */
         public TypeParameter(String name) {
             this(name, null, null);
@@ -279,14 +291,18 @@ public class SignatureAttribute {
         /**
          * Returns the class bound of this parameter.
          */
-        public ObjectType getClassBound() { return superClass; }
+        public ObjectType getClassBound() {
+            return superClass;
+        }
 
         /**
          * Returns the interface bound of this parameter.
          *
          * @return a zero-length array if the interface bound is not specified.
          */
-        public ObjectType[] getInterfaceBound() { return superInterfaces; }
+        public ObjectType[] getInterfaceBound() {
+            return superInterfaces;
+        }
 
         /**
          * Returns the string representation.
@@ -359,7 +375,7 @@ public class SignatureAttribute {
          * A type argument is <code>&lt;String&gt;</code>, <code>&lt;int[]&gt;</code>,
          * or a type variable <code>&lt;T&gt;</code>, etc.
          *
-         * @param t         a class type, an array type, or a type variable.
+         * @param t a class type, an array type, or a type variable.
          */
         public TypeArgument(ObjectType t) {
             this(t, ' ');
@@ -376,7 +392,7 @@ public class SignatureAttribute {
          * A factory method constructing a <code>TypeArgument</code> with an upper bound.
          * It represents <code>&lt;? extends ... &gt;</code>
          *
-         * @param t     an upper bound type.
+         * @param t an upper bound type.
          */
         public static TypeArgument subclassOf(ObjectType t) {
             return new TypeArgument(t, '+');
@@ -386,7 +402,7 @@ public class SignatureAttribute {
          * A factory method constructing a <code>TypeArgument</code> with an lower bound.
          * It represents <code>&lt;? super ... &gt;</code>
          *
-         * @param t     an lower bbound type.
+         * @param t an lower bbound type.
          */
         public static TypeArgument superOf(ObjectType t) {
             return new TypeArgument(t, '-');
@@ -398,13 +414,17 @@ public class SignatureAttribute {
          * @return <code>' '</code> (not-wildcard), <code>'*'</code> (wildcard), <code>'+'</code> (wildcard with
          * upper bound), or <code>'-'</code> (wildcard with lower bound).
          */
-        public char getKind() { return wildcard; }
+        public char getKind() {
+            return wildcard;
+        }
 
         /**
          * Returns true if this type argument is a wildcard type
          * such as <code>?</code>, <code>? extends String</code>, or <code>? super Integer</code>.
          */
-        public boolean isWildcard() { return wildcard != ' '; }
+        public boolean isWildcard() {
+            return wildcard != ' ';
+        }
 
         /**
          * Returns the type represented by this argument
@@ -413,7 +433,9 @@ public class SignatureAttribute {
          * the lower bound (if the kind is '-'), or null (if the upper or lower
          * bound is not specified).
          */
-        public ObjectType getType() { return arg; }
+        public ObjectType getType() {
+            return arg;
+        }
 
         /**
          * Returns the string representation.
@@ -452,6 +474,7 @@ public class SignatureAttribute {
      */
     public static abstract class Type {
         abstract void encode(StringBuffer sb);
+
         static void toString(StringBuffer sbuf, Type[] ts) {
             for (int i = 0; i < ts.length; i++) {
                 if (i > 0)
@@ -466,7 +489,9 @@ public class SignatureAttribute {
          * For example, if the type is a nested class {@code foo.Bar.Baz},
          * then {@code foo.Bar$Baz} is returned.
          */
-        public String jvmTypeName() { return toString(); }
+        public String jvmTypeName() {
+            return toString();
+        }
     }
 
     /**
@@ -474,12 +499,15 @@ public class SignatureAttribute {
      */
     public static class BaseType extends Type {
         char descriptor;
-        BaseType(char c) { descriptor = c; }
+
+        BaseType(char c) {
+            descriptor = c;
+        }
 
         /**
          * Constructs a <code>BaseType</code>.
          *
-         * @param typeName      <code>void</code>, <code>int</code>, ...
+         * @param typeName <code>void</code>, <code>int</code>, ...
          */
         public BaseType(String typeName) {
             this(typeName.charAt(0));
@@ -491,12 +519,15 @@ public class SignatureAttribute {
         }
 
         // javassist-3.30.2-GA中增加的方法
+
         /**
          * Returns the descriptor representing this primitive type.
          *
          * @see javassist.bytecode.Descriptor
          */
-        public char getDescriptor() { return descriptor; }
+        public char getDescriptor() {
+            return descriptor;
+        }
     }
 
     /**
@@ -542,8 +573,8 @@ public class SignatureAttribute {
          * Constructs a <code>ClassType</code>.  It represents
          * the name of a non-nested class.
          *
-         * @param className     a fully qualified class name.
-         * @param args          type arguments or null.
+         * @param className a fully qualified class name.
+         * @param args      type arguments or null.
          */
         public ClassType(String className, TypeArgument[] args) {
             name = className;
@@ -554,7 +585,7 @@ public class SignatureAttribute {
          * Constructs a <code>ClassType</code>.  It represents
          * the name of a non-nested class.
          *
-         * @param className     a fully qualified class name.
+         * @param className a fully qualified class name.
          */
         public ClassType(String className) {
             this(className, null);
@@ -572,7 +603,9 @@ public class SignatureAttribute {
          *
          * @return null if no type arguments are given to this class.
          */
-        public TypeArgument[] getTypeArguments() { return arguments; }
+        public TypeArgument[] getTypeArguments() {
+            return arguments;
+        }
 
         /**
          * If this class is a member of another class, returns the
@@ -580,7 +613,9 @@ public class SignatureAttribute {
          *
          * @return null if this class is not a member of another class.
          */
-        public ClassType getDeclaringClass() { return null; }
+        public ClassType getDeclaringClass() {
+            return null;
+        }
 
         /**
          * Returns the string representation.
@@ -653,6 +688,7 @@ public class SignatureAttribute {
      */
     public static class NestedClassType extends ClassType {
         ClassType parent;
+
         NestedClassType(String s, int b, int e,
                         TypeArgument[] targs, ClassType p) {
             super(s, b, e, targs);
@@ -662,10 +698,10 @@ public class SignatureAttribute {
         /**
          * Constructs a <code>NestedClassType</code>.
          *
-         * @param parent        the class surrounding this class type.
-         * @param className     a simple class name.  It does not include
-         *                      a package name or a parent's class name.
-         * @param args          type parameters or null.
+         * @param parent    the class surrounding this class type.
+         * @param className a simple class name.  It does not include
+         *                  a package name or a parent's class name.
+         * @param args      type parameters or null.
          */
         public NestedClassType(ClassType parent, String className, TypeArgument[] args) {
             super(className, args);
@@ -677,7 +713,9 @@ public class SignatureAttribute {
          * This nested class is a member of that declaring class.
          */
         @Override
-        public ClassType getDeclaringClass() { return parent; }
+        public ClassType getDeclaringClass() {
+            return parent;
+        }
     }
 
     /**
@@ -690,8 +728,8 @@ public class SignatureAttribute {
         /**
          * Constructs an <code>ArrayType</code>.
          *
-         * @param d         dimension.
-         * @param comp      the component type.
+         * @param d    dimension.
+         * @param comp the component type.
          */
         public ArrayType(int d, Type comp) {
             dim = d;
@@ -701,7 +739,9 @@ public class SignatureAttribute {
         /**
          * Returns the dimension of the array.
          */
-        public int getDimension() { return dim; }
+        public int getDimension() {
+            return dim;
+        }
 
         /**
          * Returns the component type.
@@ -744,7 +784,7 @@ public class SignatureAttribute {
         /**
          * Constructs a <code>TypeVariable</code>.
          *
-         * @param name      the name of a type variable.
+         * @param name the name of a type variable.
          */
         public TypeVariable(String name) {
             this.name = name;
@@ -774,25 +814,23 @@ public class SignatureAttribute {
     /**
      * Parses the given signature string as a class signature.
      *
-     * @param  sig                  the signature obtained from the <code>SignatureAttribute</code>
-     *                              of a <code>ClassFile</code>.
-     * @return  a tree-like data structure representing a class signature.  It provides
-     *          convenient accessor methods.
-     * @throws javassist.bytecode.BadBytecode          thrown when a syntactical error is found.
+     * @param sig the signature obtained from the <code>SignatureAttribute</code>
+     *            of a <code>ClassFile</code>.
+     * @return a tree-like data structure representing a class signature.  It provides
+     * convenient accessor methods.
+     * @throws javassist.bytecode.BadBytecode thrown when a syntactical error is found.
      * @since 3.5
      */
     public static ClassSignature toClassSignature(String sig) throws BadBytecode {
         try {
             return parseSig(sig);
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw error(sig);
         }
     }
 
     private static ClassSignature parseSig(String sig)
-            throws BadBytecode, IndexOutOfBoundsException
-    {
+            throws BadBytecode, IndexOutOfBoundsException {
         Cursor cur = new Cursor();
         TypeParameter[] tp = parseTypeParams(sig, cur);
         ClassType superClass = parseClassType(sig, cur);
@@ -809,19 +847,18 @@ public class SignatureAttribute {
     /**
      * Parses the given signature string as a method type signature.
      *
-     * @param  sig                  the signature obtained from the <code>SignatureAttribute</code>
-     *                              of a <code>MethodInfo</code>.
-     * @return  @return  a tree-like data structure representing a method signature.  It provides
-     *          convenient accessor methods.
-     * @throws BadBytecode          thrown when a syntactical error is found.
+     * @param sig the signature obtained from the <code>SignatureAttribute</code>
+     *            of a <code>MethodInfo</code>.
+     * @return @return  a tree-like data structure representing a method signature.  It provides
+     * convenient accessor methods.
+     * @throws BadBytecode thrown when a syntactical error is found.
      * @see #getSignature()
      * @since 3.5
      */
     public static MethodSignature toMethodSignature(String sig) throws BadBytecode {
         try {
             return parseMethodSig(sig);
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw error(sig);
         }
     }
@@ -829,25 +866,23 @@ public class SignatureAttribute {
     /**
      * Parses the given signature string as a field type signature.
      *
-     * @param  sig                  the signature string obtained from the <code>SignatureAttribute</code>
-     *                              of a <code>FieldInfo</code>.
+     * @param sig the signature string obtained from the <code>SignatureAttribute</code>
+     *            of a <code>FieldInfo</code>.
      * @return the field type signature.
-     * @throws BadBytecode          thrown when a syntactical error is found.
+     * @throws BadBytecode thrown when a syntactical error is found.
      * @see #getSignature()
      * @since 3.5
      */
     public static ObjectType toFieldSignature(String sig) throws BadBytecode {
         try {
             return parseObjectType(sig, new Cursor(), false);
-        }
-        catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
             throw error(sig);
         }
     }
 
     private static MethodSignature parseMethodSig(String sig)
-            throws BadBytecode
-    {
+            throws BadBytecode {
         Cursor cur = new Cursor();
         TypeParameter[] tp = parseTypeParams(sig, cur);
         if (sig.charAt(cur.position++) != '(')
@@ -878,8 +913,7 @@ public class SignatureAttribute {
     }
 
     private static TypeParameter[] parseTypeParams(String sig, Cursor cur)
-            throws BadBytecode
-    {
+            throws BadBytecode {
         List<TypeParameter> typeParam = new ArrayList<TypeParameter>();
         if (sig.charAt(cur.position) == '<') {
             cur.position++;
@@ -906,19 +940,18 @@ public class SignatureAttribute {
     }
 
     private static ObjectType parseObjectType(String sig, Cursor c, boolean dontThrow)
-            throws BadBytecode
-    {
+            throws BadBytecode {
         int i;
         int begin = c.position;
         switch (sig.charAt(begin)) {
-            case 'L' :
+            case 'L':
                 return parseClassType2(sig, c, null);
-            case 'T' :
+            case 'T':
                 i = c.indexOf(sig, ';');
                 return new TypeVariable(sig, begin + 1, i);
-            case '[' :
+            case '[':
                 return parseArray(sig, c);
-            default :
+            default:
                 if (dontThrow)
                     return null;
                 throw error(sig);
@@ -926,16 +959,14 @@ public class SignatureAttribute {
     }
 
     private static ClassType parseClassType(String sig, Cursor c)
-            throws BadBytecode
-    {
+            throws BadBytecode {
         if (sig.charAt(c.position) == 'L')
             return parseClassType2(sig, c, null);
         throw error(sig);
     }
 
     private static ClassType parseClassType2(String sig, Cursor c, ClassType parent)
-            throws BadBytecode
-    {
+            throws BadBytecode {
         int start = ++c.position;
         char t;
         do {
@@ -946,8 +977,7 @@ public class SignatureAttribute {
         if (t == '<') {
             targs = parseTypeArgs(sig, c);
             t = sig.charAt(c.position++);
-        }
-        else
+        } else
             targs = null;
 
         ClassType thisClass = ClassType.make(sig, start, end, targs, parent);
@@ -963,7 +993,7 @@ public class SignatureAttribute {
         char t;
         while ((t = sig.charAt(c.position++)) != '>') {
             TypeArgument ta;
-            if (t == '*' )
+            if (t == '*')
                 ta = new TypeArgument(null, '*');
             else {
                 if (t != '+' && t != '-') {

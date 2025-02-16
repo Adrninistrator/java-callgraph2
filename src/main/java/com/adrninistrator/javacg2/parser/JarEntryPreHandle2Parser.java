@@ -1,8 +1,8 @@
 package com.adrninistrator.javacg2.parser;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
-import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.dto.classes.ClassExtendsInfo;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg2.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
@@ -42,8 +42,8 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
 
     private final UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
 
-    public JarEntryPreHandle2Parser(JavaCG2ConfInfo javaCG2ConfInfo, Map<String, Integer> jarPathNumMap, UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler) {
-        super(javaCG2ConfInfo, jarPathNumMap);
+    public JarEntryPreHandle2Parser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar, UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler) {
+        super(javaCG2InputAndOutput, onlyOneJar);
         this.useSpringBeanByAnnotationHandler = useSpringBeanByAnnotationHandler;
     }
 
@@ -77,7 +77,7 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
             // 查找涉及继承的类的信息，需要提前执行，使后续处理方法调用时，classExtendsMethodInfoMap的数据是完整的
             findClassExtendsInfo(javaClass);
 
-            if (javaCG2ConfInfo.isParseMethodCallTypeValue()) {
+            if (javaCG2InputAndOutput.getJavaCG2ConfInfo().isParseMethodCallTypeValue()) {
                 // 记录类中带有Spring相关注解的字段信息
                 useSpringBeanByAnnotationHandler.recordClassFieldsWithSpringAnnotation(javaClass);
             }

@@ -216,6 +216,27 @@ public class JavaCG2ClassMethodUtil {
     }
 
     /**
+     * 从完整方法信息中获取方法参数类型，不包含括号
+     *
+     * @param fullMethod 完整方法信息
+     * @return
+     */
+    public static String getMethodArgTypes(String fullMethod) {
+        return StringUtils.substringBetween(fullMethod, JavaCG2Constants.FLAG_LEFT_BRACKET, JavaCG2Constants.FLAG_RIGHT_BRACKET);
+    }
+
+    /**
+     * 获得方法参数数量
+     *
+     * @param fullMethod
+     * @return
+     */
+    public static int getMethodArgNum(String fullMethod) {
+        String[] argTypes = StringUtils.splitPreserveAllTokens(getMethodArgTypes(fullMethod), JavaCG2Constants.FLAG_COMMA);
+        return argTypes.length;
+    }
+
+    /**
      * 判断childClassName是否直接或间接继承自superClassName
      *
      * @param childClassName      子类类名
@@ -391,6 +412,19 @@ public class JavaCG2ClassMethodUtil {
     }
 
     /**
+     * 获取包名层级，若包名为空，则返回0
+     *
+     * @param packageName
+     * @return
+     */
+    public static int getPackageLevel(String packageName) {
+        if (StringUtils.isBlank(packageName)) {
+            return 0;
+        }
+        return StringUtils.countMatches(packageName, JavaCG2Constants.FLAG_DOT) + 1;
+    }
+
+    /**
      * 判断指定的两个类的包名是否相同
      *
      * @param className1
@@ -460,6 +494,38 @@ public class JavaCG2ClassMethodUtil {
             existedMethodMap.putIfAbsent(entry.getKey(), entry.getValue());
         }
     }
+
+    /**
+     * 从完整方法信息中获取完整类名
+     *
+     * @param method 完整方法信息
+     * @return
+     */
+    public static String getClassNameFromMethod(String method) {
+        return StringUtils.substringBeforeLast(method, JavaCG2Constants.FLAG_COLON);
+    }
+
+    /**
+     * 从完整方法信息中获取简单类名（去掉包名）
+     *
+     * @param method 完整方法信息
+     * @return
+     */
+    public static String getSimpleClassNameFromMethod(String method) {
+        String className = getClassNameFromMethod(method);
+        return JavaCG2ClassMethodUtil.getSimpleClassNameFromFull(className);
+    }
+
+    /**
+     * 从完整方法信息中获取方法名
+     *
+     * @param fullMethod 完整方法信息
+     * @return
+     */
+    public static String getMethodNameFromFull(String fullMethod) {
+        return StringUtils.substringBetween(fullMethod, JavaCG2Constants.FLAG_COLON, JavaCG2Constants.FLAG_LEFT_BRACKET);
+    }
+
 
     private JavaCG2ClassMethodUtil() {
         throw new IllegalStateException("illegal");

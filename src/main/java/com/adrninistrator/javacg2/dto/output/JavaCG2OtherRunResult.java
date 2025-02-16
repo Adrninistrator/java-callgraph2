@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * @author adrninistrator
  * @date 2024/11/4
- * @description: 执行结果
+ * @description: 其他执行结果
  */
 public class JavaCG2OtherRunResult {
 

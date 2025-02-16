@@ -5,12 +5,16 @@ import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2ConstantTypeEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
 import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
+import com.adrninistrator.javacg2.conf.JavaCG2ConfigureWrapper;
+import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
 import com.adrninistrator.javacg2.dto.field.FieldPossibleTypes;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.instruction.InvokeInstructionPosAndCallee;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg2.dto.type.JavaCG2GenericsType;
 import com.adrninistrator.javacg2.dto.type.JavaCG2Type;
+import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
 import com.adrninistrator.javacg2.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg2.spring.UseSpringBeanByAnnotationHandler;
@@ -19,7 +23,6 @@ import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import com.adrninistrator.javacg2.util.JavaCG2GenericsTypeUtil;
-import com.adrninistrator.javacg2.util.JavaCG2Util;
 import com.adrninistrator.javacg2.writer.WriterSupportSkip;
 import copy.javassist.bytecode.BadBytecode;
 import copy.javassist.bytecode.SignatureAttribute;
@@ -74,9 +77,15 @@ public class ClassHandler {
 
     private final String className;
 
-    private final JavaCG2ConfInfo javaCG2ConfInfo;
+    private final JavaCG2InputAndOutput javaCG2InputAndOutput;
 
     private final int classJarNum;
+
+    private final boolean logMethodSpendTime;
+
+    private final JavaCG2ConfInfo javaCG2ConfInfo;
+
+    private final JavaCG2ElManager javaCG2ElManager;
 
     private UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
 
@@ -138,22 +147,28 @@ public class ClassHandler {
     // 当前类已记录过的set方法名称（get方法没有参数，只会有一个）
     private Set<String> recordedSetMethodSet;
 
-    public ClassHandler(JavaClass javaClass, String classFileName, JavaCG2ConfInfo javaCG2ConfInfo, int classJarNum) {
+    public ClassHandler(JavaClass javaClass, String classFileName, JavaCG2InputAndOutput javaCG2InputAndOutput, int classJarNum) {
         this.javaClass = javaClass;
         this.classFileName = classFileName;
-        this.javaCG2ConfInfo = javaCG2ConfInfo;
+        this.javaCG2InputAndOutput = javaCG2InputAndOutput;
         this.classJarNum = classJarNum;
 
         className = javaClass.getClassName();
         cpg = new ConstantPoolGen(javaClass.getConstantPool());
         handledMethodNameAndArgs = new HashSet<>();
 
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = javaCG2InputAndOutput.getJavaCG2ConfigureWrapper();
+        logMethodSpendTime = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_LOG_METHOD_SPEND_TIME);
+
+        javaCG2ConfInfo = javaCG2InputAndOutput.getJavaCG2ConfInfo();
         if (javaCG2ConfInfo.isParseMethodCallTypeValue()) {
             recordedSetMethodSet = new HashSet<>();
         }
         if (javaCG2ConfInfo.isFirstParseInitMethodType()) {
             nonStaticFieldPossibleTypes = new FieldPossibleTypes();
         }
+
+        javaCG2ElManager = javaCG2InputAndOutput.getJavaCG2ElManager();
     }
 
     // 记录类之间引用关系
@@ -186,9 +201,6 @@ public class ClassHandler {
         Collections.sort(referencedClassList);
         // 写入其他被类的类名
         for (String referencedClass : referencedClassList) {
-            if (JavaCG2Util.checkSkipClassWhiteList(referencedClass, javaCG2ConfInfo.getNeedHandlePackageSet())) {
-                continue;
-            }
             JavaCG2FileUtil.write2FileWithTab(classReferenceWriter, className, referencedClass);
         }
         if (referencedClassList.isEmpty()) {
@@ -285,7 +297,7 @@ public class ClassHandler {
     private boolean parseInitMethod(Method method) {
         MethodGen mg = new MethodGen(method, className, cpg);
         String callerFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(className, method.getName(), method.getArgumentTypes());
-        MethodHandler4TypeAndValue methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(method, mg, javaClass, callerFullMethod, javaCG2ConfInfo);
+        MethodHandler4TypeAndValue methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(method, mg, javaClass, callerFullMethod, javaCG2InputAndOutput);
         methodHandler4TypeAndValue.setFailCounter(failCounter);
         methodHandler4TypeAndValue.setRecordFieldPossibleTypeFlag(true);
         methodHandler4TypeAndValue.setUseFieldPossibleTypeFlag(false);
@@ -410,15 +422,20 @@ public class ClassHandler {
                                  Map<String, Type> staticFinalFieldNameTypeMap,
                                  Set<String> fieldWithGetMethodNameSet,
                                  Set<String> fieldWithSetMethodNameSet) throws IOException {
-        methodNumCounter.addAndGet();
-
         // 生成格式化后的方法参数
         String methodArgTypes = JavaCG2ClassMethodUtil.getArgTypeStr(method.getArgumentTypes());
         // 生成格式化后的完整方法
         String fullMethod = JavaCG2ClassMethodUtil.formatFullMethod(className, method.getName(), methodArgTypes);
 
+        if (javaCG2ElManager.checkIgnoreParseMethod(fullMethod)) {
+            logger.debug("跳过解析方法 {}", fullMethod);
+            return true;
+        }
+
+        methodNumCounter.addAndGet();
+
         long startTime = 0;
-        if (javaCG2ConfInfo.isLogMethodSpendTime()) {
+        if (logMethodSpendTime) {
             startTime = System.currentTimeMillis();
             // 记录当前处理的类名、方法
             logMethodSpendTimeWriter.write(classFileName + JavaCG2Constants.FLAG_TAB + fullMethod);
@@ -458,69 +475,73 @@ public class ClassHandler {
         MethodGen mg = new MethodGen(method, className, cpg);
         recordMethodArgument(fullMethod, mg, methodArgsGenericsTypeSeqSet);
 
-        // 处理方法调用
-        MethodHandler4Invoke methodHandler4Invoke = new MethodHandler4Invoke(method,
-                mg,
-                javaClass,
-                javaCG2ConfInfo,
-                methodArgTypes,
-                fullMethod,
-                useSpringBeanByAnnotationHandler,
-                callIdCounter,
-                classJarNum);
-        methodHandler4Invoke.setFailCounter(failCounter);
-        methodHandler4Invoke.setRunnableImplClassMap(runnableImplClassMap);
-        methodHandler4Invoke.setCallableImplClassMap(callableImplClassMap);
-        methodHandler4Invoke.setTransactionCallbackImplClassMap(transactionCallbackImplClassMap);
-        methodHandler4Invoke.setTransactionCallbackWithoutResultChildClassMap(transactionCallbackWithoutResultChildClassMap);
-        methodHandler4Invoke.setThreadChildClassMap(threadChildClassMap);
-        methodHandler4Invoke.setExtensionsManager(extensionsManager);
-        methodHandler4Invoke.setMethodCallWriter(methodCallWriter);
-        methodHandler4Invoke.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
-        methodHandler4Invoke.setMethodAnnotationWriter(methodAnnotationWriter);
-        methodHandler4Invoke.setMethodArgAnnotationWriter(methodArgAnnotationWriter);
-        methodHandler4Invoke.setMethodLineNumberWriter(methodLineNumberWriter);
-        methodHandler4Invoke.setClassAndJarNum(classAndJarNum);
+        boolean success = true;
+        // 判断当前方法调用是否需要忽略
+        if (!javaCG2ElManager.checkIgnoreMethodCallByEr(fullMethod)) {
+            logger.debug("跳过解析方法调用 {}", fullMethod);
+            // 处理方法调用
+            MethodHandler4Invoke methodHandler4Invoke = new MethodHandler4Invoke(method,
+                    mg,
+                    javaClass,
+                    javaCG2InputAndOutput,
+                    methodArgTypes,
+                    fullMethod,
+                    useSpringBeanByAnnotationHandler,
+                    callIdCounter,
+                    classJarNum);
+            methodHandler4Invoke.setFailCounter(failCounter);
+            methodHandler4Invoke.setRunnableImplClassMap(runnableImplClassMap);
+            methodHandler4Invoke.setCallableImplClassMap(callableImplClassMap);
+            methodHandler4Invoke.setTransactionCallbackImplClassMap(transactionCallbackImplClassMap);
+            methodHandler4Invoke.setTransactionCallbackWithoutResultChildClassMap(transactionCallbackWithoutResultChildClassMap);
+            methodHandler4Invoke.setThreadChildClassMap(threadChildClassMap);
+            methodHandler4Invoke.setExtensionsManager(extensionsManager);
+            methodHandler4Invoke.setMethodCallWriter(methodCallWriter);
+            methodHandler4Invoke.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
+            methodHandler4Invoke.setMethodAnnotationWriter(methodAnnotationWriter);
+            methodHandler4Invoke.setMethodArgAnnotationWriter(methodArgAnnotationWriter);
+            methodHandler4Invoke.setMethodLineNumberWriter(methodLineNumberWriter);
+            methodHandler4Invoke.setClassAndJarNum(classAndJarNum);
 
-        if (javaCG2ConfInfo.isParseMethodCallTypeValue()) {
-            methodHandler4Invoke.setParseMethodCallTypeValueFlag(true);
-            methodHandler4Invoke.setEnumInitArgFieldWriter(enumInitArgFieldWriter);
-            methodHandler4Invoke.setEnumInitAssignInfoWriter(enumInitAssignInfoWriter);
-            methodHandler4Invoke.setMethodCallInfoWriter(methodCallInfoWriter);
-            methodHandler4Invoke.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
-            methodHandler4Invoke.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
-            methodHandler4Invoke.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
-            methodHandler4Invoke.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
-            methodHandler4Invoke.setMethodCatchWriter(methodCatchWriter);
-            methodHandler4Invoke.setMethodFinallyWriter(methodFinallyWriter);
-            methodHandler4Invoke.setMethodThrowWriter(methodThrowWriter);
-            methodHandler4Invoke.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
-            methodHandler4Invoke.setGetMethodWriter(getMethodWriter);
-            methodHandler4Invoke.setSetMethodWriter(setMethodWriter);
-            methodHandler4Invoke.setMethodReturnConstValueWriter(methodReturnConstValueWriter);
-            methodHandler4Invoke.setMethodReturnFieldInfoWriter(methodReturnFieldInfoWriter);
-            methodHandler4Invoke.setRecordedSetMethodSet(recordedSetMethodSet);
-            methodHandler4Invoke.setNonStaticFieldNameTypeMap(nonStaticFieldNameTypeMap);
-            methodHandler4Invoke.setNonStaticFieldNameGenericsTypeMap(nonStaticFieldNameGenericsTypeMap);
-            methodHandler4Invoke.setFieldWithGetMethodNameSet(fieldWithGetMethodNameSet);
-            methodHandler4Invoke.setFieldWithSetMethodNameSet(fieldWithSetMethodNameSet);
-            if (JavaCG2CommonNameConstants.METHOD_NAME_CLINIT.equals(method.getName())) {
-                // 当前方法为静态代码块
-                methodHandler4Invoke.setInClinitMethod(true);
-                methodHandler4Invoke.setSfFieldInvokeInstructionMap(sfFieldInvokeInstructionMap);
-                methodHandler4Invoke.setStaticFinalFieldNameTypeMap(staticFinalFieldNameTypeMap);
+            if (javaCG2ConfInfo.isParseMethodCallTypeValue()) {
+                methodHandler4Invoke.setParseMethodCallTypeValueFlag(true);
+                methodHandler4Invoke.setEnumInitArgFieldWriter(enumInitArgFieldWriter);
+                methodHandler4Invoke.setEnumInitAssignInfoWriter(enumInitAssignInfoWriter);
+                methodHandler4Invoke.setMethodCallInfoWriter(methodCallInfoWriter);
+                methodHandler4Invoke.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
+                methodHandler4Invoke.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
+                methodHandler4Invoke.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
+                methodHandler4Invoke.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
+                methodHandler4Invoke.setMethodCatchWriter(methodCatchWriter);
+                methodHandler4Invoke.setMethodFinallyWriter(methodFinallyWriter);
+                methodHandler4Invoke.setMethodThrowWriter(methodThrowWriter);
+                methodHandler4Invoke.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
+                methodHandler4Invoke.setGetMethodWriter(getMethodWriter);
+                methodHandler4Invoke.setSetMethodWriter(setMethodWriter);
+                methodHandler4Invoke.setMethodReturnConstValueWriter(methodReturnConstValueWriter);
+                methodHandler4Invoke.setMethodReturnFieldInfoWriter(methodReturnFieldInfoWriter);
+                methodHandler4Invoke.setRecordedSetMethodSet(recordedSetMethodSet);
+                methodHandler4Invoke.setNonStaticFieldNameTypeMap(nonStaticFieldNameTypeMap);
+                methodHandler4Invoke.setNonStaticFieldNameGenericsTypeMap(nonStaticFieldNameGenericsTypeMap);
+                methodHandler4Invoke.setFieldWithGetMethodNameSet(fieldWithGetMethodNameSet);
+                methodHandler4Invoke.setFieldWithSetMethodNameSet(fieldWithSetMethodNameSet);
+                if (JavaCG2CommonNameConstants.METHOD_NAME_CLINIT.equals(method.getName())) {
+                    // 当前方法为静态代码块
+                    methodHandler4Invoke.setInClinitMethod(true);
+                    methodHandler4Invoke.setSfFieldInvokeInstructionMap(sfFieldInvokeInstructionMap);
+                    methodHandler4Invoke.setStaticFinalFieldNameTypeMap(staticFinalFieldNameTypeMap);
+                }
+                if (javaCG2ConfInfo.isFirstParseInitMethodType()) {
+                    methodHandler4Invoke.setNonStaticFieldPossibleTypes(nonStaticFieldPossibleTypes);
+                }
+                if (javaCG2ConfInfo.isAnalyseFieldRelationship()) {
+                    methodHandler4Invoke.setFieldRelationshipWriter(fieldRelationshipWriter);
+                    methodHandler4Invoke.setFieldRelationshipCounter(fieldRelationshipCounter);
+                }
             }
-            if (javaCG2ConfInfo.isFirstParseInitMethodType()) {
-                methodHandler4Invoke.setNonStaticFieldPossibleTypes(nonStaticFieldPossibleTypes);
-            }
-            if (javaCG2ConfInfo.isAnalyseFieldRelationship()) {
-                methodHandler4Invoke.setFieldRelationshipWriter(fieldRelationshipWriter);
-                methodHandler4Invoke.setFieldRelationshipCounter(fieldRelationshipCounter);
-            }
+            success = methodHandler4Invoke.handleMethod();
         }
-
-        boolean success = methodHandler4Invoke.handleMethod();
-        if (javaCG2ConfInfo.isLogMethodSpendTime()) {
+        if (logMethodSpendTime) {
             long spendTime = System.currentTimeMillis() - startTime;
             // 记录方法处理耗时
             logMethodSpendTimeWriter.write(JavaCG2Constants.FLAG_TAB + spendTime + JavaCG2Constants.NEW_LINE);

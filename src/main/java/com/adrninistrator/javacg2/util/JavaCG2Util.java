@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg2.util;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
+import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -84,7 +85,7 @@ public class JavaCG2Util {
      * @return
      */
     public static boolean isStringEndWithArrayIgnoreCase(String data, String[] array) {
-        if (data == null || array == null || array.length == 0) {
+        if (data == null || array == null) {
             return false;
         }
 
@@ -105,56 +106,6 @@ public class JavaCG2Util {
     public static String currentTime() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss.SSS");
         return sdf.format(new Date());
-    }
-
-    /**
-     * 判断是否需要跳过当前类的处理，白名单方式
-     *
-     * @param className
-     * @param needHandlePackageSet
-     * @return true: 跳过 false: 不跳过
-     */
-    public static boolean checkSkipClassWhiteList(String className, Set<String> needHandlePackageSet) {
-        if (isCollectionEmpty(needHandlePackageSet)) {
-            return false;
-        }
-        for (String needHandlePackage : needHandlePackageSet) {
-            if (StringUtils.startsWith(className, needHandlePackage)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * 判断是否需要跳过当前类的处理，黑名单方式
-     *
-     * @param className
-     * @param ignoreClassNameSet
-     * @return true: 跳过 false: 不跳过
-     */
-    public static boolean checkSkipClassBlackList(String className, Set<String> ignoreClassNameSet) {
-        if (isCollectionEmpty(ignoreClassNameSet)) {
-            return false;
-        }
-        return ignoreClassNameSet.contains(className);
-    }
-
-    /**
-     * 判断合并jar包、目录时，当前处理的文件的类型是否需要处理
-     *
-     * @param fileName
-     * @param jarDirMergeFileTypeSet
-     * @return true: 需要处理 false: 不需要处理
-     */
-    public static boolean checkMergeFileType(String fileName, Set<String> jarDirMergeFileTypeSet) {
-        String fileNameLower = fileName.toLowerCase();
-        for (String jarDirMergeFileType : jarDirMergeFileTypeSet) {
-            if (fileNameLower.endsWith(jarDirMergeFileType)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -272,14 +223,14 @@ public class JavaCG2Util {
     }
 
     /**
-     * 从字符串str中查找最后的标记字符串flag之后的字符串
+     * 从字符串str中查找最后的标记字符串flag之后的字符串，若源字符串中没有标记字符串时，返回整个源字符串
      *
      * @param str  源字符串
      * @param flag 标记字符串
      * @return
      */
     public static String getSubStringAfterLast(String str, String flag) {
-        // 不使用StringUtils.substringAfterLast，因为当没有指定的标记字符串时结果为空
+        // 不使用StringUtils.substringAfterLast，因为当源字符串没有标记字符串时结果为空
         int lastIndex = StringUtils.lastIndexOf(str, flag);
         if (lastIndex == -1) {
             return str;
@@ -332,6 +283,69 @@ public class JavaCG2Util {
         logger.info("当前不是调试模式");
         DEBUG_MODE = Boolean.FALSE;
         return false;
+    }
+
+    /**
+     * 将毫秒数转换为秒
+     *
+     * @param spendTime
+     * @return
+     */
+    public static double getSecondsFromMilli(long spendTime) {
+        return spendTime / 1000.0D;
+    }
+
+    /**
+     * 获得经过的时间秒数
+     *
+     * @param startTime
+     * @return
+     */
+    public static double getSpendSeconds(long startTime) {
+        return getSecondsFromMilli(System.currentTimeMillis() - startTime);
+    }
+
+    /**
+     * 将源列表中的元素添加到目标列表中
+     * 忽略空的元素，忽略重复的元素
+     *
+     * @param srcList
+     * @param destList
+     */
+    public static void addList2List(List<String> srcList, List<String> destList) {
+        if (srcList == null || destList == null) {
+            throw new JavaCG2RuntimeException("参数不允许为空");
+        }
+        for (String src : srcList) {
+            if (StringUtils.isBlank(src) || destList.contains(src)) {
+                continue;
+            }
+            destList.add(src);
+        }
+    }
+
+    /**
+     * 获取配置文件的根目录
+     *
+     * @return
+     */
+    public static String getInputRootPath() {
+        return getDirPathInJvmOptions(JavaCG2Constants.PROPERTY_INPUT_ROOT_PATH);
+    }
+
+    /**
+     * 获取对象用于打印的字符串值
+     *
+     * @param value
+     * @return
+     */
+    public static String getObjectPrintValue(Object value) {
+        if (value == null) {
+            return "";
+        } else if (value instanceof String) {
+            return (String) value;
+        }
+        return value.toString();
     }
 
     private JavaCG2Util() {

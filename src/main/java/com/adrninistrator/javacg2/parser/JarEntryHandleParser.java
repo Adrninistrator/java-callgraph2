@@ -1,12 +1,14 @@
 package com.adrninistrator.javacg2.parser;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
+import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
-import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.dto.classes.InnerClassInfo;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
+import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg2.dto.type.JavaCG2GenericsType;
+import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg2.handler.ClassHandler;
 import com.adrninistrator.javacg2.spring.UseSpringBeanByAnnotationHandler;
@@ -43,6 +45,17 @@ import java.util.Map;
 public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     private static final Logger logger = LoggerFactory.getLogger(JarEntryHandleParser.class);
+
+    private final JavaCG2ElManager javaCG2ElManager;
+
+    /*
+        记录已处理过的类名
+        key
+            类名
+        value
+            处理次数
+     */
+    private final Map<String, JavaCG2Counter> handledClassNameTimesMap = new HashMap<>();
 
     private UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
 
@@ -95,15 +108,6 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     // 扩展类管理类
     private ExtensionsManager extensionsManager;
 
-    /*
-        记录已处理过的类名
-        key
-            类名
-        value
-            处理次数
-     */
-    private final Map<String, JavaCG2Counter> handledClassNameTimesMap = new HashMap<>();
-
     private JavaCG2Counter callIdCounter;
     private JavaCG2Counter classNumCounter;
     private JavaCG2Counter methodNumCounter;
@@ -112,8 +116,9 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     private ClassAndJarNum classAndJarNum;
 
-    public JarEntryHandleParser(JavaCG2ConfInfo javaCG2ConfInfo, Map<String, Integer> jarPathNumMap) {
-        super(javaCG2ConfInfo, jarPathNumMap);
+    public JarEntryHandleParser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar) {
+        super(javaCG2InputAndOutput, onlyOneJar);
+        javaCG2ElManager = javaCG2InputAndOutput.getJavaCG2ElManager();
     }
 
     @Override
@@ -124,10 +129,6 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         }
 
         JavaClass javaClass = new ClassParser(zipInputStream, jarEntryPath).parse();
-        // 判断是否忽略当前类
-        if (ignoreCurrentClass(javaClass.getClassName())) {
-            return true;
-        }
         // 处理jar包中的class文件
         return handleClassEntry(javaClass, jarEntryPath);
     }
@@ -135,12 +136,11 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     @Override
     protected boolean handleClassEntry(JavaClass javaClass, String jarEntryPath) throws IOException {
         // 处理Java类
-        return handleJavaClass(javaClass, jarEntryPath);
-    }
-
-    // 处理Java类
-    private boolean handleJavaClass(JavaClass javaClass, String jarEntryPath) throws IOException {
         String className = javaClass.getClassName();
+        if (javaCG2ElManager.checkIgnoreParseClass(className)) {
+            logger.debug("跳过解析类 {}", className);
+            return true;
+        }
 
         JavaCG2Counter classHandledTimes = handledClassNameTimesMap.computeIfAbsent(className, k -> new JavaCG2Counter());
         // 判断是否为重复的类
@@ -154,13 +154,13 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         logger.debug("处理Class: {}", className);
 
         int classJarNum;
-        if (jarPathNumMap.size() == 1) {
+        if (onlyOneJar) {
             classJarNum = JavaCG2Constants.JAR_NUM_MIN;
         } else {
             classJarNum = JavaCG2JarUtil.getJarNumFromDirName(jarEntryPath);
         }
 
-        ClassHandler classHandler = new ClassHandler(javaClass, jarEntryPath, javaCG2ConfInfo, classJarNum);
+        ClassHandler classHandler = new ClassHandler(javaClass, jarEntryPath, javaCG2InputAndOutput, classJarNum);
         classHandler.setUseSpringBeanByAnnotationHandler(useSpringBeanByAnnotationHandler);
         classHandler.setRunnableImplClassMap(runnableImplClassMap);
         classHandler.setCallableImplClassMap(callableImplClassMap);
@@ -247,7 +247,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     // 将处理失败的类保存到目录中
     private void saveHandleFailClass(JavaClass javaClass) {
-        String saveClassFilePath = javaCG2ConfInfo.getUsedOutputDirPath() + JavaCG2Constants.DIR_FAIL_CLASSES + File.separator +
+        String saveClassFilePath = javaCG2InputAndOutput.getJavaCG2ConfInfo().getUsedOutputDirPath() + JavaCG2DirEnum.IDE_FAIL_CLASSES + File.separator +
                 javaClass.getClassName() + JavaCG2Constants.EXT_CLASS;
         File saveClassFile = new File(saveClassFilePath);
         logger.info("将处理失败的class文件保存到文件 {}", saveClassFile.getAbsolutePath());

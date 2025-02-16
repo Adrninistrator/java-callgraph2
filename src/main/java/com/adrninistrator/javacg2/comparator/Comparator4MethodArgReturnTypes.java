@@ -9,14 +9,14 @@ import java.util.Comparator;
  * @date 2022/11/26
  * @description:
  */
-public class MethodArgReturnTypesComparator implements Comparator<MethodArgReturnTypes> {
-    private static final MethodArgReturnTypesComparator INSTANCE = new MethodArgReturnTypesComparator();
+public class Comparator4MethodArgReturnTypes implements Comparator<MethodArgReturnTypes> {
+    private static final Comparator4MethodArgReturnTypes INSTANCE = new Comparator4MethodArgReturnTypes();
 
-    public static MethodArgReturnTypesComparator getInstance() {
+    public static Comparator4MethodArgReturnTypes getInstance() {
         return INSTANCE;
     }
 
-    private MethodArgReturnTypesComparator() {
+    private Comparator4MethodArgReturnTypes() {
     }
 
     @Override
