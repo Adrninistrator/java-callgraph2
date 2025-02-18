@@ -1,16 +1,24 @@
-# 表达式语言配置文件说明
-当前文件为表达式语言示例配置文件，使用 aviator 表达式语言组件，语法与 Java 类似
+# 表达式配置文件说明
+当前文件为表达式示例配置文件，使用 aviator 表达式组件，语法与 Java 类似
 使用文档可参考 https://www.yuque.com/boyan-avfmj/aviatorscript
-每个配置文件的表达式语言的执行结果类型需要为 boolean ，即结果要么是 true ，要么是 false
-通过表达式语言的执行结果，决定配置文件所对应场景下执行什么操作
+每个配置文件的表达式的执行结果类型需要为 boolean ，即结果要么是 true ，要么是 false
+通过表达式的执行结果，决定配置文件所对应场景下执行什么操作
 配置文件中有说明允许使用的变量信息
 
-# 表达式语言示例
+# 表达式示例
 例如在 _javacg2_parse_class_method_switch/parse_ignore_class.av 配置文件中指定以下内容
 package_name == 'a.b' && string.endsWith(class_name, 'Test')
 代表在解析类时，假如类的包名等于 'a.b'，且类的简单类名以 'Test' 结尾，则跳过解析对应的类
 
-# 表达式语言语法 - aviator 默认支持
+# 表达式语法 - aviator 默认支持
+
+## 返回固定值
+
+### true
+若表达式配置为“true”，则表达式执行结果固定为 true
+
+### false
+若表达式配置为“false”，或未指定表达式，则表达式执行结果固定为 false
 
 ## 字符串处理
 除判断字符串是否等于指定值外，需要使用 aviator 提供的 string.xxx() 函数对字符串进行判断
