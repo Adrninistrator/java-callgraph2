@@ -190,10 +190,59 @@ method_return_field_info    方法返回的字段（含枚举）
 |---|---|
 |com.adrninistrator.javacg2.conf.BaseConfigureWrapper:setConfig|com.adrninistrator.javacg2.conf.BaseConfigureWrapper:setMainConfig|
 
-### 1.15.3. 配置参数使用方式修改
+### 1.15.3. 删除配置文件
 
-文档暂未完成
+通过以下新增的配置文件能够达到相同的控制效果
 
-### 1.15.4. 支持解析 .jar 文件中的 .jar 文件
+```
+_javacg2_config/ignore_class_name.properties
+_javacg2_config/ignore_jar_file_keyword.properties
+_javacg2_config/ignore_jar_file_name.properties
+_javacg2_config/jar_dir_merge_file_type.properties
+_javacg2_config/packages.properties
+```
+
+### 1.15.4. 增加配置文件
+
+#### 1.15.4.1. _javacg2_merge_file_switch 目录
+
+用于控制在合并 jar 文件时需要忽略特定内容的开关，包括目录中的 class、jar、war 文件，jar/war 文件中的 class、jar 文件，目录、jar/war 文件中的其他类型文件等
+
+每个文件用于控制以上一种场景，使用表达式语言方式配置：
+
+```
+ignore_class_in_dir.av
+ignore_class_in_jar_war.av
+ignore_jar_in_dir.av
+ignore_jar_in_jar_war.av
+ignore_other_in_dir.av
+ignore_other_in_jar_war.av
+ignore_war_in_dir.av
+```
+
+#### 1.15.4.2. _javacg2_parse_class_method_switch 目录
+
+控制解析类及方法时是否需要忽略的开关
+
+每个文件用于控制以上一种场景，使用表达式语言方式配置：
+
+```
+parse_ignore_class.av
+parse_ignore_method.av
+```
+
+#### 1.15.4.3. _javacg2_parse_method_call_switch 目录
+
+控制解析方法调用时是否需要忽略的开关，包括仅通过被调用方法判断、仅通过调用方法判断、通过调用方法与被调用方法判断
+
+每个文件用于控制以上一种场景，使用表达式语言方式配置：
+
+```
+parse_ignore_method_call_ee.av
+parse_ignore_method_call_er.av
+parse_ignore_method_call_er_ee.av
+```
+
+### 1.15.5. 支持解析 .jar 文件中的 .jar 文件
 
 支持解析 .jar 文件中的 .jar 文件，例如 spring-boot 等打包方式生成的 .jar 文件中 BOOT-INF/lib 目录中的 .jar 文件
