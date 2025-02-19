@@ -208,6 +208,8 @@ _javacg2_config/packages.properties
 
 用于控制在合并 jar 文件时需要忽略特定内容的开关，包括目录中的 class、jar、war 文件，jar/war 文件中的 class、jar 文件，目录、jar/war 文件中的其他类型文件等
 
+`在 _javacg2_config/jar_dir.properties 中指定的配置包含多个 jar/war/class 文件时，仅当某个 jar/war/class 文件会被合并到最终用于解析析的 jar 文件时，才会被解析`
+
 每个文件用于控制以上一种场景，使用表达式语言方式配置：
 
 ```
