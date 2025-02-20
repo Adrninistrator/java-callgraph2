@@ -305,6 +305,13 @@ public class MergeJarHandler {
             }
 
             String jarEntryPath = fileHeader.getFileName();
+
+            // 判断当前文件是否需要跳过
+            if (javaCG2ElManager.checkIgnoreMergeFileInJarWar(jarEntryPath)) {
+                logger.debug("合并jar文件时跳过jar/war文件中的文件 {} {}", jarWarCanonicalPath, jarEntryPath);
+                continue;
+            }
+
             if (JavaCG2FileUtil.checkJarFile(jarEntryPath) && handleJarInJar) {
                 // 处理jar/war文件中的jar文件
                 // 不能使用try-with-resource，否则流关闭后后续无法再读取
@@ -315,12 +322,6 @@ public class MergeJarHandler {
                 // 获得生成的jar文件中的目录名称
                 String dirNameInJar = JavaCG2JarUtil.genDirNameInJar(jarNum, jarFileName);
                 doHandleJarFile(innerZipInputStream, null, dirNameInJar, targetZos, false);
-            }
-
-            // 判断当前文件是否需要跳过
-            if (javaCG2ElManager.checkIgnoreMergeFileInJarWar(jarEntryPath)) {
-                logger.debug("合并jar文件时跳过jar/war文件中的文件 {} {}", jarWarCanonicalPath, jarEntryPath);
-                continue;
             }
 
             // 处理jar/war文件中的一个文件
