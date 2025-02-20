@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * @author adrninistrator
  * @date 2025/1/27
- * @description: 表达式语言处理类
+ * @description: 表达式处理类
  */
 public class ElHandler {
 
@@ -34,13 +34,13 @@ public class ElHandler {
     // 表达式文本
     private final String expressionText;
 
-    // 表达式语言允许的变量配置列表
+    // 表达式允许的变量配置列表
     private final List<ElVariableConfig> elAllowedVariableConfigList = new ArrayList<>();
 
-    // 表达式语言允许的变量名称Set
+    // 表达式允许的变量名称Set
     private final Set<String> elAllowedVariableNameSet = new HashSet<>();
 
-    // 表达式语言有指定的变量名称Set
+    // 表达式有指定的变量名称Set
     private final Set<String> elSpecifiedVariableNameSet = new HashSet<>();
 
     // 表达式
@@ -48,17 +48,17 @@ public class ElHandler {
 
     /**
      * @param expressionText         表达式文本
-     * @param elAllowedVariableEnums 允许的表达式语言变量枚举
+     * @param elAllowedVariableEnums 允许的表达式变量枚举
      */
     public ElHandler(String expressionText, ElAllowedVariableInterface[] elAllowedVariableEnums) {
         this.expressionText = expressionText;
         if (StringUtils.isBlank(expressionText)) {
-            // 若表达式语言文本为空，则不创建 Expression 对象
+            // 若表达式文本为空，则不创建 Expression 对象
             return;
         }
 
         if (ArrayUtils.isEmpty(elAllowedVariableEnums)) {
-            throw new JavaCG2RuntimeException("允许的表达式语言变量信息不能为空");
+            throw new JavaCG2RuntimeException("允许的表达式变量信息不能为空");
         }
 
         // 检查指定的变量名称是否允许使用
@@ -93,9 +93,9 @@ public class ElHandler {
     }
 
     /**
-     * 增加表达式语言变量配置
+     * 增加表达式变量配置
      *
-     * @param elAllowedVariableEnum 允许使用表达式语言的变量枚举
+     * @param elAllowedVariableEnum 允许使用表达式的变量枚举
      */
     protected void addElVariableConfig(ElAllowedVariableInterface elAllowedVariableEnum) {
         if (!elAllowedVariableNameSet.add(elAllowedVariableEnum.getVariableName())) {
@@ -110,7 +110,7 @@ public class ElHandler {
     }
 
     /**
-     * 检查是否有在表达式语言中指定变量名称
+     * 检查是否有在表达式中指定变量名称
      *
      * @param elVariable 变量枚举
      * @return
@@ -140,7 +140,7 @@ public class ElHandler {
     }
 
     /**
-     * 生成表达式语言用于执行的Map
+     * 生成表达式用于执行的Map
      *
      * @return null: 未指定表达式文本 非null: 有指定表达式文本
      */

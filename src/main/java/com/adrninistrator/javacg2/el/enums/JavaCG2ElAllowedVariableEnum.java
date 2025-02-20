@@ -7,7 +7,7 @@ import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface
 /**
  * @author adrninistrator
  * @date 2025/1/29
- * @description: 允许使用表达式语言的变量枚举
+ * @description: 允许使用表达式的变量枚举
  */
 public enum JavaCG2ElAllowedVariableEnum implements ElAllowedVariableInterface {
 
@@ -18,7 +18,7 @@ public enum JavaCG2ElAllowedVariableEnum implements ElAllowedVariableInterface {
     EAVE_MF_FILE_PATH_IN_JAR_WAR("file_path", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
             new String[]{"jar/war文件中的文件相对路径", "相对根目录的路径", "以斜杠/为分隔符，不以斜杠/开头"},
             new String[]{"a/b/c.jar", "a/b/c.xml"}),
-    EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR("file_path", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
+    EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR("class_file_path", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
             new String[]{"jar/war文件中的class文件的相对路径", "相对根目录，或WEB-INF/classes、BOOT-INF/classes目录的路径", "以斜杠/为分隔符，不以斜杠/开头"},
             new String[]{"a/b/c.class"}),
     EAVE_MF_FILE_NAME("file_name", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,

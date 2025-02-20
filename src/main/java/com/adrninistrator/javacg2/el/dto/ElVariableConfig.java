@@ -3,7 +3,7 @@ package com.adrninistrator.javacg2.el.dto;
 /**
  * @author adrninistrator
  * @date 2025/1/27
- * @description: 表达式语言变量配置
+ * @description: 表达式变量配置
  */
 public class ElVariableConfig {
 

@@ -14,15 +14,15 @@ import java.util.Map;
 /**
  * @author adrninistrator
  * @date 2025/2/2
- * @description: 表达式语言管理类基类
+ * @description: 表达式管理类基类
  */
 public abstract class ElManager {
 
     private static final Logger logger = LoggerFactory.getLogger(ElManager.class);
     /*
-            保存表达式语言处理类的Map
+            保存表达式处理类的Map
             key     配置文件名称
-            value   表达式语言处理类
+            value   表达式处理类
          */
     private final Map<String, ElHandler> elHandlerMap = new HashMap<>();
 
@@ -37,7 +37,7 @@ public abstract class ElManager {
             ElHandler elHandler = configureWrapper.genElHandler(elConfig);
             elHandlerMap.put(fileName, elHandler);
 
-            // 检查表达式语言
+            // 检查表达式
             try {
                 ElChecker elChecker = elCheckerClass.newInstance();
                 elChecker.check(this, elConfig);
@@ -51,7 +51,7 @@ public abstract class ElManager {
     public ElHandler getElHandlerMap(ElConfigInterface elConfig) {
         ElHandler elHandler = elHandlerMap.get(elConfig.getKey());
         if (elHandler == null) {
-            throw new JavaCG2RuntimeException("未找到对应的表达式语言处理类 " + elConfig.getKey());
+            throw new JavaCG2RuntimeException("未找到对应的表达式处理类 " + elConfig.getKey());
         }
         return elHandler;
     }

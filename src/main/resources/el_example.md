@@ -7,7 +7,7 @@
 
 # 表达式示例
 例如在 _javacg2_parse_class_method_switch/parse_ignore_class.av 配置文件中指定以下内容
-package_name == 'a.b' && string.endsWith(class_name, 'Test')
+package_name == 'a.b' && string.endsWith(simple_class_name, 'Test')
 代表在解析类时，假如类的包名等于 'a.b'，且类的简单类名以 'Test' 结尾，则跳过解析对应的类
 
 # 表达式语法 - aviator 默认支持

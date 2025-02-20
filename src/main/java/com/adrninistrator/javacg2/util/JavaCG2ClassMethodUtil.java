@@ -174,15 +174,29 @@ public class JavaCG2ClassMethodUtil {
     }
 
     /**
-     * 拼接类名与字段名
+     * 生成类名与字段名
      *
      * @param className
      * @param fieldName
      * @return
      */
     public static String genClassAndField(String className, String fieldName) {
-        return className + JavaCG2Constants.SEPARATOR_CLASS_FIELD + fieldName;
+        return className + JavaCG2Constants.FLAG_COLON + fieldName;
     }
+
+    /**
+     * 生成调用类中字段的完整方法
+     *
+     * @param className
+     * @param fieldName
+     * @param methodName
+     * @param argTypes
+     * @return
+     */
+    public static String formatClassFieldMethodArgTypes(String className, String fieldName, String methodName, Type[] argTypes) {
+        return formatFullMethod(genClassAndField(className, fieldName), methodName, argTypes);
+    }
+
 
     /**
      * 获取简单类名首字母小写后的结果
@@ -226,13 +240,23 @@ public class JavaCG2ClassMethodUtil {
     }
 
     /**
+     * 获得方法参数类型数组
+     *
+     * @param methodArgTypes
+     * @return
+     */
+    public static String[] getMethodArgTypeArray(String methodArgTypes) {
+        return StringUtils.splitPreserveAllTokens(methodArgTypes, JavaCG2Constants.FLAG_COMMA);
+    }
+
+    /**
      * 获得方法参数数量
      *
      * @param fullMethod
      * @return
      */
     public static int getMethodArgNum(String fullMethod) {
-        String[] argTypes = StringUtils.splitPreserveAllTokens(getMethodArgTypes(fullMethod), JavaCG2Constants.FLAG_COMMA);
+        String[] argTypes = getMethodArgTypeArray(getMethodArgTypes(fullMethod));
         return argTypes.length;
     }
 

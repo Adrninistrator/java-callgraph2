@@ -15,7 +15,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author adrninistrator
@@ -127,9 +129,13 @@ public abstract class BaseGenConfFromEnum {
                     for (String description : elConfig.getDescriptions()) {
                         writeAVCommentLine(writer, "（范围）" + description);
                     }
-                    writeAVCommentLine(writer, "（表达式语言使用示例文件）请参考 " + elExampleName);
+                    writeAVCommentLine(writer, "（表达式使用示例文件）请参考 " + elExampleName);
                     writeAVCommentLine(writer, "（允许使用的变量）{" + StringUtils.joinWith("} {", "变量名称", "变量类型", "变量描述", "变量示例") + "}");
+                    Set<String> allowedVariableNameSet = new HashSet<>();
                     for (ElAllowedVariableInterface elAllowedVariable : elConfig.getElAllowedVariableEnums()) {
+                        if (!allowedVariableNameSet.add(elAllowedVariable.getVariableName())) {
+                            throw new JavaCG2RuntimeException("存在重复的变量名称 " + elAllowedVariable.getVariableName());
+                        }
                         String descriptions = StringUtils.join(elAllowedVariable.getDescriptions(), ", ");
                         String valueExamples = StringUtils.join(elAllowedVariable.getValueExamples(), ", ");
                         writeAVCommentLine(writer, "{" + StringUtils.joinWith("} {", elAllowedVariable.getVariableName(), elAllowedVariable.getType(), descriptions,
@@ -145,15 +151,20 @@ public abstract class BaseGenConfFromEnum {
 
     private String[] genElExampleDescriptions() {
         return new String[]{
-                "# 表达式语言配置文件说明",
-                "当前文件为表达式语言示例配置文件，使用 aviator 表达式语言组件，语法与 Java 类似",
+                "# 表达式配置文件说明",
+                "当前文件为表达式示例配置文件，使用 aviator 表达式组件，语法与 Java 类似",
                 "使用文档可参考 https://www.yuque.com/boyan-avfmj/aviatorscript",
-                "每个配置文件的表达式语言的执行结果类型需要为 boolean ，即结果要么是 true ，要么是 false",
-                "通过表达式语言的执行结果，决定配置文件所对应场景下执行什么操作",
+                "每个配置文件的表达式的执行结果类型需要为 boolean ，即结果要么是 true ，要么是 false",
+                "通过表达式的执行结果，决定配置文件所对应场景下执行什么操作",
                 "配置文件中有说明允许使用的变量信息",
-                JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式语言示例",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式示例",
                 chooseElExampleText(),
-                JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式语言语法 - aviator 默认支持",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式语法 - aviator 默认支持",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "## 返回固定值",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "### true",
+                "若表达式配置为“true”，则表达式执行结果固定为 true",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "### false",
+                "若表达式配置为“false”，或未指定表达式，则表达式执行结果固定为 false",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "## 字符串处理",
                 "除判断字符串是否等于指定值外，需要使用 aviator 提供的 string.xxx() 函数对字符串进行判断",
                 "字符串常量可以使用单引号包含，如 'abc'",

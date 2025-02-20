@@ -5,4 +5,4 @@
 ## （允许使用的变量）{变量名称} {变量类型} {变量描述} {变量示例}
 ## {file_path} {String} {jar/war文件中的文件相对路径, 相对根目录的路径, 以斜杠/为分隔符，不以斜杠/开头} {a/b/c.jar, a/b/c.xml}
 ## {file_name} {String} {文件名称} {a.class, a.xml}
-## {file_path} {String} {jar/war文件中的class文件的相对路径, 相对根目录，或WEB-INF/classes、BOOT-INF/classes目录的路径, 以斜杠/为分隔符，不以斜杠/开头} {a/b/c.class}
+## {class_file_path} {String} {jar/war文件中的class文件的相对路径, 相对根目录，或WEB-INF/classes、BOOT-INF/classes目录的路径, 以斜杠/为分隔符，不以斜杠/开头} {a/b/c.class}

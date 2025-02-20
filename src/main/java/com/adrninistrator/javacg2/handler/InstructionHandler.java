@@ -1149,7 +1149,7 @@ public class InstructionHandler {
                 // 被调用对象属于静态字段
                 StaticFieldElement staticFieldElement = (StaticFieldElement) objectElement;
                 variableElement = new StaticFieldMethodCallElement(returnType.toString(), 0, staticFieldElement.getClassName(),
-                        staticFieldElement.getName(), calleeMethodName);
+                        staticFieldElement.getName(), calleeMethodName, argTypes);
             } else {
                 variableElement = new VariableElement(returnType.toString());
             }

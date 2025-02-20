@@ -16,10 +16,10 @@ import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 /**
  * @author adrninistrator
  * @date 2025/1/28
- * @description: 使用表达式语言的配置文件枚举
+ * @description: 使用表达式的配置文件枚举
  */
 public enum JavaCG2ElConfigEnum implements ElConfigInterface {
-    ECE_EXAMPLE("el_example" + JavaCG2Constants.EXT_MD, new String[]{"表达式语言示例文件"}, null, null),
+    ECE_EXAMPLE("el_example" + JavaCG2Constants.EXT_MD, new String[]{"表达式示例文件"}, null, null),
     ECE_MERGE_FILE_IGNORE_JAR_IN_DIR(JavaCG2DirEnum.IDE_MERGE_FILE_SWITCH.getDirName() + "/ignore_jar_in_dir.av",
             new String[]{"目录中的jar文件"},
             new JavaCG2ElAllowedVariableEnum[]{
@@ -124,7 +124,7 @@ public enum JavaCG2ElConfigEnum implements ElConfigInterface {
     // 配置文件描述
     private final String[] descriptions;
 
-    // 配置文件允许使用的表达式语言变量枚举
+    // 配置文件允许使用的表达式变量枚举
     private final JavaCG2ElAllowedVariableEnum[] elAllowedVariableEnums;
 
     // 用于提前执行表达式进行检查的类

@@ -8,7 +8,7 @@ import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 /**
  * @author adrninistrator
  * @date 2025/2/13
- * @description: 当前项目使用的表达式语言检查抽象父类
+ * @description: 当前项目使用的表达式检查抽象父类
  */
 public abstract class JavaCG2ElChecker extends ElChecker {
 
@@ -19,7 +19,7 @@ public abstract class JavaCG2ElChecker extends ElChecker {
 
 
     /**
-     * 执行检查表达式语言
+     * 执行检查表达式
      *
      * @param elManager
      * @param elConfig

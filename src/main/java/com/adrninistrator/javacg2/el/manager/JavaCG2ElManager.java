@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * @author adrninistrator
  * @date 2025/2/2
- * @description: 表达式语言管理类
+ * @description: 表达式管理类
  */
 public class JavaCG2ElManager extends ElManager {
 

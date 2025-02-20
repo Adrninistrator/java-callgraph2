@@ -55,7 +55,7 @@ public class MergeJarHandler {
      * @param javaCG2ConfigureWrapper 需要合并的jar/war文件，或目录的列表
      * @param jarPathNumMap           保存jar文件路径与对应序号的Map
      * @param jarNumCounter           jar文件序号计数器
-     * @param javaCG2ElManager        表达式语言管理类
+     * @param javaCG2ElManager        表达式管理类
      */
     public MergeJarHandler(JavaCG2ConfigureWrapper javaCG2ConfigureWrapper, Map<String, Integer> jarPathNumMap, JavaCG2Counter jarNumCounter, JavaCG2ElManager javaCG2ElManager) {
         jarOrDirPathList = javaCG2ConfigureWrapper.getOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR);

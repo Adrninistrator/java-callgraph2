@@ -77,8 +77,6 @@ public class JavaCG2Constants {
     public static final String COMMENT_PROPERTIES = "# ";
     public static final String COMMENT_AVIATOR = "## ";
 
-    public static final String SEPARATOR_CLASS_FIELD = "@";
-
     public static final String EMPTY_METHOD_ARGS = FLAG_LEFT_BRACKET + FLAG_RIGHT_BRACKET;
 
     public static final int DEFAULT_LINE_NUMBER = 0;

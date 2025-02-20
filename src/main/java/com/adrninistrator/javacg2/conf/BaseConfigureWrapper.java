@@ -73,7 +73,7 @@ public abstract class BaseConfigureWrapper {
     private Set<String> usedOtherSetConfigSet = new HashSet<>();
 
     /*
-        记录有被使用的表达式语言配置
+        记录有被使用的表达式配置
         元素内容  配置文件名（对应 ElConfigInterface.getKey()）
      */
     private Set<String> usedElConfigSet = new HashSet<>();
@@ -100,9 +100,9 @@ public abstract class BaseConfigureWrapper {
     private Map<String, List<String>> otherConfigListMap = new HashMap<>();
 
     /*
-        表达式语言配置
-        key 表达式语言配置文件名
-        value 表达式语言文本
+        表达式配置
+        key 表达式配置文件名
+        value 表达式文本
      */
     private Map<String, String> elConfigMap = new HashMap<>();
 
@@ -203,7 +203,7 @@ public abstract class BaseConfigureWrapper {
         usedOtherSetConfigSet.add(config.getKey());
     }
 
-    // 记录有被使用的表达式语言配置
+    // 记录有被使用的表达式配置
     private void recordUsedElConfig(ElConfigInterface config) {
         // 使用配置时的自定义检查
         customCheckWhenUseConfig();
@@ -396,7 +396,7 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 清理表达式语言文本
+     * 清理表达式文本
      *
      * @param elConfigs
      */
@@ -408,7 +408,7 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 设置指定key对应的表达式语言文本，清空指定key已有的参数
+     * 设置指定key对应的表达式文本，清空指定key已有的参数
      *
      * @param elConfig
      * @param elText
@@ -418,12 +418,12 @@ public abstract class BaseConfigureWrapper {
         if (elText == null) {
             throw new JavaCG2Error("不允许传入null，只能传入空字符串 " + elConfig.getConfigPrintInfo());
         }
-        logger.info("通过代码设置表达式语言配置 {}", elConfig.getConfigPrintInfo());
+        logger.info("通过代码设置表达式配置 {}", elConfig.getConfigPrintInfo());
         elConfigMap.put(elConfig.getKey(), elText);
     }
 
     /**
-     * 设置类似表达式语言固定返回true
+     * 设置表达式固定返回true
      *
      * @param elConfig 表达式枚举
      */
@@ -432,7 +432,7 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 设置类似表达式语言固定返回false
+     * 设置表达式固定返回false
      *
      * @param elConfig 表达式枚举
      */
@@ -441,7 +441,7 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 设置类似 StringUtils.xxxAny 功能的表达式语言
+     * 设置类似 StringUtils.xxxAny 功能的表达式
      *
      * @param elConfig              表达式枚举
      * @param stringAnyFunctionEnum 字符串比较方式枚举
@@ -452,7 +452,7 @@ public abstract class BaseConfigureWrapper {
         if (ArrayUtils.isEmpty(args)) {
             throw new JavaCG2RuntimeException("未指定需要比较的字符串值");
         }
-        // 检查表达式语言变量是否允许使用
+        // 检查表达式变量是否允许使用
         if (!checkElAllowedVariable(elConfig, elVariable)) {
             logger.error("当前表达式不允许使用该变量 {} {}", elConfig.getKey(), elVariable.getVariableName());
             throw new JavaCG2RuntimeException("当前表达式不允许使用该变量");
@@ -474,7 +474,7 @@ public abstract class BaseConfigureWrapper {
         setElConfigText(elConfig, elText.toString());
     }
 
-    // 检查表达式语言变量是否允许使用
+    // 检查表达式变量是否允许使用
     private boolean checkElAllowedVariable(ElConfigInterface elConfig, ElAllowedVariableInterface elVariable) {
         for (ElAllowedVariableInterface tmpElAllowedVariable : elConfig.getElAllowedVariableEnums()) {
             if (tmpElAllowedVariable.getVariableName().equals(elVariable.getVariableName())) {
@@ -683,7 +683,7 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 获取表达式语言文本
+     * 获取表达式文本
      *
      * @param elConfig 参数key枚举
      * @return
@@ -693,7 +693,7 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 获取表达式语言文本
+     * 获取表达式文本
      *
      * @param elConfig  参数key枚举
      * @param useConfig true: 实际使用配置参数 false: 打印配置参数
@@ -1004,7 +1004,7 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 生成表达式语言处理类
+     * 生成表达式处理类
      *
      * @param elConfig
      * @return

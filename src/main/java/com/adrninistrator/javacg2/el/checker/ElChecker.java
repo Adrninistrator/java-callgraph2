@@ -8,14 +8,14 @@ import org.slf4j.LoggerFactory;
 /**
  * @author adrninistrator
  * @date 2025/2/13
- * @description: 表达式语言检查抽象父类
+ * @description: 表达式检查抽象父类
  */
 public abstract class ElChecker {
 
     private static final Logger logger = LoggerFactory.getLogger(ElChecker.class);
 
     /**
-     * 执行检查表达式语言
+     * 执行检查表达式
      *
      * @param elManager
      * @param elConfig
@@ -23,7 +23,7 @@ public abstract class ElChecker {
     protected abstract void doCheck(ElManager elManager, ElConfigInterface elConfig);
 
     /**
-     * 检查表达式语言
+     * 检查表达式
      *
      * @param elManager
      * @param elConfig
@@ -34,7 +34,7 @@ public abstract class ElChecker {
             doCheck(elManager, elConfig);
             return true;
         } catch (Exception e) {
-            logger.error("执行表达式语言进行检查时失败，需要修改对应的表达式语言 {} ", elConfig.getKey(), e);
+            logger.error("执行表达式进行检查时失败，需要修改对应的表达式 {} ", elConfig.getKey(), e);
             return false;
         }
     }

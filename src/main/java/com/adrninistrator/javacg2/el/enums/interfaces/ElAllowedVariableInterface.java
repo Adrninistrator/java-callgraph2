@@ -3,7 +3,7 @@ package com.adrninistrator.javacg2.el.enums.interfaces;
 /**
  * @author adrninistrator
  * @date 2025/2/2
- * @description: 表达式语言允许使用的变量接口
+ * @description: 表达式允许使用的变量接口
  */
 public interface ElAllowedVariableInterface {
 
