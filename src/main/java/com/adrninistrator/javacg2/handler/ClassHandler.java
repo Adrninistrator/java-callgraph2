@@ -477,7 +477,7 @@ public class ClassHandler {
 
         boolean success = true;
         // 判断当前方法调用是否需要忽略
-        if (!javaCG2ElManager.checkIgnoreMethodCallByEr(fullMethod)) {
+        if (!javaCG2ElManager.checkIgnoreMethodCallByEr(null, fullMethod)) {
             logger.debug("跳过解析方法调用 {}", fullMethod);
             // 处理方法调用
             MethodHandler4Invoke methodHandler4Invoke = new MethodHandler4Invoke(method,

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -346,6 +347,26 @@ public class JavaCG2Util {
             return (String) value;
         }
         return value.toString();
+    }
+
+    /**
+     * 将Map所有的key、value转换为字符串
+     *
+     * @param map
+     * @return
+     */
+    public static String getMapValueStr(Map<String, Object> map) {
+        StringBuilder stringBuilder = new StringBuilder();
+        List<String> keyList = new ArrayList<>(map.keySet());
+        Collections.sort(keyList);
+        for (String key : keyList) {
+            Object value = map.get(key);
+            if (stringBuilder.length() > 0) {
+                stringBuilder.append(", ");
+            }
+            stringBuilder.append(key).append(": ").append(value);
+        }
+        return stringBuilder.toString();
     }
 
     private JavaCG2Util() {

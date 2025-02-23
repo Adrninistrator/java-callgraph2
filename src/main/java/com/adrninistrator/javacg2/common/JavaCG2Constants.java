@@ -90,6 +90,8 @@ public class JavaCG2Constants {
 
     public static final String DIR_TAIL_OUTPUT = "-output_javacg2";
 
+    public static final String EL_IGNORE_DATA_FILE_NAME = "el_ignore_data.log";
+
     public static final String FILE_TYPE_CLASS = "class";
 
     public static final String EXT_JAR = ".jar";
@@ -151,6 +153,9 @@ public class JavaCG2Constants {
     public static final String CATCH = "catch";
 
     public static final int MAX_FRAME_SNAP_SHOTS_NUM = 50000;
+
+    // 表达式用于写忽略数据文件的线程名称前缀
+    public static final String THREAD_NAME_PREFIX_EL_WRITE_IGNORE_DATA = "el_write_ignore_data";
 
     // 等值转换方法
     public static final String[] FR_EQ_CONVERSION_METHOD = new String[]{

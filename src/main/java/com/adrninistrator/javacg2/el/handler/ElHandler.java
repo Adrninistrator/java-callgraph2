@@ -1,26 +1,35 @@
 package com.adrninistrator.javacg2.el.handler;
 
+import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.el.dto.ElVariableConfig;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
-import com.adrninistrator.javacg2.el.function.StringContainsAnyFunction;
-import com.adrninistrator.javacg2.el.function.StringEndsWithAnyFunction;
-import com.adrninistrator.javacg2.el.function.StringEqualsAnyFunction;
-import com.adrninistrator.javacg2.el.function.StringStartsWithAnyFunction;
+import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
+import com.adrninistrator.javacg2.el.function.any.StringContainsAnyFunction;
+import com.adrninistrator.javacg2.el.function.any.StringEndsWithAnyFunction;
+import com.adrninistrator.javacg2.el.function.any.StringEqualsAnyFunction;
+import com.adrninistrator.javacg2.el.function.any.StringStartsWithAnyFunction;
+import com.adrninistrator.javacg2.el.function.ignorecase.StringContainsICFunction;
+import com.adrninistrator.javacg2.el.function.ignorecase.StringEndsWithICFunction;
+import com.adrninistrator.javacg2.el.function.ignorecase.StringEqualsICFunction;
+import com.adrninistrator.javacg2.el.function.ignorecase.StringStartsWithICFunction;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
+import com.adrninistrator.javacg2.util.JavaCG2Util;
 import com.googlecode.aviator.AviatorEvaluator;
 import com.googlecode.aviator.AviatorEvaluatorInstance;
 import com.googlecode.aviator.Expression;
 import com.googlecode.aviator.utils.ArrayHashMap;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @author adrninistrator
@@ -43,36 +52,57 @@ public class ElHandler {
     // 表达式有指定的变量名称Set
     private final Set<String> elSpecifiedVariableNameSet = new HashSet<>();
 
+    // 用于写表达式忽略数据的文件输出流
+    private Writer elIgnoreDataWriter;
+
+    // 用于写表达式忽略数据文件的线程池
+    private ThreadPoolExecutor writeFileTPE;
+
+    // 表达式是否用于忽略数据
+    private boolean ignoreData;
+
+    // 表达式配置文件
+    private String elConfigFile;
+
     // 表达式
     private Expression expression;
 
     /**
-     * @param expressionText         表达式文本
-     * @param elAllowedVariableEnums 允许的表达式变量枚举
+     * @param expressionText     表达式文本
+     * @param elConfig           表达式配置
+     * @param elIgnoreDataWriter 表达式配置
+     * @param writeFileTPE       表达式配置
      */
-    public ElHandler(String expressionText, ElAllowedVariableInterface[] elAllowedVariableEnums) {
+    public ElHandler(String expressionText, ElConfigInterface elConfig, Writer elIgnoreDataWriter, ThreadPoolExecutor writeFileTPE) {
         this.expressionText = expressionText;
         if (StringUtils.isBlank(expressionText)) {
             // 若表达式文本为空，则不创建 Expression 对象
             return;
         }
 
-        if (ArrayUtils.isEmpty(elAllowedVariableEnums)) {
-            throw new JavaCG2RuntimeException("允许的表达式变量信息不能为空");
+        if (elConfig == null) {
+            throw new JavaCG2RuntimeException("表达式配置不能为空");
         }
 
         // 检查指定的变量名称是否允许使用
-        for (ElAllowedVariableInterface elAllowedVariableEnum : elAllowedVariableEnums) {
+        for (ElAllowedVariableInterface elAllowedVariableEnum : elConfig.getElAllowedVariableEnums()) {
             addElVariableConfig(elAllowedVariableEnum);
-            elSpecifiedVariableNameSet.add(elAllowedVariableEnum.getVariableName());
         }
 
+        ignoreData = elConfig.isIgnoreData();
+        elConfigFile = elConfig.getKey();
+
+        // 创建 Aviator 实例
         AviatorEvaluatorInstance aviatorEvaluatorInstance = AviatorEvaluator.newInstance();
         aviatorEvaluatorInstance.enableSandboxMode();
         aviatorEvaluatorInstance.addFunction(new StringContainsAnyFunction());
         aviatorEvaluatorInstance.addFunction(new StringEndsWithAnyFunction());
         aviatorEvaluatorInstance.addFunction(new StringEqualsAnyFunction());
         aviatorEvaluatorInstance.addFunction(new StringStartsWithAnyFunction());
+        aviatorEvaluatorInstance.addFunction(new StringContainsICFunction());
+        aviatorEvaluatorInstance.addFunction(new StringEndsWithICFunction());
+        aviatorEvaluatorInstance.addFunction(new StringEqualsICFunction());
+        aviatorEvaluatorInstance.addFunction(new StringStartsWithICFunction());
 
         expression = aviatorEvaluatorInstance.compile(expressionText, true);
         for (String variableName : expression.getVariableNames()) {
@@ -89,7 +119,10 @@ public class ElHandler {
                         "变量名称\t变量类型\t变量说明\t变量值示例{}", this.getClass().getSimpleName(), stringBuilder);
                 throw new JavaCG2RuntimeException("当前使用的表达式变量名称非法");
             }
+            elSpecifiedVariableNameSet.add(variableName);
         }
+        this.elIgnoreDataWriter = elIgnoreDataWriter;
+        this.writeFileTPE = writeFileTPE;
     }
 
     /**
@@ -131,12 +164,25 @@ public class ElHandler {
             return false;
         }
 
-        Object result = expression.execute(map);
-        if (!(result instanceof Boolean)) {
+        Object executeResult = expression.execute(map);
+        if (!(executeResult instanceof Boolean)) {
             logger.error("{} 表达式执行结果返回值非 {} [{}]", expressionText, Boolean.class.getSimpleName(), expressionText);
             throw new JavaCG2RuntimeException("表达式执行结果返回值非法");
         }
-        return (boolean) result;
+        boolean result = (boolean) executeResult;
+        if (result && ignoreData) {
+            // 表达式执行结果为true，且当前表达式是需要忽略数据
+            writeFileTPE.execute(() -> {
+                String mapValueStr = JavaCG2Util.getMapValueStr(map);
+                String data = String.format("通过表达式执行结果判断需要忽略当前数据，表达式配置文件： {%s} 表达式： {%s} 表达式使用的变量值： {%s}%s", elConfigFile, expressionText, mapValueStr, JavaCG2Constants.NEW_LINE);
+                try {
+                    elIgnoreDataWriter.write(data);
+                } catch (IOException e) {
+                    logger.error("写文件异常 ", e);
+                }
+            });
+        }
+        return result;
     }
 
     /**

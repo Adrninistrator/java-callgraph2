@@ -19,8 +19,8 @@ import java.util.Map;
  */
 public class JavaCG2ElManager extends ElManager {
 
-    public JavaCG2ElManager(BaseConfigureWrapper configureWrapper, ElConfigInterface[] elConfigInterfaces) {
-        super(configureWrapper, elConfigInterfaces);
+    public JavaCG2ElManager(BaseConfigureWrapper configureWrapper, ElConfigInterface[] elConfigInterfaces, String outputDirPath) {
+        super(configureWrapper, elConfigInterfaces, outputDirPath);
     }
 
     /**
@@ -136,9 +136,9 @@ public class JavaCG2ElManager extends ElManager {
             return false;
         }
         mergeFileAddData4FileInDir(elHandler, map, fileCanonicalPath);
-        if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT_LOWER)) {
-            String fileExtLower = JavaCG2FileUtil.getFileExtLower(fileCanonicalPath);
-            map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT_LOWER.getVariableName(), fileExtLower);
+        if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT)) {
+            String fileExt = JavaCG2FileUtil.getFileExt(fileCanonicalPath);
+            map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT.getVariableName(), fileExt);
         }
         return elHandler.runExpression(map);
     }
@@ -198,9 +198,9 @@ public class JavaCG2ElManager extends ElManager {
             return false;
         }
         mergeFileAddData4FileInJarWar(elHandler, map, filePath);
-        if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT_LOWER)) {
-            String fileExtLower = JavaCG2FileUtil.getFileExtLower(filePath);
-            map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT_LOWER.getVariableName(), fileExtLower);
+        if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT)) {
+            String fileExt = JavaCG2FileUtil.getFileExt(filePath);
+            map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT.getVariableName(), fileExt);
         }
         return elHandler.runExpression(map);
     }
@@ -260,15 +260,17 @@ public class JavaCG2ElManager extends ElManager {
     /**
      * 检查是否需要跳过记录方法调用，只通过调用方法判断
      *
+     * @param methodCallType   方法调用类型
      * @param callerFullMethod 调用方完整方法
      * @return
      */
-    public boolean checkIgnoreMethodCallByEr(String callerFullMethod) {
+    public boolean checkIgnoreMethodCallByEr(String methodCallType, String callerFullMethod) {
         ElHandler elHandler = getElHandlerMap(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_ER);
         Map<String, Object> map = elHandler.genMap4ElExecute();
         if (map == null) {
             return false;
         }
+        methodCallAddData4Type(elHandler, methodCallType, map);
         methodCallAddData4Caller(elHandler, callerFullMethod, map);
         return elHandler.runExpression(map);
     }
@@ -276,15 +278,17 @@ public class JavaCG2ElManager extends ElManager {
     /**
      * 检查是否需要跳过记录方法调用，只通过被调用方法判断
      *
+     * @param methodCallType   方法调用类型
      * @param calleeFullMethod 被调用方完整方法
      * @return
      */
-    public boolean checkIgnoreMethodCallByEe(String calleeFullMethod) {
+    public boolean checkIgnoreMethodCallByEe(String methodCallType, String calleeFullMethod) {
         ElHandler elHandler = getElHandlerMap(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_EE);
         Map<String, Object> map = elHandler.genMap4ElExecute();
         if (map == null) {
             return false;
         }
+        methodCallAddData4Type(elHandler, methodCallType, map);
         methodCallAddData4Callee(elHandler, calleeFullMethod, map);
         return elHandler.runExpression(map);
     }
@@ -292,19 +296,41 @@ public class JavaCG2ElManager extends ElManager {
     /**
      * 检查是否需要跳过记录方法调用，通过调用方法与被调用方法一起判断
      *
+     * @param methodCallType   方法调用类型
      * @param callerFullMethod 调用方完整方法
      * @param calleeFullMethod 被调用方完整方法
      * @return
      */
-    public boolean checkIgnoreMethodCallByErEe(String callerFullMethod, String calleeFullMethod) {
+    public boolean checkIgnoreMethodCallByErEe(String methodCallType, String callerFullMethod, String calleeFullMethod) {
         ElHandler elHandler = getElHandlerMap(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_ER_EE);
         Map<String, Object> map = elHandler.genMap4ElExecute();
         if (map == null) {
             return false;
         }
+        methodCallAddData4Type(elHandler, methodCallType, map);
         methodCallAddData4Caller(elHandler, callerFullMethod, map);
         methodCallAddData4Callee(elHandler, calleeFullMethod, map);
         return elHandler.runExpression(map);
+    }
+
+    /**
+     * 检查是否需要跳过记录方法调用，通过调用方法与被调用方法判断
+     *
+     * @param methodCallType   方法调用类型
+     * @param callerFullMethod 调用方完整方法
+     * @param calleeFullMethod 被调用方完整方法
+     * @return
+     */
+    public boolean checkIgnoreMethodCallByErEeAll(String methodCallType, String callerFullMethod, String calleeFullMethod) {
+        return checkIgnoreMethodCallByEe(methodCallType, calleeFullMethod) ||
+                checkIgnoreMethodCallByEr(methodCallType, callerFullMethod) ||
+                checkIgnoreMethodCallByErEe(methodCallType, callerFullMethod, calleeFullMethod);
+    }
+
+    private void methodCallAddData4Type(ElHandler elHandler, String methodCallType, Map<String, Object> map) {
+        if (methodCallType != null && elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_METHOD_CALL_TYPE)) {
+            map.put(JavaCG2ElAllowedVariableEnum.EAVE_METHOD_CALL_TYPE.getVariableName(), methodCallType);
+        }
     }
 
     private void methodCallAddData4Caller(ElHandler elHandler, String callerFullMethod, Map<String, Object> map) {

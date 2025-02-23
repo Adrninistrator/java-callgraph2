@@ -294,4 +294,20 @@ public enum JavaCG2CallTypeEnum {
     public static boolean isRunInSpringTxType(String callType) {
         return callType != null && RUN_IN_SPRING_TX_LIST.contains(callType);
     }
+
+    /**
+     * 获取所有的类型，用于展示
+     *
+     * @return
+     */
+    public static String getAllType4Show() {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (JavaCG2CallTypeEnum javaCG2CallTypeEnum : JavaCG2CallTypeEnum.values()) {
+            if (stringBuilder.length() > 0) {
+                stringBuilder.append(" ");
+            }
+            stringBuilder.append(javaCG2CallTypeEnum.getType());
+        }
+        return stringBuilder.toString();
+    }
 }

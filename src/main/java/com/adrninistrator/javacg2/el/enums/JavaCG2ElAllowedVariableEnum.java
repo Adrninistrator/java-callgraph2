@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg2.el.enums;
 
 import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
+import com.adrninistrator.javacg2.common.enums.JavaCG2CallTypeEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2ConstantTypeEnum;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
 
@@ -24,8 +25,8 @@ public enum JavaCG2ElAllowedVariableEnum implements ElAllowedVariableInterface {
     EAVE_MF_FILE_NAME("file_name", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
             new String[]{"文件名称"},
             new String[]{"a.class", "a.xml"}),
-    EAVE_MF_OTHER_FILE_EXT_LOWER("file_ext", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
-            new String[]{"非jar、war、class文件后缀小写形式", "以.开头"},
+    EAVE_MF_OTHER_FILE_EXT("file_ext", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
+            new String[]{"非jar、war、class文件后缀", "以.开头"},
             new String[]{".xml", ".properties"}),
     EAVE_PARSE_CLASS_NAME("class_name", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
             new String[]{"完整类名"},
@@ -39,6 +40,9 @@ public enum JavaCG2ElAllowedVariableEnum implements ElAllowedVariableInterface {
     EAVE_PARSE_METHOD_NAME("method_name", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
             new String[]{"方法名称", "不包括括号及方法参数"},
             new String[]{"method1"}),
+    EAVE_METHOD_CALL_TYPE("method_call_type", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
+            new String[]{"方法调用类型", "参考 JavaCG2CallTypeEnum 类"},
+            new String[]{JavaCG2CallTypeEnum.getAllType4Show()}),
     EAVE_MC_ER_CLASS_NAME("er_class_name", JavaCG2CommonNameConstants.SIMPLE_CLASS_NAME_STRING,
             new String[]{"调用方完整类名"},
             new String[]{"a.b.Class1"}),

@@ -4,6 +4,8 @@ import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2ConstantTypeEnum;
 import com.adrninistrator.javacg2.dto.classes.ClassExtendsInfo;
+import com.adrninistrator.javacg2.dto.field.ClassField;
+import com.adrninistrator.javacg2.dto.field.ClassFieldMethodCall;
 import com.adrninistrator.javacg2.dto.method.JavaCG2MethodInfo;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
@@ -144,7 +146,12 @@ public class JavaCG2ClassMethodUtil {
             if (i != 0) {
                 sb.append(JavaCG2Constants.FLAG_COMMA);
             }
-            sb.append(argTypes[i].getName());
+            Class<?> clazz = argTypes[i];
+            if (!clazz.isArray()) {
+                sb.append(clazz.getName());
+            } else {
+                sb.append(clazz.getTypeName());
+            }
         }
         sb.append(JavaCG2Constants.FLAG_RIGHT_BRACKET);
         return sb.toString();
@@ -180,7 +187,7 @@ public class JavaCG2ClassMethodUtil {
      * @param fieldName
      * @return
      */
-    public static String genClassAndField(String className, String fieldName) {
+    public static String formatClassAndField(String className, String fieldName) {
         return className + JavaCG2Constants.FLAG_COLON + fieldName;
     }
 
@@ -194,9 +201,43 @@ public class JavaCG2ClassMethodUtil {
      * @return
      */
     public static String formatClassFieldMethodArgTypes(String className, String fieldName, String methodName, Type[] argTypes) {
-        return formatFullMethod(genClassAndField(className, fieldName), methodName, argTypes);
+        return formatFullMethod(formatClassAndField(className, fieldName), methodName, argTypes);
     }
 
+    /**
+     * 解析类名与字段名
+     *
+     * @param data
+     * @return
+     */
+    public static ClassField parseClassAndField(String data) {
+        int index = data.indexOf(JavaCG2Constants.FLAG_COLON);
+        ClassField classField = new ClassField();
+        classField.setClassName(data.substring(0, index));
+        classField.setFieldName(data.substring(index + JavaCG2Constants.FLAG_COLON.length()));
+        return classField;
+    }
+
+    /**
+     * 解析对类中字段的方法调用
+     *
+     * @param data
+     * @return
+     */
+    public static ClassFieldMethodCall parseClassFieldMethodCall(String data) {
+        String[] array = data.split(JavaCG2Constants.FLAG_COLON);
+        String className = array[0];
+        String fieldName = array[1];
+        String methodNameAndArgTypes = array[2];
+        String methodName = StringUtils.substringBefore(methodNameAndArgTypes, JavaCG2Constants.FLAG_LEFT_BRACKET);
+        String argTypes = getMethodArgTypes(methodNameAndArgTypes);
+        ClassFieldMethodCall classFieldMethodCall = new ClassFieldMethodCall();
+        classFieldMethodCall.setClassName(className);
+        classFieldMethodCall.setFieldName(fieldName);
+        classFieldMethodCall.setMethodName(methodName);
+        classFieldMethodCall.setArgTypes(getMethodArgTypeArray(argTypes));
+        return classFieldMethodCall;
+    }
 
     /**
      * 获取简单类名首字母小写后的结果

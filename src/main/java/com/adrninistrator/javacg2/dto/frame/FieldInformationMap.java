@@ -44,7 +44,7 @@ public class FieldInformationMap {
     }
 
     private String getStaticKey(String className, String fieldName) {
-        return JavaCG2ClassMethodUtil.genClassAndField(className, fieldName);
+        return JavaCG2ClassMethodUtil.formatClassAndField(className, fieldName);
     }
 
     public FieldInformationMap copy() {

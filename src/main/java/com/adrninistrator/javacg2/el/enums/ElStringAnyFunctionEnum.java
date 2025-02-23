@@ -5,7 +5,7 @@ package com.adrninistrator.javacg2.el.enums;
  * @date 2025/2/10
  * @description:
  */
-public enum StringAnyFunctionEnum {
+public enum ElStringAnyFunctionEnum {
     CONTAINS_ANY("string.containsAny"),
     ENDS_WITH_ANY("string.endsWithAny"),
     EQUALS_ANY("string.equalsAny"),
@@ -14,7 +14,7 @@ public enum StringAnyFunctionEnum {
 
     private final String name;
 
-    StringAnyFunctionEnum(String name) {
+    ElStringAnyFunctionEnum(String name) {
         this.name = name;
     }
 

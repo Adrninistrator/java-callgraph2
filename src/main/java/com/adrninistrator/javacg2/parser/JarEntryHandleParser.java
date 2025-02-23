@@ -247,7 +247,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     // 将处理失败的类保存到目录中
     private void saveHandleFailClass(JavaClass javaClass) {
-        String saveClassFilePath = javaCG2InputAndOutput.getJavaCG2ConfInfo().getUsedOutputDirPath() + JavaCG2DirEnum.IDE_FAIL_CLASSES + File.separator +
+        String saveClassFilePath = javaCG2InputAndOutput.getJavaCG2ConfInfo().getOutputDirPath() + JavaCG2DirEnum.IDE_FAIL_CLASSES + File.separator +
                 javaClass.getClassName() + JavaCG2Constants.EXT_CLASS;
         File saveClassFile = new File(saveClassFilePath);
         logger.info("将处理失败的class文件保存到文件 {}", saveClassFile.getAbsolutePath());

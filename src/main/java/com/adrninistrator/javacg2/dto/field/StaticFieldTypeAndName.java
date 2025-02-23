@@ -25,7 +25,7 @@ public class StaticFieldTypeAndName extends FieldTypeAndName {
      * @return 类名:字段名
      */
     public String getClassAndFieldName() {
-        return JavaCG2ClassMethodUtil.genClassAndField(className, fieldName);
+        return JavaCG2ClassMethodUtil.formatClassAndField(className, fieldName);
     }
 
     @Override

@@ -5,6 +5,9 @@
 通过表达式的执行结果，决定配置文件所对应场景下执行什么操作
 配置文件中有说明允许使用的变量信息
 
+# 查看表达式忽略的数据
+若表达式用于忽略数据，则被忽略的数据会记录在日志文件中，保存在当前输出目录中，文件名为 el_ignore_data.log
+
 # 表达式示例
 例如在 _javacg2_parse_class_method_switch/parse_ignore_class.av 配置文件中指定以下内容
 package_name == 'a.b' && string.endsWith(simple_class_name, 'Test')
@@ -78,3 +81,49 @@ aviator 支持的逻辑判断运算符与 Java 相同
 （作用）用于改变运算顺序，确保按照期望的顺序执行多个逻辑表达式
 （语法）({表达式1} {运算符} {表达式2})
 （示例）(x > 10 && y < 20) || z == 5
+
+# 表达式语法 - java-callgraph2 组件扩展支持
+
+## 比较字符串忽略大小写的方法
+
+### string.containsIC()
+（作用）判断字符串类型的变量是否包含指定内容，忽略大小写
+（语法）string.containsIC({字符串类型变量名称}, {常量字符串})
+（示例）string.containsIC(str1, 'abc')
+
+### string.endsWithIC()
+（作用）判断字符串类型的变量是否以指定内容结尾，忽略大小写
+（语法）string.endsWithIC({字符串类型变量名称}, {常量字符串})
+（示例）string.endsWithIC(str1, 'abc')
+
+### string.equalsIC()
+（作用）判断字符串类型的变量是否与指定内容相等，忽略大小写
+（语法）string.equalsIC({字符串类型变量名称}, {常量字符串})
+（示例）string.equalsIC(str1, 'abc')
+
+### string.startsWithIC()
+（作用）判断字符串类型的变量是否以指定内容开头，忽略大小写
+（语法）string.startsWithIC({字符串类型变量名称}, {常量字符串})
+（示例）string.startsWithIC(str1, 'abc')
+
+## 比较字符串支持比较多个的方法
+
+### string.containsAny()
+（作用）判断字符串类型的变量是否包含多个指定内容中的任意一个
+（语法）string.containsAny({字符串类型变量名称}, {常量字符串1}, {常量字符串2}, ...)
+（示例）string.containsAny(str1, 'abc', 'def', 'ghi')
+
+### string.endsWithAny()
+（作用）判断字符串类型的变量是否以多个指定内容中的任意一个结尾
+（语法）string.endsWithAny({字符串类型变量名称}, {常量字符串1}, {常量字符串2}, ...)
+（示例）string.endsWithAny(str1, 'abc', 'def', 'ghi')
+
+### string.equalsAny()
+（作用）判断字符串类型的变量是否与多个指定内容中的任意一个相等
+（语法）string.equalsAny({字符串类型变量名称}, {常量字符串1}, {常量字符串2}, ...)
+（示例）string.equalsAny(str1, 'abc', 'def', 'ghi')
+
+### string.startsWithAny()
+（作用）判断字符串类型的变量是否以多个指定内容中的任意一个开头
+（语法）string.startsWithAny({字符串类型变量名称}, {常量字符串1}, {常量字符串2}, ...)
+（示例）string.startsWithAny(str1, 'abc', 'def', 'ghi')

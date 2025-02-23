@@ -12,6 +12,7 @@ import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg2.dto.stack.ListAsStack;
+import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
@@ -37,7 +38,7 @@ import java.util.Set;
 public class ExtendsImplHandler {
     private static final Logger logger = LoggerFactory.getLogger(ExtendsImplHandler.class);
 
-    private JavaCG2InputAndOutput javaCG2InputAndOutput;
+    private final JavaCG2ElManager javaCG2ElManager;
 
     private JavaCG2Counter callIdCounter;
 
@@ -53,6 +54,10 @@ public class ExtendsImplHandler {
     private ClassAndJarNum classAndJarNum;
 
     private Writer methodCallWriter;
+
+    public ExtendsImplHandler(JavaCG2InputAndOutput javaCG2InputAndOutput) {
+        javaCG2ElManager = javaCG2InputAndOutput.getJavaCG2ElManager();
+    }
 
     public void handle() throws IOException {
         // 将父接口中的方法添加到子接口中
@@ -473,6 +478,13 @@ public class ExtendsImplHandler {
         String callerClassJarNum = classAndJarNum.getJarNum(callerClassName);
         String calleeClassJarNum = classAndJarNum.getJarNum(calleeClassName);
 
+        String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgTypes);
+        String callerFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(callerClassName, callerMethodName, callerMethodArgTypes);
+        // 判断当前方法调用是否需要忽略
+        if (javaCG2ElManager.checkIgnoreMethodCallByErEeAll(methodCallType.getType(), callerFullMethod, calleeFullMethod)) {
+            return;
+        }
+
         MethodCall methodCall = new MethodCall();
         methodCall.setCallId(callIdCounter.addAndGet());
         methodCall.setEnabled(true);
@@ -532,9 +544,5 @@ public class ExtendsImplHandler {
 
     public void setMethodCallWriter(Writer methodCallWriter) {
         this.methodCallWriter = methodCallWriter;
-    }
-
-    public void setJavaCG2InputAndOutput(JavaCG2InputAndOutput javaCG2InputAndOutput) {
-        this.javaCG2InputAndOutput = javaCG2InputAndOutput;
     }
 }

@@ -1201,8 +1201,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                                            JavaCG2CalleeObjTypeEnum objTypeEnum) {
         String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes);
         // 判断当前方法调用是否需要忽略
-        if (javaCG2ElManager.checkIgnoreMethodCallByEe(calleeFullMethod) ||
-                javaCG2ElManager.checkIgnoreMethodCallByErEe(callerFullMethod, calleeFullMethod)) {
+        if (javaCG2ElManager.checkIgnoreMethodCallByErEeAll(callTypeEnum.getType(), callerFullMethod, calleeFullMethod)) {
             return null;
         }
 
@@ -1263,8 +1262,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                                     int callerSourceLine) {
         String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgTypes);
         // 判断当前方法调用是否需要忽略
-        if (javaCG2ElManager.checkIgnoreMethodCallByEe(calleeFullMethod) ||
-                javaCG2ElManager.checkIgnoreMethodCallByErEe(callerFullMethod, calleeFullMethod)) {
+        if (javaCG2ElManager.checkIgnoreMethodCallByErEeAll(methodCallType.getType(), callerFullMethod, calleeFullMethod)) {
             return;
         }
 

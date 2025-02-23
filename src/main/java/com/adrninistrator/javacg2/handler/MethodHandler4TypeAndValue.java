@@ -915,12 +915,6 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         Type[] calleeArgTypes = calleeMethodInfo.getMethodArgumentTypes();
         String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes);
 
-        // 判断当前方法调用是否需要忽略
-        if (javaCG2ElManager.checkIgnoreMethodCallByEe(calleeFullMethod) ||
-                javaCG2ElManager.checkIgnoreMethodCallByErEe(callerFullMethod, calleeFullMethod)) {
-            return;
-        }
-
         if (logger.isDebugEnabled()) {
             logger.debug("被调用方法: {}", calleeFullMethod);
         }

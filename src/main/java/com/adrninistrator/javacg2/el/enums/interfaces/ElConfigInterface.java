@@ -15,4 +15,7 @@ public interface ElConfigInterface extends ConfigInterface {
 
     // 用于提前执行表达式进行检查的类
     Class<? extends ElChecker> getElCheckClass();
+
+    // 当前参数是否用于忽略数据
+    boolean isIgnoreData();
 }

@@ -5,10 +5,10 @@ import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.comparator.Comparator4MainConfig;
 import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.OtherConfigInterface;
-import com.adrninistrator.javacg2.el.enums.StringAnyFunctionEnum;
+import com.adrninistrator.javacg2.el.enums.ElStringAnyFunctionEnum;
+import com.adrninistrator.javacg2.el.enums.ElStringFunctionTwoArgsEnum;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
-import com.adrninistrator.javacg2.el.handler.ElHandler;
 import com.adrninistrator.javacg2.exceptions.JavaCG2Error;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.markdown.writer.MarkdownWriter;
@@ -441,25 +441,22 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 设置类似 StringUtils.xxxAny 功能的表达式
+     * 设置类似 StringUtils.xxxAny 功能的字符串比较表达式
      *
      * @param elConfig              表达式枚举
      * @param stringAnyFunctionEnum 字符串比较方式枚举
      * @param elVariable            表达式变量
-     * @param args                  需要比较的字符串值
+     * @param args                  需要比较的字符串值，一个或多个
      */
-    public void setElConfigStringAny(ElConfigInterface elConfig, StringAnyFunctionEnum stringAnyFunctionEnum, ElAllowedVariableInterface elVariable, String... args) {
+    public void setElConfigStringAny(ElConfigInterface elConfig, ElStringAnyFunctionEnum stringAnyFunctionEnum, ElAllowedVariableInterface elVariable, String... args) {
         if (ArrayUtils.isEmpty(args)) {
             throw new JavaCG2RuntimeException("未指定需要比较的字符串值");
         }
         // 检查表达式变量是否允许使用
-        if (!checkElAllowedVariable(elConfig, elVariable)) {
-            logger.error("当前表达式不允许使用该变量 {} {}", elConfig.getKey(), elVariable.getVariableName());
-            throw new JavaCG2RuntimeException("当前表达式不允许使用该变量");
-        }
+        checkElAllowedVariable(elConfig, elVariable);
 
         StringBuilder elText = new StringBuilder();
-        elText.append(stringAnyFunctionEnum.getName()).append("(");
+        elText.append(stringAnyFunctionEnum.getName()).append("(").append(elVariable.getVariableName()).append(",");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg == null) {
@@ -474,14 +471,34 @@ public abstract class BaseConfigureWrapper {
         setElConfigText(elConfig, elText.toString());
     }
 
+    /**
+     * 设置比较字符串的表达式
+     *
+     * @param elConfig                    表达式枚举
+     * @param elStringFunctionTwoArgsEnum 字符串比较方式枚举
+     * @param elVariable                  表达式变量
+     * @param arg                         需要比较的字符串值
+     */
+    public void setElConfigStringAny(ElConfigInterface elConfig, ElStringFunctionTwoArgsEnum elStringFunctionTwoArgsEnum, ElAllowedVariableInterface elVariable, String arg) {
+        if (StringUtils.isBlank(arg)) {
+            throw new JavaCG2RuntimeException("未指定需要比较的字符串值");
+        }
+        // 检查表达式变量是否允许使用
+        checkElAllowedVariable(elConfig, elVariable);
+
+        String elText = elStringFunctionTwoArgsEnum.getName() + "(" + elVariable.getVariableName() + "," + arg + ");";
+        setElConfigText(elConfig, elText);
+    }
+
     // 检查表达式变量是否允许使用
-    private boolean checkElAllowedVariable(ElConfigInterface elConfig, ElAllowedVariableInterface elVariable) {
+    private void checkElAllowedVariable(ElConfigInterface elConfig, ElAllowedVariableInterface elVariable) {
         for (ElAllowedVariableInterface tmpElAllowedVariable : elConfig.getElAllowedVariableEnums()) {
             if (tmpElAllowedVariable.getVariableName().equals(elVariable.getVariableName())) {
-                return true;
+                return;
             }
         }
-        return false;
+        logger.error("当前表达式不允许使用该变量 {} {}", elConfig.getKey(), elVariable.getVariableName());
+        throw new JavaCG2RuntimeException("当前表达式不允许使用该变量");
     }
 
     /**
@@ -1003,14 +1020,4 @@ public abstract class BaseConfigureWrapper {
         markdownWriter.addLineWithNewLine("每个配置参数可以通过配置文件或对应的枚举进行修改，效果相同");
     }
 
-    /**
-     * 生成表达式处理类
-     *
-     * @param elConfig
-     * @return
-     */
-    public ElHandler genElHandler(ElConfigInterface elConfig) {
-        String elText = getElConfigText(elConfig);
-        return new ElHandler(elText, elConfig.getElAllowedVariableEnums());
-    }
 }

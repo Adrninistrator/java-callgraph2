@@ -1,5 +1,6 @@
-package com.adrninistrator.javacg2.el.function;
+package com.adrninistrator.javacg2.el.function.any;
 
+import com.adrninistrator.javacg2.el.util.ElUtil;
 import com.googlecode.aviator.exception.ExpressionRuntimeException;
 import com.googlecode.aviator.runtime.function.AbstractVariadicFunction;
 import com.googlecode.aviator.runtime.type.AviatorBoolean;
@@ -13,7 +14,7 @@ import java.util.Map;
  * @date 2025/2/10
  * @description: 类似 StringUtils.xxxAny 功能的自定义函数基类
  */
-public abstract class StringAnyFunction extends AbstractVariadicFunction {
+public abstract class AbstractStringAnyFunction extends AbstractVariadicFunction {
 
     /**
      * 比较字符串
@@ -34,28 +35,13 @@ public abstract class StringAnyFunction extends AbstractVariadicFunction {
             throw new ExpressionRuntimeException("至少需要有两个参数");
         }
 
-        String arg0String = getArgStringValue(env, args[0]);
+        String arg0String = ElUtil.getArgStringValue(args[0], env);
         for (int i = 1; i < args.length; i++) {
-            String argString = getArgStringValue(env, args[i]);
+            String argString = ElUtil.getArgStringValue(args[i], env);
             if (checkString(arg0String, argString)) {
                 return AviatorBoolean.TRUE;
             }
         }
         return AviatorBoolean.FALSE;
-    }
-
-    /**
-     * 获取参数的字符串类型的值
-     *
-     * @param env
-     * @param arg
-     * @return
-     */
-    protected String getArgStringValue(Map<String, Object> env, AviatorObject arg) {
-        Object argValue = arg.getValue(env);
-        if (!(argValue instanceof String)) {
-            throw new ExpressionRuntimeException("只允许使用字符串类型参数");
-        }
-        return (String) argValue;
     }
 }

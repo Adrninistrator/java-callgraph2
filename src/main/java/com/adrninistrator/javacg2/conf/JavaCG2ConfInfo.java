@@ -10,7 +10,7 @@ import java.util.Map;
 public class JavaCG2ConfInfo {
 
     // 当前使用的生成文件的目录
-    private String usedOutputDirPath;
+    private String outputDirPath;
 
     // 处理方法调用时是否解析可能的类型与值
     private boolean parseMethodCallTypeValue;
@@ -30,12 +30,12 @@ public class JavaCG2ConfInfo {
      */
     private Map<String, Map<String, Integer>> frEqConversionMethodMap;
 
-    public String getUsedOutputDirPath() {
-        return usedOutputDirPath;
+    public String getOutputDirPath() {
+        return outputDirPath;
     }
 
-    public void setUsedOutputDirPath(String usedOutputDirPath) {
-        this.usedOutputDirPath = usedOutputDirPath;
+    public void setOutputDirPath(String outputDirPath) {
+        this.outputDirPath = outputDirPath;
     }
 
     public boolean isParseMethodCallTypeValue() {

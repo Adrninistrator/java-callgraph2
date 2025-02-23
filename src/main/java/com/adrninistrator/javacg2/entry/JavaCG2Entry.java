@@ -112,18 +112,30 @@ public class JavaCG2Entry {
 
         long startTime = System.currentTimeMillis();
 
-        JavaCG2Counter jarNumCounter = new JavaCG2Counter(JavaCG2Constants.JAR_NUM_MIN_BEFORE);
-        JavaCG2ElManager javaCG2ElManager = new JavaCG2ElManager(javaCG2ConfigureWrapper, JavaCG2ElConfigEnum.values());
-
-        // 处理参数中指定的jar包
-        File newJarFile = handleJarInConf(jarNumCounter, javaCG2ElManager);
-        if (newJarFile == null) {
+        JavaCG2ConfInfo javaCG2ConfInfo = JavaCG2ConfManager.getConfInfo(javaCG2ConfigureWrapper);
+        if (javaCG2ConfInfo == null) {
             return false;
         }
-        String newJarFilePath = JavaCG2FileUtil.getCanonicalPath(newJarFile);
+
+        // 处理输出文件路径
+        String outputDirPath = handleOutputDir();
+        javaCG2ConfInfo.setOutputDirPath(outputDirPath);
+        try (JavaCG2ElManager javaCG2ElManager = new JavaCG2ElManager(javaCG2ConfigureWrapper, JavaCG2ElConfigEnum.values(), outputDirPath)) {
+            boolean success = parse(javaCG2ElManager, javaCG2ConfInfo);
+            logger.info("执行完毕，处理数量，类： {} 方法: {} 方法调用: {} 耗时: {} 秒", classNumCounter.getCount(), methodNumCounter.getCount(), callIdCounter.getCount(),
+                    JavaCG2Util.getSpendSeconds(startTime));
+            return success;
+        }
+    }
+
+    private boolean parse(JavaCG2ElManager javaCG2ElManager, JavaCG2ConfInfo javaCG2ConfInfo) {
+        JavaCG2Counter jarNumCounter = new JavaCG2Counter(JavaCG2Constants.JAR_NUM_MIN_BEFORE);
+
+        // 处理参数中指定的jar包
+        String newJarFilePath = handleJarInConf(jarNumCounter, javaCG2ElManager);
 
         // 初始化
-        if (!init(javaCG2ElManager, newJarFile, newJarFilePath)) {
+        if (!init(javaCG2ConfInfo, javaCG2ElManager)) {
             return false;
         }
 
@@ -250,9 +262,6 @@ public class JavaCG2Entry {
 
             // 记录java-callgraph2组件使用的配置参数
             recordJavaCG2Config(javaCG2ConfigWriter);
-
-            logger.info("执行完毕，处理数量，类： {} 方法: {} 方法调用: {} 耗时: {} 秒", classNumCounter.getCount(), methodNumCounter.getCount(), callIdCounter.getCount(),
-                    JavaCG2Util.getSpendSeconds(startTime));
             return true;
         } catch (Exception e) {
             logger.error("出现异常 ", e);
@@ -263,30 +272,15 @@ public class JavaCG2Entry {
         }
     }
 
-    // 处理配置参数中指定的jar包
-    private File handleJarInConf(JavaCG2Counter jarNumCounter, JavaCG2ElManager javaCG2ElManager) {
-        jarPathNumMap = new HashMap<>();
-
-        // 对指定的jar包进行处理
-        MergeJarHandler mergeJarHandler = new MergeJarHandler(javaCG2ConfigureWrapper, jarPathNumMap, jarNumCounter, javaCG2ElManager);
+    // 处理输出文件路径
+    private String handleOutputDir() {
+        MergeJarHandler mergeJarHandler = new MergeJarHandler(javaCG2ConfigureWrapper, null, null, null, true);
         File newJarFile = mergeJarHandler.mergeJar();
         if (newJarFile == null) {
-            return null;
+            throw new JavaCG2RuntimeException("获取处理需要解析的jar文件/目录的输出文件路径失败");
         }
 
-        logger.info("实际处理的jar文件: {}", JavaCG2FileUtil.getCanonicalPath(newJarFile));
-        return newJarFile;
-    }
-
-    // 初始化
-    private boolean init(JavaCG2ElManager javaCG2ElManager, File newJarFile, String newJarFilePath) {
-        // 检查方法调用枚举类型是否重复定义
-        JavaCG2CallTypeEnum.checkRepeat();
-
-        JavaCG2ConfInfo javaCG2ConfInfo = JavaCG2ConfManager.getConfInfo(javaCG2ConfigureWrapper);
-        if (javaCG2ConfInfo == null) {
-            return false;
-        }
+        String newJarFilePath = JavaCG2FileUtil.getCanonicalPath(newJarFile);
         String outputRootPath = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH);
         String outputDirPath;
         if (StringUtils.isBlank(outputRootPath)) {
@@ -296,16 +290,37 @@ public class JavaCG2Entry {
             // 配置参数中有指定生成文件的根目录，生成在指定目录
             outputDirPath = JavaCG2Util.addSeparator4FilePath(outputRootPath) + newJarFile.getName() + JavaCG2Constants.DIR_TAIL_OUTPUT + File.separator;
         }
-        // 记录当前使用的生成文件的目录
-        javaCG2ConfInfo.setUsedOutputDirPath(outputDirPath);
         logger.info("当前输出的根目录: {}", outputDirPath);
         if (!JavaCG2FileUtil.isDirectoryExists(outputDirPath, true)) {
-            return false;
+            throw new JavaCG2RuntimeException("创建输出目录失败");
         }
+        return outputDirPath;
+    }
+
+    // 处理配置参数中指定的jar包
+    private String handleJarInConf(JavaCG2Counter jarNumCounter, JavaCG2ElManager javaCG2ElManager) {
+        jarPathNumMap = new HashMap<>();
+
+        // 对指定的jar包进行处理
+        MergeJarHandler mergeJarHandler = new MergeJarHandler(javaCG2ConfigureWrapper, jarPathNumMap, jarNumCounter, javaCG2ElManager, false);
+        File newJarFile = mergeJarHandler.mergeJar();
+        if (newJarFile == null) {
+            throw new JavaCG2RuntimeException("处理需要解析的jar文件/目录失败");
+        }
+
+        String newJarFilePath = JavaCG2FileUtil.getCanonicalPath(newJarFile);
+        logger.info("实际处理的jar文件: {}", newJarFilePath);
+        return newJarFilePath;
+    }
+
+    // 初始化
+    private boolean init(JavaCG2ConfInfo javaCG2ConfInfo, JavaCG2ElManager javaCG2ElManager) {
+        // 检查方法调用枚举类型是否重复定义
+        JavaCG2CallTypeEnum.checkRepeat();
 
         String outputFileExt = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_OUTPUT_FILE_EXT);
         // 处理结果信息相关
-        JavaCG2OutputInfo javaCG2OutputInfo = new JavaCG2OutputInfo(outputDirPath, outputFileExt);
+        JavaCG2OutputInfo javaCG2OutputInfo = new JavaCG2OutputInfo(javaCG2ConfInfo.getOutputDirPath(), outputFileExt);
 
         JavaCG2OtherRunResult javaCG2OtherRunResult = new JavaCG2OtherRunResult();
         javaCG2InputAndOutput.setJavaCG2ConfInfo(javaCG2ConfInfo);
@@ -451,8 +466,7 @@ public class JavaCG2Entry {
         jarEntryHandleParser.setClassAndJarNum(classAndJarNum);
 
         // 继承及实现相关的方法处理相关
-        extendsImplHandler = new ExtendsImplHandler();
-        extendsImplHandler.setJavaCG2InputAndOutput(javaCG2InputAndOutput);
+        extendsImplHandler = new ExtendsImplHandler(javaCG2InputAndOutput);
         extendsImplHandler.setCallIdCounter(callIdCounter);
         extendsImplHandler.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
         extendsImplHandler.setClassExtendsImplMethodWithArgTypesMap(classExtendsImplMethodWithArgTypesMap);

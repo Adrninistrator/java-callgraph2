@@ -6,6 +6,7 @@ package com.adrninistrator.javacg2.conf.enums.interfaces;
  * @description: 配置枚举继承的接口
  */
 public interface ConfigInterface {
+
     // 获取枚举名称
     String getEnumName();
 
