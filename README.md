@@ -34,13 +34,58 @@ com.adrninistrator.javacg2.entry.JavaCG2Entry
 
 #### 2.1.2.2. 配置参数
 
-参考 _javacg2_config 目录的配置文件
+- _javacg2_config 目录
 
-主要配置文件为 config.properties
+|配置文件名|配置文件作用|
+|---|---|
+|config.properties|主要的开关及输出目录等配置|
+|fr_eq_conversion_method.properties|通常不需要指定，处理get/set方法对应的字段关联关系时使用|
+|jar_dir.properties|指定需要解析的目录、jar/war文件路径|
 
-需要分析的jar包或目录路径对应的配置文件为 jar_dir.properties
+- _javacg2_merge_file_switch 目录
 
-假如仅分析特定包名的类，可在配置文件 packages.properties 中配置
+用于控制在合并 jar 文件时需要忽略特定内容的开关，包括目录中的 class、jar、war 文件，jar/war 文件中的 class、jar 文件，目录、jar/war 文件中的其他类型文件等
+
+`在 _javacg2_config/jar_dir.properties 中指定的配置包含多个 jar/war/class 文件时，仅当某个 jar/war/class 文件会被合并到最终用于解析析的 jar 文件时，才会被解析`
+
+每个文件用于控制以上一种场景，使用表达式语言方式配置：
+
+```
+ignore_class_in_dir.av
+ignore_class_in_jar_war.av
+ignore_jar_in_dir.av
+ignore_jar_in_jar_war.av
+ignore_other_in_dir.av
+ignore_other_in_jar_war.av
+ignore_war_in_dir.av
+```
+
+- _javacg2_parse_class_method_switch 目录
+
+控制解析类及方法时是否需要忽略的开关
+
+每个文件用于控制以上一种场景，使用表达式语言方式配置：
+
+```
+parse_ignore_class.av
+parse_ignore_method.av
+```
+
+- _javacg2_parse_method_call_switch 目录
+
+控制解析方法调用时是否需要忽略的开关，包括仅通过被调用方法判断、仅通过调用方法判断、通过调用方法与被调用方法判断
+
+每个文件用于控制以上一种场景，使用表达式语言方式配置：
+
+```
+parse_ignore_method_call_ee.av
+parse_ignore_method_call_er.av
+parse_ignore_method_call_er_ee.av
+```
+
+- 表达式语言配置示例
+
+以上表达式语言配置示例可参考项目中的文件 src/main/resources/el_example.md
 
 ## 2.2. 通过组件引用
 
