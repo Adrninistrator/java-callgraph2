@@ -115,8 +115,7 @@ public class ElHandler {
                             .append(StringUtils.join(elVariableConfig.getDescriptions(), " ")).append("\t")
                             .append(StringUtils.join(elVariableConfig.getValueExamples(), " "));
                 }
-                logger.error("{} 当前使用的表达式变量名称非法，允许使用的变量如下\n" +
-                        "变量名称\t变量类型\t变量说明\t变量值示例{}", this.getClass().getSimpleName(), stringBuilder);
+                logger.error("{} 当前使用的表达式变量名称非法 {}\n允许使用的变量如下\n变量名称\t变量类型\t变量说明\t变量值示例{}", this.getClass().getSimpleName(), variableName, stringBuilder);
                 throw new JavaCG2RuntimeException("当前使用的表达式变量名称非法");
             }
             elSpecifiedVariableNameSet.add(variableName);

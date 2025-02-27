@@ -423,7 +423,7 @@ public class JavaCG2FileUtil {
      * @return
      */
     public static String getFileNameSupportSlash(String filePath) {
-        return StringUtils.substringAfter(filePath, JavaCG2Constants.FLAG_SLASH);
+        return StringUtils.substringAfterLast(filePath, JavaCG2Constants.FLAG_SLASH);
     }
 
     /**

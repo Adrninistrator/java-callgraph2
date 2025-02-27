@@ -27,30 +27,42 @@ package_name == 'a.b' && string.endsWith(simple_class_name, 'Test')
 除判断字符串是否等于指定值外，需要使用 aviator 提供的 string.xxx() 函数对字符串进行判断
 字符串常量可以使用单引号包含，如 'abc'
 
+### +
+（作用）拼接字符串
+（语法）{字符串变量/常量/运算结果} + {字符串变量/常量/运算结果} + ...
+（示例）str1 + 'abc'
+（示例）'abc' + '123'
+（示例）str1 + str2
+
 ### ==
 （作用）判断字符串类型的变量是否等于指定内容
-（语法）{字符串类型变量名称} == {常量字符串}
+（语法）{字符串变量/常量/运算结果} == {字符串变量/常量/运算结果}
 （示例）str1 == 'abc'
+（示例）str1 == str2 + 'abc'
 
 ### string.startsWith()
 （作用）判断字符串类型的变量是否以指定内容开头
-（语法）string.startsWith({字符串类型变量名称}, {常量字符串})
+（语法）string.startsWith({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果})
 （示例）string.startsWith(str1, 'abc')
+（示例）string.startsWith(str1, str2 + 'abc')
 
 ### string.endsWith()
 （作用）判断字符串类型的变量是否以指定内容结尾
-（语法）string.endsWith({字符串类型变量名称}, {常量字符串})
+（语法）string.endsWith({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果})
 （示例）string.endsWith(str1, 'abc')
+（示例）string.endsWith(str1, str2 + 'abc')
 
 ### string.contains()
 （作用）判断字符串类型的变量是否包含指定内容
-（语法）string.contains({字符串类型变量名称}, {常量字符串})
+（语法）string.contains({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果})
 （示例）string.contains(str1, 'abc')
+（示例）string.contains(str1, str2 + 'abc')
 
 ### string.length()
 （作用）获取字符串类型的变量的长度
-（语法）string.length({字符串类型变量名称})
+（语法）string.length({字符串变量/常量/运算结果})
 （示例）string.length(str1)
+（示例）string.length(str1 + str2)
 
 ## 整型处理
 整形的判断与 Java 语法相同，可使用比较运算符：==、<、>、<=、>=、!=
@@ -88,42 +100,42 @@ aviator 支持的逻辑判断运算符与 Java 相同
 
 ### string.containsIC()
 （作用）判断字符串类型的变量是否包含指定内容，忽略大小写
-（语法）string.containsIC({字符串类型变量名称}, {常量字符串})
+（语法）string.containsIC({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果})
 （示例）string.containsIC(str1, 'abc')
 
 ### string.endsWithIC()
 （作用）判断字符串类型的变量是否以指定内容结尾，忽略大小写
-（语法）string.endsWithIC({字符串类型变量名称}, {常量字符串})
+（语法）string.endsWithIC({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果})
 （示例）string.endsWithIC(str1, 'abc')
 
 ### string.equalsIC()
 （作用）判断字符串类型的变量是否与指定内容相等，忽略大小写
-（语法）string.equalsIC({字符串类型变量名称}, {常量字符串})
+（语法）string.equalsIC({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果})
 （示例）string.equalsIC(str1, 'abc')
 
 ### string.startsWithIC()
 （作用）判断字符串类型的变量是否以指定内容开头，忽略大小写
-（语法）string.startsWithIC({字符串类型变量名称}, {常量字符串})
+（语法）string.startsWithIC({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果})
 （示例）string.startsWithIC(str1, 'abc')
 
 ## 比较字符串支持比较多个的方法
 
 ### string.containsAny()
 （作用）判断字符串类型的变量是否包含多个指定内容中的任意一个
-（语法）string.containsAny({字符串类型变量名称}, {常量字符串1}, {常量字符串2}, ...)
+（语法）string.containsAny({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果1}, {字符串变量/常量/运算结果2}, ...)
 （示例）string.containsAny(str1, 'abc', 'def', 'ghi')
 
 ### string.endsWithAny()
 （作用）判断字符串类型的变量是否以多个指定内容中的任意一个结尾
-（语法）string.endsWithAny({字符串类型变量名称}, {常量字符串1}, {常量字符串2}, ...)
+（语法）string.endsWithAny({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果1}, {字符串变量/常量/运算结果2}, ...)
 （示例）string.endsWithAny(str1, 'abc', 'def', 'ghi')
 
 ### string.equalsAny()
 （作用）判断字符串类型的变量是否与多个指定内容中的任意一个相等
-（语法）string.equalsAny({字符串类型变量名称}, {常量字符串1}, {常量字符串2}, ...)
+（语法）string.equalsAny({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果1}, {字符串变量/常量/运算结果2}, ...)
 （示例）string.equalsAny(str1, 'abc', 'def', 'ghi')
 
 ### string.startsWithAny()
 （作用）判断字符串类型的变量是否以多个指定内容中的任意一个开头
-（语法）string.startsWithAny({字符串类型变量名称}, {常量字符串1}, {常量字符串2}, ...)
+（语法）string.startsWithAny({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果1}, {字符串变量/常量/运算结果2}, ...)
 （示例）string.startsWithAny(str1, 'abc', 'def', 'ghi')
