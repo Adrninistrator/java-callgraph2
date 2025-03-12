@@ -1019,5 +1019,4 @@ public abstract class BaseConfigureWrapper {
         markdownWriter.addLineWithNewLine("当前文件中的配置文件只有基本的说明，各配置文件的详细说明请打开对应的配置文件查看");
         markdownWriter.addLineWithNewLine("每个配置参数可以通过配置文件或对应的枚举进行修改，效果相同");
     }
-
 }

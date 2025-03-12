@@ -12,6 +12,7 @@ import com.adrninistrator.javacg2.el.function.ignorecase.StringContainsICFunctio
 import com.adrninistrator.javacg2.el.function.ignorecase.StringEndsWithICFunction;
 import com.adrninistrator.javacg2.el.function.ignorecase.StringEqualsICFunction;
 import com.adrninistrator.javacg2.el.function.ignorecase.StringStartsWithICFunction;
+import com.adrninistrator.javacg2.el.util.ElUtil;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2Util;
 import com.googlecode.aviator.AviatorEvaluator;
@@ -66,6 +67,9 @@ public class ElHandler {
 
     // 表达式
     private Expression expression;
+
+    // 是否调试模式
+    private boolean debugMode = false;
 
     /**
      * @param expressionText     表达式文本
@@ -148,7 +152,8 @@ public class ElHandler {
      * @return
      */
     public boolean checkVariableNameSpecified(ElAllowedVariableInterface elVariable) {
-        return elSpecifiedVariableNameSet.contains(elVariable.getVariableName());
+        // 调试模式时所有变量都使用
+        return debugMode || elSpecifiedVariableNameSet.contains(elVariable.getVariableName());
     }
 
     /**
@@ -163,14 +168,23 @@ public class ElHandler {
             return false;
         }
 
-        Object executeResult = expression.execute(map);
+        Object executeResult;
+        try {
+            executeResult = expression.execute(map);
+            if (debugMode) {
+                logger.info("执行表达式 配置文件 [{}] 文本 [{}] 执行结果 [{}] 变量信息： {}", elConfigFile, expressionText, executeResult, JavaCG2Util.getMapValueStr(map));
+            }
+        } catch (Exception e) {
+            logger.error("表达式执行失败 配置文件 [{}] 文本 [{}] 变量信息： [{}]", elConfigFile, expressionText, JavaCG2Util.getMapValueStr(map));
+            throw new JavaCG2RuntimeException("表达式执行失败");
+        }
         if (!(executeResult instanceof Boolean)) {
-            logger.error("{} 表达式执行结果返回值非 {} [{}]", expressionText, Boolean.class.getSimpleName(), expressionText);
+            logger.error("表达式 配置文件 [{}] 文本 [{}] 执行结果返回值类型非 {} [{}]", elConfigFile, expressionText, Boolean.class.getSimpleName(), executeResult);
             throw new JavaCG2RuntimeException("表达式执行结果返回值非法");
         }
         boolean result = (boolean) executeResult;
-        if (result && ignoreData) {
-            // 表达式执行结果为true，且当前表达式是需要忽略数据
+        if (result && ignoreData && !ElUtil.checkRunInCheckerFlag()) {
+            // 表达式执行结果为true，且当前表达式是需要忽略数据，且没有执行用于检测的表达式标志
             writeFileTPE.execute(() -> {
                 String mapValueStr = JavaCG2Util.getMapValueStr(map);
                 String data = String.format("通过表达式执行结果判断需要忽略当前数据，表达式配置文件： {%s} 表达式： {%s} 表达式使用的变量值： {%s}%s", elConfigFile, expressionText, mapValueStr, JavaCG2Constants.NEW_LINE);
@@ -195,5 +209,9 @@ public class ElHandler {
             return null;
         }
         return new ArrayHashMap<>();
+    }
+
+    public void setDebugMode(boolean debugMode) {
+        this.debugMode = debugMode;
     }
 }

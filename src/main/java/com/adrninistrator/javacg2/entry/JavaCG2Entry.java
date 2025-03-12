@@ -57,6 +57,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class JavaCG2Entry {
     private static final Logger logger = LoggerFactory.getLogger(JavaCG2Entry.class);
 
+    public static final String SIMPLE_CLASS_NAME = JavaCG2Entry.class.getSimpleName();
+
     private final JavaCG2Counter callIdCounter = new JavaCG2Counter(JavaCG2Constants.METHOD_CALL_ID_MIN_BEFORE);
     private final JavaCG2Counter classNumCounter = new JavaCG2Counter();
     private final JavaCG2Counter methodNumCounter = new JavaCG2Counter();
@@ -124,6 +126,10 @@ public class JavaCG2Entry {
             boolean success = parse(javaCG2ElManager, javaCG2ConfInfo);
             logger.info("执行完毕，处理数量，类： {} 方法: {} 方法调用: {} 耗时: {} 秒", classNumCounter.getCount(), methodNumCounter.getCount(), callIdCounter.getCount(),
                     JavaCG2Util.getSpendSeconds(startTime));
+            // 打印所有的配置参数信息
+            javaCG2ConfigureWrapper.printAllConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_ALL_CONFIG_MD);
+            // 打印当前使用的配置信息
+            javaCG2ConfigureWrapper.printUsedConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_USED_CONFIG_MD);
             return success;
         }
     }

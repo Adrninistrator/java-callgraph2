@@ -356,17 +356,19 @@ public class JavaCG2Util {
      * @return
      */
     public static String getMapValueStr(Map<String, Object> map) {
-        StringBuilder stringBuilder = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder("{");
         List<String> keyList = new ArrayList<>(map.keySet());
         Collections.sort(keyList);
+        boolean first = true;
         for (String key : keyList) {
             Object value = map.get(key);
-            if (stringBuilder.length() > 0) {
+            if (!first) {
                 stringBuilder.append(", ");
             }
-            stringBuilder.append(key).append(": ").append(value);
+            stringBuilder.append(key).append("=").append(value);
+            first = false;
         }
-        return stringBuilder.toString();
+        return stringBuilder.append("}").toString();
     }
 
     private JavaCG2Util() {

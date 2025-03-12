@@ -9,6 +9,8 @@ import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
 import org.junit.Before;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
@@ -19,6 +21,7 @@ import java.io.File;
  */
 public abstract class TestBase {
 
+    private static final Logger logger = LoggerFactory.getLogger(TestBase.class);
     protected String jacgTestListPath;
 
     @Before
@@ -66,6 +69,11 @@ public abstract class TestBase {
     protected void run(boolean success, String... inputFiles) {
         JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper(inputFiles);
         JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
-        Assert.assertEquals(success, javaCG2Entry.run());
+        if (success) {
+            Assert.assertTrue(javaCG2Entry.run());
+        } else {
+            Exception e = Assert.assertThrows(Exception.class, javaCG2Entry::run);
+            logger.error("error ", e);
+        }
     }
 }

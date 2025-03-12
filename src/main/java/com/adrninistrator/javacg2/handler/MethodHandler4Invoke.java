@@ -1077,8 +1077,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         JavaCG2CallTypeEnum callTypeEnum = isInterface ? JavaCG2CallTypeEnum.CTE_RAW_INVOKE_INTERFACE : JavaCG2CallTypeEnum.CTE_RAW_INVOKE_VIRTUAL;
         // 记录方法调用信息
         MethodCall addedMethodCall = addCommonMethodCallWithInfo(invokeInstruction, enabled, callTypeEnum, null, calleeClassName, calleeMethodName, calleeArgTypes,
-                calleeArrayDimensions,
-                methodCallPossibleInfo);
+                calleeArrayDimensions, methodCallPossibleInfo);
         if (addedMethodCall != null && addedReplacedMethodCall != null) {
             addedMethodCall.setDescription(addedReplacedMethodCall.getCallId() + " 是当前方法调用被调用对象被替换为实际类型后的记录，因此当前记录未启用");
         }

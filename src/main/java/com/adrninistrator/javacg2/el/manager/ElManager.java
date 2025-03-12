@@ -87,7 +87,22 @@ public abstract class ElManager implements Closeable {
                 throw new JavaCG2RuntimeException("创建对象实例失败");
             }
         }
+        // 选择是否为调试模式
+        boolean debugMode = chooseDebugMode(configureWrapper);
+        if (debugMode) {
+            for (ElHandler elHandler : elHandlerMap.values()) {
+                elHandler.setDebugMode(true);
+            }
+        }
     }
+
+    /**
+     * 选择是否为调试模式
+     *
+     * @param configureWrapper
+     * @return
+     */
+    protected abstract boolean chooseDebugMode(BaseConfigureWrapper configureWrapper);
 
     public ElHandler getElHandlerMap(ElConfigInterface elConfig) {
         ElHandler elHandler = elHandlerMap.get(elConfig.getKey());

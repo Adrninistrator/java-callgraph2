@@ -427,6 +427,16 @@ public class JavaCG2FileUtil {
     }
 
     /**
+     * 根据文件路径获取文件所在目录路径，支持以斜杠'/'作为分隔符
+     *
+     * @param filePath
+     * @return
+     */
+    public static String getFileDirPathSupportSlash(String filePath) {
+        return StringUtils.substringBeforeLast(filePath, JavaCG2Constants.FLAG_SLASH);
+    }
+
+    /**
      * 根据文件路径获取文件名
      *
      * @param filePath

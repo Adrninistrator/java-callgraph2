@@ -92,6 +92,11 @@ public class JavaCG2Constants {
 
     public static final String EL_IGNORE_DATA_FILE_NAME = "el_ignore_data.log";
 
+    // 保存全部的配置参数信息文件
+    public static final String FILE_JAVACG2_ALL_CONFIG_MD = "_javacg2_all_config.md";
+    // 保存当前有使用的配置参数信息文件
+    public static final String FILE_JAVACG2_USED_CONFIG_MD = "_javacg2_used_config.md";
+
     public static final String FILE_TYPE_CLASS = "class";
 
     public static final String EXT_JAR = ".jar";

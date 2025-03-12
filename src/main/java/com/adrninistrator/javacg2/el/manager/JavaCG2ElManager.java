@@ -2,6 +2,7 @@ package com.adrninistrator.javacg2.el.manager;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.conf.BaseConfigureWrapper;
+import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.el.enums.JavaCG2ElAllowedVariableEnum;
 import com.adrninistrator.javacg2.el.enums.JavaCG2ElConfigEnum;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
@@ -21,6 +22,11 @@ public class JavaCG2ElManager extends ElManager {
 
     public JavaCG2ElManager(BaseConfigureWrapper configureWrapper, ElConfigInterface[] elConfigInterfaces, String outputDirPath) {
         super(configureWrapper, elConfigInterfaces, outputDirPath);
+    }
+
+    @Override
+    protected boolean chooseDebugMode(BaseConfigureWrapper configureWrapper) {
+        return configureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_EL_DEBUG_MODE);
     }
 
     /**
@@ -68,6 +74,10 @@ public class JavaCG2ElManager extends ElManager {
         if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_PATH_IN_DIR)) {
             map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_PATH_IN_DIR.getVariableName(), newFilePath);
         }
+        if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR)) {
+            String fileDirPath = JavaCG2FileUtil.getFileDirPathSupportSlash(newFilePath);
+            map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR.getVariableName(), fileDirPath);
+        }
         if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME)) {
             String fileName = JavaCG2FileUtil.getFileNameSupportSlash(newFilePath);
             map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName(), fileName);
@@ -78,6 +88,10 @@ public class JavaCG2ElManager extends ElManager {
     private void mergeFileAddData4FileInJarWar(ElHandler elHandler, Map<String, Object> map, String filePath) {
         if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR)) {
             map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName(), filePath);
+        }
+        if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR)) {
+            String fileDirPath = JavaCG2FileUtil.getFileDirPathSupportSlash(filePath);
+            map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName(), fileDirPath);
         }
         if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME)) {
             String fileName = JavaCG2FileUtil.getFileNameSupportSlash(filePath);

@@ -337,15 +337,15 @@ public class MergeJarHandler {
                 // 获得生成的jar文件中的目录名称
                 String dirNameInJar = JavaCG2JarUtil.genDirNameInJar(jarNum, jarFileName);
                 doHandleJarFile(innerZipInputStream, null, dirNameInJar, targetZos, false);
+            } else {
+                // 处理jar/war文件中的一个文件
+                ZipParameters zipParameters = new ZipParameters();
+                zipParameters.setFileNameInZip(firstLevelDirName + JavaCG2Constants.FLAG_SLASH + jarEntryPath);
+                targetZos.putNextEntry(zipParameters);
+
+                // 向目标jar文件写入数据
+                addInput2Jar(zipInputStream, targetZos);
             }
-
-            // 处理jar/war文件中的一个文件
-            ZipParameters zipParameters = new ZipParameters();
-            zipParameters.setFileNameInZip(firstLevelDirName + JavaCG2Constants.FLAG_SLASH + jarEntryPath);
-            targetZos.putNextEntry(zipParameters);
-
-            // 向目标jar文件写入数据
-            addInput2Jar(zipInputStream, targetZos);
         }
     }
 

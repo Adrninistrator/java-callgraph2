@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * @author adrninistrator
  * @date 2023/3/26
- * @description: 方法处理相关工具类
+ * @description: 类与方法处理相关工具类
  */
 public class JavaCG2ClassMethodUtil {
 

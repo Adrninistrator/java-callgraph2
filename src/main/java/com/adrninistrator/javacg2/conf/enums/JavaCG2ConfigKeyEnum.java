@@ -30,6 +30,9 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
     CKE_OUTPUT_FILE_EXT("output.file.ext",
             new String[]{"生成文件后缀名"},
             String.class, false, ".txt"),
+    CKE_EL_DEBUG_MODE("el.debug.mode",
+            new String[]{"表达式执行时是否开启调试模式，若开启会在应用日志中输出表达式执行时的详细信息"},
+            Boolean.class, false, Boolean.FALSE.toString()),
     ;
 
     // 参数key

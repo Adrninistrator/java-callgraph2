@@ -3,5 +3,6 @@
 ## （范围）目录中的jar文件
 ## （表达式使用示例文件）请参考 el_example.md
 ## （允许使用的变量）{变量名称} {变量类型} {变量描述} {变量示例}
-## {file_path} {String} {目录中的文件绝对路径, 以斜杠/为分隔符} {D:\a\b.jar, /tmp/a/b.jar}
+## {file_path} {String} {目录中的文件绝对路径, 以斜杠/为分隔符} {D:/a/b.jar, /tmp/a/b.jar}
+## {file_dir_path} {String} {目录中的文件所在目录绝对路径, 以斜杠/为分隔符，不以分隔符结尾} {D:/a, /tmp/a}
 ## {file_name} {String} {文件名称} {a.class, a.xml}

@@ -24,24 +24,28 @@ public enum JavaCG2ElConfigEnum implements ElConfigInterface {
             new String[]{"目录中的jar文件"},
             new JavaCG2ElAllowedVariableEnum[]{
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_PATH_IN_DIR,
+                    JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME
             }, JavaCG2ElChecker4MergeFileInDir.class, true),
     ECE_MERGE_FILE_IGNORE_WAR_IN_DIR(JavaCG2DirEnum.IDE_MERGE_FILE_SWITCH.getDirName() + "/ignore_war_in_dir.av",
             new String[]{"目录中的war文件"},
             new JavaCG2ElAllowedVariableEnum[]{
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_PATH_IN_DIR,
+                    JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME
             }, JavaCG2ElChecker4MergeFileInDir.class, true),
     ECE_MERGE_FILE_IGNORE_CLASS_IN_DIR(JavaCG2DirEnum.IDE_MERGE_FILE_SWITCH.getDirName() + "/ignore_class_in_dir.av",
             new String[]{"目录中的class文件"},
             new JavaCG2ElAllowedVariableEnum[]{
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_PATH_IN_DIR,
+                    JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME
             }, JavaCG2ElChecker4MergeFileInDir.class, true),
     ECE_MERGE_FILE_IGNORE_OTHER_IN_DIR(JavaCG2DirEnum.IDE_MERGE_FILE_SWITCH.getDirName() + "/ignore_other_in_dir.av",
             new String[]{"目录中的非jar、war、class文件"},
             new JavaCG2ElAllowedVariableEnum[]{
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_PATH_IN_DIR,
+                    JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT
             }, JavaCG2ElChecker4MergeFileInDir.class, true),
@@ -49,12 +53,14 @@ public enum JavaCG2ElConfigEnum implements ElConfigInterface {
             new String[]{"jar/war中的jar文件"},
             new JavaCG2ElAllowedVariableEnum[]{
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR,
+                    JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME
             }, JavaCG2ElChecker4MergeFileInJarWar.class, true),
     ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR(JavaCG2DirEnum.IDE_MERGE_FILE_SWITCH.getDirName() + "/ignore_class_in_jar_war.av",
             new String[]{"jar/war中的class文件"},
             new JavaCG2ElAllowedVariableEnum[]{
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR,
+                    JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR
             }, JavaCG2ElChecker4MergeFileInJarWar.class, true),
@@ -62,6 +68,7 @@ public enum JavaCG2ElConfigEnum implements ElConfigInterface {
             new String[]{"jar/war中的非jar、war、class文件"},
             new JavaCG2ElAllowedVariableEnum[]{
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR,
+                    JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME,
                     JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT
             }, JavaCG2ElChecker4MergeFileInJarWar.class, true),

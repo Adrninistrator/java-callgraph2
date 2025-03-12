@@ -42,7 +42,11 @@ com.github.adrninistrator:java-callgraph2: 版本号
 
 ## 2.3. 配置参数
 
-### 2.3.1. _javacg2_config 目录
+### 2.3.1. 配置参数说明及示例
+
+参考 [_javacg2_all_config.md](docs/_javacg2_all_config.md)
+
+### 2.3.2. _javacg2_config 目录
 
 |配置文件名|配置文件作用|
 |---|---|
@@ -50,7 +54,7 @@ com.github.adrninistrator:java-callgraph2: 版本号
 |fr_eq_conversion_method.properties|通常不需要指定，处理 get/set 方法对应的字段关联关系时使用|
 |jar_dir.properties|指定需要解析的目录、jar/war 文件路径|
 
-### 2.3.2. _javacg2_merge_file_switch 目录
+### 2.3.3. _javacg2_merge_file_switch 目录
 
 用于控制在合并 jar 文件时需要忽略特定内容的开关，包括目录中的 class、jar、war 文件，jar/war 文件中的 class、jar 文件，目录、jar/war 文件中的其他类型文件等
 
@@ -68,7 +72,7 @@ ignore_other_in_jar_war.av
 ignore_war_in_dir.av
 ```
 
-### 2.3.3. _javacg2_parse_class_method_switch 目录
+### 2.3.4. _javacg2_parse_class_method_switch 目录
 
 控制解析类及方法时是否需要忽略的开关
 
@@ -79,7 +83,7 @@ parse_ignore_class.av
 parse_ignore_method.av
 ```
 
-### 2.3.4. _javacg2_parse_method_call_switch 目录
+### 2.3.5. _javacg2_parse_method_call_switch 目录
 
 控制解析方法调用时是否需要忽略的开关，包括仅通过被调用方法判断、仅通过调用方法判断、通过调用方法与被调用方法判断
 
@@ -91,7 +95,7 @@ parse_ignore_method_call_er.av
 parse_ignore_method_call_er_ee.av
 ```
 
-### 2.3.5. 表达式语言配置示例
+### 2.3.6. 表达式语言配置示例
 
 以上表达式语言配置示例可参考项目中的文件 src/main/resources/el_example.md
 
@@ -130,7 +134,7 @@ gradlew gen_run_jar
 
 ## 3.2. 执行方式
 
-执行以上命令后，会在`output_dir`目录中生成可以直接执行的文件
+执行以上命令后，会在`jar_output_dir`目录中生成可以直接执行的文件
 
 在 Windows/Linux 等操作系统中分别执行对应的脚本文件`run.bat`、`run.sh`
 

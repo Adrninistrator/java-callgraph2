@@ -13,6 +13,9 @@
 package_name == 'a.b' && string.endsWith(simple_class_name, 'Test')
 代表在解析类时，假如类的包名等于 'a.b'，且类的简单类名以 'Test' 结尾，则跳过解析对应的类
 
+# 表达式调试方式
+将配置文件 _javacg2_config/config.properties 的 el.debug.mode 参数设置为 true 可以使表达式执行时开启调试模式，会在应用日志中输出表达式执行时的详细信息
+
 # 表达式语法 - aviator 默认支持
 
 ## 返回固定值

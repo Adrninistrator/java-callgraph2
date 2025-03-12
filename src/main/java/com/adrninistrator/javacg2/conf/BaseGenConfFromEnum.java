@@ -161,6 +161,8 @@ public abstract class BaseGenConfFromEnum {
                 "若表达式用于忽略数据，则被忽略的数据会记录在日志文件中，保存在当前输出目录中，文件名为 " + JavaCG2Constants.EL_IGNORE_DATA_FILE_NAME,
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式示例",
                 chooseElExampleText(),
+                JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式调试方式",
+                chooseElDebugModeText(),
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式语法 - aviator 默认支持",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "## 返回固定值",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "### true",
@@ -265,4 +267,6 @@ public abstract class BaseGenConfFromEnum {
     }
 
     protected abstract String chooseElExampleText();
+
+    protected abstract String chooseElDebugModeText();
 }
