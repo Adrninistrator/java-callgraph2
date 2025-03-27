@@ -13,6 +13,9 @@ public interface ElAllowedVariableInterface {
     // 获取变量类型
     String getType();
 
+    // 是否为 ｛名称前缀}{数字} 的形式
+    boolean isPrefixWithNum();
+
     // 获取变量描述
     String[] getDescriptions();
 

@@ -365,7 +365,13 @@ public class JavaCG2Util {
             if (!first) {
                 stringBuilder.append(", ");
             }
-            stringBuilder.append(key).append("=").append(value);
+            stringBuilder.append(key).append("=");
+            if (value instanceof Set) {
+                String valueString = StringUtils.join((Set<?>) value, ", ");
+                stringBuilder.append("(").append(valueString).append(")");
+            } else {
+                stringBuilder.append(value);
+            }
             first = false;
         }
         return stringBuilder.append("}").toString();

@@ -2,6 +2,7 @@ package com.adrninistrator.javacg2.el.checker;
 
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.el.manager.ElManager;
+import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,13 +30,12 @@ public abstract class ElChecker {
      * @param elConfig
      * @return
      */
-    public boolean check(ElManager elManager, ElConfigInterface elConfig) {
+    public void check(ElManager elManager, ElConfigInterface elConfig) {
         try {
             doCheck(elManager, elConfig);
-            return true;
         } catch (Exception e) {
             logger.error("执行表达式进行检查时失败，需要修改对应的表达式 {} ", elConfig.getKey(), e);
-            return false;
+            throw new JavaCG2RuntimeException("执行表达式进行检查时失败，需要修改对应的表达式");
         }
     }
 }

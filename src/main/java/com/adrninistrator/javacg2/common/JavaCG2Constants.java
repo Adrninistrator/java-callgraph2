@@ -163,7 +163,7 @@ public class JavaCG2Constants {
     public static final String THREAD_NAME_PREFIX_EL_WRITE_IGNORE_DATA = "el_write_ignore_data";
 
     // 等值转换方法
-    public static final String[] FR_EQ_CONVERSION_METHOD = new String[]{
+    public static final String[] FR_EQ_CONVERSION_METHODS = new String[]{
             "java.lang.Boolean:<init>=1",
             "java.lang.Boolean:valueOf=1",
             "java.lang.Boolean:parseBoolean=1",

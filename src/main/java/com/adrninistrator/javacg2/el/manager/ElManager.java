@@ -43,6 +43,9 @@ public abstract class ElManager implements Closeable {
     // 用于写表达式忽略数据文件的线程池，在java-all-call-graph中可能在多线程中被调用
     private final ThreadPoolExecutor writeFileTPE;
 
+    // 是否调试模式
+    private final boolean debugMode;
+
     private boolean closed = false;
 
     protected ElManager(BaseConfigureWrapper configureWrapper, ElConfigInterface[] elConfigInterfaces, String outputDirPath) {
@@ -88,7 +91,7 @@ public abstract class ElManager implements Closeable {
             }
         }
         // 选择是否为调试模式
-        boolean debugMode = chooseDebugMode(configureWrapper);
+        debugMode = chooseDebugMode(configureWrapper);
         if (debugMode) {
             for (ElHandler elHandler : elHandlerMap.values()) {
                 elHandler.setDebugMode(true);
@@ -127,5 +130,9 @@ public abstract class ElManager implements Closeable {
         if (elIgnoreDataWriter != null) {
             IOUtils.closeQuietly(elIgnoreDataWriter);
         }
+    }
+
+    public boolean isDebugMode() {
+        return debugMode;
     }
 }

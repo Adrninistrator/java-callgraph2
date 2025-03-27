@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg2.conf.enums;
 
+import com.adrninistrator.javacg2.common.enums.JavaCG2CalleeRawActualEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
 import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
 
@@ -33,6 +34,18 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
     CKE_EL_DEBUG_MODE("el.debug.mode",
             new String[]{"表达式执行时是否开启调试模式，若开启会在应用日志中输出表达式执行时的详细信息"},
             Boolean.class, false, Boolean.FALSE.toString()),
+    CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL("handle.callee.new.raw.actual",
+            new String[]{"解析方法调用时，通过new创建的被调用类型使用原始类型还是实际类型",
+                    "例如 Super1 obj = new Child1(); obj.func1(); ，则被调用对象的原始类型为Super1，实际类型为Child1",
+                    JavaCG2CalleeRawActualEnum.getAllInfo()
+            },
+            String.class, false, JavaCG2CalleeRawActualEnum.CRAE_ONLY_ACTUAL.getType()),
+    CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL("handle.callee.spring.bean.raw.actual",
+            new String[]{"解析方法调用时，被调用对象为Spring Bean，类型使用原始类型还是实际类型（支持字段注入、getBean()方法）",
+                    "例如Spring Bean字段定义的类型为Super1，实际注入的类型为Child1，则被调用对象的原始类型为Super1，实际类型为Child1",
+                    JavaCG2CalleeRawActualEnum.getAllInfo()
+            },
+            String.class, false, JavaCG2CalleeRawActualEnum.CRAE_ONLY_ACTUAL.getType()),
     ;
 
     // 参数key
@@ -80,7 +93,7 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
     }
 
     @Override
-    public boolean notBlank() {
+    public boolean isNotBlank() {
         return notBlank;
     }
 

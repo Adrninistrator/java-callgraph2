@@ -1,7 +1,6 @@
 package com.adrninistrator.javacg2.el.handler;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
-import com.adrninistrator.javacg2.el.dto.ElVariableConfig;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.el.function.any.StringContainsAnyFunction;
@@ -25,9 +24,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -44,14 +42,22 @@ public class ElHandler {
     // 表达式文本
     private final String expressionText;
 
-    // 表达式允许的变量配置列表
-    private final List<ElVariableConfig> elAllowedVariableConfigList = new ArrayList<>();
-
-    // 表达式允许的变量名称Set
-    private final Set<String> elAllowedVariableNameSet = new HashSet<>();
+    /*
+        表达式允许的变量名称Map
+        key     变量名称
+        value   是否为 ｛名称前缀}{数字} 的形式
+     */
+    private final Map<String, Boolean> elAllowedVariableNameMap = new HashMap<>();
 
     // 表达式有指定的变量名称Set
     private final Set<String> elSpecifiedVariableNameSet = new HashSet<>();
+
+    /*
+        名称前缀及对应的数字Map
+        key     名称前缀
+        value   对应的数字集合
+     */
+    private final Map<String, Set<Integer>> prefixWithNumMap = new HashMap<>();
 
     // 用于写表达式忽略数据的文件输出流
     private Writer elIgnoreDataWriter;
@@ -97,6 +103,19 @@ public class ElHandler {
         elConfigFile = elConfig.getKey();
 
         // 创建 Aviator 实例
+        AviatorEvaluatorInstance aviatorEvaluatorInstance = genAviatorEvaluatorInstance();
+        // 根据表达式文本编译表达式对象
+        logger.info("表达式文本 {} [{}]", elConfigFile, expressionText);
+        expression = aviatorEvaluatorInstance.compile(expressionText, true);
+        // 检查表达式文本中使用的变量名称
+        checkElVariableName();
+
+        this.elIgnoreDataWriter = elIgnoreDataWriter;
+        this.writeFileTPE = writeFileTPE;
+    }
+
+    // 创建 Aviator 实例
+    private AviatorEvaluatorInstance genAviatorEvaluatorInstance() {
         AviatorEvaluatorInstance aviatorEvaluatorInstance = AviatorEvaluator.newInstance();
         aviatorEvaluatorInstance.enableSandboxMode();
         aviatorEvaluatorInstance.addFunction(new StringContainsAnyFunction());
@@ -107,25 +126,54 @@ public class ElHandler {
         aviatorEvaluatorInstance.addFunction(new StringEndsWithICFunction());
         aviatorEvaluatorInstance.addFunction(new StringEqualsICFunction());
         aviatorEvaluatorInstance.addFunction(new StringStartsWithICFunction());
+        return aviatorEvaluatorInstance;
+    }
 
-        expression = aviatorEvaluatorInstance.compile(expressionText, true);
+    // 检查表达式文本中使用的变量名称
+    private void checkElVariableName() {
+        // 遍历并处理表达式文本中出现的变量名称
         for (String variableName : expression.getVariableNames()) {
-            if (!elAllowedVariableNameSet.contains(variableName)) {
-                StringBuilder stringBuilder = new StringBuilder();
-                for (ElVariableConfig elVariableConfig : elAllowedVariableConfigList) {
-                    stringBuilder.append("\n")
-                            .append(elVariableConfig.getName()).append("\t")
-                            .append(elVariableConfig.getType()).append("\t")
-                            .append(StringUtils.join(elVariableConfig.getDescriptions(), " ")).append("\t")
-                            .append(StringUtils.join(elVariableConfig.getValueExamples(), " "));
-                }
-                logger.error("{} 当前使用的表达式变量名称非法 {}\n允许使用的变量如下\n变量名称\t变量类型\t变量说明\t变量值示例{}", this.getClass().getSimpleName(), variableName, stringBuilder);
-                throw new JavaCG2RuntimeException("当前使用的表达式变量名称非法");
-            }
-            elSpecifiedVariableNameSet.add(variableName);
+            doCheckElVariableName(variableName);
         }
-        this.elIgnoreDataWriter = elIgnoreDataWriter;
-        this.writeFileTPE = writeFileTPE;
+    }
+
+    private void doCheckElVariableName(String variableName) {
+        for (Map.Entry<String, Boolean> entry : elAllowedVariableNameMap.entrySet()) {
+            String allowedVariableName = entry.getKey();
+            boolean prefixWithNum = entry.getValue();
+            if (!prefixWithNum) {
+                if (allowedVariableName.equals(variableName)) {
+                    logger.debug("使用完整的表达式变量名称 {}", variableName);
+                    elSpecifiedVariableNameSet.add(variableName);
+                    return;
+                }
+                continue;
+            }
+            if (variableName.startsWith(allowedVariableName)) {
+                if (variableName.equals(allowedVariableName)) {
+                    logger.error("当前使用的 ｛名称前缀}{数字} 形式表达式变量名称非法，需要在后面指定 {数字} {}", variableName);
+                    throw new JavaCG2RuntimeException("当前使用的 ｛名称前缀}{数字} 形式表达式变量名称非法，需要在后面指定 {数字}");
+                }
+                String numStr = StringUtils.substringAfter(variableName, allowedVariableName);
+                if (!JavaCG2Util.isNumStr(numStr)) {
+                    logger.error("当前使用的 ｛名称前缀}{数字} 形式表达式变量名称非法，后面指定的内容需要是 {数字} {}", variableName);
+                    throw new JavaCG2RuntimeException("当前使用的 ｛名称前缀}{数字} 形式表达式变量名称非法，后面指定的内容需要是 {数字}");
+                }
+                int num = Integer.parseInt(numStr);
+                if (num < 0) {
+                    logger.error("当前使用的 ｛名称前缀}{数字} 形式表达式变量名称非法，后面指定的 {数字} 需要是正整数 {}", variableName);
+                    throw new JavaCG2RuntimeException("当前使用的 ｛名称前缀}{数字} 形式表达式变量名称非法，后面指定的 {数字} 需要是正整数");
+                }
+                // 记录 ｛名称前缀}{数字} 形式表达式变量
+                Set<Integer> numSet = prefixWithNumMap.computeIfAbsent(allowedVariableName, k -> new HashSet<>());
+                numSet.add(num);
+                elSpecifiedVariableNameSet.add(variableName);
+                return;
+            }
+        }
+
+        logger.error("当前使用的表达式变量名称非法 {} 允许使用的变量查看表达式配置文件 {}", variableName, elConfigFile);
+        throw new JavaCG2RuntimeException("当前使用的表达式变量名称非法");
     }
 
     /**
@@ -134,19 +182,14 @@ public class ElHandler {
      * @param elAllowedVariableEnum 允许使用表达式的变量枚举
      */
     protected void addElVariableConfig(ElAllowedVariableInterface elAllowedVariableEnum) {
-        if (!elAllowedVariableNameSet.add(elAllowedVariableEnum.getVariableName())) {
+        if (elAllowedVariableNameMap.putIfAbsent(elAllowedVariableEnum.getVariableName(), elAllowedVariableEnum.isPrefixWithNum()) != null) {
             throw new JavaCG2RuntimeException("添加了重复的变量名称 " + elAllowedVariableEnum.getVariableName());
         }
-        ElVariableConfig elVariableConfig = new ElVariableConfig();
-        elVariableConfig.setName(elAllowedVariableEnum.getVariableName());
-        elVariableConfig.setType(elAllowedVariableEnum.getType());
-        elVariableConfig.setDescriptions(elAllowedVariableEnum.getDescriptions());
-        elVariableConfig.setValueExamples(elAllowedVariableEnum.getValueExamples());
-        elAllowedVariableConfigList.add(elVariableConfig);
     }
 
     /**
      * 检查是否有在表达式中指定变量名称
+     * 表达式变量不是 ｛名称前缀}{数字} 的形式
      *
      * @param elVariable 变量枚举
      * @return
@@ -154,6 +197,39 @@ public class ElHandler {
     public boolean checkVariableNameSpecified(ElAllowedVariableInterface elVariable) {
         // 调试模式时所有变量都使用
         return debugMode || elSpecifiedVariableNameSet.contains(elVariable.getVariableName());
+    }
+
+    /**
+     * 检查是否有在表达式中指定变量名称
+     * 表达式变量是 ｛名称前缀}{数字} 的形式
+     *
+     * @param elVariable 变量枚举
+     * @return
+     */
+    public boolean checkVariableNamePrefixWithNumSpecified(ElAllowedVariableInterface elVariable) {
+        // 调试模式时所有变量都使用
+        return debugMode || prefixWithNumMap.containsKey(elVariable.getVariableName());
+    }
+
+    /**
+     * 检查是否有在表达式中指定变量名称
+     * 表达式变量是 ｛名称前缀}{数字} 的形式
+     *
+     * @param elVariable 变量枚举
+     * @param num        数字
+     * @return
+     */
+    public boolean checkVariableNamePrefixWithNumSpecified(ElAllowedVariableInterface elVariable, int num) {
+        if (debugMode) {
+            // 调试模式时所有变量都使用
+            return true;
+        }
+
+        Set<Integer> numSet = prefixWithNumMap.get(elVariable.getVariableName());
+        if (numSet == null) {
+            return false;
+        }
+        return numSet.contains(num);
     }
 
     /**
@@ -187,7 +263,7 @@ public class ElHandler {
             // 表达式执行结果为true，且当前表达式是需要忽略数据，且没有执行用于检测的表达式标志
             writeFileTPE.execute(() -> {
                 String mapValueStr = JavaCG2Util.getMapValueStr(map);
-                String data = String.format("通过表达式执行结果判断需要忽略当前数据，表达式配置文件： {%s} 表达式： {%s} 表达式使用的变量值： {%s}%s", elConfigFile, expressionText, mapValueStr, JavaCG2Constants.NEW_LINE);
+                String data = String.format("通过表达式执行结果判断需要忽略当前数据，表达式配置文件： {%s} 表达式： {%s} 表达式使用的变量值： %s%s", elConfigFile, expressionText, mapValueStr, JavaCG2Constants.NEW_LINE);
                 try {
                     elIgnoreDataWriter.write(data);
                 } catch (IOException e) {

@@ -20,6 +20,11 @@ tasks.register('gen_jar_in_jar', Jar) {
     archiveFileName = 'jar_output_dir.jar'
     destinationDirectory = file('build')
 
+    from(sourceSets.test.output) {
+        include 'test/**'
+        into '/'
+    }
+
     from(fileTree('jar_output_dir/jar')) {
         into 'jar'
     }

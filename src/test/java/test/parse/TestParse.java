@@ -28,4 +28,13 @@ public class TestParse extends TestBase {
         JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
         Assert.assertTrue(javaCG2Entry.run());
     }
+
+    /*
+        需要先执行 gradlew gen_run_jar gen_jar_in_jar 命令生成对应jar文件
+     */
+    @Test
+    public void testJarInJar() {
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper("build/jar_output_dir.jar");
+        Assert.assertTrue(new JavaCG2Entry(javaCG2ConfigureWrapper).run());
+    }
 }

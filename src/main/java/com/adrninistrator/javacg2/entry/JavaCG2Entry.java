@@ -123,23 +123,28 @@ public class JavaCG2Entry {
         String outputDirPath = handleOutputDir();
         javaCG2ConfInfo.setOutputDirPath(outputDirPath);
         try (JavaCG2ElManager javaCG2ElManager = new JavaCG2ElManager(javaCG2ConfigureWrapper, JavaCG2ElConfigEnum.values(), outputDirPath)) {
-            boolean success = parse(javaCG2ElManager, javaCG2ConfInfo);
-            logger.info("执行完毕，处理数量，类： {} 方法: {} 方法调用: {} 耗时: {} 秒", classNumCounter.getCount(), methodNumCounter.getCount(), callIdCounter.getCount(),
-                    JavaCG2Util.getSpendSeconds(startTime));
-            // 打印所有的配置参数信息
-            javaCG2ConfigureWrapper.printAllConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_ALL_CONFIG_MD);
-            // 打印当前使用的配置信息
-            javaCG2ConfigureWrapper.printUsedConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_USED_CONFIG_MD);
-            return success;
+            JavaCG2Counter jarNumCounter = new JavaCG2Counter(JavaCG2Constants.JAR_NUM_MIN_BEFORE);
+
+            // 处理参数中指定的jar包
+            String newJarFilePath = handleJarInConf(jarNumCounter, javaCG2ElManager);
+
+            try {
+                boolean success = parse(newJarFilePath, javaCG2ElManager, javaCG2ConfInfo);
+                logger.info("执行完毕，处理数量，类： {} 方法: {} 方法调用: {} 耗时: {} 秒", classNumCounter.getCount(), methodNumCounter.getCount(), callIdCounter.getCount(),
+                        JavaCG2Util.getSpendSeconds(startTime));
+                // 打印所有的配置参数信息
+                javaCG2ConfigureWrapper.printAllConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_ALL_CONFIG_MD);
+                // 打印当前使用的配置信息
+                javaCG2ConfigureWrapper.printUsedConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_USED_CONFIG_MD);
+                return success;
+            } catch (Exception e) {
+                logger.error("error ", e);
+                return false;
+            }
         }
     }
 
-    private boolean parse(JavaCG2ElManager javaCG2ElManager, JavaCG2ConfInfo javaCG2ConfInfo) {
-        JavaCG2Counter jarNumCounter = new JavaCG2Counter(JavaCG2Constants.JAR_NUM_MIN_BEFORE);
-
-        // 处理参数中指定的jar包
-        String newJarFilePath = handleJarInConf(jarNumCounter, javaCG2ElManager);
-
+    private boolean parse(String newJarFilePath, JavaCG2ElManager javaCG2ElManager, JavaCG2ConfInfo javaCG2ConfInfo) {
         // 初始化
         if (!init(javaCG2ConfInfo, javaCG2ElManager)) {
             return false;

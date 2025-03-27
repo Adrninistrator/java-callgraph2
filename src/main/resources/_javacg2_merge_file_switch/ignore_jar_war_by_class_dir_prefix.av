@@ -1,0 +1,16 @@
+## （作用）在 合并需要解析的目录或jar/war文件时 使用的表达式
+## （作用）若当前配置文件中的表达式执行结果为 true，则跳过合并（及解析）对应的文件
+## （作用）若表达式执行结果为 false，或未指定表达式，则当前配置不会跳过对应的文件
+## （范围）通过class文件目录的不同层级的路径前缀判断是否跳过合并当前jar/war文件
+## （范围）相当于通过jar/war文件中类的包名控制是否跳过合并当前jar/war文件
+## （范围）以下参数为jar/war文件中的class文件目录的不同层级的路径前缀集合
+## （范围）集合中的元素类型为字符串，以/作为分隔符，不会以分隔符开头或结尾
+## （范围）例如jar文件中有a1/c1.class、a2/b2/c2.class，则该jar文件中的class文件目录1级路径前缀有a1、a2，2级路径前缀有a2/b2，没有大于2级的路径前缀
+## （范围）在使用以下 class_dir_prefix_level_ 参数时，需要以 class_dir_prefix_level_ 开头，后续通过数字指定class文件路径层级
+## （范围）例如 class_dir_prefix_level_3 代表第3级class文件路径集合
+## （范围）以下的 file_name file_dir_path 均代表需要判断是否需要跳过合并的jar/war文件
+## （表达式使用示例文件）请参考 el_example.md
+## （允许使用的变量）{变量名称} {变量类型} {变量描述} {变量值示例}
+## {class_dir_prefix_level_} {Set} {jar/war文件中的class文件目录的不同层级的路径前缀集合} {集合：('a'), 集合：('a', 'a/b')}
+## {file_name} {String} {文件名称} {a.class, a.xml}
+## {file_dir_path} {String} {目录中的文件所在目录绝对路径, 以斜杠/为分隔符，不以分隔符结尾} {D:/a, /tmp/a}

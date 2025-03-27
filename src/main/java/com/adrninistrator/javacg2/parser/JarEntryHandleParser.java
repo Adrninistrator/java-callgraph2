@@ -123,7 +123,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     @Override
     protected boolean handleEntry(ZipInputStream zipInputStream, String jarEntryPath) throws IOException {
-        if (!JavaCG2FileUtil.isClassFile(jarEntryPath)) {
+        if (!JavaCG2FileUtil.checkClassFile(jarEntryPath)) {
             // 非class文件则跳过
             return true;
         }

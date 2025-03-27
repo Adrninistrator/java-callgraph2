@@ -130,7 +130,7 @@ public abstract class BaseGenConfFromEnum {
                         writeAVCommentLine(writer, "（范围）" + description);
                     }
                     writeAVCommentLine(writer, "（表达式使用示例文件）请参考 " + elExampleName);
-                    writeAVCommentLine(writer, "（允许使用的变量）{" + StringUtils.joinWith("} {", "变量名称", "变量类型", "变量描述", "变量示例") + "}");
+                    writeAVCommentLine(writer, "（允许使用的变量）{" + StringUtils.joinWith("} {", "变量名称", "变量类型", "变量描述", "变量值示例") + "}");
                     Set<String> allowedVariableNameSet = new HashSet<>();
                     for (ElAllowedVariableInterface elAllowedVariable : elConfig.getElAllowedVariableEnums()) {
                         if (!allowedVariableNameSet.add(elAllowedVariable.getVariableName())) {
@@ -227,6 +227,15 @@ public abstract class BaseGenConfFromEnum {
                 "（作用）用于改变运算顺序，确保按照期望的顺序执行多个逻辑表达式",
                 "（语法）({表达式1} {运算符} {表达式2})",
                 "（示例）(x > 10 && y < 20) || z == 5",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "## 集合处理",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "### include",
+                "（作用）判断集合中是否包含指定的元素",
+                "（语法）include({集合变量}, {字符串/整型等常量})",
+                "（示例）include(set1, 'abc')",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "### !include",
+                "（作用）判断集合中是否不包含指定的元素",
+                "（语法）!include({集合变量}, {字符串/整型等常量})",
+                "（示例）!include(set1, 'abc')",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式语法 - java-callgraph2 组件扩展支持",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "## 比较字符串忽略大小写的方法",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "### string.containsIC()",

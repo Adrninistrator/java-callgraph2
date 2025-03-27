@@ -22,6 +22,8 @@ JavaCG2ConfigKeyEnum
 |output.root.path|CKE_OUTPUT_ROOT_PATH|生成文件的根目录，以"/"或"\\"作为分隔符，末尾是否为分隔符不影响（默认为jar包所在目录）||
 |output.file.ext|CKE_OUTPUT_FILE_EXT|生成文件后缀名|.md|
 |el.debug.mode|CKE_EL_DEBUG_MODE|表达式执行时是否开启调试模式，若开启会在应用日志中输出表达式执行时的详细信息|false|
+|handle.callee.new.raw.actual|CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL|解析方法调用时，通过new创建的被调用类型使用原始类型还是实际类型 例如 Super1 obj = new Child1(); obj.func1(); ，则被调用对象的原始类型为Super1，实际类型为Child1 only_raw 仅记录原始类型	only_actual 仅记录实际类型	raw_actual 记录原始类型+实际类型|only_actual|
+|handle.callee.spring.bean.raw.actual|CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL|解析方法调用时，被调用对象为Spring Bean，类型使用原始类型还是实际类型（支持字段注入、getBean()方法） 例如Spring Bean字段定义的类型为Super1，实际注入的类型为Child1，则被调用对象的原始类型为Super1，实际类型为Child1 only_raw 仅记录原始类型	only_actual 仅记录实际类型	raw_actual 记录原始类型+实际类型|only_actual|
 
 # 3. 不区分顺序的其他配置信息
 

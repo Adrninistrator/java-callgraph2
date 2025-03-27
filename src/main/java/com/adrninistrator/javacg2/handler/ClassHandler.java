@@ -39,7 +39,6 @@ import org.apache.bcel.classfile.LocalVariableTable;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.classfile.MethodParameter;
 import org.apache.bcel.classfile.MethodParameters;
-import org.apache.bcel.classfile.Utility;
 import org.apache.bcel.generic.ConstantPoolGen;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
@@ -137,7 +136,6 @@ public class ClassHandler {
     private WriterSupportSkip logMethodSpendTimeWriter;
 
     private AnnotationAttributesFormatterInterface annotationAttributesFormatter;
-
 
     private ClassAndJarNum classAndJarNum;
 
@@ -555,7 +553,7 @@ public class ClassHandler {
         Code code = method.getCode();
         String methodInstructionsHash = "";
         if (code != null) {
-            String methodCode = Utility.codeToString(code.getCode(), method.getConstantPool(), 0, -1, false);
+            String methodCode = MethodCodeInstructionHandler.getMethodCodeStr(method);
             methodInstructionsHash = DigestUtils.md5Hex(methodCode);
         }
 

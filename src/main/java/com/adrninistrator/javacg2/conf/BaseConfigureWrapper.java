@@ -526,7 +526,7 @@ public abstract class BaseConfigureWrapper {
         if (value != null) {
             if (useConfig) {
                 // 判断不允许为空的参数是否有指定值
-                if (mainConfig.notBlank() && value instanceof String && StringUtils.isBlank((String) value)) {
+                if (mainConfig.isNotBlank() && value instanceof String && StringUtils.isBlank((String) value)) {
                     logger.error("需要使用的配置参数未在代码中指定 {} {}", mainConfig.getFileName(), mainConfig.getConfigPrintInfo());
                     throw new JavaCG2Error("需要使用的配置参数未在代码中指定: " + mainConfig.getFileName() + " " + mainConfig.getConfigPrintInfo());
                 }
@@ -554,7 +554,7 @@ public abstract class BaseConfigureWrapper {
         // 获取配置文件中的参数
         String strValue = properties.getProperty(key);
         if (useConfig) {
-            if (mainConfig.notBlank() && StringUtils.isBlank(strValue)) {
+            if (mainConfig.isNotBlank() && StringUtils.isBlank(strValue)) {
                 logger.error("需要使用的配置参数未在配置文件中指定 {} {}", mainConfig.getFileName(), mainConfig.getConfigPrintInfo());
                 throw new JavaCG2Error("需要使用的配置参数未在配置文件中指定: " + mainConfig.getFileName() + " " + mainConfig.getConfigPrintInfo());
             }

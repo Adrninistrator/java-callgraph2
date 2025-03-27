@@ -111,19 +111,6 @@ public class JavaCG2FileUtil {
     }
 
     /**
-     * 判断文件名是否为class文件
-     *
-     * @param fileName
-     * @return
-     */
-    public static boolean isClassFile(String fileName) {
-        if (fileName == null) {
-            return false;
-        }
-        return fileName.toLowerCase().endsWith(JavaCG2Constants.EXT_CLASS);
-    }
-
-    /**
      * 判断目录是否存在，不存在时尝试创建
      *
      * @param dirPath 需要判断的目录路径
@@ -514,6 +501,22 @@ public class JavaCG2FileUtil {
      */
     public static boolean checkClassFile(String filePath) {
         return StringUtils.endsWithIgnoreCase(filePath, JavaCG2Constants.EXT_CLASS);
+    }
+
+    /**
+     * 获取jar/war中的class文件相对BOOT-INF、WEB-INF目录的路径
+     *
+     * @param classFilePath
+     * @return
+     */
+    public static String getClassFileRelativelyPathInJar(String classFilePath) {
+        if (classFilePath.startsWith(JavaCG2Constants.BOOT_INF_CLASSES)) {
+            return StringUtils.substringAfter(classFilePath, JavaCG2Constants.BOOT_INF_CLASSES);
+        }
+        if (classFilePath.startsWith(JavaCG2Constants.WEB_INF_CLASSES)) {
+            return StringUtils.substringAfter(classFilePath, JavaCG2Constants.WEB_INF_CLASSES);
+        }
+        return classFilePath;
     }
 
     private JavaCG2FileUtil() {

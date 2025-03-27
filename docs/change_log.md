@@ -280,6 +280,53 @@ el.debug.mode=false
 
 ```
 ## （允许使用的变量）{变量名称} {变量类型} {变量描述} {变量示例}
-## {file_dir_path} {String} {目录中的文件所在目录绝对路径, 以斜杠/为分隔符，不以分隔符结尾} {D:/a, /tmp/a}
-## {file_dir_path} {String} {jar/war文件中的文件所在目录相对路径, 相对根目录的路径, 以斜杠/为分隔符，不以分隔符开头或结尾} {a/b, a/b}
+## {file_dir_path} {String} {目录中的文件所在目录绝对路径，以斜杠/为分隔符，不以分隔符结尾} {D:/a, /tmp/a}
+## {file_dir_path} {String} {jar/war 文件中的文件所在目录相对路径，相对根目录的路径，以斜杠/为分隔符，不以分隔符开头或结尾} {a/b, a/b}
 ```
+
+## 1.18. (3.0.7)
+
+### 1.18.1. 增加配置参数
+
+— _javacg2_config/config.properties
+
+```
+# 解析方法调用时，通过 new 创建的被调用类型使用原始类型还是实际类型
+# 例如 Super1 obj = new Child1(); obj.func1(); ，则被调用对象的原始类型为 Super1，实际类型为 Child1
+# only_raw 仅记录原始类型	only_actual 仅记录实际类型	raw_actual 记录原始类型+实际类型
+handle.callee.new.raw.actual=only_actual
+
+# 解析方法调用时，被调用对象为 Spring Bean，类型使用原始类型还是实际类型（支持字段注入、getBean() 方法）
+# 例如 Spring Bean 字段定义的类型为 Super1，实际注入的类型为 Child1，则被调用对象的原始类型为 Super1，实际类型为 Child1
+# only_raw 仅记录原始类型	only_actual 仅记录实际类型	raw_actual 记录原始类型+实际类型
+handle.callee.spring.bean.raw.actual=only_actual
+```
+
+### 1.18.2. 增加配置文件
+
+- _javacg2_merge_file_switch/ignore_jar_war_by_class_dir_prefix.av
+
+```
+## （作用）在 合并需要解析的目录或 jar/war 文件时 使用的表达式
+## （作用）若当前配置文件中的表达式执行结果为 true，则跳过合并（及解析）对应的文件
+## （作用）若表达式执行结果为 false，或未指定表达式，则当前配置不会跳过对应的文件
+## （范围）通过 class 文件目录的不同层级的路径前缀判断是否跳过合并当前 jar/war 文件
+## （范围）相当于通过 jar/war 文件中类的包名控制是否跳过合并当前 jar/war 文件
+## （范围）以下参数为 jar/war 文件中的 class 文件目录的不同层级的路径前缀集合
+## （范围）集合中的元素类型为字符串，以/作为分隔符，不会以分隔符开头或结尾
+## （范围）例如 jar 文件中有 a1/c1.class、a2/b2/c2.class，则该 jar 文件中的 class 文件目录 1 级路径前缀有 a1、a2，2 级路径前缀有 a2/b2，没有大于 2 级的路径前缀
+## （范围）在使用以下 class_dir_prefix_level_ 参数时，需要以 class_dir_prefix_level_ 开头，后续通过数字指定 class 文件路径层级
+## （范围）例如 class_dir_prefix_level_3 代表第 3 级 class 文件路径集合
+## （范围）以下的 file_name file_dir_path 均代表需要判断是否需要跳过合并的 jar/war 文件
+## （表达式使用示例文件）请参考 el_example.md
+## （允许使用的变量）{变量名称} {变量类型} {变量描述} {变量值示例}
+## {class_dir_prefix_level_} {Set} {jar/war 文件中的 class 文件目录的不同层级的路径前缀集合} {集合：('a'), 集合：('a', 'a/b')}
+## {file_name} {String} {文件名称} {a.class, a.xml}
+## {file_dir_path} {String} {目录中的文件所在目录绝对路径，以斜杠/为分隔符，不以分隔符结尾} {D:/a, /tmp/a}
+```
+
+### 1.18.3. 优化 method_info 文件中的方法指令 hash
+
+对应 java-all-call-graph 项目 method_info 数据库表的 method_instructions_hash 字段
+
+某个类中其他方法被修改时，可能导致未被修改的方法指令 hash 发生变化，优化这个问题

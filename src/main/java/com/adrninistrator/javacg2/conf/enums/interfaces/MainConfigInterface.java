@@ -13,7 +13,7 @@ public interface MainConfigInterface extends ConfigInterface {
     Class<?> getType();
 
     // 是否不允许为空
-    boolean notBlank();
+    boolean isNotBlank();
 
     // 默认值
     String getDefaultValue();

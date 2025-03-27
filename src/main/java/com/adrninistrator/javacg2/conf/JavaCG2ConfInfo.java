@@ -21,6 +21,18 @@ public class JavaCG2ConfInfo {
     // 是否需要分析dto的字段之间的关联关系
     private boolean analyseFieldRelationship;
 
+    // 解析方法调用时，通过new创建的被调用类型是否处理原始类型
+    private boolean handleCalleeNewRaw;
+
+    // 解析方法调用时，通过new创建的被调用类型是否处理实际类型
+    private boolean handleCalleeNewActual;
+
+    // 解析方法调用时，被调用对象为Spring Bean，是否处理原始类型（支持字段注入、getBean()方法）
+    private boolean handleCalleeSpringBeanRaw;
+
+    // 解析方法调用时，被调用对象为Spring Bean，是否处理实际类型（支持字段注入、getBean()方法）
+    private boolean handleCalleeSpringBeanActual;
+
     /*
         在处理通过get/set方法的字段关联关系时使用，指定方法返回值与被调用对象或参数认为是等值转换的方法
         外层key   类名
@@ -60,6 +72,38 @@ public class JavaCG2ConfInfo {
 
     public void setAnalyseFieldRelationship(boolean analyseFieldRelationship) {
         this.analyseFieldRelationship = analyseFieldRelationship;
+    }
+
+    public boolean isHandleCalleeNewRaw() {
+        return handleCalleeNewRaw;
+    }
+
+    public void setHandleCalleeNewRaw(boolean handleCalleeNewRaw) {
+        this.handleCalleeNewRaw = handleCalleeNewRaw;
+    }
+
+    public boolean isHandleCalleeNewActual() {
+        return handleCalleeNewActual;
+    }
+
+    public void setHandleCalleeNewActual(boolean handleCalleeNewActual) {
+        this.handleCalleeNewActual = handleCalleeNewActual;
+    }
+
+    public boolean isHandleCalleeSpringBeanRaw() {
+        return handleCalleeSpringBeanRaw;
+    }
+
+    public void setHandleCalleeSpringBeanRaw(boolean handleCalleeSpringBeanRaw) {
+        this.handleCalleeSpringBeanRaw = handleCalleeSpringBeanRaw;
+    }
+
+    public boolean isHandleCalleeSpringBeanActual() {
+        return handleCalleeSpringBeanActual;
+    }
+
+    public void setHandleCalleeSpringBeanActual(boolean handleCalleeSpringBeanActual) {
+        this.handleCalleeSpringBeanActual = handleCalleeSpringBeanActual;
     }
 
     public Map<String, Map<String, Integer>> getFrEqConversionMethodMap() {

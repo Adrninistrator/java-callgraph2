@@ -16,7 +16,7 @@ public enum JavaCG2OtherConfigFileUseSetEnum implements OtherConfigInterface {
                     "(内容) key指定对应的方法，包含{完整类名}:{方法名}",
                     "(内容) value指定与方法返回值等值的被调用对象（使用0表示）或方法参数（从1开始）序号",
                     "(格式) {完整类名}:{方法名}={被调用对象或方法参数序号}"},
-            JavaCG2Constants.FR_EQ_CONVERSION_METHOD
+            JavaCG2Constants.FR_EQ_CONVERSION_METHODS
     ),
     ;
 

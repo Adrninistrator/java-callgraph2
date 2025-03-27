@@ -863,7 +863,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
         if (methodCallPossibleInfo == null) {
             // 记录方法调用信息
-            addCommonMethodCall(invokevirtual, true, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_VIRTUAL, null, calleeClassName, calleeMethodName, calleeArgTypes,
+            addCommonMethodCall(invokevirtual, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_VIRTUAL, null, calleeClassName, calleeMethodName, calleeArgTypes,
                     calleeArrayDimensions, null, null);
             return;
         }
@@ -881,7 +881,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
         if (methodCallPossibleInfo == null) {
             // 记录方法调用信息
-            addCommonMethodCall(invokeinterface, true, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_INTERFACE, null, calleeClassName, calleeMethodName, calleeArgTypes,
+            addCommonMethodCall(invokeinterface, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_INTERFACE, null, calleeClassName, calleeMethodName, calleeArgTypes,
                     calleeArrayDimensions, null, null);
             return;
         }
@@ -918,7 +918,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         }
 
         // 记录方法调用信息
-        addCommonMethodCallWithInfo(invokespecial, true, callTypeEnum, null, calleeClassName, calleeMethodName, calleeArgTypes, calleeArrayDimensions,
+        addCommonMethodCallWithInfo(invokespecial, callTypeEnum, null, calleeClassName, calleeMethodName, calleeArgTypes, calleeArrayDimensions,
                 methodCallPossibleInfo);
     }
 
@@ -930,7 +930,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         int calleeArrayDimensions = calleeMethodInfo.getArrayDimensions();
 
         // 记录方法调用信息
-        addCommonMethodCallWithInfo(invokestatic, true, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_STATIC, null, calleeClassName, calleeMethodName, calleeArgTypes, calleeArrayDimensions
+        addCommonMethodCallWithInfo(invokestatic, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_STATIC, null, calleeClassName, calleeMethodName, calleeArgTypes, calleeArrayDimensions
                 , methodCallPossibleInfo);
     }
 
@@ -942,7 +942,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         int calleeArrayDimensions = calleeMethodInfo.getArrayDimensions();
 
         // 记录INVOKEDYNAMIC指令对应的方法调用信息
-        addCommonMethodCallWithInfo(invokedynamic, true, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_DYNAMIC, null, calleeClassName, calleeMethodName,
+        addCommonMethodCallWithInfo(invokedynamic, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_DYNAMIC, null, calleeClassName, calleeMethodName,
                 calleeArgTypes, calleeArrayDimensions, methodCallPossibleInfo);
 
         // 判断是否为Lambda表达式
@@ -968,7 +968,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         }
 
         // 记录Lambda表达式实际的方法调用信息
-        MethodCall methodCall = addCommonMethodCall(invokedynamic, true, JavaCG2CallTypeEnum.CTE_LAMBDA, null, bootstrapMethodInfo.getClassName(),
+        MethodCall methodCall = addCommonMethodCall(invokedynamic, JavaCG2CallTypeEnum.CTE_LAMBDA, null, bootstrapMethodInfo.getClassName(),
                 bootstrapMethodInfo.getMethodName(), bootstrapMethodInfo.getMethodArgumentTypes(), 0, bootstrapMethodInfo.getMethodReturnType(), null);
         if (methodCall == null) {
             // 当前方法调用不记录，返回
@@ -1027,60 +1027,99 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         // 记录已处理过的被调用对象类型
         Set<String> handledCalleeTypeSet = new HashSet<>();
 
+        boolean addCalleeActualTypeBySpringBean = false;
         MethodCall addedReplacedMethodCall = null;
         MethodCallPossibleList methodCallPossibleList4Object = methodCallPossibleInfo.getPossibleInfo4Object();
+        // 处理实际的被调用对象类型
         if (methodCallPossibleList4Object != null) {
-            // 处理Spring Bean相关的被调用对象类型，外层已判断methodCallPossibleInfo非空
-            if (useSpringBeanByAnnotationHandler.hasUseSpringBean() && methodCallPossibleList4Object.hasNonStaticField()) {
-                // 涉及Spring Bean，获取被调用对象可能的非静态字段名
-                for (MethodCallPossibleEntry methodCallPossibleEntry : methodCallPossibleList4Object.getMethodCallPossibleEntryList()) {
-                    FieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
-                    if (nonStaticField == null) {
-                        continue;
-                    }
-                    // 获取指定类指定字段对应的Spring Bean类型
-                    List<String> springBeanFieldTypeList = useSpringBeanByAnnotationHandler.getSpringBeanTypeList(callerClassName, nonStaticField.getFieldName());
-                    if (JavaCG2Util.isCollectionEmpty(springBeanFieldTypeList)) {
-                        continue;
-                    }
-                    for (String springBeanFieldType : springBeanFieldTypeList) {
-                        // 尝试添加方法调用信息，使用对应的被调用类型
-                        MethodCall tmpMethodCall = tryAddMethodCallWithType(invokeInstruction, isInterface, true, handledCalleeTypeSet, calleeClassName, springBeanFieldType,
-                                calleeMethodName, calleeArgTypes, calleeArrayDimensions, methodCallPossibleInfo);
-                        if (tmpMethodCall != null) {
-                            addedReplacedMethodCall = tmpMethodCall;
-                        }
-                    }
-                }
+            // 处理Spring Bean相关的被调用对象类型
+            addedReplacedMethodCall = handleCalleeSpringBean(methodCallPossibleList4Object, handledCalleeTypeSet, invokeInstruction, isInterface, calleeClassName,
+                    calleeMethodName, calleeArgTypes, calleeArrayDimensions, methodCallPossibleInfo);
+            if (addedReplacedMethodCall != null) {
+                addCalleeActualTypeBySpringBean = true;
             }
 
-            // 处理一般的被调用对象类型
-            if (methodCallPossibleList4Object.hasType()) {
-                for (MethodCallPossibleEntry methodCallPossibleEntry : methodCallPossibleList4Object.getMethodCallPossibleEntryList()) {
-                    String type = methodCallPossibleEntry.getType();
-                    if (type != null) {
-                        // 尝试添加方法调用信息，使用对应的被调用类型
-                        MethodCall tmpMethodCall = tryAddMethodCallWithType(invokeInstruction, isInterface, false, handledCalleeTypeSet, calleeClassName, type, calleeMethodName,
-                                calleeArgTypes, calleeArrayDimensions, methodCallPossibleInfo);
-                        if (tmpMethodCall != null) {
-                            addedReplacedMethodCall = tmpMethodCall;
-                        }
-                    }
-                }
+            // 处理通过构建函数创建的被调用对象类型
+            if (addedReplacedMethodCall == null) {
+                addedReplacedMethodCall = handleCalleeNew(methodCallPossibleList4Object, handledCalleeTypeSet, invokeInstruction, isInterface, calleeClassName, calleeMethodName,
+                        calleeArgTypes, calleeArrayDimensions, methodCallPossibleInfo);
             }
         }
 
-        // 若未添加与方法调用指令中被调用类不同类型的调用信息，则添加的代码中原始的方法调用信息需要启用；否则需要禁用
-        boolean enabled = (addedReplacedMethodCall == null);
+        // 判断原始被调用对象类型是否需要记录
+        if (addedReplacedMethodCall != null) {
+            if (addCalleeActualTypeBySpringBean && !javaCG2ConfInfo.isHandleCalleeSpringBeanRaw()) {
+                return;
+            }
+            if (!addCalleeActualTypeBySpringBean && !javaCG2ConfInfo.isHandleCalleeNewRaw()) {
+                return;
+            }
+        }
 
-        // 获取实际的被调用类型
+        // 获取原始的被调用类型
         JavaCG2CallTypeEnum callTypeEnum = isInterface ? JavaCG2CallTypeEnum.CTE_RAW_INVOKE_INTERFACE : JavaCG2CallTypeEnum.CTE_RAW_INVOKE_VIRTUAL;
-        // 记录方法调用信息
-        MethodCall addedMethodCall = addCommonMethodCallWithInfo(invokeInstruction, enabled, callTypeEnum, null, calleeClassName, calleeMethodName, calleeArgTypes,
+        // 记录原始方法调用信息
+        MethodCall addedMethodCall = addCommonMethodCallWithInfo(invokeInstruction, callTypeEnum, null, calleeClassName, calleeMethodName, calleeArgTypes,
                 calleeArrayDimensions, methodCallPossibleInfo);
         if (addedMethodCall != null && addedReplacedMethodCall != null) {
-            addedMethodCall.setDescription(addedReplacedMethodCall.getCallId() + " 是当前方法调用被调用对象被替换为实际类型后的记录，因此当前记录未启用");
+            addedMethodCall.setDescription(addedReplacedMethodCall.getCallId() + " 是当前方法调用被调用对象被替换为实际类型后的记录");
         }
+    }
+
+    // 处理Spring Bean相关的被调用对象类型
+    private MethodCall handleCalleeSpringBean(MethodCallPossibleList methodCallPossibleList4Object, Set<String> handledCalleeTypeSet, InvokeInstruction invokeInstruction,
+                                              boolean isInterface, String calleeClassName, String calleeMethodName, Type[] calleeArgTypes, int calleeArrayDimensions,
+                                              MethodCallPossibleInfo methodCallPossibleInfo) {
+        if (!javaCG2ConfInfo.isHandleCalleeSpringBeanActual() ||
+                !useSpringBeanByAnnotationHandler.hasUseSpringBean() ||
+                !methodCallPossibleList4Object.hasNonStaticField()) {
+            return null;
+        }
+
+        // 涉及Spring Bean，获取被调用对象可能的非静态字段名
+        for (MethodCallPossibleEntry methodCallPossibleEntry : methodCallPossibleList4Object.getMethodCallPossibleEntryList()) {
+            FieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
+            if (nonStaticField == null) {
+                continue;
+            }
+            // 获取指定类指定字段对应的Spring Bean类型
+            List<String> springBeanFieldTypeList = useSpringBeanByAnnotationHandler.getSpringBeanTypeList(callerClassName, nonStaticField.getFieldName());
+            if (JavaCG2Util.isCollectionEmpty(springBeanFieldTypeList)) {
+                continue;
+            }
+            for (String springBeanFieldType : springBeanFieldTypeList) {
+                // 尝试添加方法调用信息，使用对应的被调用类型
+                MethodCall tmpMethodCall = tryAddMethodCallWithType(invokeInstruction, isInterface, true, handledCalleeTypeSet, calleeClassName, springBeanFieldType,
+                        calleeMethodName, calleeArgTypes, calleeArrayDimensions, methodCallPossibleInfo);
+                if (tmpMethodCall != null) {
+                    return tmpMethodCall;
+                }
+            }
+        }
+        return null;
+    }
+
+    // 处理通过构建函数创建的被调用对象类型
+    private MethodCall handleCalleeNew(MethodCallPossibleList methodCallPossibleList4Object, Set<String> handledCalleeTypeSet, InvokeInstruction invokeInstruction,
+                                       boolean isInterface, String calleeClassName, String calleeMethodName, Type[] calleeArgTypes, int calleeArrayDimensions,
+                                       MethodCallPossibleInfo methodCallPossibleInfo) {
+        if (!javaCG2ConfInfo.isHandleCalleeNewActual() ||
+                !methodCallPossibleList4Object.hasType()) {
+            return null;
+        }
+        for (MethodCallPossibleEntry methodCallPossibleEntry : methodCallPossibleList4Object.getMethodCallPossibleEntryList()) {
+            String type = methodCallPossibleEntry.getType();
+            if (type == null) {
+                continue;
+            }
+            // 尝试添加方法调用信息，使用对应的被调用类型
+            MethodCall tmpMethodCall = tryAddMethodCallWithType(invokeInstruction, isInterface, false, handledCalleeTypeSet, calleeClassName, type, calleeMethodName,
+                    calleeArgTypes, calleeArrayDimensions, methodCallPossibleInfo);
+            if (tmpMethodCall != null) {
+                return tmpMethodCall;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1140,7 +1179,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         JavaCG2CallTypeEnum callTypeEnum = chooseActualCallType(isInterface, isSpringBean);
 
         // 记录方法调用信息
-        return addCommonMethodCallWithInfo(invokeInstruction, true, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, calleeArgTypes, calleeArrayDimensions,
+        return addCommonMethodCallWithInfo(invokeInstruction, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, calleeArgTypes, calleeArrayDimensions,
                 methodCallPossibleInfo);
     }
 
@@ -1148,7 +1187,6 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      * 记录方法调用信息，尝试记录处理可能的信息
      *
      * @param invokeInstruction      方法调用指令
-     * @param enabled                是否启用
      * @param callTypeEnum           调用类型
      * @param calleeTypeRuntime      运行时的被调用类型
      * @param calleeClassName        方法调用指令中的被调用类名
@@ -1158,7 +1196,6 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      * @param methodCallPossibleInfo 方法调用可能的信息
      */
     private MethodCall addCommonMethodCallWithInfo(InvokeInstruction invokeInstruction,
-                                                   boolean enabled,
                                                    JavaCG2CallTypeEnum callTypeEnum,
                                                    String calleeTypeRuntime,
                                                    String calleeClassName,
@@ -1167,11 +1204,11 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                                                    int calleeArrayDimensions,
                                                    MethodCallPossibleInfo methodCallPossibleInfo) {
         if (methodCallPossibleInfo == null) {
-            return addCommonMethodCall(invokeInstruction, enabled, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, calleeArgTypes, calleeArrayDimensions,
+            return addCommonMethodCall(invokeInstruction, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, calleeArgTypes, calleeArrayDimensions,
                     null, null);
         }
 
-        MethodCall methodCall = addCommonMethodCall(invokeInstruction, enabled, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, calleeArgTypes,
+        MethodCall methodCall = addCommonMethodCall(invokeInstruction, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, calleeArgTypes,
                 calleeArrayDimensions, null, methodCallPossibleInfo.getObjTypeEnum());
         if (methodCall == null) {
             return null;
@@ -1193,7 +1230,6 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      * 记录方法调用信息
      *
      * @param invokeInstruction     方法调用指令
-     * @param enabled               是否启用
      * @param callTypeEnum          调用类型
      * @param calleeTypeRuntime     运行时的被调用类型
      * @param calleeClassName       方法调用指令中的被调用类名
@@ -1204,7 +1240,6 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      * @param objTypeEnum           被调用对象类型
      */
     private MethodCall addCommonMethodCall(InvokeInstruction invokeInstruction,
-                                           boolean enabled,
                                            JavaCG2CallTypeEnum callTypeEnum,
                                            String calleeTypeRuntime,
                                            String calleeClassName,
@@ -1242,7 +1277,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         // 若运行时的被调用类型非空则使用，若为空则使用方法调用指令中的被调用类名
         MethodCall methodCall = new MethodCall();
         methodCall.setCallId(genNewCallId());
-        methodCall.setEnabled(enabled);
+        methodCall.setEnabled(true);
         methodCall.setMethodCallType(callTypeEnum.getType());
         methodCall.setCallerClassName(callerClassName);
         methodCall.setCallerMethodName(callerMethodName);

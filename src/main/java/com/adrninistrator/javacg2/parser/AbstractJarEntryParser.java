@@ -103,7 +103,7 @@ public abstract class AbstractJarEntryParser {
      * @return true: 是class文件 false: 不是class文件
      */
     protected boolean tryHandleClassEntry(InputStream inputStream, String jarEntryPath) throws IOException {
-        if (!JavaCG2FileUtil.isClassFile(jarEntryPath)) {
+        if (!JavaCG2FileUtil.checkClassFile(jarEntryPath)) {
             return false;
         }
 

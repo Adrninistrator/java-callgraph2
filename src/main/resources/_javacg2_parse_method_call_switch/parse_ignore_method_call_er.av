@@ -1,8 +1,9 @@
-## （作用）在 *解析方法调用时* 使用的表达式。若当前配置文件中的表达式执行结果为 true，则忽略对应的方法调用
-## （作用）若表达式执行结果为 false，或未指定表达式，则当前配置不会忽略对应的方法调用
-## （范围）方法调用，只通过调用方法判断
+## （作用）在 解析方法调用时 使用的表达式
+## （作用）若当前配置文件中的表达式执行结果为 true，则跳过解析对应的方法调用
+## （作用）若表达式执行结果为 false，或未指定表达式，则当前配置不会跳过对应的方法调用
+## （范围）指定是否跳过解析方法调用，只通过调用方法判断
 ## （表达式使用示例文件）请参考 el_example.md
-## （允许使用的变量）{变量名称} {变量类型} {变量描述} {变量示例}
+## （允许使用的变量）{变量名称} {变量类型} {变量描述} {变量值示例}
 ## {method_call_type} {String} {方法调用类型, 参考 JavaCG2CallTypeEnum 类} {VIR INT SPE STA DYN _SPR_ACT_I _SPR_ACT_C _ACT_I _ACT_C _ITF _LM _RIR1 _RIR2 _CIC1 _CIC2 _TCID1 _TCID2 _TCWRID1 _TCWRID2 _TSR _SCC _CCS _CCS_SPE _CCS_I _CCID _ICID _MA _MAA ILLEGAL}
 ## {er_class_name} {String} {调用方完整类名} {a.b.Class1}
 ## {er_package_name} {String} {调用方完整包名, 不会以.结束} {a.b}

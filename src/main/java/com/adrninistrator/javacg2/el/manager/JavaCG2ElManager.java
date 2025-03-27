@@ -1,6 +1,5 @@
 package com.adrninistrator.javacg2.el.manager;
 
-import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.conf.BaseConfigureWrapper;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.el.enums.JavaCG2ElAllowedVariableEnum;
@@ -9,9 +8,9 @@ import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.el.handler.ElHandler;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author adrninistrator
@@ -188,13 +187,8 @@ public class JavaCG2ElManager extends ElManager {
         mergeFileAddData4FileInJarWar(elHandler, map, filePath);
         // 处理class文件路径
         if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR)) {
-            String classFilePath = filePath;
-            if (filePath.startsWith(JavaCG2Constants.BOOT_INF_CLASSES)) {
-                classFilePath = StringUtils.substringAfter(filePath, JavaCG2Constants.BOOT_INF_CLASSES);
-            } else if (filePath.startsWith(JavaCG2Constants.WEB_INF_CLASSES)) {
-                classFilePath = StringUtils.substringAfter(filePath, JavaCG2Constants.WEB_INF_CLASSES);
-            }
-            map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR.getVariableName(), classFilePath);
+            String classFileRelativelyPath = JavaCG2FileUtil.getClassFileRelativelyPathInJar(filePath);
+            map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR.getVariableName(), classFileRelativelyPath);
         }
         return elHandler.runExpression(map);
     }
@@ -339,6 +333,43 @@ public class JavaCG2ElManager extends ElManager {
         return checkIgnoreMethodCallByEe(methodCallType, calleeFullMethod) ||
                 checkIgnoreMethodCallByEr(methodCallType, callerFullMethod) ||
                 checkIgnoreMethodCallByErEe(methodCallType, callerFullMethod, calleeFullMethod);
+    }
+
+    /**
+     * 检查是否需要通过class文件目录的不同层级的路径前缀判断是否跳过合并当前的jar/war文件
+     *
+     * @return
+     */
+    public boolean checkNeedIgnoreJarWarByClassDirPrefix() {
+        ElHandler elHandler = getElHandlerMap(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_WAR_BY_CLASS_DIR_PREFIX);
+        if (elHandler.checkVariableNamePrefixWithNumSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_DIR_PREFIX_LEVEL)) {
+            return true;
+        }
+        if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME)) {
+            return true;
+        }
+        return elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR);
+    }
+
+    /**
+     * 通过class文件目录的不同层级的路径前缀判断是否跳过合并当前的jar/war文件
+     *
+     * @param classDirPrefixMap key class文件目录层级 value class文件目录对应层级的路径前缀，以/作为分隔符，不会以分隔符开头或结尾
+     * @return
+     */
+    public boolean checkIgnoreJarWarByClassDirPrefix(Map<Integer, Set<String>> classDirPrefixMap) {
+        ElHandler elHandler = getElHandlerMap(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_WAR_BY_CLASS_DIR_PREFIX);
+        Map<String, Object> map = elHandler.genMap4ElExecute();
+        if (map == null) {
+            return false;
+        }
+        for (Map.Entry<Integer, Set<String>> entry : classDirPrefixMap.entrySet()) {
+            Integer level = entry.getKey();
+            if (elHandler.checkVariableNamePrefixWithNumSpecified(JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_DIR_PREFIX_LEVEL, level)) {
+                map.put(JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_DIR_PREFIX_LEVEL.getVariableName() + level, entry.getValue());
+            }
+        }
+        return elHandler.runExpression(map);
     }
 
     private void methodCallAddData4Type(ElHandler elHandler, String methodCallType, Map<String, Object> map) {
