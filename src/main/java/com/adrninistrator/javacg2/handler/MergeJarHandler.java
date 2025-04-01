@@ -199,8 +199,6 @@ public class MergeJarHandler {
                 // 获得生成的jar文件中的目录名称
                 String dirNameInJar = JavaCG2JarUtil.genDirNameInJar(jarNum, jarFileOrDir.getName());
                 if (jarFileOrDir.isFile()) {
-                    // 记录jar/war文件中的jar文件序号
-                    recordJarInJarNum(jarOrDirCanonicalPath);
                     // 处理jar/war文件，将其中的文件添加到目标jar文件中
                     handleJarWarFile(jarFileOrDir, jarOrDirCanonicalPath, dirNameInJar, zos);
                     continue;
@@ -317,6 +315,9 @@ public class MergeJarHandler {
                 }
             }
         }
+        // 记录jar/war文件中的jar文件序号
+        recordJarInJarNum(jarWarCanonicalPath);
+
         try (ZipInputStream zipInputStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(sourceJarFile)))) {
             doHandleJarFile(zipInputStream, jarWarCanonicalPath, firstLevelDirName, targetZos, true);
         }
@@ -342,7 +343,10 @@ public class MergeJarHandler {
             String jarEntryPath = fileHeader.getFileName();
             // 判断当前文件是否需要跳过
             if (javaCG2ElManager.checkIgnoreMergeFileInJarWar(jarEntryPath)) {
-                if (logger.isDebugEnabled() || javaCG2ElManager.isDebugMode()) {
+                if (JavaCG2FileUtil.checkJarFile(jarEntryPath) && handleJarInJar) {
+                    // 跳过处理jar/war文件中的jar文件
+                    ignoreJarInJarWar(jarWarCanonicalPath, jarEntryPath);
+                } else if (logger.isDebugEnabled() || javaCG2ElManager.isDebugMode()) {
                     logger.info("合并jar文件时跳过jar/war文件中的文件 {} {}", jarWarCanonicalPath, jarEntryPath);
                 }
                 continue;
@@ -362,6 +366,8 @@ public class MergeJarHandler {
                     ZipInputStream innerZipInputStream = new ZipInputStream(cachedInputStream);
                     // 通过class文件目录的不同层级的路径前缀判断是否跳过合并当前的jar/war文件
                     if (checkIgnoreJarWarByClassDirPrefix(innerZipInputStream)) {
+                        // 跳过处理jar/war文件中的jar文件
+                        ignoreJarInJarWar(jarWarCanonicalPath, jarEntryPath);
                         continue;
                     }
                 }
@@ -391,6 +397,14 @@ public class MergeJarHandler {
                 addInput2Jar(zipInputStream, targetZos);
             }
         }
+    }
+
+    // 跳过处理jar/war文件中的jar文件
+    private void ignoreJarInJarWar(String jarWarCanonicalPath, String jarEntryPath) {
+        logger.info("合并jar文件时跳过jar/war文件中的jar文件 {} {}", jarWarCanonicalPath, jarEntryPath);
+        String jarMergedPath = JavaCG2JarUtil.mergeOuterInnerJarPath(jarWarCanonicalPath, jarEntryPath);
+        // 当前jar/war文件中的jar文件不处理，需要从记录jar文件序号的Map中删除
+        jarPathNumMap.remove(jarMergedPath);
     }
 
     // 通过class文件目录的不同层级的路径前缀判断是否跳过合并当前的jar/war文件

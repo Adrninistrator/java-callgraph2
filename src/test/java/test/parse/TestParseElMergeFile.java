@@ -32,7 +32,7 @@ public class TestParseElMergeFile extends TestBase {
     }
 
     /*
-        忽略lib目录中的jar文件
+        忽略jar/war文件的lib目录中的jar文件
         需要先执行 gradlew gen_run_jar gen_jar_in_jar 命令生成对应jar文件
      */
     @Test

@@ -470,8 +470,9 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         CatchInfo lastCatchInfo = null;
         for (CodeExceptionGen codeExceptionGen : codeExceptionGens) {
             int fromPosition = codeExceptionGen.getStartPC().getPosition();
-            // BCEL的CodeExceptionGen的end的下一个指令，对应Exception table的to
-            int toPosition = codeExceptionGen.getEndPC().getNext().getPosition();
+            // BCEL的CodeExceptionGen的end的下一个指令，对应Exception table的to。若end的下一个指令不存在，则使用end
+            InstructionHandle endPC = codeExceptionGen.getEndPC();
+            int toPosition = endPC.getNext() != null ? endPC.getNext().getPosition() : endPC.getPosition();
             // BCEL的CodeExceptionGen的end，对应Exception table的to的上一个指令
             int endPosition = codeExceptionGen.getEndPC().getPosition();
             int targetPosition = codeExceptionGen.getHandlerPC().getPosition();

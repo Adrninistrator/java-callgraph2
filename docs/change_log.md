@@ -330,3 +330,9 @@ handle.callee.spring.bean.raw.actual=only_actual
 对应 java-all-call-graph 项目 method_info 数据库表的 method_instructions_hash 字段
 
 某个类中其他方法被修改时，可能导致未被修改的方法指令 hash 发生变化，优化这个问题
+
+## 1.19. (3.0.8)
+
+优化 Exception table 中的 end 指令处理时可能超过限制的问题
+
+合并 jar 文件，jar/war 中的 jar 文件被忽略时，避免被写到 jar_info 输出文件中

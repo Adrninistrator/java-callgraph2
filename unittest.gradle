@@ -16,6 +16,7 @@ test {
     }
 }
 
+// 生成包含jar文件的jar文件
 tasks.register('gen_jar_in_jar', Jar) {
     archiveFileName = 'jar_output_dir.jar'
     destinationDirectory = file('build')
