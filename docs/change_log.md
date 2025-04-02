@@ -335,4 +335,6 @@ handle.callee.spring.bean.raw.actual=only_actual
 
 优化 Exception table 中的 end 指令处理时可能超过限制的问题
 
+## 1.20. (3.0.9)
+
 合并 jar 文件，jar/war 中的 jar 文件被忽略时，避免被写到 jar_info 输出文件中

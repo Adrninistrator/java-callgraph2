@@ -253,6 +253,10 @@ public class JavaCG2Entry {
             }
             for (int i = JavaCG2Constants.JAR_NUM_MIN; i <= jarNumPathMap.size(); i++) {
                 String jarDirPath = jarNumPathMap.get(i);
+                if (jarDirPath == null) {
+                    // 对应序号的jar文件被排除掉，跳过
+                    continue;
+                }
                 String jarDirType;
                 OuterInnerJarPath outerInnerJarPath = JavaCG2JarUtil.parseOuterInnerJarPath(jarDirPath);
                 String outerJarDirPath;
