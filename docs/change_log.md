@@ -338,3 +338,7 @@ handle.callee.spring.bean.raw.actual=only_actual
 ## 1.20. (3.0.9)
 
 合并 jar 文件，jar/war 中的 jar 文件被忽略时，避免被写到 jar_info 输出文件中
+
+## 1.21. (3.0.10)
+
+解决生成的 jar_info 文件可能漏掉 jar 文件的问题

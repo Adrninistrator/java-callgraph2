@@ -247,12 +247,17 @@ public class JavaCG2Entry {
             }
 
             // 记录处理的jar包信息
+            int maxJarNum = 0;
             Map<Integer, String> jarNumPathMap = new HashMap<>(jarPathNumMap.size());
             for (Map.Entry<String, Integer> entry : jarPathNumMap.entrySet()) {
-                jarNumPathMap.put(entry.getValue(), entry.getKey());
+                int jarNum = entry.getValue();
+                maxJarNum = Math.max(maxJarNum, jarNum);
+                jarNumPathMap.put(jarNum, entry.getKey());
             }
-            for (int i = JavaCG2Constants.JAR_NUM_MIN; i <= jarNumPathMap.size(); i++) {
-                String jarDirPath = jarNumPathMap.get(i);
+            List<Integer> jarNumList = new ArrayList<>(jarNumPathMap.keySet());
+            Collections.sort(jarNumList);
+            for (Integer jarNum : jarNumList) {
+                String jarDirPath = jarNumPathMap.get(jarNum);
                 if (jarDirPath == null) {
                     // 对应序号的jar文件被排除掉，跳过
                     continue;
@@ -269,10 +274,10 @@ public class JavaCG2Entry {
                     boolean isJar = new File(jarDirPath).isFile();
                     jarDirType = isJar ? JavaCG2Constants.FILE_KEY_JAR : JavaCG2Constants.FILE_KEY_DIR;
                 }
-                JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, jarDirType, String.valueOf(i), outerJarDirPath, innerJarPath);
+                JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, jarDirType, String.valueOf(jarNum), outerJarDirPath, innerJarPath);
             }
 
-            JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_RESULT_DIR_INFO_PREFIX, String.valueOf(jarNumPathMap.size() + 1),
+            JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_RESULT_DIR_INFO_PREFIX, String.valueOf(maxJarNum + 1),
                     javaCG2OutputInfo.getOutputDirPath(), "");
 
             // 记录java-callgraph2组件使用的配置参数
