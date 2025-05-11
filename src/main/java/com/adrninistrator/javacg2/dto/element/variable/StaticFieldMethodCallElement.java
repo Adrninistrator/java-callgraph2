@@ -25,6 +25,8 @@ public class StaticFieldMethodCallElement extends VariableElement {
     // 被调用的方法参数类型
     private final Type[] argTypes;
 
+    // type字段为被调用的方法返回类型
+
     public StaticFieldMethodCallElement(String type, int addArrayDimensions, String className, String fieldName, String methodName, Type[] argTypes) {
         super(type, addArrayDimensions);
         this.className = className;
@@ -42,7 +44,7 @@ public class StaticFieldMethodCallElement extends VariableElement {
     }
 
     public String getInfo() {
-        return JavaCG2ClassMethodUtil.formatClassFieldMethodArgTypes(className, fieldName, methodName, argTypes);
+        return JavaCG2ClassMethodUtil.formatClassFieldMethodArgTypes(className, fieldName, methodName, argTypes, getType());
     }
 
     @Override

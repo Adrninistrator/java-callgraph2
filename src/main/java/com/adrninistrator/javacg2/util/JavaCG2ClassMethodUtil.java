@@ -8,6 +8,7 @@ import com.adrninistrator.javacg2.dto.field.ClassField;
 import com.adrninistrator.javacg2.dto.field.ClassFieldMethodCall;
 import com.adrninistrator.javacg2.dto.method.JavaCG2MethodInfo;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
+import com.adrninistrator.javacg2.exceptions.JavaCG2Error;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
@@ -33,6 +34,20 @@ public class JavaCG2ClassMethodUtil {
      */
     public static String formatFullMethod(JavaCG2MethodInfo javaCG2MethodInfo) {
         return formatFullMethod(javaCG2MethodInfo.getClassName(), javaCG2MethodInfo.getMethodName(), javaCG2MethodInfo.getMethodArgumentTypes());
+    }
+
+    /**
+     * 将完整方法与返回类型拼接
+     *
+     * @param fullMethod 完整方法
+     * @param returnType 返回类型（包含数组标志）
+     * @return
+     */
+    public static String genFullMethodWithReturnType(String fullMethod, String returnType) {
+        if (StringUtils.isBlank(returnType)) {
+            throw new JavaCG2Error("返回类型为空 " + fullMethod);
+        }
+        return fullMethod + JavaCG2Constants.FLAG_COLON + returnType;
     }
 
     /**
@@ -200,8 +215,9 @@ public class JavaCG2ClassMethodUtil {
      * @param argTypes
      * @return
      */
-    public static String formatClassFieldMethodArgTypes(String className, String fieldName, String methodName, Type[] argTypes) {
-        return formatFullMethod(formatClassAndField(className, fieldName), methodName, argTypes);
+    public static String formatClassFieldMethodArgTypes(String className, String fieldName, String methodName, Type[] argTypes, String returnType) {
+        String fieldFullMethod = formatFullMethod(formatClassAndField(className, fieldName), methodName, argTypes);
+        return genFullMethodWithReturnType(fieldFullMethod, returnType);
     }
 
     /**
@@ -229,6 +245,7 @@ public class JavaCG2ClassMethodUtil {
         String className = array[0];
         String fieldName = array[1];
         String methodNameAndArgTypes = array[2];
+        String returnType = array[3];
         String methodName = StringUtils.substringBefore(methodNameAndArgTypes, JavaCG2Constants.FLAG_LEFT_BRACKET);
         String argTypes = getMethodArgTypes(methodNameAndArgTypes);
         ClassFieldMethodCall classFieldMethodCall = new ClassFieldMethodCall();
@@ -236,6 +253,7 @@ public class JavaCG2ClassMethodUtil {
         classFieldMethodCall.setFieldName(fieldName);
         classFieldMethodCall.setMethodName(methodName);
         classFieldMethodCall.setArgTypes(getMethodArgTypeArray(argTypes));
+        classFieldMethodCall.setReturnType(returnType);
         return classFieldMethodCall;
     }
 

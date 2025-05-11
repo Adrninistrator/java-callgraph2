@@ -87,6 +87,7 @@ public class MethodCallPossibleList {
                 String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(variableDataSourceMethodCallReturn.getCalleeClassName(),
                         variableDataSourceMethodCallReturn.getCalleeMethodName(), variableDataSourceMethodCallReturn.getCalleeArgTypeStr());
                 addedMethodCallPossibleEntry.setMethodCallReturnFullMethod(calleeFullMethod);
+                addedMethodCallPossibleEntry.setMethodCallReturnReturnType(variableDataSourceMethodCallReturn.getReturnType());
                 addedMethodCallPossibleEntry.setMethodCallReturnInstructionPosition(variableDataSourceMethodCallReturn.getInvokeInstructionPosition());
             } else if (variableDataSource instanceof VariableDataSourceMethodArg) {
                 VariableDataSourceMethodArg variableDataSourceMethodArg = (VariableDataSourceMethodArg) variableDataSource;
@@ -100,6 +101,7 @@ public class MethodCallPossibleList {
                 String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(variableDataSourceMethodCallEQC.getCalleeClassName(),
                         variableDataSourceMethodCallEQC.getCalleeMethodName(), variableDataSourceMethodCallEQC.getCalleeArgTypeStr());
                 addedMethodCallPossibleEntry.setMethodCallReturnFullMethodEQC(calleeFullMethod);
+                addedMethodCallPossibleEntry.setMethodCallReturnReturnTypeEQC(variableDataSourceMethodCallEQC.getReturnType());
                 addedMethodCallPossibleEntry.setMethodCallReturnInstructionPositionEQC(variableDataSourceMethodCallEQC.getInvokeInstructionPosition());
             } else if (variableDataSourceEQC instanceof VariableDataSourceMethodArg) {
                 VariableDataSourceMethodArg variableDataSourceMethodArgEQC = (VariableDataSourceMethodArg) variableDataSourceEQC;

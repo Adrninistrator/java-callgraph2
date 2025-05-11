@@ -37,11 +37,11 @@ public abstract class TestBase {
     protected String getJacgTestLibPath() {
         File parentDir = new File("..");
         String jacgDirPath = JavaCG2FileUtil.getCanonicalPath(parentDir) + File.separator + "java-all-call-graph";
-        String jacgTestLibPath1 = jacgDirPath + "/build/libs/test.jar";
+        String jacgTestLibPath1 = jacgDirPath + "/build/test.jar";
         if (new File(jacgTestLibPath1).exists()) {
             return jacgTestLibPath1;
         }
-        String jacgTestLibPath2 = jacgDirPath + "/java-all-call-graph/build/libs/test.jar";
+        String jacgTestLibPath2 = jacgDirPath + "/java-all-call-graph/build/test.jar";
         if (new File(jacgTestLibPath2).exists()) {
             return jacgTestLibPath2;
         }

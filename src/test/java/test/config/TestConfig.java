@@ -2,26 +2,24 @@ package test.config;
 
 import com.adrninistrator.javacg2.conf.JavaCG2ConfigureWrapper;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
-import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum;
 import com.adrninistrator.javacg2.entry.JavaCG2Entry;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Collections;
+import test.base.TestBase;
 
 /**
  * @author adrninistrator
  * @date 2022/11/7
  * @description:
  */
-public class TestConfig {
+public class TestConfig extends TestBase {
 
-    private final JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper();
+    private JavaCG2ConfigureWrapper javaCG2ConfigureWrapper;
 
     @Before
     public void init() {
-        javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, Collections.singletonList("build/libs/java-callgraph2-2.0.8.jar"));
+        javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper();
     }
 
     @Test

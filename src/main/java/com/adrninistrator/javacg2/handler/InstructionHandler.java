@@ -1140,6 +1140,7 @@ public class InstructionHandler {
 
         // 处理返回值
         Type returnType = invokeInstruction.getReturnType(cpg);
+        String returnTypeStr = invokeInstruction.getReturnType(cpg).toString();
         String calleeClassName = invokeInstruction.getReferenceType(cpg).toString();
         String calleeMethodName = invokeInstruction.getMethodName(cpg);
         if (Type.VOID != returnType) {
@@ -1148,10 +1149,10 @@ public class InstructionHandler {
             if (objectElement instanceof StaticFieldElement) {
                 // 被调用对象属于静态字段
                 StaticFieldElement staticFieldElement = (StaticFieldElement) objectElement;
-                variableElement = new StaticFieldMethodCallElement(returnType.toString(), 0, staticFieldElement.getClassName(),
+                variableElement = new StaticFieldMethodCallElement(returnTypeStr, 0, staticFieldElement.getClassName(),
                         staticFieldElement.getName(), calleeMethodName, argTypes);
             } else {
-                variableElement = new VariableElement(returnType.toString());
+                variableElement = new VariableElement(returnTypeStr);
             }
             VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = new VariableDataSourceMethodCallReturn(ih.getPosition(),
                     invokeInstruction.getClass().getSimpleName(), calleeClassName, calleeMethodName, JavaCG2ClassMethodUtil.getArgTypeStr(argTypes), returnType.toString(),

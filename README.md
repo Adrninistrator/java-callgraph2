@@ -1,5 +1,11 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.adrninistrator/java-callgraph2.svg)](https://search.maven.org/artifact/com.github.adrninistrator/java-callgraph2/)
 
+# 3. DeepWiki 链接
+
+[https://deepwiki.com/Adrninistrator/java-callgraph2](https://deepwiki.com/Adrninistrator/java-callgraph2)
+
+通过大模型分析项目代码，可向大模型提出关于项目的问题，包括使用方法等
+
 # 1. 说明
 
 java-callgraph2 项目用于对 Java 代码（编译后的 class、jar、war 文件）进行静态分析

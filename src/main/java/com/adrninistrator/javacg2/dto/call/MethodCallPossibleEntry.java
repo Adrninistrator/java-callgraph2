@@ -37,6 +37,9 @@ public class MethodCallPossibleEntry {
     // 被调用对象或参数来自方法调用返回，对应的完整方法
     private String methodCallReturnFullMethod;
 
+    // 被调用对象或参数来自方法调用返回，对应的方法返回类型
+    private String methodCallReturnReturnType;
+
     // 被调用对象或参数来自方法调用返回，对应的方法调用指令的位置
     private Integer methodCallReturnInstructionPosition;
 
@@ -45,6 +48,9 @@ public class MethodCallPossibleEntry {
 
     // 被调用对象或参数来自等值转换前的方法调用返回，对应的完整方法
     private String methodCallReturnFullMethodEQC;
+
+    // 被调用对象或参数来自等值转换前的方法调用返回，对应的方法返回类型
+    private String methodCallReturnReturnTypeEQC;
 
     // 被调用对象或参数来自等值转换前的方法调用返回，对应的方法调用指令的位置
     private Integer methodCallReturnInstructionPositionEQC;
@@ -84,8 +90,11 @@ public class MethodCallPossibleEntry {
                 && StringUtils.equals(staticFieldMethodCall, added.staticFieldMethodCall)
                 && StringUtils.equals(nameOfVariable, added.nameOfVariable)
                 && StringUtils.equals(methodCallReturnFullMethod, added.methodCallReturnFullMethod)
+                && StringUtils.equals(methodCallReturnReturnType, added.methodCallReturnReturnType)
                 && Objects.equals(methodCallReturnInstructionPosition, added.methodCallReturnInstructionPosition)
                 && Objects.equals(methodArgSeq, added.methodArgSeq)
+                && Objects.equals(methodCallReturnFullMethodEQC, added.methodCallReturnFullMethodEQC)
+                && Objects.equals(methodCallReturnReturnTypeEQC, added.methodCallReturnReturnTypeEQC)
                 && Objects.equals(methodCallReturnInstructionPositionEQC, added.methodCallReturnInstructionPositionEQC)
                 && Objects.equals(methodArgSeqEQC, added.methodArgSeqEQC)
                 && Objects.equals(catchExceptionStartPosition, added.catchExceptionStartPosition);
@@ -161,6 +170,15 @@ public class MethodCallPossibleEntry {
         // 不增加内容数量
     }
 
+    public String getMethodCallReturnReturnType() {
+        return methodCallReturnReturnType;
+    }
+
+    public void setMethodCallReturnReturnType(String methodCallReturnReturnType) {
+        this.methodCallReturnReturnType = methodCallReturnReturnType;
+        // 不增加内容数量
+    }
+
     public Integer getMethodCallReturnInstructionPosition() {
         return methodCallReturnInstructionPosition;
     }
@@ -185,6 +203,15 @@ public class MethodCallPossibleEntry {
 
     public void setMethodCallReturnFullMethodEQC(String methodCallReturnFullMethodEQC) {
         this.methodCallReturnFullMethodEQC = methodCallReturnFullMethodEQC;
+        // 不增加内容数量
+    }
+
+    public String getMethodCallReturnReturnTypeEQC() {
+        return methodCallReturnReturnTypeEQC;
+    }
+
+    public void setMethodCallReturnReturnTypeEQC(String methodCallReturnReturnTypeEQC) {
+        this.methodCallReturnReturnTypeEQC = methodCallReturnReturnTypeEQC;
         // 不增加内容数量
     }
 

@@ -1,7 +1,5 @@
 package com.adrninistrator.javacg2.common.enums;
 
-import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
-
 /**
  * @author adrninistrator
  * @date 2022/5/13
@@ -10,15 +8,15 @@ import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
 public enum JavaCG2ConstantTypeEnum {
     // 以下都使用实际的类型，用于进行比较
     CONSTTE_NULL("null", false),
-    CONSTTE_INT("int", true),
-    CONSTTE_LONG("long", true),
-    CONSTTE_FLOAT("float", true),
-    CONSTTE_DOUBLE("double", true),
-    CONSTTE_BYTE("byte", true),
-    CONSTTE_CHAR("char", true),
-    CONSTTE_SHORT("short", true),
-    CONSTTE_STRING(JavaCG2CommonNameConstants.CLASS_NAME_STRING, false),
-    CONSTTE_BOOLEAN("boolean", true),
+    CONSTTE_INT(int.class.getName(), true),
+    CONSTTE_LONG(long.class.getName(), true),
+    CONSTTE_FLOAT(float.class.getName(), true),
+    CONSTTE_DOUBLE(double.class.getName(), true),
+    CONSTTE_BYTE(byte.class.getName(), true),
+    CONSTTE_CHAR(char.class.getName(), true),
+    CONSTTE_SHORT(short.class.getName(), true),
+    CONSTTE_STRING(String.class.getName(), false),
+    CONSTTE_BOOLEAN(boolean.class.getName(), true),
     CONSTTE_ILLEGAL("ILLEGAL", false),
     ;
 

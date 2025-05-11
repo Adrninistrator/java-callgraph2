@@ -72,7 +72,7 @@ public class ClassHandler {
 
     private final ConstantPoolGen cpg;
 
-    private final Set<String> handledMethodNameAndArgs;
+    private final Set<String> handledMethodNameArgsReturnTypeSet;
 
     private final String className;
 
@@ -153,7 +153,7 @@ public class ClassHandler {
 
         className = javaClass.getClassName();
         cpg = new ConstantPoolGen(javaClass.getConstantPool());
-        handledMethodNameAndArgs = new HashSet<>();
+        handledMethodNameArgsReturnTypeSet = new HashSet<>();
 
         JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = javaCG2InputAndOutput.getJavaCG2ConfigureWrapper();
         logMethodSpendTime = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_LOG_METHOD_SPEND_TIME);
@@ -441,6 +441,7 @@ public class ClassHandler {
 
         logger.debug("处理Method: {}", fullMethod);
 
+        String methodReturnTypeStr = method.getReturnType().toString();
         boolean returnExistsGenericsType = false;
         Set<Integer> methodArgsGenericsTypeSeqSet = new HashSet<>();
         String methodGenericSignature = method.getGenericSignature();
@@ -448,30 +449,27 @@ public class ClassHandler {
             try {
                 SignatureAttribute.MethodSignature methodSignature = SignatureAttribute.toMethodSignature(methodGenericSignature);
                 // 记录方法返回泛型类型
-                returnExistsGenericsType = recordMethodReturnGenericsType(fullMethod, method.getReturnType(), methodSignature);
+                returnExistsGenericsType = recordMethodReturnGenericsType(fullMethod, methodReturnTypeStr, method.getReturnType(), methodSignature);
 
                 // 记录方法参数中泛型类型
-                recordMethodArgsGenericsType(fullMethod, method.getArgumentTypes(), methodSignature, methodArgsGenericsTypeSeqSet);
+                recordMethodArgsGenericsType(fullMethod, methodReturnTypeStr, method.getArgumentTypes(), methodSignature, methodArgsGenericsTypeSeqSet);
             } catch (BadBytecode e) {
                 logger.error("处理方法签名出现异常 {}", fullMethod, e);
             }
         }
 
-        // 返回类型
-        String methodNameAndArgs = method.getName() + methodArgTypes;
-        if (handledMethodNameAndArgs.add(methodNameAndArgs)) {
+        // 记录方法名称+参数类型+返回类型
+        String methodNameArgsReturnType = JavaCG2ClassMethodUtil.genFullMethodWithReturnType(method.getName() + methodArgTypes, methodReturnTypeStr);
+        if (handledMethodNameArgsReturnTypeSet.add(methodNameArgsReturnType)) {
             // 记录方法信息
             recordMethodInfo(methodInfoWriter, method, fullMethod, returnExistsGenericsType);
         } else {
-            // 出现方法名+参数类型均相同的方法
-            if (!JavaCG2ByteCodeUtil.isBridgeFlag(method.getAccessFlags()) && !JavaCG2ByteCodeUtil.isSyntheticFlag(method.getAccessFlags())) {
-                logger.warn("出现方法名+参数类型均相同的方法，但方法没有ACC_BRIDGE或ACC_SYNTHETIC标志，与预期不符 {} {}", className, methodNameAndArgs);
-                recordMethodInfo(dupMethodInfoWriter, method, fullMethod, false);
-            }
+            // 出现方法名+参数类型+返回类型均相同的方法
+            recordMethodInfo(dupMethodInfoWriter, method, fullMethod, false);
         }
 
         MethodGen mg = new MethodGen(method, className, cpg);
-        recordMethodArgument(fullMethod, mg, methodArgsGenericsTypeSeqSet);
+        recordMethodArgument(fullMethod, methodReturnTypeStr, mg, methodArgsGenericsTypeSeqSet);
 
         boolean success = true;
         // 判断当前方法调用是否需要忽略
@@ -571,7 +569,7 @@ public class ClassHandler {
     }
 
     // 记录方法返回泛型类型
-    private boolean recordMethodReturnGenericsType(String fullMethod, Type methodReturnType, SignatureAttribute.MethodSignature methodSignature) {
+    private boolean recordMethodReturnGenericsType(String fullMethod, String methodReturnTypeStr, Type methodReturnType, SignatureAttribute.MethodSignature methodSignature) {
         try {
             SignatureAttribute.Type returnType = methodSignature.getReturnType();
             if (!(returnType instanceof SignatureAttribute.ClassType)) {
@@ -591,6 +589,7 @@ public class ClassHandler {
             JavaCG2Type javaCG2Type = JavaCG2ByteCodeUtil.genJavaCG2Type(methodReturnType);
             JavaCG2FileUtil.write2FileWithTab(methodReturnGenericsTypeWriter,
                     fullMethod,
+                    methodReturnTypeStr,
                     JavaCG2Constants.FILE_KEY_CLASS_TYPE,
                     JavaCG2ByteCodeUtil.genGenericsTypeStr4Fixed(javaCG2Type));
 
@@ -599,6 +598,7 @@ public class ClassHandler {
                 JavaCG2GenericsType methodReturnGenericsType = methodReturnGenericsTypeList.get(genericsSeq);
                 JavaCG2FileUtil.write2FileWithTab(methodReturnGenericsTypeWriter,
                         fullMethod,
+                        methodReturnTypeStr,
                         JavaCG2Constants.FILE_KEY_GENERICS_TYPE,
                         JavaCG2GenericsTypeUtil.genGenericsTypeStr(genericsSeq, methodReturnGenericsType));
             }
@@ -610,7 +610,8 @@ public class ClassHandler {
     }
 
     // 记录方法参数中泛型类型
-    private void recordMethodArgsGenericsType(String fullMethod, Type[] argTypes, SignatureAttribute.MethodSignature methodSignature, Set<Integer> methodArgsGenericsTypeSeqSet) throws IOException {
+    private void recordMethodArgsGenericsType(String fullMethod, String methodReturnType, Type[] argTypes, SignatureAttribute.MethodSignature methodSignature,
+                                              Set<Integer> methodArgsGenericsTypeSeqSet) throws IOException {
         SignatureAttribute.Type[] parameterTypes = methodSignature.getParameterTypes();
         if (ArrayUtils.isEmpty(parameterTypes)) {
             return;
@@ -636,6 +637,7 @@ public class ClassHandler {
             JavaCG2Type javaCG2Type = JavaCG2ByteCodeUtil.genJavaCG2Type(argTypes[argSeq]);
             JavaCG2FileUtil.write2FileWithTab(methodArgGenericsTypeWriter,
                     fullMethod,
+                    methodReturnType,
                     String.valueOf(argSeq),
                     JavaCG2Constants.FILE_KEY_CLASS_TYPE,
                     JavaCG2ByteCodeUtil.genGenericsTypeStr4Fixed(javaCG2Type));
@@ -645,6 +647,7 @@ public class ClassHandler {
                 JavaCG2GenericsType methodArgsGenericsType = methodArgsGenericsTypeList.get(genericsSeq);
                 JavaCG2FileUtil.write2FileWithTab(methodArgGenericsTypeWriter,
                         fullMethod,
+                        methodReturnType,
                         String.valueOf(argSeq),
                         JavaCG2Constants.FILE_KEY_GENERICS_TYPE,
                         JavaCG2GenericsTypeUtil.genGenericsTypeStr(genericsSeq, methodArgsGenericsType));
@@ -653,7 +656,7 @@ public class ClassHandler {
     }
 
     // 处理方法参数
-    private void recordMethodArgument(String fullMethod, MethodGen mg, Set<Integer> methodArgsGenericsTypeSeqSet) throws IOException {
+    private void recordMethodArgument(String fullMethod, String methodReturnType, MethodGen mg, Set<Integer> methodArgsGenericsTypeSeqSet) throws IOException {
         Type[] argTypes = mg.getArgumentTypes();
 
         for (Attribute attribute : mg.getAttributes()) {
@@ -665,7 +668,7 @@ public class ClassHandler {
             MethodParameter[] parameters = methodParameters.getParameters();
             for (int i = 0; i < parameters.length; i++) {
                 String argName = parameters[i].getParameterName(constantPool);
-                doRecordMethodArgument(fullMethod, i, argTypes[i], argName, methodArgsGenericsTypeSeqSet);
+                doRecordMethodArgument(fullMethod, methodReturnType, i, argTypes[i], argName, methodArgsGenericsTypeSeqSet);
             }
             return;
         }
@@ -675,15 +678,16 @@ public class ClassHandler {
             int argIndex = JavaCG2ByteCodeUtil.getLocalVariableTableIndex(mg, i);
             LocalVariable localVariable = localVariableTable.getLocalVariable(argIndex, 0);
             String argName = (localVariable == null ? "" : localVariable.getName());
-            doRecordMethodArgument(fullMethod, i, argTypes[i], argName, methodArgsGenericsTypeSeqSet);
+            doRecordMethodArgument(fullMethod, methodReturnType, i, argTypes[i], argName, methodArgsGenericsTypeSeqSet);
         }
     }
 
-    private void doRecordMethodArgument(String fullMethod, int seq, Type argType, String argName, Set<Integer> methodArgsGenericsTypeSeqSet) throws IOException {
+    private void doRecordMethodArgument(String fullMethod, String methodReturnType, int seq, Type argType, String argName, Set<Integer> methodArgsGenericsTypeSeqSet) throws IOException {
         JavaCG2Type javaCG2Type = JavaCG2ByteCodeUtil.genJavaCG2Type(argType);
         String existsGenericsType = JavaCG2YesNoEnum.parseStrValue(methodArgsGenericsTypeSeqSet.contains(seq));
         JavaCG2FileUtil.write2FileWithTab(methodArgumentWriter,
                 fullMethod,
+                methodReturnType,
                 String.valueOf(seq),
                 argName,
                 javaCG2Type.getType(),

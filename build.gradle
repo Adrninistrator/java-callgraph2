@@ -6,7 +6,7 @@ apply plugin: 'idea'
 apply from: 'unittest.gradle'
 
 group 'com.github.adrninistrator'
-version = "3.0.10"
+version = "3.1.0"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
@@ -111,7 +111,7 @@ task gen_run_jar(type: Jar) {
 
     doLast {
         copy {
-            from 'build/libs/run_javacg2.jar'
+            from "${buildDir}/libs/run_javacg2.jar"
             into "${jar_output_dir}/jar/"
         }
         copy {

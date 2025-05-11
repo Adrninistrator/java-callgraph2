@@ -201,10 +201,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
     @Override
     protected boolean preHandleMethod() throws IOException {
         // 记录方法上的注解信息，在最后写入方法返回类型
-        JavaCG2AnnotationUtil.writeAnnotationInfo(methodAnnotationWriter,
-                method.getAnnotationEntries(),
-                annotationAttributesFormatter,
-                callerFullMethod);
+        JavaCG2AnnotationUtil.writeAnnotationInfo(methodAnnotationWriter, method.getAnnotationEntries(), annotationAttributesFormatter, callerFullMethod, methodReturnType);
 
         // 记录方法参数上的注解信息
         ParameterAnnotationEntry[] parameterAnnotationEntries = method.getParameterAnnotationEntries();
@@ -218,12 +215,13 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                         parameterAnnotationEntry.getAnnotationEntries(),
                         annotationAttributesFormatter,
                         callerFullMethod,
+                        methodReturnType,
                         String.valueOf(i));
             }
         }
 
         // 处理方法的行号信息
-        handleLineNumber(callerFullMethod);
+        handleLineNumber();
 
         // 处理方法注解，需要在此执行，否则接口方法上的注解不会被处理
         handleMethodAnnotations();
@@ -321,7 +319,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         if (parseMethodCallTypeValueFlag) {
             // 记录方法返回值对应的方法参数序号
             for (Integer methodReturnArgSeq : methodReturnArgSeqList) {
-                JavaCG2FileUtil.write2FileWithTab(methodReturnArgSeqWriter, callerFullMethod, String.valueOf(methodReturnArgSeq), JavaCG2YesNoEnum.NO.getStrValue());
+                JavaCG2FileUtil.write2FileWithTab(methodReturnArgSeqWriter, callerFullMethod, methodReturnType, String.valueOf(methodReturnArgSeq),
+                        JavaCG2YesNoEnum.NO.getStrValue());
             }
 
             // 记录方法返回值对应的方法调用ID
@@ -331,14 +330,16 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                     // 对应的方法调用未解析，不能处理
                     continue;
                 }
-                JavaCG2FileUtil.write2FileWithTab(methodReturnCallIdWriter, callerFullMethod, String.valueOf(methodReturnCallId), JavaCG2YesNoEnum.NO.getStrValue());
+                JavaCG2FileUtil.write2FileWithTab(methodReturnCallIdWriter, callerFullMethod, methodReturnType, String.valueOf(methodReturnCallId),
+                        JavaCG2YesNoEnum.NO.getStrValue());
             }
 
             // 记录等值转换前方法返回值对应的方法参数序号
             for (Integer methodReturnArgSeqEQC : methodReturnArgSeqEQCList) {
                 if (!methodReturnArgSeqList.contains(methodReturnArgSeqEQC)) {
                     // 等值转换前的方法参数序号，若在非等值转换的情况下也存在则不写入，避免重复
-                    JavaCG2FileUtil.write2FileWithTab(methodReturnArgSeqWriter, callerFullMethod, String.valueOf(methodReturnArgSeqEQC), JavaCG2YesNoEnum.YES.getStrValue());
+                    JavaCG2FileUtil.write2FileWithTab(methodReturnArgSeqWriter, callerFullMethod, methodReturnType, String.valueOf(methodReturnArgSeqEQC),
+                            JavaCG2YesNoEnum.YES.getStrValue());
                 }
             }
 
@@ -351,7 +352,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                         // 对应的方法调用未解析，不能处理
                         continue;
                     }
-                    JavaCG2FileUtil.write2FileWithTab(methodReturnCallIdWriter, callerFullMethod, String.valueOf(methodReturnCallIdEQC), JavaCG2YesNoEnum.YES.getStrValue());
+                    JavaCG2FileUtil.write2FileWithTab(methodReturnCallIdWriter, callerFullMethod, methodReturnType, String.valueOf(methodReturnCallIdEQC),
+                            JavaCG2YesNoEnum.YES.getStrValue());
                 }
             }
 
@@ -406,7 +408,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
     }
 
     // 处理方法的行号信息
-    private void handleLineNumber(String callerFullMethod) throws IOException {
+    private void handleLineNumber() throws IOException {
         if (lineNumberTable == null) {
             return;
         }
@@ -433,7 +435,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         }
 
         // 记录方法起始代码行号
-        JavaCG2FileUtil.write2FileWithTab(methodLineNumberWriter, callerFullMethod, String.valueOf(minLineNumber), String.valueOf(maxLineNumber));
+        JavaCG2FileUtil.write2FileWithTab(methodLineNumberWriter, callerFullMethod, methodReturnType, String.valueOf(minLineNumber), String.valueOf(maxLineNumber));
     }
 
     // 记录异常处理信息
@@ -528,7 +530,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             // 获取catch代码块的标识
             String flag = getCatchFlag(catchInfo, catchEndPosition, tryMinCallId, tryMaxCallId, catchMinCallId, catchMaxCallId);
             for (String catchExceptionType : catchInfo.getCatchExceptionTypeList()) {
-                JavaCG2FileUtil.write2FileWithTab(methodCatchWriter, callerFullMethod, catchExceptionType, flag, String.valueOf(tryStartLineNumber),
+                JavaCG2FileUtil.write2FileWithTab(methodCatchWriter, callerFullMethod, methodReturnType, catchExceptionType, flag, String.valueOf(tryStartLineNumber),
                         String.valueOf(tryEndLineNumber), String.valueOf(tryMinCallId), String.valueOf(tryMaxCallId), String.valueOf(catchInfo.getTargetPosition()),
                         String.valueOf(catchEndPosition), String.valueOf(catchStartLineNumber), String.valueOf(catchEndLineNumber), String.valueOf(catchMinCallId),
                         String.valueOf(catchMaxCallId));
@@ -543,8 +545,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             int tryCatchMinCallId = getMinCallId(finallyInfo.getFromPosition(), finallyInfo.getEndPosition());
             int tryCatchMaxCallId = getMaxCallId(finallyInfo.getFromPosition(), finallyInfo.getEndPosition());
             int finallyStartLineNumber = getSourceLine(finallyInfo.getTargetPosition());
-            JavaCG2FileUtil.write2FileWithTab(methodFinallyWriter, callerFullMethod, tryCatchType, String.valueOf(tryCatchStartLineNumber), String.valueOf(tryCatchEndLineNumber),
-                    String.valueOf(tryCatchMinCallId), String.valueOf(tryCatchMaxCallId), String.valueOf(finallyStartLineNumber));
+            JavaCG2FileUtil.write2FileWithTab(methodFinallyWriter, callerFullMethod, methodReturnType, tryCatchType, String.valueOf(tryCatchStartLineNumber),
+                    String.valueOf(tryCatchEndLineNumber), String.valueOf(tryCatchMinCallId), String.valueOf(tryCatchMaxCallId), String.valueOf(finallyStartLineNumber));
         }
     }
 
@@ -841,6 +843,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             }
             JavaCG2FileUtil.write2FileWithTab(methodThrowWriter,
                     callerFullMethod,
+                    methodReturnType,
                     String.valueOf(position),
                     String.valueOf(sourceLine),
                     String.valueOf(i),
@@ -1356,19 +1359,21 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             skipRawMethodCall = true;
         }
 
-        // 处理Callable实现类，call方法返回类型不固定
+        // 处理 Callable 实现类，call 方法返回类型使用 Object
         if (handleSpecialInitMethod(callableImplClassMap, calleeClassName, calleeMethodName, calleeMethodArgTypes, JavaCG2CallTypeEnum.CTE_CALLABLE_INIT_CALL1,
-                JavaCG2CallTypeEnum.CTE_CALLABLE_INIT_CALL2, JavaCG2CommonNameConstants.METHOD_CALLABLE_CALL, JavaCG2Constants.EMPTY_METHOD_ARGS, "")) {
+                JavaCG2CallTypeEnum.CTE_CALLABLE_INIT_CALL2, JavaCG2CommonNameConstants.METHOD_CALLABLE_CALL, JavaCG2Constants.EMPTY_METHOD_ARGS,
+                JavaCG2CommonNameConstants.CLASS_NAME_OBJECT)) {
             skipRawMethodCall = true;
         }
 
-        // 处理TransactionCallback实现类，doInTransaction方法返回类型不固定
+        // 处理 TransactionCallback 实现类，doInTransaction 方法返回类型使用 Object
         if (handleSpecialInitMethod(transactionCallbackImplClassMap, calleeClassName, calleeMethodName, calleeMethodArgTypes, JavaCG2CallTypeEnum.CTE_TX_CALLBACK_INIT_CALL1,
-                JavaCG2CallTypeEnum.CTE_TX_CALLBACK_INIT_CALL2, JavaCG2CommonNameConstants.METHOD_DO_IN_TRANSACTION, JavaCG2CommonNameConstants.ARGS_TRANSACTION_STATUS, "")) {
+                JavaCG2CallTypeEnum.CTE_TX_CALLBACK_INIT_CALL2, JavaCG2CommonNameConstants.METHOD_DO_IN_TRANSACTION, JavaCG2CommonNameConstants.ARGS_TRANSACTION_STATUS,
+                JavaCG2CommonNameConstants.CLASS_NAME_OBJECT)) {
             skipRawMethodCall = true;
         }
 
-        // 处理TransactionCallbackWithoutResult实现类，doInTransactionWithoutResult方法返回类型为void
+        // 处理TransactionCallbackWithoutResult实现类，doInTransactionWithoutResult 方法返回类型为void
         if (handleSpecialInitMethod(transactionCallbackWithoutResultChildClassMap, calleeClassName, calleeMethodName, calleeMethodArgTypes,
                 JavaCG2CallTypeEnum.CTE_TX_CALLBACK_WR_INIT_CALL1, JavaCG2CallTypeEnum.CTE_TX_CALLBACK_WR_INIT_CALL2,
                 JavaCG2CommonNameConstants.METHOD_DO_IN_TRANSACTION_WITHOUT_RESULT, JavaCG2CommonNameConstants.ARGS_TRANSACTION_STATUS,
@@ -1486,7 +1491,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                         staticField.getClassName(),
                         staticField.getFieldName(),
                         staticField.getFieldType(),
-                        callerFullMethod);
+                        callerFullMethod,
+                        methodReturnType);
             }
 
             // 处理被调用对象或参数是静态字段方法返回值的可能信息
@@ -1505,7 +1511,6 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                     JavaCG2MethodCallInfoTypeEnum.MCIT_NAME_OF_VARIABLE, seq, arrayElementFlag, "");
 
             // 处理被调用对象或参数的方法调用返回call_id可能信息
-            String methodCallReturnFullMethod = methodCallPossibleEntry.getMethodCallReturnFullMethod();
             Integer methodCallReturnInstructionPosition = methodCallPossibleEntry.getMethodCallReturnInstructionPosition();
             if (methodCallReturnInstructionPosition != null) {
                 // 根据方法调用指令位置查找对应的call_id
@@ -1521,7 +1526,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                             String.valueOf(seq),
                             String.valueOf(arrayElementFlag),
                             String.valueOf(methodCallReturnCallId),
-                            methodCallReturnFullMethod);
+                            methodCallPossibleEntry.getMethodCallReturnFullMethod(),
+                            methodCallPossibleEntry.getMethodCallReturnReturnType());
                 }
             }
 
@@ -1612,7 +1618,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 arrayElementFlag,
                 valueType,
                 data,
-                callerFullMethod
+                callerFullMethod,
+                methodReturnType
         );
         stringBuilder.append(appendedData).append(JavaCG2Constants.NEW_LINE);
     }

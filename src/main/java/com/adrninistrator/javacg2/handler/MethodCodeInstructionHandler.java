@@ -10,6 +10,7 @@ import org.apache.bcel.Const;
 import org.apache.bcel.classfile.ClassFormatException;
 import org.apache.bcel.classfile.Code;
 import org.apache.bcel.classfile.Constant;
+import org.apache.bcel.classfile.ConstantInvokeDynamic;
 import org.apache.bcel.classfile.ConstantPool;
 import org.apache.bcel.classfile.Method;
 import org.apache.bcel.classfile.Utility;
@@ -311,7 +312,10 @@ public class MethodCodeInstructionHandler {
             case Const.INVOKEDYNAMIC:
                 index = bytes.readUnsignedShort();
                 methodCodeInstruction = new MethodCodeInstructionArg();
-                ((MethodCodeInstructionArg) methodCodeInstruction).setArg(constantPool.constantToString(index, Const.CONSTANT_InvokeDynamic));
+                Constant constantInvokeDynamic = constantPool.getConstant(index, Const.CONSTANT_InvokeDynamic);
+                ConstantInvokeDynamic cid = (ConstantInvokeDynamic) constantInvokeDynamic;
+                String constantString = constantPool.constantToString(cid.getNameAndTypeIndex(), Const.CONSTANT_NameAndType);
+                ((MethodCodeInstructionArg) methodCodeInstruction).setArg(constantString);
                 bytes.readUnsignedByte(); // Thrid byte is a reserved space
                 bytes.readUnsignedByte(); // Last byte is a reserved space
                 break;
