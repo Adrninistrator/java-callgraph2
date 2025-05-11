@@ -1,12 +1,12 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.adrninistrator/java-callgraph2.svg)](https://search.maven.org/artifact/com.github.adrninistrator/java-callgraph2/)
 
-# 3. DeepWiki 链接
+# 1. DeepWiki 链接
 
 [https://deepwiki.com/Adrninistrator/java-callgraph2](https://deepwiki.com/Adrninistrator/java-callgraph2)
 
 通过大模型分析项目代码，可向大模型提出关于项目的问题，包括使用方法等
 
-# 1. 说明
+# 2. 说明
 
 java-callgraph2 项目用于对 Java 代码（编译后的 class、jar、war 文件）进行静态分析
 
@@ -16,11 +16,11 @@ java-callgraph2 项目用于对 Java 代码（编译后的 class、jar、war 文
 
 `当前项目提供了插件功能，可用于为 Java 代码自动生成 UML 时序图`，可参考 [https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram](https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram)。
 
-# 2. 使用说明
+# 3. 使用说明
 
-## 2.1. 通过源码编译
+## 3.1. 通过源码编译
 
-### 2.1.1. 编译方式
+### 3.1.1. 编译方式
 
 执行以下命令
 
@@ -28,17 +28,17 @@ java-callgraph2 项目用于对 Java 代码（编译后的 class、jar、war 文
 gradlew jar
 ```
 
-### 2.1.2. 执行方式
+### 3.1.2. 执行方式
 
 执行命令可参考脚本文件`run.bat`、`run.sh`
 
-### 2.1.3. 程序主类
+### 3.1.3. 程序主类
 
 ```java
 com.adrninistrator.javacg2.entry.JavaCG2Entry
 ```
 
-## 2.2. 通过组件引用
+## 3.2. 通过组件引用
 
 可在其他项目中通过组件方式引用当前项目，添加的 Gradle 格式的组件依赖如下：
 
@@ -46,13 +46,13 @@ com.adrninistrator.javacg2.entry.JavaCG2Entry
 com.github.adrninistrator:java-callgraph2: 版本号
 ```
 
-## 2.3. 配置参数
+## 3.3. 配置参数
 
-### 2.3.1. 配置参数说明及示例
+### 3.3.1. 配置参数说明及示例
 
 参考 [_javacg2_all_config.md](docs/_javacg2_all_config.md)
 
-### 2.3.2. _javacg2_config 目录
+### 3.3.2. _javacg2_config 目录
 
 |配置文件名|配置文件作用|
 |---|---|
@@ -60,7 +60,7 @@ com.github.adrninistrator:java-callgraph2: 版本号
 |fr_eq_conversion_method.properties|通常不需要指定，处理 get/set 方法对应的字段关联关系时使用|
 |jar_dir.properties|指定需要解析的目录、jar/war 文件路径|
 
-### 2.3.3. _javacg2_merge_file_switch 目录
+### 3.3.3. _javacg2_merge_file_switch 目录
 
 用于控制在合并 jar 文件时需要忽略特定内容的开关，包括目录中的 class、jar、war 文件，jar/war 文件中的 class、jar 文件，目录、jar/war 文件中的其他类型文件等
 
@@ -78,7 +78,7 @@ ignore_other_in_jar_war.av
 ignore_war_in_dir.av
 ```
 
-### 2.3.4. _javacg2_parse_class_method_switch 目录
+### 3.3.4. _javacg2_parse_class_method_switch 目录
 
 控制解析类及方法时是否需要忽略的开关
 
@@ -89,7 +89,7 @@ parse_ignore_class.av
 parse_ignore_method.av
 ```
 
-### 2.3.5. _javacg2_parse_method_call_switch 目录
+### 3.3.5. _javacg2_parse_method_call_switch 目录
 
 控制解析方法调用时是否需要忽略的开关，包括仅通过被调用方法判断、仅通过调用方法判断、通过调用方法与被调用方法判断
 
@@ -101,11 +101,11 @@ parse_ignore_method_call_er.av
 parse_ignore_method_call_er_ee.av
 ```
 
-### 2.3.6. 表达式语言配置示例
+### 3.3.6. 表达式语言配置示例
 
 以上表达式语言配置示例可参考项目中的文件 src/main/resources/el_example.md
 
-## 2.4. 配置参数-通过代码指定
+## 3.4. 配置参数-通过代码指定
 
 在代码中使用 com.adrninistrator.javacg2.conf.JavaCG2ConfigureWrapper 类可以指定配置参数
 
@@ -128,9 +128,9 @@ javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCF
 JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
 ```
 
-# 3. 生成可以直接执行的文件
+# 4. 生成可以直接执行的文件
 
-## 3.1. 编译方式
+## 4.1. 编译方式
 
 执行以下命令
 
@@ -138,29 +138,29 @@ JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
 gradlew gen_run_jar
 ```
 
-## 3.2. 执行方式
+## 4.2. 执行方式
 
 执行以上命令后，会在`jar_output_dir`目录中生成可以直接执行的文件
 
 在 Windows/Linux 等操作系统中分别执行对应的脚本文件`run.bat`、`run.sh`
 
-# 4. 输出文件格式
+# 5. 输出文件格式
 
 [输出文件格式](docs/file_format.md)
 
-# 5. 方法调用类型
+# 6. 方法调用类型
 
 [方法调用类型](docs/call_type.md)
 
-# 6. 扩展功能
+# 7. 扩展功能
 
 参考 [https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md) 中的相关内容
 
-# 7. 更新说明
+# 8. 更新说明
 
 [更新说明](docs/change_log.md)
 
-# 8. 原始 java-callgraph 调用关系缺失的场景
+# 9. 原始 java-callgraph 调用关系缺失的场景
 
 原始 java-callgraph 在多数场景下能够获取到 Java 方法调用关系，但以下场景的调用关系会缺失：
 
