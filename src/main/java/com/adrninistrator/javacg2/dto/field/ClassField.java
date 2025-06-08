@@ -13,6 +13,9 @@ public class ClassField {
     // 字段名称
     private String fieldName;
 
+    // 字段类型
+    private String fieldType;
+
     public String getClassName() {
         return className;
     }
@@ -27,5 +30,13 @@ public class ClassField {
 
     public void setFieldName(String fieldName) {
         this.fieldName = fieldName;
+    }
+
+    public String getFieldType() {
+        return fieldType;
+    }
+
+    public void setFieldType(String fieldType) {
+        this.fieldType = fieldType;
     }
 }

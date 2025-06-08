@@ -7,8 +7,8 @@ package com.adrninistrator.javacg2.conf.enums.interfaces;
  */
 public interface ConfigInterface {
 
-    // 获取枚举名称
-    String getEnumName();
+    // 获取枚举常量名称
+    String getEnumConstantsName();
 
     // 获取key
     String getKey();

@@ -35,6 +35,8 @@ public enum JavaCG2OutPutFileTypeEnum {
     OPFTE_METHOD_CALL_INFO("method_call_info", "方法调用的信息"),
     OPFTE_METHOD_CALL_METHOD_CALL_RETURN("method_call_method_call_return", "方法调用使用方法调用返回值"),
     OPFTE_METHOD_CALL_STATIC_FIELD("method_call_static_field", "方法调用使用静态字段信息"),
+    OPFTE_METHOD_CALL_NON_STATIC_FIELD("method_call_non_static_field", "方法调用使用非静态字段信息"),
+    OPFTE_METHOD_CALL_STATIC_FIELD_MCR("method_call_static_field_mcr", "方法调用使用静态字段方法调用返回值"),
     OPFTE_METHOD_CATCH("method_catch", "方法的catch信息"),
     OPFTE_METHOD_FINALLY("method_finally", "方法的finally信息"),
     OPFTE_METHOD_INFO("method_info", "方法的信息"),

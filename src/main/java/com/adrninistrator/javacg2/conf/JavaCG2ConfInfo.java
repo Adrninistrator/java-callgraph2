@@ -27,10 +27,10 @@ public class JavaCG2ConfInfo {
     // 解析方法调用时，通过new创建的被调用类型是否处理实际类型
     private boolean handleCalleeNewActual;
 
-    // 解析方法调用时，被调用对象为Spring Bean，是否处理原始类型（支持字段注入、getBean()方法）
+    // 解析方法调用时，被调用对象为Spring Bean，是否处理原始类型（支持字段注入）
     private boolean handleCalleeSpringBeanRaw;
 
-    // 解析方法调用时，被调用对象为Spring Bean，是否处理实际类型（支持字段注入、getBean()方法）
+    // 解析方法调用时，被调用对象为Spring Bean，是否处理实际类型（支持字段注入）
     private boolean handleCalleeSpringBeanActual;
 
     /*

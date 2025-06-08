@@ -4,6 +4,7 @@ import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.Writer;
 
 /**
@@ -14,7 +15,7 @@ import java.io.Writer;
 public abstract class AbstractSaveData2FileParser implements JarEntryOtherFileParser {
     private static final Logger logger = LoggerFactory.getLogger(AbstractSaveData2FileParser.class);
 
-    protected Writer writer;
+    private Writer writer;
 
     /**
      * 返回当前生成的文件名
@@ -36,6 +37,16 @@ public abstract class AbstractSaveData2FileParser implements JarEntryOtherFilePa
             logger.error("error ", e);
             return false;
         }
+    }
+
+    /**
+     * 将数据写入文件
+     *
+     * @param data
+     * @throws IOException
+     */
+    public void writeData2File(String... data) throws IOException {
+        JavaCG2FileUtil.write2FileWithTab(writer, data);
     }
 
     /**

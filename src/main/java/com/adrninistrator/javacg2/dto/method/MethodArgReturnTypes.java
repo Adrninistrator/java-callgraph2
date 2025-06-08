@@ -22,7 +22,7 @@ public class MethodArgReturnTypes {
 
     public MethodArgReturnTypes(String methodName, Type[] argTypes, Type returnType) {
         this.methodName = methodName;
-        this.methodArgTypes = JavaCG2ClassMethodUtil.getArgTypeStr(argTypes);
+        this.methodArgTypes = JavaCG2ClassMethodUtil.genArgTypeStr(argTypes);
         this.methodReturnType = returnType.toString();
     }
 

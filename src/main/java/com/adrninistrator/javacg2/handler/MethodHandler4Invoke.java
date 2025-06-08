@@ -18,8 +18,8 @@ import com.adrninistrator.javacg2.dto.exception.CatchInfo;
 import com.adrninistrator.javacg2.dto.exception.FinallyInfo;
 import com.adrninistrator.javacg2.dto.exception.ThrowInfo;
 import com.adrninistrator.javacg2.dto.exception.ThrowInfoList;
-import com.adrninistrator.javacg2.dto.field.FieldTypeAndName;
-import com.adrninistrator.javacg2.dto.field.StaticFieldTypeAndName;
+import com.adrninistrator.javacg2.dto.field.ClassFieldMethodCall;
+import com.adrninistrator.javacg2.dto.field.ClassFieldTypeAndName;
 import com.adrninistrator.javacg2.dto.fieldrelationship.GetSetFieldRelationship;
 import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.instruction.InvokeInstructionPosAndCallee;
@@ -134,6 +134,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
     private Writer methodCallInfoWriter;
     private Writer methodCallMethodCallReturnWriter;
     private Writer methodCallStaticFieldWriter;
+    private Writer methodCallNonStaticFieldWriter;
+    private Writer methodCallStaticFieldMCRWriter;
     private Writer methodReturnArgSeqWriter;
     private Writer methodReturnCallIdWriter;
     private Writer methodCatchWriter;
@@ -1082,7 +1084,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
         // 涉及Spring Bean，获取被调用对象可能的非静态字段名
         for (MethodCallPossibleEntry methodCallPossibleEntry : methodCallPossibleList4Object.getMethodCallPossibleEntryList()) {
-            FieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
+            ClassFieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
             if (nonStaticField == null) {
                 continue;
             }
@@ -1290,7 +1292,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         methodCall.setCallerReturnType(methodReturnType);
         methodCall.setCalleeClassName(calleeTypeRuntime != null ? calleeTypeRuntime : calleeClassName);
         methodCall.setCalleeMethodName(calleeMethodName);
-        methodCall.setCalleeMethodArgTypes(JavaCG2ClassMethodUtil.getArgTypeStr(calleeArgTypes));
+        methodCall.setCalleeMethodArgTypes(JavaCG2ClassMethodUtil.genArgTypeStr(calleeArgTypes));
         methodCall.setCalleeArgTypes(calleeArgTypes);
         methodCall.setCalleeArrayDimensions(calleeArrayDimensions);
         methodCall.setCalleeObjTypeEnum(objTypeEnum);
@@ -1350,7 +1352,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         }
 
         boolean skipRawMethodCall = false;
-        String calleeMethodArgTypes = JavaCG2ClassMethodUtil.getArgTypeStr(argTypes);
+        String calleeMethodArgTypes = JavaCG2ClassMethodUtil.genArgTypeStr(argTypes);
 
         // 处理Runnable实现类，run方法返回类型为void
         if (handleSpecialInitMethod(runnableImplClassMap, calleeClassName, calleeMethodName, calleeMethodArgTypes, JavaCG2CallTypeEnum.CTE_RUNNABLE_INIT_RUN1,
@@ -1430,7 +1432,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             return;
         }
 
-        String calleeMethodArgTypes = JavaCG2ClassMethodUtil.getArgTypeStr(argTypes);
+        String calleeMethodArgTypes = JavaCG2ClassMethodUtil.genArgTypeStr(argTypes);
         // 记录Thread子类的start方法调用run方法（以上Map的value等于FALSE时，代表当前类为Thread的子类，且start()方法调用run()方法未添加过）
         // Thead类的start()、run()方法返回类型都是void
         addOtherMethodCall(calleeClassName, calleeMethodName, calleeMethodArgTypes, JavaCG2CommonNameConstants.RETURN_TYPE_VOID, JavaCG2CallTypeEnum.CTE_THREAD_START_RUN,
@@ -1446,7 +1448,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         }
 
         // 记录方法调用可能的信息，被调用对象
-        recordMethodCallPossibleInfo(methodCall.getCallId(), JavaCG2Constants.METHOD_CALL_OBJECT_SEQ, null, methodCallPossibleInfo.getPossibleInfo4Object());
+        recordMethodCallPossibleInfo(methodCall.getCallId(), JavaCG2Constants.METHOD_CALL_OBJECT_SEQ, methodCall.getCalleeClassName(),
+                methodCallPossibleInfo.getPossibleInfo4Object());
 
         Type[] argTypes = methodCall.getCalleeArgTypes();
         // 记录方法调用可能的信息，参数
@@ -1480,7 +1483,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             recordStringMethodCallPossibleValue(stringBuilder, methodCallPossibleEntry, methodCallId, argSeq, argType, seq, arrayElementFlag);
 
             // 处理方法调用可能的被调用静态变量
-            StaticFieldTypeAndName staticField = methodCallPossibleEntry.getStaticField();
+            ClassFieldTypeAndName staticField = methodCallPossibleEntry.getStaticField();
             if (staticField != null) {
                 recordStringMethodCallPossibleInfo(stringBuilder, staticField.getClassAndFieldName(), methodCallId, argSeq,
                         JavaCG2MethodCallInfoTypeEnum.MCIT_STATIC_FIELD, seq, arrayElementFlag, "");
@@ -1495,15 +1498,39 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                         methodReturnType);
             }
 
-            // 处理被调用对象或参数是静态字段方法返回值的可能信息
-            recordStringMethodCallPossibleInfo(stringBuilder, methodCallPossibleEntry.getStaticFieldMethodCall(), methodCallId, argSeq,
-                    JavaCG2MethodCallInfoTypeEnum.MCIT_STATIC_FIELD_METHOD_CALL, seq, arrayElementFlag, "");
-
-            // 处理被调用对象或参数的字段名称可能信息
-            FieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
+            // 处理方法调用可能的被调用非静态变量
+            ClassFieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
             if (nonStaticField != null) {
-                recordStringMethodCallPossibleInfo(stringBuilder, nonStaticField.getFieldName(), methodCallId, argSeq,
-                        JavaCG2MethodCallInfoTypeEnum.MCIT_NAME_OF_FIELD, seq, arrayElementFlag, "");
+                recordStringMethodCallPossibleInfo(stringBuilder, nonStaticField.getClassAndFieldName(), methodCallId, argSeq,
+                        JavaCG2MethodCallInfoTypeEnum.MCIT_NON_STATIC_FIELD, seq, arrayElementFlag, "");
+                JavaCG2FileUtil.write2FileWithTab(methodCallNonStaticFieldWriter,
+                        String.valueOf(methodCallId),
+                        String.valueOf(argSeq),
+                        String.valueOf(seq),
+                        nonStaticField.getClassName(),
+                        nonStaticField.getFieldName(),
+                        nonStaticField.getFieldType(),
+                        callerFullMethod,
+                        methodReturnType);
+            }
+
+            // 处理被调用对象或参数是静态字段方法返回值的可能信息
+            String staticFieldMethodCallStr = methodCallPossibleEntry.getStaticFieldMethodCall();
+            if (staticFieldMethodCallStr != null) {
+                recordStringMethodCallPossibleInfo(stringBuilder, staticFieldMethodCallStr, methodCallId, argSeq, JavaCG2MethodCallInfoTypeEnum.MCIT_STATIC_FIELD_MCR,
+                        seq, arrayElementFlag, "");
+                ClassFieldMethodCall classFieldMethodCall = JavaCG2ClassMethodUtil.parseClassFieldMethodCall(staticFieldMethodCallStr);
+                JavaCG2FileUtil.write2FileWithTab(methodCallStaticFieldMCRWriter,
+                        String.valueOf(methodCallId),
+                        String.valueOf(argSeq),
+                        String.valueOf(seq),
+                        classFieldMethodCall.getClassName(),
+                        classFieldMethodCall.getFieldName(),
+                        classFieldMethodCall.getFieldType(),
+                        classFieldMethodCall.genFullMethod(),
+                        classFieldMethodCall.getReturnType(),
+                        callerFullMethod,
+                        methodReturnType);
             }
 
             // 处理被调用对象或参数的变量名称可能信息
@@ -1572,7 +1599,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                                                     JavaCG2Counter typeCounter, String arrayElementFlag) {
         if (useSpringBeanByAnnotationHandler.hasUseSpringBean()) {
             // 涉及Spring Bean，获取被调用对象可能的非静态字段名
-            FieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
+            ClassFieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
             if (nonStaticField != null) {
                 // 获取指定类指定字段对应的Spring Bean类型
                 List<String> springBeanFieldTypeList = useSpringBeanByAnnotationHandler.getSpringBeanTypeList(callerClassName, nonStaticField.getFieldName());
@@ -1737,6 +1764,14 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     public void setMethodCallStaticFieldWriter(Writer methodCallStaticFieldWriter) {
         this.methodCallStaticFieldWriter = methodCallStaticFieldWriter;
+    }
+
+    public void setMethodCallNonStaticFieldWriter(Writer methodCallNonStaticFieldWriter) {
+        this.methodCallNonStaticFieldWriter = methodCallNonStaticFieldWriter;
+    }
+
+    public void setMethodCallStaticFieldMCRWriter(Writer methodCallStaticFieldMCRWriter) {
+        this.methodCallStaticFieldMCRWriter = methodCallStaticFieldMCRWriter;
     }
 
     public void setMethodReturnArgSeqWriter(Writer methodReturnArgSeqWriter) {

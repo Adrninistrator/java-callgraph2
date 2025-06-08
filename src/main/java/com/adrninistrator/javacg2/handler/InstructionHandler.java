@@ -15,7 +15,7 @@ import com.adrninistrator.javacg2.dto.element.variable.FieldElement;
 import com.adrninistrator.javacg2.dto.element.variable.JSRElement;
 import com.adrninistrator.javacg2.dto.element.variable.LocalVariableElement;
 import com.adrninistrator.javacg2.dto.element.variable.StaticFieldElement;
-import com.adrninistrator.javacg2.dto.element.variable.StaticFieldMethodCallElement;
+import com.adrninistrator.javacg2.dto.element.variable.StaticFieldMethodCallReturnElement;
 import com.adrninistrator.javacg2.dto.element.variable.VariableElement;
 import com.adrninistrator.javacg2.dto.field.FieldPossibleTypes;
 import com.adrninistrator.javacg2.dto.frame.FieldInformationMap;
@@ -98,6 +98,8 @@ public class InstructionHandler {
 
     private final String callerFullMethod;
 
+    private final String callerMethodReturnType;
+
     private final LocalVariableTable localVariableTable;
 
     private JavaCG2OperandStack stack;
@@ -147,6 +149,7 @@ public class InstructionHandler {
         this.mg = mg;
         this.cpg = mg.getConstantPool();
         this.callerFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(mg.getClassName(), mg.getName(), mg.getArgumentTypes());
+        this.callerMethodReturnType = mg.getReturnType().toString();
         this.localVariableTable = localVariableTable;
         this.stack = stack;
         this.locals = locals;
@@ -158,7 +161,7 @@ public class InstructionHandler {
         instructionPosition = ih.getPosition();
         sourceLineNumber = JavaCG2ByteCodeUtil.getSourceLine(instructionPosition, mg.getLineNumberTable(cpg));
         if (logger.isDebugEnabled()) {
-            logger.debug("当前解析的方法 {} 指令位置 {} 代码行号 {}", callerFullMethod, instructionPosition, sourceLineNumber);
+            logger.debug("当前解析的方法 {} {} 指令位置 {} 代码行号 {}", callerFullMethod, callerMethodReturnType, instructionPosition, sourceLineNumber);
         }
 
         Instruction i = ih.getInstruction();
@@ -711,12 +714,10 @@ public class InstructionHandler {
         String variableName = (localVariable != null ? localVariable.getName() : null);
         if (typeEnum == null) {
             // 处理ASTORE指令
-            if (!JavaCG2ByteCodeUtil.isNullType(poppedElementType)) {
-                // 操作数栈中元素类型有值
-                // 添加本地变量
-                locals.add(poppedElementType, baseElement, index, variableName);
-                return;
-            }
+            // 操作数栈中元素类型有值
+            // 添加本地变量
+            locals.add(poppedElementType, baseElement, index, variableName);
+            return;
         }
 
         // 处理非ASTORE指令，或操作数栈中元素类型未获取到值
@@ -724,7 +725,7 @@ public class InstructionHandler {
         if (localVariable != null) {
             actualType = Utility.typeSignatureToString(localVariable.getSignature(), false);
         } else {
-            actualType = (typeEnum != null ? typeEnum.getType() : poppedElementType);
+            actualType = typeEnum.getType();
         }
 
         // 添加本地变量
@@ -985,12 +986,12 @@ public class InstructionHandler {
 
     private void handleGETSTATIC(GETSTATIC getstatic) {
         String fieldName = getstatic.getFieldName(cpg);
+        String fieldType = getstatic.getFieldType(cpg).toString();
         ObjectType classType = getstatic.getLoadClassType(cpg);
 
-        FieldElement fieldElement = staticFieldInfoMap.getStatic(classType.getClassName(), fieldName);
+        FieldElement fieldElement = staticFieldInfoMap.getStatic(classType.getClassName(), fieldName, fieldType);
         if (fieldElement == null) {
             // 假如是静态字段定义的类型与实际初始化类型不一致，则以上获取的fieldElement会是null，因为代码中没有对静态初始化方法进行处理（意义不大）
-            String fieldType = getstatic.getFieldType(cpg).toString();
             fieldElement = new StaticFieldElement(fieldType, 0, null, fieldName, classType.getClassName());
         }
         stack.push(fieldElement);
@@ -998,6 +999,7 @@ public class InstructionHandler {
 
     private PutStaticParseResult handlePUTSTATIC(PUTSTATIC putstatic) {
         String fieldName = putstatic.getFieldName(cpg);
+        String fieldType = putstatic.getFieldType(cpg).toString();
         ObjectType classType = putstatic.getLoadClassType(cpg);
         BaseElement value = stack.pop();
 
@@ -1008,11 +1010,11 @@ public class InstructionHandler {
             staticFieldElement.setArrayValueMap(value.getArrayValueMap());
         }
 
-        staticFieldInfoMap.putStatic(putStaticClassName, fieldName, staticFieldElement);
+        staticFieldInfoMap.putStatic(putStaticClassName, fieldName, fieldType, staticFieldElement);
 
         if (inClinitMethod) {
             // 仅当在静态代码块时返回以下解析结果
-            return new PutStaticParseResult(putStaticClassName, fieldName, putstatic.getFieldType(cpg).toString(), value);
+            return new PutStaticParseResult(putStaticClassName, fieldName, fieldType, value);
         }
         return null;
     }
@@ -1020,11 +1022,18 @@ public class InstructionHandler {
     private void handleGETFIELD(GETFIELD getfield) {
         String fieldName = getfield.getFieldName(cpg);
         BaseElement object = stack.pop();
+        String fieldType = getfield.getFieldType(cpg).toString();
         if (object instanceof ConstElementString && JavaCG2CommonNameConstants.CLASS_NAME_STRING.equals(mg.getClassName())) {
             // String类中获取字符串中的字段
-            String fieldType = getfield.getFieldType(cpg).toString();
             ConstElementString constElementString = (ConstElementString) object;
             FieldElement fieldElement = new FieldElement(fieldType, 0, constElementString.getValue(), fieldName, JavaCG2CommonNameConstants.CLASS_NAME_STRING);
+            stack.push(fieldElement);
+            return;
+        }
+
+        if (object instanceof ConstElementNull) {
+            // 允许object为null
+            FieldElement fieldElement = new FieldElement(fieldType, 0, null, fieldName, JavaCG2ConstantTypeEnum.CONSTTE_NULL.getType());
             stack.push(fieldElement);
             return;
         }
@@ -1046,9 +1055,16 @@ public class InstructionHandler {
             if (objectLocalVariableElement.isThis()) {
                 // 处理对this的变量获取
                 // 尝试从已处理的非静态变量中获取
-                fieldElement = nonStaticFieldInfoMap.get(fieldName);
+                String fieldNameAndType = JavaCG2ClassMethodUtil.formatFieldNameAndType(fieldName, fieldType);
+                fieldElement = nonStaticFieldInfoMap.get(fieldNameAndType);
                 if (fieldElement != null) {
-                    FieldElement newFieldElement = (FieldElement) fieldElement.copyElement();
+                    FieldElement newFieldElement;
+                    if (!fieldType.equals(fieldElement.getRawType())) {
+                        // getfield指令的字段类型与对应的字段原始类型不相同，使用getfield指令的字段类型
+                        newFieldElement = new FieldElement(fieldType, 0, null, fieldName, objectClassName);
+                    } else {
+                        newFieldElement = (FieldElement) fieldElement.copyElement();
+                    }
                     variableDataSourceField.setFieldType(newFieldElement.getType());
                     // 记录变量的数据来源
                     newFieldElement.recordVariableDataSource(variableDataSourceField, frEqConversionMethodMap);
@@ -1058,7 +1074,7 @@ public class InstructionHandler {
 
                 if (useFieldPossibleTypeFlag) {
                     // 从已处理的非静态变量中未获取到，使用当前类已获取的构造函数非静态字段可能的类型
-                    List<String> possibleTypeList = nonStaticFieldPossibleTypes.getPossibleTypeList(fieldName);
+                    List<String> possibleTypeList = nonStaticFieldPossibleTypes.getPossibleTypeList(fieldName, fieldType);
                     if (!JavaCG2Util.isCollectionEmpty(possibleTypeList)) {
                         if (possibleTypeList.size() == 1) {
                             // 字段可能的类型数量为1，则使用
@@ -1077,7 +1093,6 @@ public class InstructionHandler {
         }
 
         // 若以上未得到字段合适的类型，则使用GETFIELD指令对应的类型
-        String fieldType = getfield.getFieldType(cpg).toString();
         FieldElement fieldElement = new FieldElement(fieldType, 0, null, fieldName, objectClassName);
         variableDataSourceField.setFieldType(fieldElement.getType());
         // 记录变量的数据来源
@@ -1093,23 +1108,25 @@ public class InstructionHandler {
             throw new JavaCG2RuntimeException("PUTFIELD对象类型与预期不一致: " + object.getClass().getName());
         }
 
+        String rawFieldType = putfield.getFieldType(cpg).toString();
         if (object instanceof LocalVariableElement) {
             LocalVariableElement objectLocalVariableElement = (LocalVariableElement) object;
             if (objectLocalVariableElement.isThis()) {
                 // 仅处理对this的变量赋值
                 String objectClassName = JavaCG2ElementUtil.getVariableClassNameOrThis(objectLocalVariableElement);
-                FieldElement fieldElement = new FieldElement(value.getType(), 0, value.getValue(), fieldName, objectClassName);
+                FieldElement fieldElement = new FieldElement(value.getType(), 0, value.getValue(), JavaCG2Constants.LOCAL_VARIABLE_INDEX_NOT_USED, fieldName, objectClassName,
+                        rawFieldType);
                 // 数组类型的处理
                 if (value.checkArrayElement()) {
                     fieldElement.setArrayValueMap(value.getArrayValueMap());
                 }
 
-                nonStaticFieldInfoMap.put(fieldName, fieldElement);
+                String fieldNameAndType = JavaCG2ClassMethodUtil.formatFieldNameAndType(fieldName, rawFieldType);
+                nonStaticFieldInfoMap.put(fieldNameAndType, fieldElement);
                 if (recordFieldPossibleTypeFlag) {
-                    String rawFieldType = putfield.getFieldType(cpg).toString();
                     if (!StringUtils.equals(rawFieldType, value.getType())) {
                         // 记录非静态字段可能的类型，仅当字段实际类型与原始类型不相同时才记录
-                        nonStaticFieldPossibleTypes.addPossibleType(fieldName, value.getType());
+                        nonStaticFieldPossibleTypes.addPossibleType(fieldName, rawFieldType, value.getType());
                     }
                 }
             }
@@ -1149,13 +1166,13 @@ public class InstructionHandler {
             if (objectElement instanceof StaticFieldElement) {
                 // 被调用对象属于静态字段
                 StaticFieldElement staticFieldElement = (StaticFieldElement) objectElement;
-                variableElement = new StaticFieldMethodCallElement(returnTypeStr, 0, staticFieldElement.getClassName(),
-                        staticFieldElement.getName(), calleeMethodName, argTypes);
+                variableElement = new StaticFieldMethodCallReturnElement(returnTypeStr, 0, staticFieldElement.getClassName(), staticFieldElement.getName(),
+                        staticFieldElement.getType(), calleeMethodName, argTypes);
             } else {
                 variableElement = new VariableElement(returnTypeStr);
             }
             VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = new VariableDataSourceMethodCallReturn(ih.getPosition(),
-                    invokeInstruction.getClass().getSimpleName(), calleeClassName, calleeMethodName, JavaCG2ClassMethodUtil.getArgTypeStr(argTypes), returnType.toString(),
+                    invokeInstruction.getClass().getSimpleName(), calleeClassName, calleeMethodName, JavaCG2ClassMethodUtil.genArgTypeStr(argTypes), returnType.toString(),
                     objectElement, argElementList);
 
             // 记录变量的数据来源
@@ -1169,7 +1186,7 @@ public class InstructionHandler {
                 VariableElement topVariableElement = (VariableElement) topElement;
                 // 修改数据来源
                 VariableDataSourceMethodCallReturn variableDataSourceMethodCallReturn = new VariableDataSourceMethodCallReturn(ih.getPosition(),
-                        invokeInstruction.getClass().getSimpleName(), calleeClassName, calleeMethodName, JavaCG2ClassMethodUtil.getArgTypeStr(argTypes), calleeClassName,
+                        invokeInstruction.getClass().getSimpleName(), calleeClassName, calleeMethodName, JavaCG2ClassMethodUtil.genArgTypeStr(argTypes), calleeClassName,
                         objectElement, argElementList);
                 topVariableElement.recordVariableDataSource(variableDataSourceMethodCallReturn, frEqConversionMethodMap);
             }

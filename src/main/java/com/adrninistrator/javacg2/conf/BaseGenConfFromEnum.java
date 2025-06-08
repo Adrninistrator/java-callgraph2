@@ -59,7 +59,7 @@ public abstract class BaseGenConfFromEnum {
 
     protected void genOtherConfig(OtherConfigInterface[] otherConfigs, String[] ignoreNames) {
         for (OtherConfigInterface otherConfig : otherConfigs) {
-            String enumName = otherConfig.getEnumName();
+            String enumName = otherConfig.getEnumConstantsName();
             boolean skip = false;
             if (ArrayUtils.isNotEmpty(ignoreNames)) {
                 for (String ignoreName : ignoreNames) {
@@ -271,7 +271,6 @@ public abstract class BaseGenConfFromEnum {
                 "（作用）判断字符串类型的变量是否以多个指定内容中的任意一个开头",
                 "（语法）string.startsWithAny({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果1}, {字符串变量/常量/运算结果2}, ...)",
                 "（示例）string.startsWithAny(str1, 'abc', 'def', 'ghi')",
-
         };
     }
 

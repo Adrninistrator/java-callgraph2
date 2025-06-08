@@ -1,6 +1,5 @@
 package com.adrninistrator.javacg2.handler;
 
-import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
@@ -223,15 +222,16 @@ public abstract class AbstractMethodHandler {
             }
             return success;
         } catch (Exception e) {
-            logger.error("处理方法出现异常，需要分析原因 {} ", callerFullMethod, e);
+            logger.error("处理方法出现异常，需要分析原因 {} {} ", callerFullMethod, methodReturnType, e);
             // 增加失败次数
             failCounter.addAndGet();
 
             if (Boolean.TRUE.equals(continueWhenError)) {
                 return true;
             }
-            logger.info("假如在处理方法出现异常时需要继续执行，请在配置文件 {} 中指定参数 {}", JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR.getFileName(),
-                    JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR.getKey() + JavaCG2Constants.FLAG_EQUAL + Boolean.TRUE);
+            logger.info("假如在处理方法出现异常时需要继续执行，请配置参数值为 {} {}", Boolean.TRUE,
+                    javaCG2InputAndOutput.getJavaCG2ConfigureWrapper().genConfigUsage(JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR)
+            );
             return false;
         }
     }

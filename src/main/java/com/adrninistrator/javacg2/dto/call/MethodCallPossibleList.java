@@ -4,10 +4,9 @@ import com.adrninistrator.javacg2.dto.element.BaseElement;
 import com.adrninistrator.javacg2.dto.element.variable.FieldElement;
 import com.adrninistrator.javacg2.dto.element.variable.LocalVariableElement;
 import com.adrninistrator.javacg2.dto.element.variable.StaticFieldElement;
-import com.adrninistrator.javacg2.dto.element.variable.StaticFieldMethodCallElement;
+import com.adrninistrator.javacg2.dto.element.variable.StaticFieldMethodCallReturnElement;
 import com.adrninistrator.javacg2.dto.element.variable.VariableElement;
-import com.adrninistrator.javacg2.dto.field.FieldTypeAndName;
-import com.adrninistrator.javacg2.dto.field.StaticFieldTypeAndName;
+import com.adrninistrator.javacg2.dto.field.ClassFieldTypeAndName;
 import com.adrninistrator.javacg2.dto.variabledatasource.AbstractVariableDataSource;
 import com.adrninistrator.javacg2.dto.variabledatasource.VariableDataSourceMethodArg;
 import com.adrninistrator.javacg2.dto.variabledatasource.VariableDataSourceMethodCallReturn;
@@ -56,23 +55,23 @@ public class MethodCallPossibleList {
 
         // 记录已经处理过的元素
         handledElementList.add(baseElement);
-        String type = baseElement.getType();
+        String elementType = baseElement.getType();
 
         MethodCallPossibleEntry addedMethodCallPossibleEntry = new MethodCallPossibleEntry();
-        if (baseElement instanceof StaticFieldMethodCallElement) {
+        if (baseElement instanceof StaticFieldMethodCallReturnElement) {
             // 添加被调用对象或参数是静态字段方法返回值的可能信息
-            String staticFieldMethodCallInfo = ((StaticFieldMethodCallElement) baseElement).getInfo();
+            String staticFieldMethodCallInfo = ((StaticFieldMethodCallReturnElement) baseElement).getDetailInfo();
             addedMethodCallPossibleEntry.setStaticFieldMethodCall(staticFieldMethodCallInfo);
         } else if (baseElement instanceof StaticFieldElement) {
             // 添加可能的被调用静态字段
             StaticFieldElement staticFieldElement = (StaticFieldElement) baseElement;
-            StaticFieldTypeAndName staticField = new StaticFieldTypeAndName(type, staticFieldElement.getName(), staticFieldElement.getClassName());
+            ClassFieldTypeAndName staticField = new ClassFieldTypeAndName(staticFieldElement.getType(), staticFieldElement.getName(), staticFieldElement.getClassName());
             addedMethodCallPossibleEntry.setStaticField(staticField);
         } else if (baseElement instanceof FieldElement) {
             // 添加可能的被调用非静态字段
             FieldElement fieldElement = (FieldElement) baseElement;
-            FieldTypeAndName fieldTypeAndName = new FieldTypeAndName(fieldElement.getType(), fieldElement.getName());
-            addedMethodCallPossibleEntry.setNonStaticField(fieldTypeAndName);
+            ClassFieldTypeAndName nonStaticField = new ClassFieldTypeAndName(fieldElement.getType(), fieldElement.getName(), fieldElement.getClassName());
+            addedMethodCallPossibleEntry.setNonStaticField(nonStaticField);
         } else if (baseElement instanceof LocalVariableElement) {
             // 添加可能的被调用本地变量
             addedMethodCallPossibleEntry.setNameOfVariable(((LocalVariableElement) baseElement).getName());
@@ -115,10 +114,10 @@ public class MethodCallPossibleList {
             }
         }
 
-        if (!JavaCG2ByteCodeUtil.isNullType(type) &&
-                !type.equals(definedType) &&
-                !JavaCG2ByteCodeUtil.compareIntType(type, definedType) &&
-                !JavaCG2ByteCodeUtil.compareByteBooleanType(type, definedType)
+        if (!JavaCG2ByteCodeUtil.isNullType(elementType) &&
+                !elementType.equals(definedType) &&
+                !JavaCG2ByteCodeUtil.compareIntType(elementType, definedType) &&
+                !JavaCG2ByteCodeUtil.compareByteBooleanType(elementType, definedType)
         ) {
             /*
                 添加可能的类型
@@ -126,13 +125,13 @@ public class MethodCallPossibleList {
                 若为int及兼容的类型，则不添加
                 若为兼容的byte、boolean类型，则不添加
              */
-            addedMethodCallPossibleEntry.setType(type);
+            addedMethodCallPossibleEntry.setType(elementType);
         }
 
         Object value = baseElement.getValue();
         if (value != null) {
             // 添加可能的值
-            addedMethodCallPossibleEntry.setValueType(type);
+            addedMethodCallPossibleEntry.setValueType(elementType);
             addedMethodCallPossibleEntry.setValue(value);
         }
 

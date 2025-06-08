@@ -89,6 +89,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer methodCallInfoWriter;
     private Writer methodCallMethodCallReturnWriter;
     private Writer methodCallStaticFieldWriter;
+    private Writer methodCallNonStaticFieldWriter;
+    private Writer methodCallStaticFieldMCRWriter;
     private Writer methodCallWriter;
     private Writer methodCatchWriter;
     private Writer methodFinallyWriter;
@@ -187,6 +189,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         classHandler.setMethodCallInfoWriter(methodCallInfoWriter);
         classHandler.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
         classHandler.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
+        classHandler.setMethodCallNonStaticFieldWriter(methodCallNonStaticFieldWriter);
+        classHandler.setMethodCallStaticFieldMCRWriter(methodCallStaticFieldMCRWriter);
         classHandler.setMethodCallWriter(methodCallWriter);
         classHandler.setMethodCatchWriter(methodCatchWriter);
         classHandler.setMethodFinallyWriter(methodFinallyWriter);
@@ -509,6 +513,14 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setMethodCallStaticFieldWriter(Writer methodCallStaticFieldWriter) {
         this.methodCallStaticFieldWriter = methodCallStaticFieldWriter;
+    }
+
+    public void setMethodCallNonStaticFieldWriter(Writer methodCallNonStaticFieldWriter) {
+        this.methodCallNonStaticFieldWriter = methodCallNonStaticFieldWriter;
+    }
+
+    public void setMethodCallStaticFieldMCRWriter(Writer methodCallStaticFieldMCRWriter) {
+        this.methodCallStaticFieldMCRWriter = methodCallStaticFieldMCRWriter;
     }
 
     public void setMethodCallWriter(Writer methodCallWriter) {

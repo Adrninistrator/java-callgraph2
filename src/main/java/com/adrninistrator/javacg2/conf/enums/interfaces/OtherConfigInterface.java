@@ -7,6 +7,9 @@ package com.adrninistrator.javacg2.conf.enums.interfaces;
  */
 public interface OtherConfigInterface extends ConfigInterface {
 
+    // 配置参数属于Set类型还是List类型
+    boolean isSetOrList();
+
     // 通过key获取对应的配置枚举
     OtherConfigInterface getFromKey(String key);
 

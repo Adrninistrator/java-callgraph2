@@ -6,7 +6,7 @@ apply plugin: 'idea'
 apply from: 'unittest.gradle'
 
 group 'com.github.adrninistrator'
-version = "3.1.0"
+version = "3.2.0"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
@@ -50,11 +50,13 @@ sourceSets {
     }
 }
 
-List apache_ant = ["org.apache.ant:ant:1.10.9"]
+List apache_ant = ["org.apache.ant:ant:1.10.15"]
 
 List apache_common = [
         'commons-codec:commons-codec:1.15',
-        'org.apache.commons:commons-compress:1.26.0'
+        'org.apache.commons:commons-compress:1.27.1',
+        'org.apache.commons:commons-lang3:3.17.0',
+        'commons-io:commons-io:2.15.1'
 ]
 
 List aviator = ['com.googlecode.aviator:aviator:5.4.3']
@@ -91,7 +93,7 @@ processTestResources {
     setDuplicatesStrategy(DuplicatesStrategy.INCLUDE)
 }
 
-task createProject {
+tasks.register('createProject') {
     doFirst {
         sourceSets*.java.srcDirs*.each { it.mkdirs() }
         sourceSets*.resources.srcDirs*.each { it.mkdirs() }
@@ -99,7 +101,7 @@ task createProject {
 }
 
 // 生成可以直接执行的jar包，并拷贝相关文件
-task gen_run_jar(type: Jar) {
+tasks.register('gen_run_jar', Jar) {
     archiveFileName.set('run_javacg2.jar')
     from(sourceSets.main.output) {
         into '/'
@@ -141,16 +143,27 @@ task gen_run_jar(type: Jar) {
             rename { "log4j2.xml" }
         }
         copy {
-            from 'run.bat'
+            from new File('bat').listFiles().findAll { File f -> (f.name.endsWith('.bat')) }
             into "${jar_output_dir}/"
         }
         copy {
-            from 'run.sh'
+            from new File('shell').listFiles().findAll { File f -> (f.name.endsWith('.sh')) }
             into "${jar_output_dir}/"
+        }
+        copy {
+            from configurations.runtimeClasspath.getFiles()
+            into "${jar_output_dir}/lib"
         }
         copy {
             from configurations.testRuntimeClasspath.getFiles().findAll {
-                File f -> (!f.name.startsWith("junit-") && !f.name.startsWith('hamcrest-core-'))
+                    /*
+                    需要使用以下日志相关的组件：
+                    log4j
+                    disruptor
+                 */
+                File f ->
+                    (f.name.startsWith('log4j-')
+                            || f.name.startsWith("disruptor-"))
             }
             into "${jar_output_dir}/lib"
         }

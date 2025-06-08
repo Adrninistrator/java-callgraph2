@@ -14,7 +14,7 @@ public class StaticFieldElement extends FieldElement {
     }
 
     public StaticFieldElement(String type, int addArrayDimensions, Object value, int index, String variableName, String className) {
-        super(type, addArrayDimensions, value, index, variableName, className);
+        super(type, addArrayDimensions, value, index, variableName, className, type);
     }
 
     @Override

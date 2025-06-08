@@ -119,6 +119,8 @@ public class ClassHandler {
     private Writer methodCallInfoWriter;
     private Writer methodCallMethodCallReturnWriter;
     private Writer methodCallStaticFieldWriter;
+    private Writer methodCallNonStaticFieldWriter;
+    private Writer methodCallStaticFieldMCRWriter;
     private Writer methodCallWriter;
     private Writer methodCatchWriter;
     private Writer methodFinallyWriter;
@@ -421,7 +423,7 @@ public class ClassHandler {
                                  Set<String> fieldWithGetMethodNameSet,
                                  Set<String> fieldWithSetMethodNameSet) throws IOException {
         // 生成格式化后的方法参数
-        String methodArgTypes = JavaCG2ClassMethodUtil.getArgTypeStr(method.getArgumentTypes());
+        String methodArgTypes = JavaCG2ClassMethodUtil.genArgTypeStr(method.getArgumentTypes());
         // 生成格式化后的完整方法
         String fullMethod = JavaCG2ClassMethodUtil.formatFullMethod(className, method.getName(), methodArgTypes);
 
@@ -506,6 +508,8 @@ public class ClassHandler {
                 methodHandler4Invoke.setMethodCallInfoWriter(methodCallInfoWriter);
                 methodHandler4Invoke.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
                 methodHandler4Invoke.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
+                methodHandler4Invoke.setMethodCallNonStaticFieldWriter(methodCallNonStaticFieldWriter);
+                methodHandler4Invoke.setMethodCallStaticFieldMCRWriter(methodCallStaticFieldMCRWriter);
                 methodHandler4Invoke.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
                 methodHandler4Invoke.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
                 methodHandler4Invoke.setMethodCatchWriter(methodCatchWriter);
@@ -800,6 +804,14 @@ public class ClassHandler {
 
     public void setMethodCallStaticFieldWriter(Writer methodCallStaticFieldWriter) {
         this.methodCallStaticFieldWriter = methodCallStaticFieldWriter;
+    }
+
+    public void setMethodCallNonStaticFieldWriter(Writer methodCallNonStaticFieldWriter) {
+        this.methodCallNonStaticFieldWriter = methodCallNonStaticFieldWriter;
+    }
+
+    public void setMethodCallStaticFieldMCRWriter(Writer methodCallStaticFieldMCRWriter) {
+        this.methodCallStaticFieldMCRWriter = methodCallStaticFieldMCRWriter;
     }
 
     public void setMethodCallWriter(Writer methodCallWriter) {

@@ -167,7 +167,7 @@ public enum JavaCG2ElConfigEnum implements ElConfigInterface {
     }
 
     @Override
-    public String getEnumName() {
+    public String getEnumConstantsName() {
         return name();
     }
 

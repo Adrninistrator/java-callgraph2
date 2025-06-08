@@ -180,6 +180,8 @@ public class JavaCG2Entry {
              Writer methodCallMethodCallReturnWriter =
                      JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_METHOD_CALL_RETURN));
              Writer methodCallStaticFieldWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_STATIC_FIELD));
+             Writer methodCallNonStaticFieldWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_NON_STATIC_FIELD));
+             Writer methodCallStaticFieldMCRWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_STATIC_FIELD_MCR));
              Writer methodReturnArgSeqWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_ARG_SEQ));
              Writer methodReturnCallIdWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_CALL_ID));
              Writer methodReturnConstValueWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_CONST_VALUE));
@@ -221,6 +223,8 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setMethodCallInfoWriter(methodCallInfoWriter);
             jarEntryHandleParser.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
             jarEntryHandleParser.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
+            jarEntryHandleParser.setMethodCallNonStaticFieldWriter(methodCallNonStaticFieldWriter);
+            jarEntryHandleParser.setMethodCallStaticFieldMCRWriter(methodCallStaticFieldMCRWriter);
             jarEntryHandleParser.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
             jarEntryHandleParser.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
             jarEntryHandleParser.setMethodReturnConstValueWriter(methodReturnConstValueWriter);

@@ -31,13 +31,15 @@ public class JavaCG2ConfManager {
 
         if (!parseMethodCallTypeValue) {
             if (firstParseInitMethodType) {
-                logger.warn("配置文件 {} 中的 {} 参数值为false时， {} 参数值不会生效-1", JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getFileName(),
+                String logContent = String.format("配置文件 %s 中的 %s 参数值为false时， %s 参数值不会生效-1", JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getFileName(),
                         JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey(), JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE.getKey());
+                logger.warn("{}", logContent);
                 firstParseInitMethodType = false;
             }
             if (analyseFieldRelationship) {
-                logger.warn("配置文件 {} 中的 {} 参数值为false时， {} 参数值不会生效-2", JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getFileName(),
+                String logContent = String.format("配置文件 %s 中的 %s 参数值为false时， %s 参数值不会生效-2", JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getFileName(),
                         JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE.getKey(), JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP.getKey());
+                logger.warn("{}", logContent);
                 analyseFieldRelationship = false;
             }
         }
@@ -46,12 +48,12 @@ public class JavaCG2ConfManager {
         javaCG2ConfInfo.setAnalyseFieldRelationship(analyseFieldRelationship);
 
         // 处理解析方法调用时，通过new创建的被调用类型使用原始类型还是实际类型
-        if (!handleCalleeNewRawActual(javaCG2ConfigureWrapper, javaCG2ConfInfo)){
+        if (!handleCalleeNewRawActual(javaCG2ConfigureWrapper, javaCG2ConfInfo)) {
             return null;
         }
 
-        // 处理解析方法调用时，被调用对象为Spring Bean，类型使用原始类型还是实际类型（支持字段注入、getBean()方法）
-        if (!handleCalleeSpringBeanRawActual(javaCG2ConfigureWrapper, javaCG2ConfInfo)){
+        // 处理解析方法调用时，被调用对象为Spring Bean，类型使用原始类型还是实际类型（支持字段注入）
+        if (!handleCalleeSpringBeanRawActual(javaCG2ConfigureWrapper, javaCG2ConfInfo)) {
             return null;
         }
 
@@ -74,18 +76,21 @@ public class JavaCG2ConfManager {
         for (String frEqConversionMethod : frEqConversionMethodSet) {
             String[] data1 = StringUtils.splitPreserveAllTokens(frEqConversionMethod, JavaCG2Constants.FLAG_EQUAL);
             if (data1.length != 2) {
-                logger.error("配置文件内容不是合法的properties参数 {} {}", JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD.getKey(), frEqConversionMethod);
+                logger.error("配置文件内容不是合法的properties参数 {} {}", frEqConversionMethod,
+                        javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD));
                 return false;
             }
             String classAndMethod = data1[0];
             int argObjSeq = Integer.parseInt(data1[1]);
             if (argObjSeq < 0) {
-                logger.error("配置文件被调用对象（使用0表示）或方法参数（从1开始）序号非法 {} {}", JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD.getKey(), frEqConversionMethod);
+                logger.error("配置文件被调用对象（使用0表示）或方法参数（从1开始）序号非法 {} {}", frEqConversionMethod,
+                        javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD));
                 return false;
             }
             String[] data2 = StringUtils.splitPreserveAllTokens(classAndMethod, JavaCG2Constants.FLAG_COLON);
             if (data2.length != 2) {
-                logger.error("配置文件内容不是合法的类名与方法名 {} {}", JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD.getKey(), frEqConversionMethod);
+                logger.error("配置文件内容不是合法的类名与方法名 {} {}", frEqConversionMethod,
+                        javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD));
                 return false;
             }
             String className = data2[0];
@@ -101,9 +106,8 @@ public class JavaCG2ConfManager {
         String handleCalleeNewRawActualStr = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL);
         JavaCG2CalleeRawActualEnum calleeNewRawActual = JavaCG2CalleeRawActualEnum.getFromType(handleCalleeNewRawActualStr);
         if (calleeNewRawActual == null) {
-            logger.error("配置文件 {} 中的 {} 参数值非法，允许使用的值如下： {}", JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL.getFileName(),
-                    JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL.getKey(),
-                    JavaCG2CalleeRawActualEnum.getAllInfo());
+            logger.error("参数值非法，允许使用的值为 {} {}", JavaCG2CalleeRawActualEnum.getAllInfo(),
+                    javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL));
             return false;
         }
         switch (calleeNewRawActual) {
@@ -123,14 +127,13 @@ public class JavaCG2ConfManager {
         return true;
     }
 
-    // 处理解析方法调用时，被调用对象为Spring Bean，类型使用原始类型还是实际类型（支持字段注入、getBean()方法）
+    // 处理解析方法调用时，被调用对象为Spring Bean，类型使用原始类型还是实际类型（支持字段注入）
     private static boolean handleCalleeSpringBeanRawActual(JavaCG2ConfigureWrapper javaCG2ConfigureWrapper, JavaCG2ConfInfo javaCG2ConfInfo) {
         String handleCalleeSpringBeanRawActualStr = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL);
         JavaCG2CalleeRawActualEnum springBeanCalleeNewRawActual = JavaCG2CalleeRawActualEnum.getFromType(handleCalleeSpringBeanRawActualStr);
         if (springBeanCalleeNewRawActual == null) {
-            logger.error("配置文件 {} 中的 {} 参数值非法，允许使用的值如下： {}", JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL.getFileName(),
-                    JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL.getKey(),
-                    JavaCG2CalleeRawActualEnum.getAllInfo());
+            logger.error("参数值非法，允许使用的值为： {} {}", JavaCG2CalleeRawActualEnum.getAllInfo(),
+                    javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL));
             return false;
         }
         switch (springBeanCalleeNewRawActual) {

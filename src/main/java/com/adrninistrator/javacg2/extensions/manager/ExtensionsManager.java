@@ -52,8 +52,15 @@ public class ExtensionsManager {
     // 保存方法调用处理扩展类的列表
     private final List<JavaCG2MethodCallExtensionInterface> methodCallExtensionList = new ArrayList<>();
 
-    // 解析并将结果保存在文件的类
+    // 解析并将结果保存在文件的类列表
     private final List<AbstractSaveData2FileParser> saveData2FileParserList = new ArrayList<>();
+
+    /*
+        解析并将结果保存在文件的类Map
+        key 生成的文件名
+        value   对应的类名
+     */
+    private final Map<String, String> saveData2FileParserNameMap = new HashMap<>();
 
     private JavaCG2InputAndOutput javaCG2InputAndOutput;
 
@@ -100,6 +107,14 @@ public class ExtensionsManager {
                         logger.error("初始化失败 {}", codeParser.getClass().getName());
                         return false;
                     }
+                    String outputFileName = saveData2FileParser.chooseFileName();
+                    String existedAbstractSaveData2FileParserName = saveData2FileParserNameMap.get(outputFileName);
+                    if (existedAbstractSaveData2FileParserName != null) {
+                        logger.error("出现不同的 {} 实现类使用了相同的生成文件名 {} {} {}", AbstractSaveData2FileParser.class.getName(), outputFileName,
+                                saveData2FileParser.getClass().getName(), existedAbstractSaveData2FileParserName);
+                        return false;
+                    }
+                    saveData2FileParserNameMap.put(outputFileName, saveData2FileParser.getClass().getName());
                     saveData2FileParserList.add(saveData2FileParser);
                 }
             } else if (codeParser instanceof MethodAnnotationParser) {

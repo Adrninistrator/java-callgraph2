@@ -5,6 +5,7 @@ import com.adrninistrator.javacg2.dto.element.BaseElement;
 import com.adrninistrator.javacg2.dto.element.variable.FieldElement;
 import com.adrninistrator.javacg2.dto.element.variable.LocalVariableElement;
 import com.adrninistrator.javacg2.dto.element.variable.StaticFieldElement;
+import com.adrninistrator.javacg2.dto.element.variable.StaticFieldMethodCallReturnElement;
 import com.adrninistrator.javacg2.dto.element.variable.VariableElement;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ElementUtil;
@@ -130,7 +131,11 @@ public class JavaCG2LocalVariables {
      */
     public void add(String type, BaseElement baseElement, int index, String variableName) {
         LocalVariableElement localVariableElement;
-        if (baseElement instanceof StaticFieldElement) {
+        if (baseElement instanceof StaticFieldMethodCallReturnElement) {
+            StaticFieldMethodCallReturnElement staticFieldElement = (StaticFieldMethodCallReturnElement) baseElement;
+            localVariableElement = new StaticFieldMethodCallReturnElement(type, 0, staticFieldElement.getClassName(), staticFieldElement.getName(),
+                    staticFieldElement.getFieldType(), staticFieldElement.getMethodName(), staticFieldElement.getMethodArgTypes());
+        } else if (baseElement instanceof StaticFieldElement) {
             StaticFieldElement staticFieldElement = (StaticFieldElement) baseElement;
             localVariableElement = new StaticFieldElement(type, 0, staticFieldElement.getValue(), index, staticFieldElement.getName(),
                     staticFieldElement.getClassName());

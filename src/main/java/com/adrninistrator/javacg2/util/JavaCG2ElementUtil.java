@@ -7,6 +7,7 @@ import com.adrninistrator.javacg2.dto.element.BaseElement;
 import com.adrninistrator.javacg2.dto.element.variable.FieldElement;
 import com.adrninistrator.javacg2.dto.element.variable.LocalVariableElement;
 import com.adrninistrator.javacg2.dto.element.variable.StaticFieldElement;
+import com.adrninistrator.javacg2.dto.element.variable.StaticFieldMethodCallReturnElement;
 import com.adrninistrator.javacg2.dto.element.variable.VariableElement;
 import com.adrninistrator.javacg2.dto.variabledatasource.AbstractVariableDataSource;
 import com.adrninistrator.javacg2.dto.variabledatasource.VariableDataSourceArithmeticOperation;
@@ -94,10 +95,26 @@ public class JavaCG2ElementUtil {
         }
 
         if (existed instanceof FieldElement && added instanceof FieldElement) {
-            // 对于字段（非静态或静态），还需要比较类名
+            // 对于字段（非静态或静态），还需要比较字段所在类名
             FieldElement existedFieldElement = (FieldElement) existed;
             FieldElement addedFieldElement = (FieldElement) added;
-            if (!StringUtils.equals(existedFieldElement.getClassName(), addedFieldElement.getClassName())) {
+            if (!StringUtils.equals(existedFieldElement.getClassName(), addedFieldElement.getClassName()) ||
+                    !StringUtils.equals(existedFieldElement.getRawType(), addedFieldElement.getRawType())) {
+                return false;
+            }
+        }
+        if (existed instanceof StaticFieldMethodCallReturnElement && added instanceof StaticFieldMethodCallReturnElement) {
+            // 对于静态字段的方法调用，还需要比较字段所在类名
+            StaticFieldMethodCallReturnElement existedStaticFieldMethodCallReturnElement = (StaticFieldMethodCallReturnElement) existed;
+            StaticFieldMethodCallReturnElement addedStaticFieldMethodCallReturnElement = (StaticFieldMethodCallReturnElement) added;
+            if (!StringUtils.equals(existedStaticFieldMethodCallReturnElement.getClassName(), addedStaticFieldMethodCallReturnElement.getClassName()) ||
+                    !StringUtils.equals(existedStaticFieldMethodCallReturnElement.getFieldType(), addedStaticFieldMethodCallReturnElement.getFieldType()) ||
+                    !StringUtils.equals(existedStaticFieldMethodCallReturnElement.getMethodName(), addedStaticFieldMethodCallReturnElement.getMethodName())) {
+                return false;
+            }
+            String existedArgTypeStr = JavaCG2ClassMethodUtil.genArgTypeStr(existedStaticFieldMethodCallReturnElement.getMethodArgTypes());
+            String addedArgTypeStr = JavaCG2ClassMethodUtil.genArgTypeStr(addedStaticFieldMethodCallReturnElement.getMethodArgTypes());
+            if (!StringUtils.equals(existedArgTypeStr, addedArgTypeStr)) {
                 return false;
             }
         }

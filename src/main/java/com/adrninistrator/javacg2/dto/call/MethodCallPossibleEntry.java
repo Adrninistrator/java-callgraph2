@@ -1,7 +1,6 @@
 package com.adrninistrator.javacg2.dto.call;
 
-import com.adrninistrator.javacg2.dto.field.FieldTypeAndName;
-import com.adrninistrator.javacg2.dto.field.StaticFieldTypeAndName;
+import com.adrninistrator.javacg2.dto.field.ClassFieldTypeAndName;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
@@ -14,10 +13,10 @@ import java.util.Objects;
 public class MethodCallPossibleEntry {
 
     // 可能的被调用静态字段
-    private StaticFieldTypeAndName staticField;
+    private ClassFieldTypeAndName staticField;
 
     // 可能的被调用非静态字段
-    private FieldTypeAndName nonStaticField;
+    private ClassFieldTypeAndName nonStaticField;
 
     // 可能的类型
     private String type;
@@ -66,11 +65,11 @@ public class MethodCallPossibleEntry {
     // 记录被设置的内容数量
     private int contentNum = 0;
 
-    public StaticFieldTypeAndName getStaticField() {
+    public ClassFieldTypeAndName getStaticField() {
         return staticField;
     }
 
-    public void setStaticField(StaticFieldTypeAndName staticField) {
+    public void setStaticField(ClassFieldTypeAndName staticField) {
         this.staticField = staticField;
         addContentNum();
     }
@@ -108,11 +107,11 @@ public class MethodCallPossibleEntry {
         contentNum++;
     }
 
-    public FieldTypeAndName getNonStaticField() {
+    public ClassFieldTypeAndName getNonStaticField() {
         return nonStaticField;
     }
 
-    public void setNonStaticField(FieldTypeAndName nonStaticField) {
+    public void setNonStaticField(ClassFieldTypeAndName nonStaticField) {
         this.nonStaticField = nonStaticField;
         addContentNum();
     }

@@ -6,9 +6,9 @@ package com.adrninistrator.javacg2.common.enums;
  * @description: 选择涉及多态的被调用的类型，使用原始的还是实际的
  */
 public enum JavaCG2CalleeRawActualEnum {
-    CRAE_ONLY_RAW("only_raw", "仅记录原始类型"),
-    CRAE_ONLY_ACTUAL("only_actual", "仅记录实际类型"),
-    CRAE_RAW_ACTUAL("raw_actual", "记录原始类型+实际类型"),
+    CRAE_ONLY_RAW("only_raw", "记录一条方法调用关系，被调用类型使用：原始类型"),
+    CRAE_ONLY_ACTUAL("only_actual", "记录一条方法调用关系，被调用类型使用：实际类型"),
+    CRAE_RAW_ACTUAL("raw_actual", "记录两条方法调用关系，被调用类型分别使用：原始类型、实际类型"),
     ;
 
     private final String type;
@@ -42,7 +42,7 @@ public enum JavaCG2CalleeRawActualEnum {
             if (stringBuilder.length() > 0) {
                 stringBuilder.append("\t");
             }
-            stringBuilder.append(javaCG2CalleeRawActualEnum.getType()).append(" ").append(javaCG2CalleeRawActualEnum.getDesc());
+            stringBuilder.append(javaCG2CalleeRawActualEnum.getType()).append(": ").append(javaCG2CalleeRawActualEnum.getDesc());
         }
         return stringBuilder.toString();
     }

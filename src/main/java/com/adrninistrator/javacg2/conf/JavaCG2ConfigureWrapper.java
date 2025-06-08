@@ -1,7 +1,5 @@
 package com.adrninistrator.javacg2.conf;
 
-import com.adrninistrator.javacg2.common.JavaCG2Constants;
-import com.adrninistrator.javacg2.common.enums.JavaCG2CalleeRawActualEnum;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseSetEnum;
@@ -43,33 +41,6 @@ public class JavaCG2ConfigureWrapper extends BaseConfigureWrapper {
 
     @Override
     protected Object customGetDefaultConfig(MainConfigInterface mainConfig) {
-        if (JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE == mainConfig) {
-            return Boolean.TRUE;
-        }
-        if (JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE == mainConfig) {
-            return Boolean.TRUE;
-        }
-        if (JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP == mainConfig) {
-            return Boolean.FALSE;
-        }
-        if (JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR == mainConfig) {
-            return Boolean.FALSE;
-        }
-        if (JavaCG2ConfigKeyEnum.CKE_LOG_METHOD_SPEND_TIME == mainConfig) {
-            return Boolean.TRUE;
-        }
-        if (JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH == mainConfig) {
-            return "";
-        }
-        if (JavaCG2ConfigKeyEnum.CKE_OUTPUT_FILE_EXT == mainConfig) {
-            return JavaCG2Constants.EXT_TXT;
-        }
-        if (JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL == mainConfig) {
-            return JavaCG2CalleeRawActualEnum.CRAE_ONLY_ACTUAL.getType();
-        }
-        if (JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL == mainConfig) {
-            return JavaCG2CalleeRawActualEnum.CRAE_ONLY_ACTUAL.getType();
-        }
         return null;
     }
 

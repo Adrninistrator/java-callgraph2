@@ -4,7 +4,6 @@ import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2ConstantTypeEnum;
 import com.adrninistrator.javacg2.dto.classes.ClassExtendsInfo;
-import com.adrninistrator.javacg2.dto.field.ClassField;
 import com.adrninistrator.javacg2.dto.field.ClassFieldMethodCall;
 import com.adrninistrator.javacg2.dto.method.JavaCG2MethodInfo;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
@@ -80,7 +79,7 @@ public class JavaCG2ClassMethodUtil {
      * @return
      */
     public static String formatFullMethod(String className, String methodName, Type[] argTypes) {
-        return formatFullMethod(className, methodName, getArgTypeStr(argTypes));
+        return formatFullMethod(className, methodName, genArgTypeStr(argTypes));
     }
 
     /**
@@ -125,7 +124,7 @@ public class JavaCG2ClassMethodUtil {
      * @param argTypes
      * @return
      */
-    public static String getArgTypeStr(Type[] argTypes) {
+    public static String genArgTypeStr(Type[] argTypes) {
         StringBuilder sb = new StringBuilder(JavaCG2Constants.FLAG_LEFT_BRACKET);
         for (int i = 0; i < argTypes.length; i++) {
             if (i != 0) {
@@ -207,31 +206,40 @@ public class JavaCG2ClassMethodUtil {
     }
 
     /**
+     * 生成类名与字段名及字段类型
+     *
+     * @param className
+     * @param fieldName
+     * @return
+     */
+    public static String formatClassAndField(String className, String fieldName, String fieldType) {
+        return className + JavaCG2Constants.FLAG_COLON + fieldName + JavaCG2Constants.FLAG_COLON + fieldType;
+    }
+
+    /**
+     * 生成字段名与字段类型
+     *
+     * @param fieldName
+     * @param fieldType
+     * @return
+     */
+    public static String formatFieldNameAndType(String fieldName, String fieldType) {
+        return fieldName + JavaCG2Constants.FLAG_COLON + fieldType;
+    }
+
+    /**
      * 生成调用类中字段的完整方法
      *
      * @param className
      * @param fieldName
+     * @param fieldType
      * @param methodName
      * @param argTypes
      * @return
      */
-    public static String formatClassFieldMethodArgTypes(String className, String fieldName, String methodName, Type[] argTypes, String returnType) {
-        String fieldFullMethod = formatFullMethod(formatClassAndField(className, fieldName), methodName, argTypes);
+    public static String formatClassFieldMethodArgTypes(String className, String fieldName, String fieldType, String methodName, Type[] argTypes, String returnType) {
+        String fieldFullMethod = formatFullMethod(formatClassAndField(className, fieldName, fieldType), methodName, argTypes);
         return genFullMethodWithReturnType(fieldFullMethod, returnType);
-    }
-
-    /**
-     * 解析类名与字段名
-     *
-     * @param data
-     * @return
-     */
-    public static ClassField parseClassAndField(String data) {
-        int index = data.indexOf(JavaCG2Constants.FLAG_COLON);
-        ClassField classField = new ClassField();
-        classField.setClassName(data.substring(0, index));
-        classField.setFieldName(data.substring(index + JavaCG2Constants.FLAG_COLON.length()));
-        return classField;
     }
 
     /**
@@ -244,13 +252,15 @@ public class JavaCG2ClassMethodUtil {
         String[] array = data.split(JavaCG2Constants.FLAG_COLON);
         String className = array[0];
         String fieldName = array[1];
-        String methodNameAndArgTypes = array[2];
-        String returnType = array[3];
+        String fieldType = array[2];
+        String methodNameAndArgTypes = array[3];
+        String returnType = array[4];
         String methodName = StringUtils.substringBefore(methodNameAndArgTypes, JavaCG2Constants.FLAG_LEFT_BRACKET);
         String argTypes = getMethodArgTypes(methodNameAndArgTypes);
         ClassFieldMethodCall classFieldMethodCall = new ClassFieldMethodCall();
         classFieldMethodCall.setClassName(className);
         classFieldMethodCall.setFieldName(fieldName);
+        classFieldMethodCall.setFieldType(fieldType);
         classFieldMethodCall.setMethodName(methodName);
         classFieldMethodCall.setArgTypes(getMethodArgTypeArray(argTypes));
         classFieldMethodCall.setReturnType(returnType);

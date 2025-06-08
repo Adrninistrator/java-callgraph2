@@ -50,8 +50,15 @@ public abstract class BaseElement {
      * @param addArrayDimensions 需要增加的数组维度值，正数代表增加数组维度，0代表不不改变数组维度，负数代表减少数组维度
      */
     protected BaseElement(String type, int addArrayDimensions) {
+        if (JavaCG2ConstantTypeEnum.CONSTTE_NULL.getType().equals(type)) {
+            // 若类型为null，则记录数组维度为0，记录对应类型
+            arrayDimensions = 0;
+            this.type = type;
+            return;
+        }
+
         arrayDimensions = JavaCG2ByteCodeUtil.getTypeArrayDimensions(type) + addArrayDimensions;
-        if (arrayDimensions < 0 && !JavaCG2ConstantTypeEnum.CONSTTE_NULL.getType().equals(type)) {
+        if (arrayDimensions < 0) {
             throw new JavaCG2RuntimeException("数组维度非法 " + arrayDimensions);
         }
         if (arrayDimensions > 0) {

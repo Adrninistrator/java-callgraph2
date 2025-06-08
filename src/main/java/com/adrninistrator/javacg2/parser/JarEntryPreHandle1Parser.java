@@ -11,6 +11,7 @@ import com.adrninistrator.javacg2.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg2.spring.DefineSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
+import com.adrninistrator.javacg2.util.JavaCG2JarUtil;
 import com.adrninistrator.javacg2.util.JavaCG2Util;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import org.apache.bcel.classfile.JavaClass;
@@ -31,7 +32,7 @@ import java.util.Set;
 /**
  * @author adrninistrator
  * @date 2022/9/14
- * @description: 解析jar包中的文件，第一次预处理
+ * @description: 解析jar文件中的文件，第一次预处理
  */
 public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
@@ -68,15 +69,15 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     @Override
     protected boolean handleEntry(ZipInputStream zipInputStream, String jarEntryPath) throws IOException {
-        // 尝试处理jar包中的class文件
+        // 尝试处理jar文件中的class文件
         if (tryHandleClassEntry(zipInputStream, jarEntryPath)) {
             // 是class文件，不再处理
             return true;
         }
 
-        // 非class文件，判断是否需要使用扩展类处理jar包中的文件
+        // 非class文件，判断是否需要使用扩展类处理jar文件中的文件
         String jarEntryFileExt = JavaCG2Constants.FLAG_DOT + StringUtils.substringAfterLast(jarEntryPath, JavaCG2Constants.FLAG_DOT);
-        logger.debug("jar包中文件的后缀: [{}] {}", jarEntryPath, jarEntryFileExt);
+        logger.debug("jar文件中文件的后缀: [{}] {}", jarEntryPath, jarEntryFileExt);
         List<JarEntryOtherFileParser> jarEntryOtherFileParserList = extensionsManager.getJarEntryOtherFileParserList(jarEntryFileExt);
         if (jarEntryOtherFileParserList == null) {
             // 当前文件不存在对应的扩展类，不处理
@@ -91,11 +92,12 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
             return false;
         }
 
+        String jarEntryName = JavaCG2JarUtil.getJarEntryNameFromPath(jarEntryPath);
         // 调用扩展类的方法
         for (JarEntryOtherFileParser jarEntryOtherFileParser : jarEntryOtherFileParserList) {
             try {
-                // 处理一个jar包中的文件
-                jarEntryOtherFileParser.parseJarEntryOtherFile(cachedInputStream, jarEntryPath);
+                // 处理一个jar文件中的文件
+                jarEntryOtherFileParser.parseJarEntryOtherFile(cachedInputStream, jarEntryPath, jarEntryName);
             } catch (Throwable e) {
                 // 内部有可能抛出Error等非Exception异常，需要捕获
                 logger.error("处理文件出现未知异常 {} ", jarEntryPath, e);
@@ -110,7 +112,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     @Override
     protected boolean handleClassEntry(JavaClass javaClass, String jarEntryPath) {
-        // 记录类名及所在的jar包序号
+        // 记录类名及所在的jar文件序号
         classAndJarNum.put(javaClass.getClassName(), lastJarNum);
 
         if (javaClass.isInterface()) {
@@ -157,7 +159,8 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
     private boolean preHandle1Class(JavaClass javaClass) {
         String className = javaClass.getClassName();
         if (JavaCG2ClassMethodUtil.isObjectClass(className)) {
-            logger.error("Object类所在jar包不需要添加到需要分析的jar包参数中，假如需要添加JDK中的类，可以解压相关的class文件到目录中并在 {} 中指定", JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR.getKey());
+            logger.error("Object类所在jar文件不需要添加到需要分析的jar文件参数中，假如需要添加JDK中的类，可以解压相关的class文件到目录中，并在配置文件中指定 {}",
+                    javaCG2InputAndOutput.getJavaCG2ConfigureWrapper().genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
             return false;
         }
         allClassNameSet.add(className);

@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg2.dto.field;
 
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
+import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,14 +27,16 @@ public class FieldPossibleTypes {
      * 为字段添加可能的类型
      *
      * @param fieldName
+     * @param fieldType
      * @param possibleType
      */
-    public void addPossibleType(String fieldName, String possibleType) {
+    public void addPossibleType(String fieldName, String fieldType, String possibleType) {
         if (JavaCG2ByteCodeUtil.isNullType(possibleType)) {
             return;
         }
 
-        List<String> possibleTypeList = possibleTypeMap.computeIfAbsent(fieldName, k -> new ArrayList<>());
+        String fieldNameAndType = JavaCG2ClassMethodUtil.formatFieldNameAndType(fieldName, fieldType);
+        List<String> possibleTypeList = possibleTypeMap.computeIfAbsent(fieldNameAndType, k -> new ArrayList<>());
         if (!possibleTypeList.contains(possibleType)) {
             possibleTypeList.add(possibleType);
         }
@@ -43,9 +46,11 @@ public class FieldPossibleTypes {
      * 获取字段可能的类型
      *
      * @param fieldName
+     * @param fieldType
      * @return
      */
-    public List<String> getPossibleTypeList(String fieldName) {
-        return possibleTypeMap.get(fieldName);
+    public List<String> getPossibleTypeList(String fieldName, String fieldType) {
+        String fieldNameAndType = JavaCG2ClassMethodUtil.formatFieldNameAndType(fieldName, fieldType);
+        return possibleTypeMap.get(fieldNameAndType);
     }
 }

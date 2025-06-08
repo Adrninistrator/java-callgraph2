@@ -31,20 +31,16 @@ public class FieldInformationMap {
         map.put(fieldName, fieldElement);
     }
 
-    public void putStatic(String className, String fieldName, FieldElement fieldElement) {
-        map.put(getStaticKey(className, fieldName), fieldElement);
+    public void putStatic(String className, String fieldName, String fieldType, FieldElement fieldElement) {
+        map.put(JavaCG2ClassMethodUtil.formatClassAndField(className, fieldName, fieldType), fieldElement);
     }
 
     public FieldElement get(String fieldName) {
         return map.get(fieldName);
     }
 
-    public FieldElement getStatic(String className, String fieldName) {
-        return map.get(getStaticKey(className, fieldName));
-    }
-
-    private String getStaticKey(String className, String fieldName) {
-        return JavaCG2ClassMethodUtil.formatClassAndField(className, fieldName);
+    public FieldElement getStatic(String className, String fieldName, String fieldType) {
+        return map.get(JavaCG2ClassMethodUtil.formatClassAndField(className, fieldName, fieldType));
     }
 
     public FieldInformationMap copy() {

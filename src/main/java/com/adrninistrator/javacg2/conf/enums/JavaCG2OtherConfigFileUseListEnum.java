@@ -11,8 +11,8 @@ import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
  */
 public enum JavaCG2OtherConfigFileUseListEnum implements OtherConfigInterface {
     OCFULE_JAR_DIR(JavaCG2DirEnum.IDE_CONFIG.getDirName() + "/jar_dir.properties",
-            new String[]{"(作用) 指定需要处理的jar、war包路径，或保存class、jar、war文件的目录路径（每行代表一条记录，支持多行）",
-                    "(格式) 路径中的分隔符使用/或\\均可，目录最后指定或不指定分隔符均可",
+            new String[]{"(作用) 指定需要解析的jar、war文件路径，或保存class、jar、war文件的目录路径（每行代表一条记录，支持多行）",
+                    "(格式) 路径中的分隔符支持使用/或\\，目录最后指定或不指定分隔符均可",
                     "(示例) build/",
                     "(示例) build/test.jar",
                     "(示例) D:/test/build/test.jar"},
@@ -38,7 +38,7 @@ public enum JavaCG2OtherConfigFileUseListEnum implements OtherConfigInterface {
     }
 
     @Override
-    public String getEnumName() {
+    public String getEnumConstantsName() {
         return name();
     }
 
@@ -60,6 +60,11 @@ public enum JavaCG2OtherConfigFileUseListEnum implements OtherConfigInterface {
     @Override
     public String getConfigPrintInfo() {
         return fileName + " " + JavaCG2OtherConfigFileUseListEnum.class.getSimpleName() + "." + name();
+    }
+
+    @Override
+    public boolean isSetOrList() {
+        return false;
     }
 
     @Override

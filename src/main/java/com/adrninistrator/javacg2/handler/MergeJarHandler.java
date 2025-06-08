@@ -42,6 +42,8 @@ public class MergeJarHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(MergeJarHandler.class);
 
+    private final JavaCG2ConfigureWrapper javaCG2ConfigureWrapper;
+
     private final List<String> jarOrDirPathList;
 
     private final Map<String, Integer> jarPathNumMap;
@@ -62,9 +64,10 @@ public class MergeJarHandler {
      */
     public MergeJarHandler(JavaCG2ConfigureWrapper javaCG2ConfigureWrapper, Map<String, Integer> jarPathNumMap, JavaCG2Counter jarNumCounter, JavaCG2ElManager javaCG2ElManager,
                            boolean onlyForOutputFile) {
+        this.javaCG2ConfigureWrapper = javaCG2ConfigureWrapper;
         jarOrDirPathList = javaCG2ConfigureWrapper.getOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR);
         if (jarOrDirPathList.isEmpty()) {
-            logger.error("请在配置文件 {} 中指定需要处理的jar文件或目录列表", JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR.getKey());
+            logger.error("请在配置文件中指定需要处理的jar文件或目录列表 {}", javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
             throw new JavaCG2RuntimeException("未指定需要处理的jar文件或目录列表");
         }
 
@@ -262,7 +265,7 @@ public class MergeJarHandler {
             File jarFileOrDir = new File(currentJarOrDirPath);
             String jarDirCanonicalPath = JavaCG2FileUtil.getCanonicalPath(jarFileOrDir);
             if (!jarFileOrDir.exists()) {
-                logger.error("{} 配置文件中指定的文件或目录不存在: {}", JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR.getKey(), jarDirCanonicalPath);
+                logger.error("配置文件中指定的文件或目录不存在 {} {}", jarDirCanonicalPath, javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
                 return null;
             }
             if (ignoreJarByNamePath(jarDirCanonicalPath)) {
@@ -277,7 +280,7 @@ public class MergeJarHandler {
             if (jarFileOrDir.isFile()) {
                 String jarFilePathLower = jarDirCanonicalPath.toLowerCase();
                 if (!JavaCG2FileUtil.checkJarWarFile(jarFilePathLower)) {
-                    logger.error("{} 配置文件中指定文件时只允许指定jar或war文件", JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR.getKey());
+                    logger.error("配置文件中指定文件时只允许指定jar或war文件 {}", javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
                     return null;
                 }
                 if (javaCG2ElManager.checkIgnoreMergeFileInDir(jarDirCanonicalPath)) {

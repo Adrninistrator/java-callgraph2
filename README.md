@@ -1,168 +1,74 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.adrninistrator/java-callgraph2.svg)](https://search.maven.org/artifact/com.github.adrninistrator/java-callgraph2/)
 
-# 1. DeepWiki 链接
+# 1. `todo`配置文件    特性
+
+# 2. DeepWiki 链接
 
 [https://deepwiki.com/Adrninistrator/java-callgraph2](https://deepwiki.com/Adrninistrator/java-callgraph2)
 
 通过大模型分析项目代码，可向大模型提出关于项目的问题，包括使用方法等
 
-# 2. 说明
+# 3. 项目说明
 
-java-callgraph2 项目用于对 Java 代码（编译后的 class、jar、war 文件）进行静态分析
+java-callgraph2 项目用于对 Java 代码（编译后的 class、jar、war 文件）进行静态分析，支持输出以下文件
 
-当前原本 fork 自 [https://github.com/gousiosg/java-callgraph](https://github.com/gousiosg/java-callgraph)。
-
-后来进行了优化和增强，差别已比较大，不容易合并回原始项目中，且仅提供通过静态分析获取 Java 方法调用关系的功能，因此创建了该项目。
-
-`当前项目提供了插件功能，可用于为 Java 代码自动生成 UML 时序图`，可参考 [https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram](https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram)。
-
-# 3. 使用说明
-
-## 3.1. 通过源码编译
-
-### 3.1.1. 编译方式
-
-执行以下命令
-
-```
-gradlew jar
-```
-
-### 3.1.2. 执行方式
-
-执行命令可参考脚本文件`run.bat`、`run.sh`
-
-### 3.1.3. 程序主类
-
-```java
-com.adrninistrator.javacg2.entry.JavaCG2Entry
-```
-
-## 3.2. 通过组件引用
-
-可在其他项目中通过组件方式引用当前项目，添加的 Gradle 格式的组件依赖如下：
-
-```
-com.github.adrninistrator:java-callgraph2: 版本号
-```
-
-## 3.3. 配置参数
-
-### 3.3.1. 配置参数说明及示例
-
-参考 [_javacg2_all_config.md](docs/_javacg2_all_config.md)
-
-### 3.3.2. _javacg2_config 目录
-
-|配置文件名|配置文件作用|
+|序号|文件内容|
 |---|---|
-|config.properties|主要的开关及输出目录等配置|
-|fr_eq_conversion_method.properties|通常不需要指定，处理 get/set 方法对应的字段关联关系时使用|
-|jar_dir.properties|指定需要解析的目录、jar/war 文件路径|
+|1|类的注解|
+|2|类的继承或实现的泛型信息|
+|3|类的信息|
+|4|引用的类|
+|5|类的签名中的泛型信息|
+|6|重复类的信息|
+|7|重复类的方法的信息|
+|8|枚举类构造函数参数与字段赋值关系|
+|9|枚举类初始化赋值信息|
+|10|继承与实现相关信息|
+|11|字段的注解|
+|12|非静态字段集合中涉及的泛型类型|
+|13|字段信息|
+|14|通过get/set方法关联的字段关系|
+|15|dto的get方法及字段|
+|16|内部类信息|
+|17|jar包信息|
+|18|java-callgraph2组件使用的配置参数|
+|19|Lambda表达式方法信息|
+|20|日志-方法处理耗时|
+|21|方法的注解|
+|22|方法参数的注解|
+|23|方法参数集合中涉及的泛型类型|
+|24|方法参数|
+|25|方法调用|
+|26|方法调用的信息|
+|27|方法调用使用方法调用返回值|
+|28|方法调用使用静态字段信息|
+|29|方法调用使用非静态字段信息|
+|30|方法调用使用静态字段方法调用返回值|
+|31|方法的catch信息|
+|32|方法的finally信息|
+|33|方法的信息|
+|34|方法代码行号|
+|35|方法返回值对应的方法序号|
+|36|方法返回值对应的方法调用ID|
+|37|方法返回的常量值（含null）|
+|38|方法返回的字段（含枚举）|
+|39|方法返回集合中涉及的泛型类型|
+|40|方法通过throw抛出的异常信息|
+|41|dto的set方法及字段|
+|42|static、final字段初始化方法信息（含枚举）|
+|43|Spring Bean信息|
 
-### 3.3.3. _javacg2_merge_file_switch 目录
+当前项目原本 fork 自 [https://github.com/gousiosg/java-callgraph](https://github.com/gousiosg/java-callgraph)，用于生成Java方法调用关系
 
-用于控制在合并 jar 文件时需要忽略特定内容的开关，包括目录中的 class、jar、war 文件，jar/war 文件中的 class、jar 文件，目录、jar/war 文件中的其他类型文件等
+后来进行了优化和增强，差别已比较大，不容易合并回原始项目中，且仅提供通过静态分析获取 Java 方法调用关系的功能，因此创建了该项目
 
-`在 _javacg2_config/jar_dir.properties 中指定的配置包含多个 jar/war/class 文件时，仅当某个 jar/war/class 文件会被合并到最终用于解析析的 jar 文件时，才会被解析`
+当前项目只会输出静态分析结果到文件，不会写入数据库；假如需要将结果写入数据库进行后续分析，例如生成Java代码完整方法调用链、生成调用堆栈、分析jar文件方法修改影响范围等，可使用项目[https://github.com/Adrninistrator/java-all-call-graph](https://github.com/Adrninistrator/java-all-call-graph)
 
-每个文件用于控制以上一种场景，使用表达式语言方式配置：
+`当前项目提供了插件功能，可用于为 Java 代码自动生成 UML 时序图（文档未完成，暂未提交）`，可参考 [https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram](https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram)。
 
-```
-ignore_class_in_dir.av
-ignore_class_in_jar_war.av
-ignore_jar_in_dir.av
-ignore_jar_in_jar_war.av
-ignore_other_in_dir.av
-ignore_other_in_jar_war.av
-ignore_war_in_dir.av
-```
+# 4. 特性说明
 
-### 3.3.4. _javacg2_parse_class_method_switch 目录
-
-控制解析类及方法时是否需要忽略的开关
-
-每个文件用于控制以上一种场景，使用表达式语言方式配置：
-
-```
-parse_ignore_class.av
-parse_ignore_method.av
-```
-
-### 3.3.5. _javacg2_parse_method_call_switch 目录
-
-控制解析方法调用时是否需要忽略的开关，包括仅通过被调用方法判断、仅通过调用方法判断、通过调用方法与被调用方法判断
-
-每个文件用于控制以上一种场景，使用表达式语言方式配置：
-
-```
-parse_ignore_method_call_ee.av
-parse_ignore_method_call_er.av
-parse_ignore_method_call_er_ee.av
-```
-
-### 3.3.6. 表达式语言配置示例
-
-以上表达式语言配置示例可参考项目中的文件 src/main/resources/el_example.md
-
-## 3.4. 配置参数-通过代码指定
-
-在代码中使用 com.adrninistrator.javacg2.conf.JavaCG2ConfigureWrapper 类可以指定配置参数
-
-在创建 com.adrninistrator.javacg2.entry.JavaCG2Entry 类实例时需要有参数的构造函数“JavaCG2Entry(JavaCG2ConfigureWrapper javaCG2ConfigureWrapper)”
-
-示例如下：
-
-```java
-JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper();
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, parseMethodCallTypeValue);
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE, firstParseInitMethodType);
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP, analyseFieldRelationship);
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR, continueWhenError);
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_LOG_METHOD_SPEND_TIME, logMethodSpendTime);
-javaCG2ConfigureWrapper.setOtherConfigSet(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD,
-		"java.lang.Boolean:<init>=1"
-);
-javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, "../java-all-call-graph/build/libs/test.jar");
-
-JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
-```
-
-# 4. 生成可以直接执行的文件
-
-## 4.1. 编译方式
-
-执行以下命令
-
-```
-gradlew gen_run_jar
-```
-
-## 4.2. 执行方式
-
-执行以上命令后，会在`jar_output_dir`目录中生成可以直接执行的文件
-
-在 Windows/Linux 等操作系统中分别执行对应的脚本文件`run.bat`、`run.sh`
-
-# 5. 输出文件格式
-
-[输出文件格式](docs/file_format.md)
-
-# 6. 方法调用类型
-
-[方法调用类型](docs/call_type.md)
-
-# 7. 扩展功能
-
-参考 [https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md) 中的相关内容
-
-# 8. 更新说明
-
-[更新说明](docs/change_log.md)
-
-# 9. 原始 java-callgraph 调用关系缺失的场景
-
-原始 java-callgraph 在多数场景下能够获取到 Java 方法调用关系，但以下场景的调用关系会缺失：
+原始 java-callgraph 在多数场景下能够获取到 Java 方法调用关系，但以下场景的调用关系会缺失
 
 - 接口与实现类方法
 
@@ -172,7 +78,7 @@ gradlew gen_run_jar
 
 - Runnable 实现类线程调用
 
-假如 f1() 方法中使用内部匿名类形式的 Runnable 实现类在线程中执行操作，在线程中执行了 f2() 方法，如下所示：
+假如 f1() 方法中使用内部匿名类形式的 Runnable 实现类在线程中执行操作，在线程中执行了 f2() 方法，如下所示
 
 ```java
 private void f1() {
@@ -199,7 +105,7 @@ private void f1() {
 
 - lambda 表达式（含线程调用等）
 
-假如 f1() 方法中使用 lambda 表达式的形式在线程中执行操作，在线程中执行了 f2() 方法，如下所示：
+假如 f1() 方法中使用 lambda 表达式的形式在线程中执行操作，在线程中执行了 f2() 方法，如下所示
 
 ```java
 private void f1() {
@@ -235,3 +141,23 @@ list.stream().map(TestDto1::getStr).collect(Collectors.toList());
 针对以上问题，java-callgraph2 都进行了优化，能够生成缺失的调用关系。
 
 对于更复杂的情况，例如存在接口 Interface1，及其抽象实现类 Abstract1，及其子类 ChildImpl1，若在某个类中引入了抽象实现类 Abstract1 并调用其方法的情况，生成的方法调用关系中也不会出现缺失。
+
+# 使用说明
+
+见[使用说明](docs/how_to_use.md)
+
+# 5. 支持输出的文件格式
+
+具体文件格式见 [输出文件格式](docs/file_format.md) ，有部分文件需要使用 java-all-call-graph 组件时支持输出
+
+# 6. 方法调用类型
+
+[方法调用类型](docs/call_type.md)
+
+# 7. 扩展功能
+
+参考 [https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md) 中的相关内容
+
+# 8. 更新说明
+
+[更新说明](docs/change_log.md)

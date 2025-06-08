@@ -7,14 +7,14 @@ import java.util.Objects;
 /**
  * @author adrninistrator
  * @date 2024/2/2
- * @description: 类中的静态字段类型及名称
+ * @description: 类中的字段类型及名称，包括静态字段及非静态字段
  */
-public class StaticFieldTypeAndName extends FieldTypeAndName {
+public class ClassFieldTypeAndName extends FieldTypeAndName {
 
     // 类名
     private final String className;
 
-    public StaticFieldTypeAndName(String fieldType, String fieldName, String className) {
+    public ClassFieldTypeAndName(String fieldType, String fieldName, String className) {
         super(fieldType, fieldName);
         this.className = className;
     }
@@ -33,7 +33,7 @@ public class StaticFieldTypeAndName extends FieldTypeAndName {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
-        StaticFieldTypeAndName that = (StaticFieldTypeAndName) o;
+        ClassFieldTypeAndName that = (ClassFieldTypeAndName) o;
         return fieldName.equals(that.fieldName) && className.equals(that.className);
     }
 
