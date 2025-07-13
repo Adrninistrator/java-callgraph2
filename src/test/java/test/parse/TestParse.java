@@ -14,16 +14,19 @@ import test.base.TestBase;
  */
 public class TestParse extends TestBase {
 
-    // 正常解析
+    /*
+        正常解析
+        需要先在java-all-call-graph项目执行 gradlew test_gen_jar 命令生成对应jar文件
+     */
     @Test
     public void testParse() {
-        run(true);
+        run(true, true);
     }
 
     // 不解析被调用对象和参数可能的类型与值
     @Test
     public void testParseNoMCTypeValue() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper();
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JACGTest();
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, Boolean.FALSE.toString());
         JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
         Assert.assertTrue(javaCG2Entry.run());
@@ -34,7 +37,7 @@ public class TestParse extends TestBase {
      */
     @Test
     public void testJarInJar() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper("build/jar_output_dir.jar");
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JavaCg2("build/jar_output_dir.jar");
         Assert.assertTrue(new JavaCG2Entry(javaCG2ConfigureWrapper).run());
     }
 }

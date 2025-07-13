@@ -25,7 +25,7 @@ public class MethodCallList {
     }
 
     /**
-     * 增加方法调用对象，使用指定的的call_id
+     * 增加方法调用对象，使用指定的call_id
      *
      * @param methodCall
      */

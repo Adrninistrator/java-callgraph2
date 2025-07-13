@@ -1,6 +1,8 @@
 package com.adrninistrator.javacg2.extensions.codeparser;
 
-import java.util.Map;
+import com.adrninistrator.javacg2.dto.spring.SpringBeanInXml;
+
+import java.util.List;
 
 /**
  * @author adrninistrator
@@ -18,11 +20,9 @@ public interface SpringXmlBeanParserInterface extends JarEntryOtherFileParser {
     String getBeanClass(String beanId);
 
     /**
-     * 获取Spring Bean对应的Map
-     * key Bean名称
-     * value Bean的类名
+     * 获取XML中定义的Spring Bean信息
      *
      * @return
      */
-    Map<String, String> getBeanMap();
+    List<SpringBeanInXml> getBeanInXml();
 }

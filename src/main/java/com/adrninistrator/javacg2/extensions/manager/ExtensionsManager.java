@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg2.extensions.manager;
 
 import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
+import com.adrninistrator.javacg2.dto.output.JavaCG2OutputInfo;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
 import com.adrninistrator.javacg2.extensions.annotationattributes.DefaultAnnotationAttributesFormatter;
@@ -82,7 +83,7 @@ public class ExtensionsManager {
         if (springXmlBeanParser != null) {
             allCodeParserList.add(springXmlBeanParser);
         }
-
+        JavaCG2OutputInfo javaCG2OutputInfo = javaCG2InputAndOutput.getJavaCG2OutputInfo();
         for (CodeParserInterface codeParser : allCodeParserList) {
             // 初始化扩展类
             codeParser.initCodeParser();
@@ -101,20 +102,28 @@ public class ExtensionsManager {
                 // 处理解析并将结果保存在文件的类
                 if (codeParser instanceof AbstractSaveData2FileParser) {
                     AbstractSaveData2FileParser saveData2FileParser = (AbstractSaveData2FileParser) codeParser;
-                    // 增加其他文件信息
-                    String outputFilePath = javaCG2InputAndOutput.getJavaCG2OutputInfo().addOtherFileInfo(saveData2FileParser.chooseFileName());
-                    if (!saveData2FileParser.init(outputFilePath)) {
+                    if (!saveData2FileParser.init(javaCG2OutputInfo.getOutputDirPath(), javaCG2OutputInfo.getOutputFileExt())) {
                         logger.error("初始化失败 {}", codeParser.getClass().getName());
                         return false;
                     }
+                    // 增加其他文件信息
                     String outputFileName = saveData2FileParser.chooseFileName();
-                    String existedAbstractSaveData2FileParserName = saveData2FileParserNameMap.get(outputFileName);
-                    if (existedAbstractSaveData2FileParserName != null) {
-                        logger.error("出现不同的 {} 实现类使用了相同的生成文件名 {} {} {}", AbstractSaveData2FileParser.class.getName(), outputFileName,
-                                saveData2FileParser.getClass().getName(), existedAbstractSaveData2FileParserName);
-                        return false;
+                    String[] outputFileNames;
+                    if (outputFileName != null) {
+                        outputFileNames = new String[]{outputFileName};
+                    } else {
+                        outputFileNames = saveData2FileParser.chooseFileNames();
                     }
-                    saveData2FileParserNameMap.put(outputFileName, saveData2FileParser.getClass().getName());
+                    for (String tmpOutputFileName : outputFileNames) {
+                        String existedAbstractSaveData2FileParserName = saveData2FileParserNameMap.get(tmpOutputFileName);
+                        if (existedAbstractSaveData2FileParserName != null) {
+                            logger.error("出现不同的 {} 实现类使用了相同的生成文件名 {} {} {}", AbstractSaveData2FileParser.class.getName(), tmpOutputFileName,
+                                    saveData2FileParser.getClass().getName(), existedAbstractSaveData2FileParserName);
+                            return false;
+                        }
+                        javaCG2OutputInfo.addOtherFileInfo(tmpOutputFileName);
+                        saveData2FileParserNameMap.put(tmpOutputFileName, saveData2FileParser.getClass().getName());
+                    }
                     saveData2FileParserList.add(saveData2FileParser);
                 }
             } else if (codeParser instanceof MethodAnnotationParser) {

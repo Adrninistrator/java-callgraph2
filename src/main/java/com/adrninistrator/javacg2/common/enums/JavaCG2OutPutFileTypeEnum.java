@@ -50,6 +50,10 @@ public enum JavaCG2OutPutFileTypeEnum {
     OPFTE_SET_METHOD("set_method", "dto的set方法及字段"),
     OPFTE_SF_FIELD_METHOD_CALL("sf_field_method_call", "static、final字段初始化方法信息（含枚举）"),
     OPFTE_SPRING_BEAN("spring_bean", "Spring Bean信息"),
+    OPFTE_SPRING_SCAN_PACKAGE_JAVA("spring_scan_package_java", "Java代码中定义的Spring的包扫描路径"),
+    OPFTE_SPRING_AOP_ASPECT_JAVA("spring_aop_aspect_java", "Java代码中定义的Spring AOP Aspect"),
+    OPFTE_SPRING_AOP_POINTCUT_JAVA("spring_aop_pointcut_java", "Java代码中定义的Spring AOP Pointcut"),
+    OPFTE_SPRING_AOP_ADVICE_JAVA("spring_aop_advice_java", "Java代码中定义的Spring AOP Advice"),
     OPFTE_ILLEGAL("illegal", "非法值"),
     ;
 

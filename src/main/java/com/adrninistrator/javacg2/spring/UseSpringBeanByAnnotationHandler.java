@@ -2,10 +2,10 @@ package com.adrninistrator.javacg2.spring;
 
 import com.adrninistrator.javacg2.common.SpringAnnotationConstants;
 import com.adrninistrator.javacg2.dto.classes.ClassExtendsInfo;
+import com.adrninistrator.javacg2.dto.spring.SpringBeanInJava;
 import com.adrninistrator.javacg2.extensions.codeparser.SpringXmlBeanParserInterface;
 import com.adrninistrator.javacg2.util.JavaCG2AnnotationUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
-import com.adrninistrator.javacg2.util.JavaCG2Util;
 import org.apache.bcel.classfile.AnnotationEntry;
 import org.apache.bcel.classfile.Field;
 import org.apache.bcel.classfile.JavaClass;
@@ -34,7 +34,7 @@ public class UseSpringBeanByAnnotationHandler {
 
     private final Map<String, List<String>> interfaceExtendsInfoMap;
 
-    private final DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler;
+    private final SpringDefineBeanHandler springDefineBeanHandler;
 
     private final SpringXmlBeanParserInterface springXmlBeanParser;
 
@@ -80,12 +80,12 @@ public class UseSpringBeanByAnnotationHandler {
     public UseSpringBeanByAnnotationHandler(Map<String, ClassExtendsInfo> classExtendsInfoMap,
                                             Map<String, List<String>> classImplementsInfoMap,
                                             Map<String, List<String>> interfaceExtendsInfoMap,
-                                            DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler,
+                                            SpringDefineBeanHandler springDefineBeanHandler,
                                             SpringXmlBeanParserInterface springXmlBeanParser) {
         this.classExtendsInfoMap = classExtendsInfoMap;
         this.classImplementsInfoMap = classImplementsInfoMap;
         this.interfaceExtendsInfoMap = interfaceExtendsInfoMap;
-        this.defineSpringBeanByAnnotationHandler = defineSpringBeanByAnnotationHandler;
+        this.springDefineBeanHandler = springDefineBeanHandler;
         this.springXmlBeanParser = springXmlBeanParser;
         if (springXmlBeanParser != null) {
             logger.info("指定 {} 实例 {}", SpringXmlBeanParserInterface.class.getSimpleName(), springXmlBeanParser.getClass().getName());
@@ -139,15 +139,15 @@ public class UseSpringBeanByAnnotationHandler {
         AnnotationEntry injectAnnotationEntry = null;
 
         for (AnnotationEntry annotationEntry : field.getAnnotationEntries()) {
-            if (SpringAnnotationConstants.ANNOTATION_NAME_RESOURCE.equals(annotationEntry.getAnnotationType())) {
+            if (SpringAnnotationConstants.ANNOTATION_TYPE_RESOURCE.equals(annotationEntry.getAnnotationType())) {
                 resourceAnnotationEntry = annotationEntry;
-            } else if (SpringAnnotationConstants.ANNOTATION_NAME_AUTOWIRED.equals(annotationEntry.getAnnotationType())) {
+            } else if (SpringAnnotationConstants.ANNOTATION_TYPE_AUTOWIRED.equals(annotationEntry.getAnnotationType())) {
                 autowiredAnnotationEntry = annotationEntry;
-            } else if (SpringAnnotationConstants.ANNOTATION_NAME_QUALIFIER.equals(annotationEntry.getAnnotationType())) {
+            } else if (SpringAnnotationConstants.ANNOTATION_TYPE_QUALIFIER.equals(annotationEntry.getAnnotationType())) {
                 qualifierAnnotationEntry = annotationEntry;
-            } else if (SpringAnnotationConstants.ANNOTATION_NAME_NAMED.equals(annotationEntry.getAnnotationType())) {
+            } else if (SpringAnnotationConstants.ANNOTATION_TYPE_NAMED.equals(annotationEntry.getAnnotationType())) {
                 namedAnnotationEntry = annotationEntry;
-            } else if (SpringAnnotationConstants.ANNOTATION_NAME_INJECT.equals(annotationEntry.getAnnotationType())) {
+            } else if (SpringAnnotationConstants.ANNOTATION_TYPE_INJECT.equals(annotationEntry.getAnnotationType())) {
                 injectAnnotationEntry = annotationEntry;
             }
         }
@@ -268,10 +268,10 @@ public class UseSpringBeanByAnnotationHandler {
         }
 
         // 获取指定类指定字段对应的Spring Bean类型列表
-        List<String> springBeanTypeList = defineSpringBeanByAnnotationHandler.getSpringBeanTypeList(springBeanName);
-        if (!JavaCG2Util.isCollectionEmpty(springBeanTypeList)) {
+        SpringBeanInJava springBeanInJava = springDefineBeanHandler.getSpringBeanInJavaMap().get(springBeanName);
+        if (springBeanInJava != null) {
             // 检查@Autowired、@Inject注解的字段类型与Spring Bean类型是否匹配（使用@Autowired注解时未指定@Qualifier注解）
-            return checkAutowiredTypeMatches(className, fieldName, springBeanTypeList);
+            return checkAutowiredTypeMatches(className, fieldName, springBeanInJava.getClassNameList());
         }
 
         if (springXmlBeanParser != null) {

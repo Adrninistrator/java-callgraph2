@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -254,7 +255,7 @@ public abstract class BaseConfigureWrapper {
             throw new JavaCG2Error("生成的参数值类型与预期的不一致");
         }
         if (useConfig) {
-            logger.info("通过代码设置主要配置的参数 {} {} {}", mainConfig.getFileName(), mainConfig.getConfigPrintInfo(), value);
+            logger.info("设置主要配置的参数 {} {} {}", mainConfig.getFileName(), mainConfig.getConfigPrintInfo(), value);
             // 缓存当前的参数值
             mainConfigMap.put(mainConfig.getKey(), value);
         }
@@ -282,7 +283,7 @@ public abstract class BaseConfigureWrapper {
         if (configSet == null) {
             throw new JavaCG2Error("不允许传入null，只能传入内容为空的Set " + otherConfig.getConfigPrintInfo());
         }
-        logger.info("通过代码设置不区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
+        logger.info("设置不区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
         otherConfigSetMap.put(otherConfig.getKey(), configSet);
     }
 
@@ -307,7 +308,7 @@ public abstract class BaseConfigureWrapper {
         if (configSet == null) {
             throw new JavaCG2Error("不允许传入null，只能传入内容为空的Set " + otherConfig.getConfigPrintInfo());
         }
-        logger.info("通过代码设置不区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
+        logger.info("增加不区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
         Set<String> existedSet = otherConfigSetMap.get(otherConfig.getKey());
         if (existedSet == null) {
             otherConfigSetMap.put(otherConfig.getKey(), configSet);
@@ -337,7 +338,7 @@ public abstract class BaseConfigureWrapper {
         if (configList == null) {
             throw new JavaCG2Error("不允许传入null，只能传入内容为空的List " + otherConfig.getConfigPrintInfo());
         }
-        logger.info("通过代码设置区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
+        logger.info("设置区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
         otherConfigListMap.put(otherConfig.getKey(), configList);
     }
 
@@ -362,7 +363,7 @@ public abstract class BaseConfigureWrapper {
         if (configList == null) {
             throw new JavaCG2Error("不允许传入null，只能传入内容为空的List " + otherConfig.getConfigPrintInfo());
         }
-        logger.info("通过代码设置区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
+        logger.info("增加区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
         List<String> existedList = otherConfigListMap.get(otherConfig.getKey());
         if (existedList == null) {
             List<String> newList = new ArrayList<>();
@@ -422,7 +423,7 @@ public abstract class BaseConfigureWrapper {
         if (elText == null) {
             throw new JavaCG2Error("不允许传入null，只能传入空字符串 " + elConfig.getConfigPrintInfo());
         }
-        logger.info("通过代码设置表达式配置 {}", elConfig.getConfigPrintInfo());
+        logger.info("设置表达式配置 {}", elConfig.getConfigPrintInfo());
         elConfigMap.put(elConfig.getKey(), elText);
     }
 
@@ -796,11 +797,11 @@ public abstract class BaseConfigureWrapper {
      * @param outputDirPath
      * @param fileName
      */
-    public void printUsedConfigInfo(String simpleClassName, String outputDirPath, String fileName) {
+    public boolean printUsedConfigInfo(String simpleClassName, String outputDirPath, String fileName) {
         String configMdFilePath = JavaCG2Util.addSeparator4FilePath(outputDirPath) + fileName;
         logger.info("{} 使用的配置参数信息保存到以下文件 {}", simpleClassName, configMdFilePath);
         // 打印使用的配置参数信息
-        printConfigInfo(simpleClassName, configMdFilePath, false);
+        return printConfigInfo(simpleClassName, configMdFilePath, false);
     }
 
     /**
@@ -810,11 +811,11 @@ public abstract class BaseConfigureWrapper {
      * @param outputDirPath
      * @param fileName
      */
-    public void printAllConfigInfo(String simpleClassName, String outputDirPath, String fileName) {
+    public boolean printAllConfigInfo(String simpleClassName, String outputDirPath, String fileName) {
         String configMdFilePath = JavaCG2Util.addSeparator4FilePath(outputDirPath) + fileName;
         logger.info("{} 所有配置参数信息保存到以下文件 {}", simpleClassName, configMdFilePath);
         // 打印使用的配置参数信息
-        printConfigInfo(simpleClassName, configMdFilePath, true);
+        return printConfigInfo(simpleClassName, configMdFilePath, true);
     }
 
     /**
@@ -824,7 +825,7 @@ public abstract class BaseConfigureWrapper {
      * @param configMdFilePath
      * @param printAllConfigInfo true: 打印所有的配置参数信息 false: 打印使用的配置参数信息
      */
-    private void printConfigInfo(String simpleClassName, String configMdFilePath, boolean printAllConfigInfo) {
+    private boolean printConfigInfo(String simpleClassName, String configMdFilePath, boolean printAllConfigInfo) {
         // 当前文件可能会写多次，最后一次写的内容覆盖前面的内容，所有使用过当前配置类的类名都会被记录
         if (!useThisSimpleClassNameList.contains(simpleClassName)) {
             useThisSimpleClassNameList.add(simpleClassName);
@@ -838,12 +839,15 @@ public abstract class BaseConfigureWrapper {
                 // 打印使用的配置参数信息，先打印当前有使用的配置参数
                 printUsedConfig(markdownWriter, StringUtils.join(useThisSimpleClassNameList, " "));
             }
-            markdownWriter.addLineWithNewLine("当前文件代表所有支持的的配置参数");
+            markdownWriter.addLineWithNewLine("当前文件代表所有支持的配置参数");
 
             // 自定义打印配置参数信息
             customPrintConfigInfo(markdownWriter, printAllConfigInfo);
+
+            return true;
         } catch (Exception e) {
             logger.error("{} error ", simpleClassName, e);
+            return false;
         }
     }
 
@@ -947,13 +951,8 @@ public abstract class BaseConfigureWrapper {
             markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_NOT_BLANK, JavaCG2YesNoEnum.parseDesc(mainConfig.isNotBlank()));
 
             Object value = getMainConfig(mainConfig, false);
-            String valueStr;
-            if (value instanceof String) {
-                valueStr = (String) value;
-            } else {
-                valueStr = String.valueOf(value);
-            }
-            markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE, valueStr);
+            String printValue = JavaCG2Util.getObjectPrintValue(value);
+            markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE, printValue);
             markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DEFAULT_VALUE, mainConfig.getDefaultValue());
             markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_ENUM_NAME, mainConfig.getEnumConstantsName());
             markdownWriter.addEmptyLine();
@@ -1119,5 +1118,57 @@ public abstract class BaseConfigureWrapper {
                 .append(".").append(configMethodName).append("(").append(enumSimpleClassName)
                 .append(".").append(enumConstantName).append(", ...);");
         return stringBuilder.toString();
+    }
+
+    /**
+     * 将所有的配置信息写入文件
+     *
+     * @param writer
+     * @param mainConfigInterfaceArrays
+     * @param otherConfigListArray
+     * @param otherConfigSetArray
+     */
+    public boolean recordAllConfigToFile(Writer writer, MainConfigInterface[][] mainConfigInterfaceArrays, OtherConfigInterface[] otherConfigListArray,
+                                         OtherConfigInterface[] otherConfigSetArray) {
+        try {
+            for (MainConfigInterface[] mainConfigInterfaceArray : mainConfigInterfaceArrays) {
+                for (MainConfigInterface mainConfig : mainConfigInterfaceArray) {
+                    Object value = getMainConfig(mainConfig, false);
+                    String printValue = JavaCG2Util.getObjectPrintValue(value);
+                    JavaCG2FileUtil.write2FileWithTab(writer, mainConfig.getFileName(), mainConfig.getKey(), printValue,
+                            JavaCG2Constants.CONFIG_PROPERTIES);
+                }
+            }
+
+            for (OtherConfigInterface otherConfigList : otherConfigListArray) {
+                List<String> configValueList;
+                configValueList = getOtherConfigList(otherConfigList, false);
+                int seq = 0;
+                for (String configValue : configValueList) {
+                    JavaCG2FileUtil.write2FileWithTab(writer, otherConfigList.getKey(), String.valueOf(seq), configValue, JavaCG2Constants.CONFIG_LIST);
+                    seq++;
+                }
+            }
+
+            for (OtherConfigInterface otherConfigSet : otherConfigSetArray) {
+                Set<String> configSet = getOtherConfigSet(otherConfigSet, false);
+                List<String> configValueList = new ArrayList<>(configSet);
+                // 排序后打印
+                Collections.sort(configValueList);
+                int seq = 0;
+                for (String configValue : configValueList) {
+                    JavaCG2FileUtil.write2FileWithTab(writer, otherConfigSet.getKey(), String.valueOf(seq), configValue, JavaCG2Constants.CONFIG_SET);
+                    seq++;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            logger.error("error ", e);
+            return false;
+        }
+    }
+
+    public List<String> getUseThisSimpleClassNameList() {
+        return Collections.unmodifiableList(useThisSimpleClassNameList);
     }
 }

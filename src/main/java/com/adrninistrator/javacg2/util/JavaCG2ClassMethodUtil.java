@@ -9,6 +9,7 @@ import com.adrninistrator.javacg2.dto.method.JavaCG2MethodInfo;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg2.exceptions.JavaCG2Error;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
+import org.apache.bcel.classfile.Method;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
 import org.apache.commons.lang3.ArrayUtils;
@@ -57,6 +58,17 @@ public class JavaCG2ClassMethodUtil {
      */
     public static String formatFullMethod(MethodGen mg) {
         return formatFullMethod(mg.getClassName(), mg.getName(), mg.getArgumentTypes());
+    }
+
+    /**
+     * 生成格式化后的完整方法
+     *
+     * @param className 类名
+     * @param method    方法
+     * @return
+     */
+    public static String formatFullMethod(String className, Method method) {
+        return formatFullMethod(className, method.getName(), method.getArgumentTypes());
     }
 
     /**

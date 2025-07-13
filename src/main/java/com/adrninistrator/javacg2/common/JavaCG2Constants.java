@@ -8,9 +8,8 @@ package com.adrninistrator.javacg2.common;
  */
 
 public class JavaCG2Constants {
-    /* JVM启动参数中的配置项 */
-    // 保存配置文件的根目录
-    public static final String PROPERTY_INPUT_ROOT_PATH = "input.root.path";
+    // JVM参数，保存配置文件的根目录
+    public static final String JVM_PROP_KEY_INPUT_ROOT_PATH = "input.root.path";
 
     // 输出文件中的常量
     // jar/war文件
@@ -21,7 +20,11 @@ public class JavaCG2Constants {
     public static final String FILE_KEY_JAR_IN_JAR = "JIJ";
 
     // 解析结果文件保存目录
-    public static final String FILE_KEY_RESULT_DIR_INFO_PREFIX = "R";
+    public static final String FILE_KEY_RESULT_DIR = "R";
+    // 最终解析的jar文件路径
+    public static final String FILE_KEY_PARSE_JAR_PATH = "PJ";
+    // 合并生成的fat jar文件路径
+    public static final String FILE_KEY_FAT_JAR_PATH = "FJ";
     // 方法调用类型左边的标记
     public static final String FILE_KEY_CALL_TYPE_FLAG1 = "(";
     // 方法调用类型右边的标记
@@ -52,10 +55,12 @@ public class JavaCG2Constants {
     public static final String FILE_KEY_THROW_TYPE_METHOD_CALL_RETURN = "mcr";
     // 方法中通过throw抛出的异常类型，未知情况
     public static final String FILE_KEY_THROW_TYPE_UNKNOWN = "unk";
-    // Spring Bean的定义方式，Java代码中定义
-    public static final String FILE_KEY_SPRING_BEAN_IN_JAVA = "j";
-    // Spring Bean的定义方式，XML文件中定义
-    public static final String FILE_KEY_SPRING_BEAN_IN_XML = "x";
+    // Spring相关信息，Java代码中定义
+    public static final String FILE_KEY_SPRING_DEFINE_IN_JAVA = "j";
+    // Spring相关信息，XML文件中定义
+    public static final String FILE_KEY_SPRING_DEFINE_IN_XML = "x";
+    // Spring相关信息，去重后的包扫描路径类型
+    public static final String FILE_KEY_SPRING_SCAN_PACKAGE_DISTINCT = "dist";
 
     // 配置类型
     public static final String CONFIG_PROPERTIES = "properties";
@@ -73,6 +78,10 @@ public class JavaCG2Constants {
     public static final String FLAG_DOLOR = "$";
     public static final String FLAG_TAB = "\t";
     public static final String FLAG_SLASH = "/";
+    public static final String FLAG_BACKSLASH = "\\";
+
+    public static final char CHAR_SLASH = '/';
+    public static final char CHAR_BACKSLASH = '\\';
 
     public static final String COMMENT_PROPERTIES = "# ";
     public static final String COMMENT_AVIATOR = "## ";
@@ -87,6 +96,7 @@ public class JavaCG2Constants {
 
     public static final String JAR_SEQ_FLAG = "@";
     public static final String MERGED_JAR_FLAG = "-javacg2_merged.jar";
+    public static final String MERGED_FAT_JAR_FLAG = "-javacg2_merged_fat.jar";
 
     public static final String DIR_TAIL_OUTPUT = "-output_javacg2";
 

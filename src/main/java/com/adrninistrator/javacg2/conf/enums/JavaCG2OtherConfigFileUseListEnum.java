@@ -17,11 +17,7 @@ public enum JavaCG2OtherConfigFileUseListEnum implements OtherConfigInterface {
                     "(示例) build/test.jar",
                     "(示例) D:/test/build/test.jar"},
             null
-    ),
-    OCFULE_CODE_PARSER_ONLY_4SHOW("代码解析扩展类名（仅用于显示）",
-            new String[]{"对代码进行解析的扩展类完整类名"},
-            null
-    ),
+    )
     ;
 
     // 参数配置文件名

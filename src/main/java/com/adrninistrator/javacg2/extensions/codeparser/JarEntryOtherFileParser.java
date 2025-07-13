@@ -21,7 +21,8 @@ public interface JarEntryOtherFileParser extends CodeParserInterface {
      *
      * @param inputStream  当前文件对应的输入流
      * @param jarEntryPath 当前文件在jar文件中的路径
-     * @param jarEntryName  当前文件在jar文件中的名称
+     * @param jarEntryName 当前文件在jar文件中的名称
+     * @return true: 处理成功 false: 处理失败
      */
-    void parseJarEntryOtherFile(InputStream inputStream, String jarEntryPath, String jarEntryName);
+    boolean parseJarEntryOtherFile(InputStream inputStream, String jarEntryPath, String jarEntryName);
 }

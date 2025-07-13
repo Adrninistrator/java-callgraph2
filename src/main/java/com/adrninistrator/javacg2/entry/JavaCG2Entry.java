@@ -3,20 +3,27 @@ package com.adrninistrator.javacg2.entry;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2CallTypeEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2OutPutFileTypeEnum;
+import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
 import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.conf.JavaCG2ConfManager;
 import com.adrninistrator.javacg2.conf.JavaCG2ConfigureWrapper;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseSetEnum;
+import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
 import com.adrninistrator.javacg2.dto.classes.ClassExtendsInfo;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
 import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
+import com.adrninistrator.javacg2.dto.jar.MergeJarResult;
 import com.adrninistrator.javacg2.dto.jar.OuterInnerJarPath;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg2.dto.output.JavaCG2OtherRunResult;
 import com.adrninistrator.javacg2.dto.output.JavaCG2OutputInfo;
+import com.adrninistrator.javacg2.dto.spring.SpringAopAdviceInfo;
+import com.adrninistrator.javacg2.dto.spring.SpringAopPointcutInfo;
+import com.adrninistrator.javacg2.dto.spring.SpringBeanInJava;
+import com.adrninistrator.javacg2.dto.spring.SpringBeanInXml;
 import com.adrninistrator.javacg2.el.enums.JavaCG2ElConfigEnum;
 import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
@@ -27,7 +34,9 @@ import com.adrninistrator.javacg2.handler.MergeJarHandler;
 import com.adrninistrator.javacg2.parser.JarEntryHandleParser;
 import com.adrninistrator.javacg2.parser.JarEntryPreHandle1Parser;
 import com.adrninistrator.javacg2.parser.JarEntryPreHandle2Parser;
-import com.adrninistrator.javacg2.spring.DefineSpringBeanByAnnotationHandler;
+import com.adrninistrator.javacg2.spring.SpringDefineAopHandler;
+import com.adrninistrator.javacg2.spring.SpringDefineBeanHandler;
+import com.adrninistrator.javacg2.spring.SpringDefineComponentScanHandler;
 import com.adrninistrator.javacg2.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import com.adrninistrator.javacg2.util.JavaCG2JarUtil;
@@ -86,9 +95,13 @@ public class JavaCG2Entry {
      */
     private Map<String, Integer> jarPathNumMap;
 
-    private DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler;
+    private SpringDefineBeanHandler springDefineBeanHandler;
 
     private UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
+
+    private SpringDefineComponentScanHandler springDefineComponentScanHandler;
+
+    private SpringDefineAopHandler springDefineAopHandler;
 
     public static void main(String[] args) {
         new JavaCG2Entry().run();
@@ -121,22 +134,29 @@ public class JavaCG2Entry {
 
         // 处理输出文件路径
         String outputDirPath = handleOutputDir();
+        if (outputDirPath == null) {
+            return false;
+        }
+
         javaCG2ConfInfo.setOutputDirPath(outputDirPath);
         try (JavaCG2ElManager javaCG2ElManager = new JavaCG2ElManager(javaCG2ConfigureWrapper, JavaCG2ElConfigEnum.values(), outputDirPath)) {
             JavaCG2Counter jarNumCounter = new JavaCG2Counter(JavaCG2Constants.JAR_NUM_MIN_BEFORE);
 
             // 处理参数中指定的jar包
-            String newJarFilePath = handleJarInConf(jarNumCounter, javaCG2ElManager);
+            MergeJarResult mergeJarResult = handleJarInConf(jarNumCounter, javaCG2ElManager);
+            if (mergeJarResult == null) {
+                return false;
+            }
 
             try {
-                boolean success = parse(newJarFilePath, javaCG2ElManager, javaCG2ConfInfo);
+                boolean success1 = parse(mergeJarResult, javaCG2ElManager, javaCG2ConfInfo);
                 logger.info("执行完毕，处理数量，类： {} 方法: {} 方法调用: {} 耗时: {} 秒", classNumCounter.getCount(), methodNumCounter.getCount(), callIdCounter.getCount(),
                         JavaCG2Util.getSpendSeconds(startTime));
                 // 打印所有的配置参数信息
-                javaCG2ConfigureWrapper.printAllConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_ALL_CONFIG_MD);
+                boolean success2 = javaCG2ConfigureWrapper.printAllConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_ALL_CONFIG_MD);
                 // 打印当前使用的配置信息
-                javaCG2ConfigureWrapper.printUsedConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_USED_CONFIG_MD);
-                return success;
+                boolean success3 = javaCG2ConfigureWrapper.printUsedConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_USED_CONFIG_MD);
+                return success1 && success2 && success3;
             } catch (Exception e) {
                 logger.error("error ", e);
                 return false;
@@ -144,7 +164,7 @@ public class JavaCG2Entry {
         }
     }
 
-    private boolean parse(String newJarFilePath, JavaCG2ElManager javaCG2ElManager, JavaCG2ConfInfo javaCG2ConfInfo) {
+    private boolean parse(MergeJarResult mergeJarResult, JavaCG2ElManager javaCG2ElManager, JavaCG2ConfInfo javaCG2ConfInfo) {
         // 初始化
         if (!init(javaCG2ConfInfo, javaCG2ElManager)) {
             return false;
@@ -180,8 +200,10 @@ public class JavaCG2Entry {
              Writer methodCallMethodCallReturnWriter =
                      JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_METHOD_CALL_RETURN));
              Writer methodCallStaticFieldWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_STATIC_FIELD));
-             Writer methodCallNonStaticFieldWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_NON_STATIC_FIELD));
-             Writer methodCallStaticFieldMCRWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_STATIC_FIELD_MCR));
+             Writer methodCallNonStaticFieldWriter =
+                     JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_NON_STATIC_FIELD));
+             Writer methodCallStaticFieldMCRWriter =
+                     JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_STATIC_FIELD_MCR));
              Writer methodReturnArgSeqWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_ARG_SEQ));
              Writer methodReturnCallIdWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_CALL_ID));
              Writer methodReturnConstValueWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_CONST_VALUE));
@@ -199,6 +221,10 @@ public class JavaCG2Entry {
              Writer methodThrowWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_THROW));
              Writer setMethodWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SET_METHOD));
              Writer springBeanWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_BEAN));
+             Writer springScanPackageWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_SCAN_PACKAGE_JAVA));
+             Writer springAopAspectWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_AOP_ASPECT_JAVA));
+             Writer springAopPointcutWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_AOP_POINTCUT_JAVA));
+             Writer springAopAdviceWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_AOP_ADVICE_JAVA));
              Writer staticFinalFieldMethodCallIdWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SF_FIELD_METHOD_CALL));
              WriterSupportSkip logMethodSpendTimeWriter = new WriterSupportSkip(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_LOG_METHOD_SPEND_TIME), false)
         ) {
@@ -244,8 +270,10 @@ public class JavaCG2Entry {
 
             jarEntryHandleParser.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
 
+            String mergeJarFilePath = JavaCG2FileUtil.getCanonicalPath(mergeJarResult.getMergeJarFile());
             // 处理jar包
-            if (!handleJar(newJarFilePath, methodCallWriter, springBeanWriter) || failCounter.getCount() > 0) {
+            if (!handleJar(mergeJarFilePath, methodCallWriter, springBeanWriter, springScanPackageWriter, springAopAspectWriter, springAopPointcutWriter, springAopAdviceWriter)
+                    || failCounter.getCount() > 0) {
                 logger.error("处理失败，出错次数 {}", failCounter.getCount());
                 return false;
             }
@@ -281,12 +309,18 @@ public class JavaCG2Entry {
                 JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, jarDirType, String.valueOf(jarNum), outerJarDirPath, innerJarPath);
             }
 
-            JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_RESULT_DIR_INFO_PREFIX, String.valueOf(maxJarNum + 1),
+            JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_RESULT_DIR, String.valueOf(++maxJarNum),
                     javaCG2OutputInfo.getOutputDirPath(), "");
+            JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_PARSE_JAR_PATH, String.valueOf(++maxJarNum),
+                    mergeJarFilePath, "");
+            if (mergeJarResult.getFatJarFile() != null) {
+                String fatJarFilePath = JavaCG2FileUtil.getCanonicalPath(mergeJarResult.getFatJarFile());
+                JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_FAT_JAR_PATH, String.valueOf(++maxJarNum),
+                        fatJarFilePath, "");
+            }
 
             // 记录java-callgraph2组件使用的配置参数
-            recordJavaCG2Config(javaCG2ConfigWriter);
-            return true;
+            return recordJavaCG2Config(javaCG2ConfigWriter);
         } catch (Exception e) {
             logger.error("出现异常 ", e);
             return false;
@@ -299,12 +333,14 @@ public class JavaCG2Entry {
     // 处理输出文件路径
     private String handleOutputDir() {
         MergeJarHandler mergeJarHandler = new MergeJarHandler(javaCG2ConfigureWrapper, null, null, null, true);
-        File newJarFile = mergeJarHandler.mergeJar();
-        if (newJarFile == null) {
-            throw new JavaCG2RuntimeException("获取处理需要解析的jar文件/目录的输出文件路径失败");
+        MergeJarResult mergeJarResult = mergeJarHandler.mergeJar();
+        if (mergeJarResult == null) {
+            logger.error("获取处理需要解析的jar文件/目录的输出文件路径失败");
+            return null;
         }
 
-        String newJarFilePath = JavaCG2FileUtil.getCanonicalPath(newJarFile);
+        File mergeJarFile = mergeJarResult.getMergeJarFile();
+        String newJarFilePath = JavaCG2FileUtil.getCanonicalPath(mergeJarFile);
         String outputRootPath = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH);
         String outputDirPath;
         if (StringUtils.isBlank(outputRootPath)) {
@@ -312,29 +348,35 @@ public class JavaCG2Entry {
             outputDirPath = newJarFilePath + JavaCG2Constants.DIR_TAIL_OUTPUT + File.separator;
         } else {
             // 配置参数中有指定生成文件的根目录，生成在指定目录
-            outputDirPath = JavaCG2Util.addSeparator4FilePath(outputRootPath) + newJarFile.getName() + JavaCG2Constants.DIR_TAIL_OUTPUT + File.separator;
+            outputDirPath = JavaCG2Util.addSeparator4FilePath(outputRootPath) + mergeJarFile.getName() + JavaCG2Constants.DIR_TAIL_OUTPUT + File.separator;
         }
         logger.info("当前输出的根目录: {}", outputDirPath);
         if (!JavaCG2FileUtil.isDirectoryExists(outputDirPath, true)) {
-            throw new JavaCG2RuntimeException("创建输出目录失败");
+            logger.error("创建输出目录失败 {}", outputRootPath);
+            return null;
         }
         return outputDirPath;
     }
 
     // 处理配置参数中指定的jar包
-    private String handleJarInConf(JavaCG2Counter jarNumCounter, JavaCG2ElManager javaCG2ElManager) {
+    private MergeJarResult handleJarInConf(JavaCG2Counter jarNumCounter, JavaCG2ElManager javaCG2ElManager) {
         jarPathNumMap = new HashMap<>();
 
         // 对指定的jar包进行处理
         MergeJarHandler mergeJarHandler = new MergeJarHandler(javaCG2ConfigureWrapper, jarPathNumMap, jarNumCounter, javaCG2ElManager, false);
-        File newJarFile = mergeJarHandler.mergeJar();
-        if (newJarFile == null) {
-            throw new JavaCG2RuntimeException("处理需要解析的jar文件/目录失败");
+        MergeJarResult mergeJarResult = mergeJarHandler.mergeJar();
+        if (mergeJarResult == null) {
+            logger.error("处理需要解析的jar文件/目录失败");
+            return null;
         }
 
-        String newJarFilePath = JavaCG2FileUtil.getCanonicalPath(newJarFile);
-        logger.info("实际处理的jar文件: {}", newJarFilePath);
-        return newJarFilePath;
+        String mergeJarFilePath = JavaCG2FileUtil.getCanonicalPath(mergeJarResult.getMergeJarFile());
+        logger.info("实际处理的jar文件路径: {}", mergeJarFilePath);
+        if (mergeJarResult.getFatJarFile() != null) {
+            String fatJarFilePath = JavaCG2FileUtil.getCanonicalPath(mergeJarResult.getFatJarFile());
+            logger.info("生成的fat jar文件路径: {}", fatJarFilePath);
+        }
+        return mergeJarResult;
     }
 
     // 初始化
@@ -408,10 +450,12 @@ public class JavaCG2Entry {
         Map<String, Map<MethodArgReturnTypes, Integer>> interfaceMethodWithArgTypesMap = new HashMap<>(JavaCG2Constants.SIZE_200);
 
         if (Boolean.TRUE.equals(javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE))) {
-            defineSpringBeanByAnnotationHandler = new DefineSpringBeanByAnnotationHandler(javaCG2InputAndOutput, failCounter);
+            springDefineBeanHandler = new SpringDefineBeanHandler(javaCG2InputAndOutput, failCounter);
         }
+        springDefineComponentScanHandler = new SpringDefineComponentScanHandler();
+        springDefineAopHandler = new SpringDefineAopHandler();
         boolean onlyOneJar = jarPathNumMap.size() == 1;
-        jarEntryPreHandle1Parser = new JarEntryPreHandle1Parser(javaCG2InputAndOutput, onlyOneJar, defineSpringBeanByAnnotationHandler, extensionsManager);
+        jarEntryPreHandle1Parser = new JarEntryPreHandle1Parser(javaCG2InputAndOutput, onlyOneJar, javaCG2ElManager);
         jarEntryPreHandle1Parser.setClassImplementsInfoMap(classImplementsInfoMap);
         jarEntryPreHandle1Parser.setClassExtendsImplMethodWithArgTypesMap(classExtendsImplMethodWithArgTypesMap);
         jarEntryPreHandle1Parser.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
@@ -424,6 +468,10 @@ public class JavaCG2Entry {
         jarEntryPreHandle1Parser.setInterfaceExtendsSet(interfaceExtendsSet);
         jarEntryPreHandle1Parser.setAllClassNameSet(allClassNameSet);
         jarEntryPreHandle1Parser.setClassAndJarNum(classAndJarNum);
+        jarEntryPreHandle1Parser.setSpringDefineBeanHandler(springDefineBeanHandler);
+        jarEntryPreHandle1Parser.setExtensionsManager(extensionsManager);
+        jarEntryPreHandle1Parser.setSpringDefineComponentScanHandler(springDefineComponentScanHandler);
+        jarEntryPreHandle1Parser.setSpringDefineAopHandler(springDefineAopHandler);
 
         // 第二次预处理相关
         /*
@@ -459,10 +507,10 @@ public class JavaCG2Entry {
                     classExtendsInfoMap,
                     classImplementsInfoMap,
                     interfaceExtendsInfoMap,
-                    defineSpringBeanByAnnotationHandler,
+                    springDefineBeanHandler,
                     extensionsManager.getSpringXmlBeanParser());
         }
-        jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCG2InputAndOutput, onlyOneJar, useSpringBeanByAnnotationHandler);
+        jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCG2InputAndOutput, onlyOneJar, useSpringBeanByAnnotationHandler, javaCG2ElManager);
         jarEntryPreHandle2Parser.setClassExtendsImplMethodWithArgTypesMap(classExtendsImplMethodWithArgTypesMap);
         jarEntryPreHandle2Parser.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
         jarEntryPreHandle2Parser.setClassAndSuperMap(classAndSuperMap);
@@ -525,7 +573,8 @@ public class JavaCG2Entry {
     }
 
     // 处理一个jar包
-    private boolean handleJar(String jarFilePath, Writer methodCallWriter, Writer springBeanWriter) {
+    private boolean handleJar(String jarFilePath, Writer methodCallWriter, Writer springBeanWriter, Writer springScanPackageWriter, Writer springAopAspectWriter,
+                              Writer springAopPointcutWriter, Writer springAopAdviceWriter) {
         try {
             // 对Class进行预处理
             if (!preHandleClasses1(jarFilePath)) {
@@ -548,6 +597,12 @@ public class JavaCG2Entry {
 
             // 记录Spring Bean的名称及类型
             recordSpringBeanNameAndType(springBeanWriter);
+
+            // 记录Spring包扫描路径
+            recordSpringScanPackage(springScanPackageWriter);
+
+            // 记录Spring AOP信息
+            recordSpringAop(springAopAspectWriter, springAopPointcutWriter, springAopAdviceWriter);
             return true;
         } catch (Exception e) {
             logger.error("处理jar包出现异常 {} ", jarFilePath, e);
@@ -567,70 +622,110 @@ public class JavaCG2Entry {
 
     // 记录Spring Bean的名称及类型
     private void recordSpringBeanNameAndType(Writer springBeanWriter) throws IOException {
-        if (defineSpringBeanByAnnotationHandler == null) {
+        if (springDefineBeanHandler != null) {
+            Map<String, SpringBeanInJava> springBeanInJavaMap = springDefineBeanHandler.getSpringBeanInJavaMap();
+            if (!springBeanInJavaMap.isEmpty()) {
+                List<String> springBeanNameList = new ArrayList<>(springBeanInJavaMap.keySet());
+                Collections.sort(springBeanNameList);
+                for (String springBeanName : springBeanNameList) {
+                    SpringBeanInJava springBeanInJava = springBeanInJavaMap.get(springBeanName);
+                    List<String> springBeanTypeList = springBeanInJava.getClassNameList();
+                    for (int i = 0; i < springBeanTypeList.size(); i++) {
+                        JavaCG2FileUtil.write2FileWithTab(springBeanWriter, springBeanName, String.valueOf(i), springBeanTypeList.get(i),
+                                JavaCG2Constants.FILE_KEY_SPRING_DEFINE_IN_JAVA, springBeanInJava.getAnnotationClassName(), springBeanInJava.getDefineClassName());
+                    }
+                }
+            }
+        }
+
+        /*
+            记录XML中定义的Spring Bean信息
+            SpringXmlBeanParserInterface.getBeanClass方法会在UseSpringBeanByAnnotationHandler.getSpringBeanTypeList方法中被调用
+            不只是为了将XML中定义的Spring Bean信息写入文件
+         */
+        SpringXmlBeanParserInterface springXmlBeanParser = extensionsManager.getSpringXmlBeanParser();
+        if (springXmlBeanParser != null) {
+            List<SpringBeanInXml> springBeanListInXml = springXmlBeanParser.getBeanInXml();
+            for (SpringBeanInXml springBeanNameInXml : springBeanListInXml) {
+                JavaCG2FileUtil.write2FileWithTab(springBeanWriter, springBeanNameInXml.getSpringBeanName(), "0", springBeanNameInXml.getClassName(),
+                        JavaCG2Constants.FILE_KEY_SPRING_DEFINE_IN_XML, "", springBeanNameInXml.getXmlFilePath());
+            }
+        }
+    }
+
+    // 记录Spring包扫描路径
+    private void recordSpringScanPackage(Writer springScanPackageWriter) throws IOException {
+        Map<String, List<String>> springComponentScanMap = springDefineComponentScanHandler.getSpringComponentScanMap();
+        if (springComponentScanMap.isEmpty()) {
             return;
         }
 
-        List<String> springBeanNameList = new ArrayList<>(defineSpringBeanByAnnotationHandler.getSpringBeanNameSet());
-        Collections.sort(springBeanNameList);
-        for (String springBeanName : springBeanNameList) {
-            List<String> springBeanTypeList = defineSpringBeanByAnnotationHandler.getSpringBeanTypeList(springBeanName);
-            for (int i = 0; i < springBeanTypeList.size(); i++) {
-                JavaCG2FileUtil.write2FileWithTab(springBeanWriter, springBeanName, String.valueOf(i), springBeanTypeList.get(i), JavaCG2Constants.FILE_KEY_SPRING_BEAN_IN_JAVA);
+        List<String> componentScanClassNameList = new ArrayList<>(springComponentScanMap.keySet());
+        Collections.sort(componentScanClassNameList);
+        for (String componentScanClassName : componentScanClassNameList) {
+            List<String> componentScanPathList = springComponentScanMap.get(componentScanClassName);
+            for (int i = 0; i < componentScanPathList.size(); i++) {
+                JavaCG2FileUtil.write2FileWithTab(springScanPackageWriter, JavaCG2Constants.FILE_KEY_SPRING_DEFINE_IN_JAVA, String.valueOf(i), componentScanPathList.get(i),
+                        componentScanClassName);
             }
         }
-        // 记录XML中定义的Spring Bean信息
-        SpringXmlBeanParserInterface springXmlBeanParser = extensionsManager.getSpringXmlBeanParser();
-        if (springXmlBeanParser != null) {
-            Map<String, String> springBeanMapInXml = springXmlBeanParser.getBeanMap();
-            List<String> springBeanNameInXmlList = new ArrayList<>(springBeanMapInXml.keySet());
-            for (String springBeanNameInXml : springBeanNameInXmlList) {
-                String springBeanTypeInXml = springBeanMapInXml.get(springBeanNameInXml);
-                JavaCG2FileUtil.write2FileWithTab(springBeanWriter,
-                        springBeanNameInXml,
-                        "0",
-                        springBeanTypeInXml,
-                        JavaCG2Constants.FILE_KEY_SPRING_BEAN_IN_XML);
+    }
+
+    // 记录Spring AOP信息
+    private void recordSpringAop(Writer springAopAspectWriter, Writer springAopPointcutWriter, Writer springAopAdviceWriter) throws IOException {
+        Map<String, Integer> aspectMap = springDefineAopHandler.getAspectMap();
+        if (!aspectMap.isEmpty()) {
+            List<String> aspectClassNameList = new ArrayList<>(aspectMap.keySet());
+            Collections.sort(aspectClassNameList);
+            for (String aspectClassName : aspectClassNameList) {
+                Integer orderValue = aspectMap.get(aspectClassName);
+                JavaCG2FileUtil.write2FileWithTab(springAopAspectWriter, String.valueOf(orderValue), aspectClassName);
+            }
+        }
+
+        Map<String, List<SpringAopPointcutInfo>> pointcutMap = springDefineAopHandler.getPointcutMap();
+        if (!pointcutMap.isEmpty()) {
+            List<String> pointcutAspectClassNameList = new ArrayList<>(pointcutMap.keySet());
+            Collections.sort(pointcutAspectClassNameList);
+            for (String pointcutAspectClassName : pointcutAspectClassNameList) {
+                List<SpringAopPointcutInfo> pointcutList = pointcutMap.get(pointcutAspectClassName);
+                for (SpringAopPointcutInfo springAopPointcutInfo : pointcutList) {
+                    String expression = springAopPointcutInfo.getExpression();
+                    JavaCG2YesNoEnum base64 = JavaCG2YesNoEnum.NO;
+                    if (JavaCG2Util.checkNeedBase64(expression)) {
+                        base64 = JavaCG2YesNoEnum.YES;
+                        expression = JavaCG2Util.base64Encode(expression);
+                    }
+                    JavaCG2FileUtil.write2FileWithTab(springAopPointcutWriter, base64.getStrValue(), expression, springAopPointcutInfo.getFullMethod());
+                }
+            }
+        }
+
+        Map<String, List<SpringAopAdviceInfo>> adviceMap = springDefineAopHandler.getAdviceMap();
+        if (!adviceMap.isEmpty()) {
+            List<String> adviceAspectClassNameList = new ArrayList<>(adviceMap.keySet());
+            Collections.sort(adviceAspectClassNameList);
+            for (String adviceAspectClassName : adviceAspectClassNameList) {
+                List<SpringAopAdviceInfo> adviceList = adviceMap.get(adviceAspectClassName);
+                for (SpringAopAdviceInfo springAopAdviceInfo : adviceList) {
+                    String expression = springAopAdviceInfo.getExpression();
+                    JavaCG2YesNoEnum base64 = JavaCG2YesNoEnum.NO;
+                    if (JavaCG2Util.checkNeedBase64(expression)) {
+                        base64 = JavaCG2YesNoEnum.YES;
+                        expression = JavaCG2Util.base64Encode(expression);
+                    }
+                    JavaCG2FileUtil.write2FileWithTab(springAopAdviceWriter, springAopAdviceInfo.getFullMethod(), springAopAdviceInfo.getReturnType(),
+                            springAopAdviceInfo.getAnnotationSimpleClassName(), base64.getStrValue(), expression, String.valueOf(springAopAdviceInfo.getAspectOrder()));
+                }
             }
         }
     }
 
     // 记录java-callgraph2组件使用的配置参数
-    private void recordJavaCG2Config(Writer javaCG2ConfigWriter) throws IOException {
-        for (JavaCG2ConfigKeyEnum javaCG2ConfigKeyEnum : JavaCG2ConfigKeyEnum.values()) {
-            Object value = javaCG2ConfigureWrapper.getMainConfig(javaCG2ConfigKeyEnum, false);
-            String printValue = JavaCG2Util.getObjectPrintValue(value);
-            JavaCG2FileUtil.write2FileWithTab(javaCG2ConfigWriter, javaCG2ConfigKeyEnum.getFileName(), javaCG2ConfigKeyEnum.getKey(), printValue,
-                    JavaCG2Constants.CONFIG_PROPERTIES);
-        }
-
-        JavaCG2OtherConfigFileUseListEnum[] javaCG2OtherConfigFileUseListEnums = JavaCG2OtherConfigFileUseListEnum.values();
-        for (JavaCG2OtherConfigFileUseListEnum currentConfig : javaCG2OtherConfigFileUseListEnums) {
-            List<String> configValueList;
-            if (JavaCG2OtherConfigFileUseListEnum.OCFULE_CODE_PARSER_ONLY_4SHOW == currentConfig) {
-                configValueList = extensionsManager.getAllCodeParserNameList();
-            } else {
-                configValueList = javaCG2ConfigureWrapper.getOtherConfigList(currentConfig, false);
-            }
-            int seq = 0;
-            for (String configValue : configValueList) {
-                JavaCG2FileUtil.write2FileWithTab(javaCG2ConfigWriter, currentConfig.getKey(), String.valueOf(seq), configValue, JavaCG2Constants.CONFIG_LIST);
-                seq++;
-            }
-        }
-
-        JavaCG2OtherConfigFileUseSetEnum[] javaCG2OtherConfigFileUseSetEnums = JavaCG2OtherConfigFileUseSetEnum.values();
-        for (JavaCG2OtherConfigFileUseSetEnum currentConfig : javaCG2OtherConfigFileUseSetEnums) {
-            Set<String> configSet = javaCG2ConfigureWrapper.getOtherConfigSet(currentConfig, false);
-            List<String> configValueList = new ArrayList<>(configSet);
-            // 排序后打印
-            Collections.sort(configValueList);
-            int seq = 0;
-            for (String configValue : configValueList) {
-                JavaCG2FileUtil.write2FileWithTab(javaCG2ConfigWriter, currentConfig.getKey(), String.valueOf(seq), configValue, JavaCG2Constants.CONFIG_SET);
-                seq++;
-            }
-        }
+    private boolean recordJavaCG2Config(Writer javaCG2ConfigWriter) {
+        MainConfigInterface[][] mainConfigs = new MainConfigInterface[][]{JavaCG2ConfigKeyEnum.values()};
+        return javaCG2ConfigureWrapper.recordAllConfigToFile(javaCG2ConfigWriter, mainConfigs, JavaCG2OtherConfigFileUseListEnum.values(),
+                JavaCG2OtherConfigFileUseSetEnum.values());
     }
 
     // 获取扩展类管理类

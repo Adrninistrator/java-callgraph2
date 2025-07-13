@@ -9,7 +9,7 @@
 ## （范围）在使用以下 class_dir_prefix_level_ 参数时，需要以 class_dir_prefix_level_ 开头，后续通过数字指定class文件路径层级
 ## （范围）例如 class_dir_prefix_level_3 代表第3级class文件路径集合
 ## （范围）以下的 file_name file_dir_path 均代表需要判断是否需要跳过合并的jar/war文件
-## （表达式使用示例文件）请参考 el_example.md
+## （表达式使用示例文件）请参考 _el_example/el_example.md
 ## （允许使用的变量）{变量名称} {变量类型} {变量描述} {变量值示例}
 ## {class_dir_prefix_level_} {Set} {jar/war文件中的class文件目录的不同层级的路径前缀集合} {集合：('a'), 集合：('a', 'a/b')}
 ## {file_name} {String} {文件名称} {a.class, a.xml}

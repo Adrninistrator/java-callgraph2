@@ -2,7 +2,6 @@ package test.config;
 
 import com.adrninistrator.javacg2.conf.JavaCG2ConfigureWrapper;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
-import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseSetEnum;
 import com.adrninistrator.javacg2.entry.JavaCG2Entry;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
@@ -51,7 +50,7 @@ public class TestAllConfig extends TestBase {
                                         continue;
                                     }
 
-                                    JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper();
+                                    JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JACGTest();
                                     javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, parseMethodCallTypeValue);
                                     javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE, firstParseInitMethodType);
                                     javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP, analyseFieldRelationship);
@@ -62,7 +61,6 @@ public class TestAllConfig extends TestBase {
                                                 "java.lang.Boolean:<init>=1"
                                         );
                                     }
-                                    javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, jacgTestListPath);
 
                                     JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
                                     if (!javaCG2Entry.run()) {

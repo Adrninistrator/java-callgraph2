@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg2.dto.output;
 
 import com.adrninistrator.javacg2.common.enums.JavaCG2OutPutFileTypeEnum;
+import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import com.adrninistrator.javacg2.util.JavaCG2Util;
 
 import java.util.Collections;
@@ -44,12 +45,10 @@ public class JavaCG2OutputInfo {
      * 增加其他文件信息，返回对应的文件路径
      *
      * @param fileName 文件名，不需要指定文件后缀
-     * @return 文件路径
      */
-    public String addOtherFileInfo(String fileName) {
-        String filePath = outputDirPath + fileName + outputFileExt;
+    public void addOtherFileInfo(String fileName) {
+        String filePath = JavaCG2FileUtil.genFilePath(outputDirPath, fileName, outputFileExt);
         otherFilePathMap.put(fileName, filePath);
-        return filePath;
     }
 
     /**
@@ -87,7 +86,7 @@ public class JavaCG2OutputInfo {
      * @return
      */
     public String getMainFilePath(JavaCG2OutPutFileTypeEnum javaCG2OutPutFileTypeEnum) {
-        return outputDirPath + javaCG2OutPutFileTypeEnum.getFileName() + outputFileExt;
+        return JavaCG2FileUtil.genFilePath(outputDirPath, javaCG2OutPutFileTypeEnum.getFileName(), outputFileExt);
     }
 
     public void addFrameSnapshotNumExceedMethod(String frameSnapshotNumExceedMethod) {
@@ -100,5 +99,9 @@ public class JavaCG2OutputInfo {
 
     public Set<String> getFrameSnapshotNumExceedMethodSetReadOnly() {
         return Collections.unmodifiableSet(frameSnapshotNumExceedMethodSet);
+    }
+
+    public String getOutputFileExt() {
+        return outputFileExt;
     }
 }

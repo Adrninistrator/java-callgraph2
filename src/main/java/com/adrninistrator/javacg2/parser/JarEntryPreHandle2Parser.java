@@ -4,6 +4,7 @@ import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.dto.classes.ClassExtendsInfo;
 import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
+import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.spring.UseSpringBeanByAnnotationHandler;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
@@ -11,6 +12,8 @@ import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Method;
 import org.apache.commons.lang3.ArrayUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,8 +30,13 @@ import java.util.Set;
  * @description: 解析jar包中的文件，第二次预处理
  */
 public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
+    private static final Logger logger = LoggerFactory.getLogger(JarEntryPreHandle2Parser.class);
 
     private final Set<String> classExtendsSet = new HashSet<>(JavaCG2Constants.SIZE_100);
+
+    private final UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
+
+    private final JavaCG2ElManager javaCG2ElManager;
 
     private Map<String, Map<MethodArgReturnTypes, Integer>> classExtendsImplMethodWithArgTypesMap;
     private Map<String, Map<MethodArgReturnTypes, Integer>> interfaceMethodWithArgTypesMap;
@@ -40,11 +48,10 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
     private Map<String, List<String>> childrenInterfaceMap;
     private Set<String> allClassNameSet;
 
-    private final UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
-
-    public JarEntryPreHandle2Parser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar, UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler) {
+    public JarEntryPreHandle2Parser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar, UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler,JavaCG2ElManager javaCG2ElManager) {
         super(javaCG2InputAndOutput, onlyOneJar);
         this.useSpringBeanByAnnotationHandler = useSpringBeanByAnnotationHandler;
+        this.javaCG2ElManager = javaCG2ElManager;
     }
 
     @Override
@@ -72,6 +79,12 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
 
     @Override
     protected boolean handleClassEntry(JavaClass javaClass, String jarEntryPath) {
+        String className = javaClass.getClassName();
+        if (javaCG2ElManager.checkIgnoreParseClass(className)) {
+            logger.debug("跳过解析类 {}", className);
+            return true;
+        }
+
         if (javaClass.isClass()) {
             // 处理类
             // 查找涉及继承的类的信息，需要提前执行，使后续处理方法调用时，classExtendsMethodInfoMap的数据是完整的

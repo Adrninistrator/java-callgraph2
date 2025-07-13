@@ -52,16 +52,7 @@ public class JavaCG2ConfigureWrapper extends BaseConfigureWrapper {
         printOtherSetConfigInfo(markdownWriter, JavaCG2OtherConfigFileUseSetEnum.values(), printAllConfigInfo);
 
         // 打印List格式的其他配置信息
-        List<JavaCG2OtherConfigFileUseListEnum> javaCG2OtherConfigFileUseListEnumList = new ArrayList<>();
-        for (JavaCG2OtherConfigFileUseListEnum javaCG2OtherConfigFileUseListEnum : JavaCG2OtherConfigFileUseListEnum.values()) {
-            if (javaCG2OtherConfigFileUseListEnum == JavaCG2OtherConfigFileUseListEnum.OCFULE_CODE_PARSER_ONLY_4SHOW) {
-                continue;
-            }
-            javaCG2OtherConfigFileUseListEnumList.add(javaCG2OtherConfigFileUseListEnum);
-        }
-        JavaCG2OtherConfigFileUseListEnum[] javaCG2OtherConfigFileUseListEnums = new JavaCG2OtherConfigFileUseListEnum[javaCG2OtherConfigFileUseListEnumList.size()];
-        javaCG2OtherConfigFileUseListEnums = javaCG2OtherConfigFileUseListEnumList.toArray(javaCG2OtherConfigFileUseListEnums);
-        printOtherListConfigInfo(markdownWriter, javaCG2OtherConfigFileUseListEnums, printAllConfigInfo);
+        printOtherListConfigInfo(markdownWriter, JavaCG2OtherConfigFileUseListEnum.values(), printAllConfigInfo);
     }
 
     @Override

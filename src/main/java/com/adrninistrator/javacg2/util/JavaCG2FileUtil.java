@@ -195,6 +195,11 @@ public class JavaCG2FileUtil {
      * @return
      */
     public static BufferedWriter genBufferedWriter(String filePath, boolean append) throws FileNotFoundException {
+        File file = new File(filePath);
+        if (!isDirectoryExists(file.getParentFile(), true)) {
+            throw new FileNotFoundException("创建文件所在目录失败 " + filePath);
+        }
+
         return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filePath, append), StandardCharsets.UTF_8));
     }
 
@@ -390,7 +395,7 @@ public class JavaCG2FileUtil {
      * @return
      */
     public static boolean checkFilePathContainsSeparator(String filePath) {
-        return StringUtils.containsAny(filePath, "\\", "/");
+        return StringUtils.containsAny(filePath, JavaCG2Constants.FLAG_SLASH,JavaCG2Constants.FLAG_BACKSLASH);
     }
 
     /**
@@ -400,7 +405,7 @@ public class JavaCG2FileUtil {
      * @return
      */
     public static String replaceFilePath2Slash(String filePath) {
-        return StringUtils.replaceChars(filePath, '\\', '/');
+        return StringUtils.replaceChars(filePath, JavaCG2Constants.CHAR_BACKSLASH, JavaCG2Constants.CHAR_SLASH);
     }
 
     /**
@@ -517,6 +522,18 @@ public class JavaCG2FileUtil {
             return StringUtils.substringAfter(classFilePath, JavaCG2Constants.WEB_INF_CLASSES);
         }
         return classFilePath;
+    }
+
+    /**
+     * 生成文件路径
+     *
+     * @param dirPath  文件所在目录，最后需要以分隔符结尾
+     * @param fileName 文件名，不包含文件后缀
+     * @param fileExt  文件后缀，需要以.开头
+     * @return
+     */
+    public static String genFilePath(String dirPath, String fileName, String fileExt) {
+        return dirPath + fileName + fileExt;
     }
 
     private JavaCG2FileUtil() {

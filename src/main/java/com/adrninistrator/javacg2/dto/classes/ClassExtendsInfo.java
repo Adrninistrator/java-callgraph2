@@ -7,7 +7,7 @@ package com.adrninistrator.javacg2.dto.classes;
  */
 public class ClassExtendsInfo {
 
-    // 类的的accessFlags
+    // 类的accessFlags
     private final int accessFlags;
 
     // 父类名称

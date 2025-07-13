@@ -18,7 +18,7 @@ public class TestParseElFixed extends TestBase {
     // 所有表达式均配置为返回false
     @Test
     public void testElFalse() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper();
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JACGTest();
         for (JavaCG2ElConfigEnum javaCG2ElConfigEnum : JavaCG2ElConfigEnum.values()) {
             javaCG2ConfigureWrapper.setElConfigFixedFalse(javaCG2ElConfigEnum);
         }
@@ -29,7 +29,7 @@ public class TestParseElFixed extends TestBase {
     // 所有表达式均配置为返回true
     @Test
     public void testElTrue() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper();
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JACGTest();
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_EL_DEBUG_MODE, Boolean.TRUE.toString());
         for (JavaCG2ElConfigEnum javaCG2ElConfigEnum : JavaCG2ElConfigEnum.values()) {
             javaCG2ConfigureWrapper.setElConfigFixedTrue(javaCG2ElConfigEnum);

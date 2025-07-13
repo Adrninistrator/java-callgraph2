@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.Writer;
 import java.util.HashMap;
@@ -49,7 +48,7 @@ public abstract class ElManager implements Closeable {
     private boolean closed = false;
 
     protected ElManager(BaseConfigureWrapper configureWrapper, ElConfigInterface[] elConfigInterfaces, String outputDirPath) {
-        String elIgnoreDataFilePath = outputDirPath + File.separator + JavaCG2Constants.EL_IGNORE_DATA_FILE_NAME;
+        String elIgnoreDataFilePath = outputDirPath + JavaCG2Constants.EL_IGNORE_DATA_FILE_NAME;
         logger.info("保存表达式忽略数据的文件路径 {}", elIgnoreDataFilePath);
         try {
             elIgnoreDataWriter = JavaCG2FileUtil.genBufferedWriter(elIgnoreDataFilePath);

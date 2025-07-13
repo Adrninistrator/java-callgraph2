@@ -51,6 +51,9 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
                     "例如Spring Bean字段定义的类型为Super1，实际注入的类型为Child1，被调用对象的原始类型为Super1，实际类型为Child1，通过该开关选择被调用对象使用的类型"
             },
             String.class, false, JavaCG2CalleeRawActualEnum.CRAE_ONLY_ACTUAL.getType()),
+    CKE_MERGE_SEPARATE_FAT_JAR("merge.separate.fat.jar",
+            new String[]{"在合并需要解析的jar文件时，是否合并出一个单独的fat jar。仅包含.class文件，且所有的jar文件都合并到从根目录开始"},
+            Boolean.class, false, Boolean.FALSE.toString()),
     ;
 
     // 参数key

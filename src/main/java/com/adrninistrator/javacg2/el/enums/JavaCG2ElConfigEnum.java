@@ -19,7 +19,7 @@ import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
  * @description: 使用表达式的配置文件枚举
  */
 public enum JavaCG2ElConfigEnum implements ElConfigInterface {
-    ECE_EXAMPLE("el_example" + JavaCG2Constants.EXT_MD, new String[]{"表达式示例文件"}, null, null, false),
+    ECE_EXAMPLE(JavaCG2DirEnum.IDE_EL_EXAMPLE.getDirName() + "/el_example" + JavaCG2Constants.EXT_MD, new String[]{"表达式示例文件"}, null, null, false),
     ECE_MERGE_FILE_IGNORE_JAR_IN_DIR(JavaCG2DirEnum.IDE_MERGE_FILE_SWITCH.getDirName() + "/ignore_jar_in_dir.av",
             new String[]{"指定是否跳过合并目录中的jar文件"},
             new JavaCG2ElAllowedVariableEnum[]{

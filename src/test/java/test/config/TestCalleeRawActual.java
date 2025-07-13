@@ -30,7 +30,7 @@ public class TestCalleeRawActual extends TestBase {
     }
 
     private void doTest(JavaCG2CalleeRawActualEnum javaCG2CalleeRawActualEnumNew, JavaCG2CalleeRawActualEnum javaCG2CalleeRawActualEnumSpringBean) {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper();
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JACGTest();
         String outRootPath = String.format("build/callee_raw_actual@new_%s_spb_%s", javaCG2CalleeRawActualEnumNew.getType(), javaCG2CalleeRawActualEnumSpringBean.getType());
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH, outRootPath);
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL, javaCG2CalleeRawActualEnumNew.getType());

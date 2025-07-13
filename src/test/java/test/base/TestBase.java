@@ -8,11 +8,13 @@ import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Assert;
-import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author adrninistrator
@@ -22,40 +24,41 @@ import java.io.File;
 public abstract class TestBase {
 
     private static final Logger logger = LoggerFactory.getLogger(TestBase.class);
-    protected String jacgTestListPath;
-
-    @Before
-    public void initTestBase() {
-        jacgTestListPath = getJacgTestLibPath();
-    }
 
     /**
      * 获取 java-all-call-graph 项目中的 test.jar 文件路径
      *
      * @return
      */
-    protected String getJacgTestLibPath() {
+    protected String getJarInJacgDirPath(String jarPath) {
         File parentDir = new File("..");
-        String jacgDirPath = JavaCG2FileUtil.getCanonicalPath(parentDir) + File.separator + "java-all-call-graph";
-        String jacgTestLibPath1 = jacgDirPath + "/build/test.jar";
-        if (new File(jacgTestLibPath1).exists()) {
-            return jacgTestLibPath1;
+        String jacgDirPath = JavaCG2FileUtil.getCanonicalPath(parentDir) + "/java-all-call-graph/";
+        String jacgJarPath1 = jacgDirPath + jarPath;
+        if (new File(jacgJarPath1).exists()) {
+            return jacgJarPath1;
         }
-        String jacgTestLibPath2 = jacgDirPath + "/java-all-call-graph/build/test.jar";
-        if (new File(jacgTestLibPath2).exists()) {
-            return jacgTestLibPath2;
+        String jacgJarPath2 = jacgDirPath + "java-all-call-graph/" + jarPath;
+        if (new File(jacgJarPath2).exists()) {
+            return jacgJarPath2;
         }
 
-        throw new JavaCG2RuntimeException("在目录 " + jacgTestLibPath1 + " " + jacgTestLibPath2 + " 中未找到 java-all-call-graph 项目的 test.jar");
+        logger.error("在 java-all-call-graph 项目中未找到指定的jar文件 {} {} {}", jarPath, jacgJarPath1, jacgJarPath2);
+        throw new JavaCG2RuntimeException("在 java-all-call-graph 项目中未找到指定的jar文件 " + jarPath);
     }
 
-    protected JavaCG2ConfigureWrapper genJavaCG2ConfigureWrapper(String... inputFiles) {
+    protected JavaCG2ConfigureWrapper genJavaCG2ConfigureWrapper4JACGTest() {
+        return genJavaCG2ConfigureWrapper(true);
+    }
+
+    protected JavaCG2ConfigureWrapper genJavaCG2ConfigureWrapper4JavaCg2(String... inputFiles) {
+        return genJavaCG2ConfigureWrapper(false, inputFiles);
+    }
+
+    protected JavaCG2ConfigureWrapper genJavaCG2ConfigureWrapper(boolean findInJacgDir, String... inputFiles) {
         JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper();
-        if (ArrayUtils.isEmpty(inputFiles)) {
-            javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, jacgTestListPath);
-        } else {
-            javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, inputFiles);
-        }
+        List<String> jarList = genJarList(findInJacgDir, inputFiles);
+        javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, jarList);
+
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, Boolean.TRUE.toString());
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE, Boolean.TRUE.toString());
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP, Boolean.TRUE.toString());
@@ -66,14 +69,29 @@ public abstract class TestBase {
         return javaCG2ConfigureWrapper;
     }
 
-    protected void run(boolean success, String... inputFiles) {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper(inputFiles);
-        JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
-        if (success) {
-            Assert.assertTrue(javaCG2Entry.run());
+    private List<String> genJarList(boolean findInJacgDir, String... inputFiles) {
+        List<String> inputFileList = new ArrayList<>();
+        if (ArrayUtils.isEmpty(inputFiles)) {
+            inputFileList.add("/build/test.jar");
         } else {
-            Exception e = Assert.assertThrows(Exception.class, javaCG2Entry::run);
-            logger.error("error ", e);
+            inputFileList.addAll(Arrays.asList(inputFiles));
         }
+        if (!findInJacgDir) {
+            return inputFileList;
+        }
+
+        List<String> jarInJacgDirPathList = new ArrayList<>(inputFileList.size());
+        for (String inputFile : inputFileList) {
+            String jarInJacgDirPath = getJarInJacgDirPath(inputFile);
+            jarInJacgDirPathList.add(jarInJacgDirPath);
+        }
+        return jarInJacgDirPathList;
+    }
+
+    protected void run(boolean success, boolean findInJacgDir, String... inputFiles) {
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper(findInJacgDir, inputFiles);
+        JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
+        boolean result = javaCG2Entry.run();
+        Assert.assertEquals(success, result);
     }
 }

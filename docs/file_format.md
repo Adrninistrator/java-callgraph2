@@ -379,7 +379,7 @@ jar_info
 
 |序号|说明|
 |---|---|
-|1|jar文件类型，J: jar/war文件，D: 目录，JIJ: jar/war文件中的jar，R: 解析结果文件保存目录|
+|1|jar文件类型，J: jar/war文件，D: 目录，JIJ: jar/war文件中的jar，R: 解析结果文件保存目录，FJ: 最终解析的jar文件|
 |2|jar文件序号|
 |3|外层jar文件完整路径|
 |4|jar/war文件中的jar文件路径|
@@ -392,7 +392,7 @@ javacg2_config
 
 - 文件说明
 
-java-callgraph2组件使用的配置参数信息表
+java-callgraph2组件
 
 - 文件各列内容说明
 
@@ -913,7 +913,7 @@ method_throw
 |9|抛出异常对应的catch的异常对象变量名称|
 |10|抛出异常属于方法调用返回值时，对应的方法调用ID|
 
-## 1.40. MyBatis的Entity与数据库字段名信息（使用MySQL）
+## 1.40. MyBatis的resultMap中的信息（使用MySQL）
 
 - 文件名
 
@@ -921,16 +921,18 @@ mybatis_ms_column
 
 - 文件说明
 
-使用MySQL时，MyBatis的Entity与数据库字段名对应关系信息
+使用MySQL时，MyBatis的resultMap中的信息，包括Entity与数据库字段名对应关系信息
 
 - 文件各列内容说明
 
 |序号|说明|
 |---|---|
-|1|MyBatis的Entity类名|
-|2|Entity中的字段名称|
-|3|数据库表中的字段名称|
-|4|MyBatis XML文件路径|
+|1|XML的resultMap ID|
+|2|MyBatis的Entity类名|
+|3|Entity中的字段名称|
+|4|数据库表中的字段名称|
+|5|数据库字段类型|
+|6|MyBatis XML文件路径|
 
 ## 1.41. MyBatis的Entity与Mapper、表名（使用MySQL）
 
@@ -951,7 +953,7 @@ mybatis_ms_entity
 |3|数据库表名|
 |4|MyBatis XML文件路径|
 
-## 1.42. MyBatis XML中格式化后的sql文本（使用MySQL）
+## 1.42. MyBatis XML的sql、Mapper相关信息（使用MySQL）
 
 - 文件名
 
@@ -959,7 +961,7 @@ mybatis_ms_formated_sql
 
 - 文件说明
 
-使用MySQL时，MyBatis的XML中格式化后的sql文本，包括XML文件路径、Mapper类名等
+使用MySQL时，MyBatis XML的sql、Mapper相关信息，包括XML文件路径、Mapper类名、resultMap的ID、hash等
 
 - 文件各列内容说明
 
@@ -971,6 +973,7 @@ mybatis_ms_formated_sql
 |4|XML元素名称，如select、insert、update等|
 |5|格式化后的sql文本|
 |6|MyBatis XML文件路径|
+|7|XML的resultMap ID|
 
 ## 1.43. 使用MyBatis时get/set方法所关联的数据库信息（使用MySQL）
 
@@ -1221,7 +1224,176 @@ static、final字段在初始化时使用方法调用的返回值，保存这些
 |7|初始化方法被调类名|
 |8|初始化方法被调用方法名|
 
-## 1.54. Spring Bean信息
+## 1.54. Spring AOP advice影响的方法信息
+
+- 文件名
+
+spring_aop_advice_affected_method
+
+- 文件说明
+
+包括advice信息，及advice影响的方法信息
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|记录id，从1开始|
+|2|类型，j: 在Java代码中定义，x: 在XML文件中定义|
+|3|XML中定义的aspect的ID|
+|4|XML中定义的aspect的方法名称|
+|5|advice类型|
+|6|XML中的pointcut-ref名称|
+|7|pointcut表达式|
+|8|aspect排序数值|
+|9|advice的完整方法|
+|10|advice方法的返回类型|
+|11|advice方法hash+字节数|
+|12|对应aspect的类名|
+|13|在XML中定义时对应的文件路径|
+|14|底层的pointcut表达式|
+|15|影响的完整方法|
+|16|影响的方法的返回类型|
+|17|影响的方法hash+字节数|
+
+## 1.55. Spring AOP advice Around信息
+
+- 文件名
+
+spring_aop_advice_around
+
+- 文件说明
+
+包括advice Around方法，及调用ProceedingJoinPoint.proceed()方法调用序号
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|记录id，从1开始|
+|2|advice的完整方法|
+|3|advice方法的返回类型|
+|4|advice方法hash+字节数|
+|5|调用ProceedingJoinPoint.proceed()方法调用序号，从1开始|
+
+## 1.56. Java代码中定义的Spring AOP Advice
+
+- 文件名
+
+spring_aop_advice_java
+
+- 文件说明
+
+包括advice在Java代码中定义时的完整方法、advice注解简单类名、表达式等
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|advice的完整方法|
+|2|advice的方法返回类型|
+|3|Java代码中定义的advice注解简单类名|
+|4|pointcut表达式是否为base64格式|
+|5|pointcut表达式|
+|6|aspect排序数值|
+
+## 1.57. Spring AOP advice信息，在XML中定义
+
+- 文件名
+
+spring_aop_advice_xml
+
+- 文件说明
+
+包括XML中定义的aspect的ID、aspect的方法名称、advice XML元素的名称表达式、pointcut-ref名称、pointcut表达式、XML文件路径等
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|XML中定义的aspect的ID|
+|2|XML中定义的aspect的方法名称|
+|3|XML中定义的advice XML元素的名称|
+|4|XML中的pointcut-ref名称|
+|5|pointcut表达式是否为base64格式|
+|6|pointcut表达式|
+|7|aspect排序数值|
+|8|XML文件路径|
+
+## 1.58. Java代码中定义的Spring AOP Aspect
+
+- 文件名
+
+spring_aop_aspect_java
+
+- 文件说明
+
+包括aspect在Java代码中定义时所在的类名、aspect排序数值等
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|aspect排序数值|
+|2|aspect在Java代码中定义时所在的类名|
+
+## 1.59. Spring AOP aspect信息，在XML中定义
+
+- 文件名
+
+spring_aop_aspect_xml
+
+- 文件说明
+
+包括XML中定义的aspect的ID、对应的Bean名称、aspect排序数值、XML文件路径等
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|XML中定义的aspect的ID|
+|2|XML中定义的aspect对应的Bean名称|
+|3|aspect排序数值|
+|4|XML文件路径|
+
+## 1.60. Java代码中定义的Spring AOP Pointcut
+
+- 文件名
+
+spring_aop_pointcut_java
+
+- 文件说明
+
+包括pointcut在Java代码中定义的表达式、所在的完整方法等
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|pointcut表达式是否为base64格式|
+|2|pointcut表达式|
+|3|pointcut在Java代码中定义时所在的完整方法|
+
+## 1.61. Spring AOP pointcut信息，在XML中定义
+
+- 文件名
+
+spring_aop_pointcut_xml
+
+- 文件说明
+
+包括XML中定义的pointcut的ID、表达式、XML文件路径等
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|XML中定义的pointcut的ID|
+|2|pointcut表达式是否为base64格式|
+|3|pointcut表达式|
+|4|XML文件路径|
+
+## 1.62. Spring Bean信息
 
 - 文件名
 
@@ -1239,8 +1411,10 @@ Spring Bean信息，包括Bean的名称及完整类名
 |2|序号，从0开始，大于0代表有多种可能|
 |3|完整类名|
 |4|Spring Bean的定义方式，j: 在Java代码中定义，x: 在XML文件中定义|
+|5|在Java代码中定义时对应的注解类名|
+|6|在Java代码中定义时所在的类名，或在XML中定义时对应的文件路径|
 
-## 1.55. Spring Controller信息
+## 1.63. Spring Controller信息
 
 - 文件名
 
@@ -1271,11 +1445,49 @@ spring_controller
 |11|完整方法（类名+方法名+参数）|
 |12|方法返回类型，包含数组标志|
 
-## 1.56. Spring定时任务信息，通过注解定义
+## 1.64. Java代码中定义的Spring的包扫描路径
 
 - 文件名
 
-spring_task_annotation
+spring_scan_package_java
+
+- 文件说明
+
+包括Spring的包扫描路径、定义Spring包扫描路径的类名
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|包扫描路径类型，j: 在Java代码中定义，x: 在XML文件中定义；dist: 按范围去重后的包扫描路径|
+|2|序号，从0开始，大于0代表有多种可能|
+|3|包扫描路径|
+|4|在Java代码中定义时所在的类名，或在XML中定义时对应的文件路径|
+
+## 1.65. Spring的包扫描路径，在XML文件中定义
+
+- 文件名
+
+spring_scan_package_xml
+
+- 文件说明
+
+包括Spring的包扫描路径、XML文件路径
+
+- 文件各列内容说明
+
+|序号|说明|
+|---|---|
+|1|包扫描路径类型，j: 在Java代码中定义，x: 在XML文件中定义；dist: 按范围去重后的包扫描路径|
+|2|序号，从0开始，大于0代表有多种可能|
+|3|包扫描路径|
+|4|在Java代码中定义时所在的类名，或在XML中定义时对应的文件路径|
+
+## 1.66. Spring定时任务信息，在Java代码中通过注解定义
+
+- 文件名
+
+spring_task_java
 
 - 文件说明
 
@@ -1290,11 +1502,12 @@ spring_task_annotation
 |3|Spring Bean的名称|
 |4|完整类名|
 |5|方法名|
-|6|类型，XML: 在XML文件中定义，annotation: 通过注解定义|
+|6|类型，j: 在Java代码中定义，x: 在XML文件中定义|
 |7|完整方法（类名+方法名+参数）|
 |8|方法返回类型，包含数组标志|
+|9|在Java代码中定义时所在的类名，或在XML中定义时对应的文件路径|
 
-## 1.57. Spring定时任务信息，通过XML定义
+## 1.67. Spring定时任务信息，通过XML定义
 
 - 文件名
 
@@ -1302,7 +1515,7 @@ spring_task_xml
 
 - 文件说明
 
-包括Spring定时任务Bean的名称及方法名称
+包括Spring定时任务Bean的名称及方法名称、XML文件路径
 
 - 文件各列内容说明
 
@@ -1310,4 +1523,5 @@ spring_task_xml
 |---|---|
 |1|Spring Bean的名称|
 |2|方法名|
+|3|在Java代码中定义时所在的类名，或在XML中定义时对应的文件路径|
 

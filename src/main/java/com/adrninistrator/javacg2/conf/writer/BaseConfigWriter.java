@@ -1,34 +1,44 @@
-package com.adrninistrator.javacg2.conf;
+package com.adrninistrator.javacg2.conf.writer;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
+import com.adrninistrator.javacg2.conf.BaseConfigureWrapper;
 import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.OtherConfigInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
+import com.adrninistrator.javacg2.util.JavaCG2Util;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * @author adrninistrator
  * @date 2025/2/13
- * @description: 根据枚举生成配置文件的基类
+ * @description: 根据配置参数生成文件的基类
  */
-public abstract class BaseGenConfFromEnum {
+public abstract class BaseConfigWriter {
 
-    private static final Logger logger = LoggerFactory.getLogger(BaseGenConfFromEnum.class);
+    private static final Logger logger = LoggerFactory.getLogger(BaseConfigWriter.class);
 
-    public static final String DIR_RESOURCES = "src/main/resources/";
+    // 保存配置参数需要写到文件的根目录
+    private final String rootDirPath;
+
+    protected BaseConfigureWrapper baseConfigureWrapper;
+
+    public BaseConfigWriter(String rootDirPath) {
+        // 记录根目录时，在最后增加文件目录分隔符
+        this.rootDirPath = JavaCG2Util.addSeparator4FilePath(rootDirPath);
+    }
 
     private void writeCommentLine(Writer writer, String data) throws IOException {
         writeNewLine(writer, JavaCG2Constants.COMMENT_PROPERTIES + data);
@@ -42,54 +52,63 @@ public abstract class BaseGenConfFromEnum {
         writer.write(data + JavaCG2Constants.NEW_LINE_WINDOWS);
     }
 
-    protected void genMainConfig(MainConfigInterface[] mainConfigs) {
-        try (Writer writer = JavaCG2FileUtil.genBufferedWriter(DIR_RESOURCES + mainConfigs[0].getFileName())) {
+    /**
+     * 生成主要的配置参数
+     *
+     * @param mainConfigs
+     * @return
+     */
+    public boolean genMainConfig(MainConfigInterface[] mainConfigs) {
+        try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + mainConfigs[0].getFileName())) {
             for (MainConfigInterface mainConfig : mainConfigs) {
                 for (String description : mainConfig.getDescriptions()) {
                     writeCommentLine(writer, description);
                 }
-                writeNewLine(writer, mainConfig.getKey() + "=" + mainConfig.getDefaultValue());
+                String value = chooseMainConfig(mainConfig);
+                writeNewLine(writer, mainConfig.getKey() + "=" + value);
                 writeNewLine(writer, "");
             }
+            return true;
         } catch (Exception e) {
             logger.error("error ", e);
-            throw new JavaCG2RuntimeException();
+            return false;
         }
     }
 
-    protected void genOtherConfig(OtherConfigInterface[] otherConfigs, String[] ignoreNames) {
+    /**
+     * 生成其他格式的配置参数
+     *
+     * @param otherConfigs
+     * @return
+     */
+    public boolean genOtherConfig(OtherConfigInterface[] otherConfigs) {
         for (OtherConfigInterface otherConfig : otherConfigs) {
-            String enumName = otherConfig.getEnumConstantsName();
-            boolean skip = false;
-            if (ArrayUtils.isNotEmpty(ignoreNames)) {
-                for (String ignoreName : ignoreNames) {
-                    if (enumName.equals(ignoreName)) {
-                        skip = true;
-                        break;
-                    }
-                }
-            }
-            if (skip) {
-                continue;
-            }
-            try (Writer writer = JavaCG2FileUtil.genBufferedWriter(DIR_RESOURCES + otherConfig.getKey())) {
+            try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + otherConfig.getKey())) {
                 for (String description : otherConfig.getDescriptions()) {
                     writeCommentLine(writer, description);
                 }
-                String[] defaultValues = otherConfig.getDefaultValues();
-                if (ArrayUtils.isNotEmpty(defaultValues)) {
-                    for (String defaultValue : defaultValues) {
+                String[] values = chooseOtherConfig(otherConfig);
+                if (ArrayUtils.isNotEmpty(values)) {
+                    for (String defaultValue : values) {
                         writeNewLine(writer, defaultValue);
                     }
                 }
             } catch (Exception e) {
                 logger.error("error ", e);
-                throw new JavaCG2RuntimeException();
+                return false;
             }
         }
+        return true;
     }
 
-    protected void genElConfig(ElConfigInterface[] elConfigs, Map<String, String[]> fileUsageMap) {
+    /**
+     * 生成EL表达式配置参数
+     *
+     * @param elConfigs
+     * @param fileUsageMap
+     * @return
+     */
+    public boolean genElConfig(ElConfigInterface[] elConfigs, Map<String, String[]> fileUsageMap) {
         String elExampleName = "";
         for (ElConfigInterface elConfig : elConfigs) {
             String fileName = elConfig.getKey();
@@ -100,14 +119,10 @@ public abstract class BaseGenConfFromEnum {
         for (ElConfigInterface elConfig : elConfigs) {
             String fileName = elConfig.getKey();
             boolean elExample = fileName.endsWith(JavaCG2Constants.EXT_MD);
-            File file = new File(DIR_RESOURCES + elConfig.getKey());
-            if (!JavaCG2FileUtil.isDirectoryExists(file.getParent(), true)) {
-                throw new JavaCG2RuntimeException("创建目录失败");
-            }
-            try (Writer writer = JavaCG2FileUtil.genBufferedWriter(file.getAbsolutePath())) {
+            try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + elConfig.getKey())) {
                 String[] usages = null;
                 for (Map.Entry<String, String[]> entry : fileUsageMap.entrySet()) {
-                    if (fileName.startsWith(entry.getKey() + "/")) {
+                    if (fileName.startsWith(entry.getKey() + JavaCG2Constants.FLAG_SLASH)) {
                         usages = entry.getValue();
                         break;
                     }
@@ -144,9 +159,10 @@ public abstract class BaseGenConfFromEnum {
                 }
             } catch (Exception e) {
                 logger.error("error ", e);
-                throw new JavaCG2RuntimeException();
+                return false;
             }
         }
+        return true;
     }
 
     private String[] genElExampleDescriptions() {
@@ -164,6 +180,8 @@ public abstract class BaseGenConfFromEnum {
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式调试方式",
                 chooseElDebugModeText(),
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式语法 - aviator 默认支持",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "## aviator .av 文件中的注释格式",
+                "在aviator .av 文件中，需要注释某一行时，需要在行首指定两个井号“##”",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "## 返回固定值",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "### true",
                 "若表达式配置为“true”，则表达式执行结果固定为 true",
@@ -274,7 +292,35 @@ public abstract class BaseGenConfFromEnum {
         };
     }
 
+    // 选择需要生成的EL表达式示例文本
     protected abstract String chooseElExampleText();
 
+    // 选择需要生成的调试模式文本
     protected abstract String chooseElDebugModeText();
+
+    // 选择使用的主要配置参数值
+    protected String chooseMainConfig(MainConfigInterface mainConfig) {
+        if (baseConfigureWrapper != null) {
+            return baseConfigureWrapper.getMainConfig(mainConfig, false);
+        }
+        return mainConfig.getDefaultValue();
+    }
+
+    // 选择使用的其他格式配置参数值
+    protected String[] chooseOtherConfig(OtherConfigInterface otherConfigInterface) {
+        if (baseConfigureWrapper != null) {
+            if (otherConfigInterface.isSetOrList()) {
+                Set<String> set = baseConfigureWrapper.getOtherConfigSet(otherConfigInterface, false);
+                return set.toArray(new String[]{});
+            } else {
+                List<String> list = baseConfigureWrapper.getOtherConfigList(otherConfigInterface, false);
+                return list.toArray(new String[]{});
+            }
+        }
+        return otherConfigInterface.getDefaultValues();
+    }
+
+    public void setBaseConfigureWrapper(BaseConfigureWrapper baseConfigureWrapper) {
+        this.baseConfigureWrapper = baseConfigureWrapper;
+    }
 }

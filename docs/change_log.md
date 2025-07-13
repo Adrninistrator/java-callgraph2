@@ -466,3 +466,62 @@ type 修改
 ### 1.23.4. 优化配置参数提示方式
 
 当配置参数使用有误时，同时提示在配置文件及代码中进行配置的方式
+
+## 1.24. (3.3.0)
+
+### 1.24.1. 修改对 jar 文件中的其他文件解析类的接口方法返回值
+
+com.adrninistrator.javacg2.extensions.codeparser.JarEntryOtherFileParser:parseJarEntryOtherFile 方法返回类型由 void 修改为 boolean
+
+### 1.24.2. 解析 jar 文件中其他文件并将结果保存在文件的类支持生成多个文件
+
+修改 com.adrninistrator.javacg2.extensions.codeparser.AbstractSaveData2FileParser 类，支持解析 jar 文件中其他文件并将结果保存在文件的一个类中生成多个文件
+
+### 1.24.3. 生成 jar_info 文件时增加记录最终解析的 jar 文件路径
+
+类型为 FJ
+
+### 1.24.4. 修改生成的文件内容
+
+- spring_bean
+
+增加以下列
+
+```
+在 Java 代码中定义时，使用的注解类名
+在 XML 中定义时对应的文件路径，或在 Java 代码中定义时所在的类名
+```
+
+- spring_task
+
+增加以下列
+
+```
+在 XML 中定义时对应的文件路径，或在 Java 代码中定义时所在的类名
+```
+
+### 1.24.5. 增加生成的文件
+
+- spring_scan_package_java
+
+Java 代码中定义的 Spring 的包扫描路径
+
+- spring_aop_aspect_java
+
+Java 代码中定义的 Spring AOP Aspect
+
+- spring_aop_pointcut_java
+
+Java 代码中定义的 Spring AOP Pointcut
+
+- spring_aop_advice_java
+
+Java 代码中定义的 Spring AOP Advice
+
+### 1.24.6. 增加配置参数
+
+在配置文件_javacg2_config/config.properties 增加以下参数
+
+- merge.separate.fat.jar
+
+在合并需要解析的 jar 文件时，是否合并出一个单独的 fat jar。仅包含 .class 文件，且所有的 jar 文件都合并到从根目录开始

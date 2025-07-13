@@ -12,12 +12,12 @@ public class TestNotAllowed extends TestBase {
 
     @Test
     public void testSingleClass() {
-        run(false, "out/test/classes/test/base/TestBase.class");
+        run(false, false, "out/test/classes/test/base/TestBase.class");
     }
 
     @Test
     public void testMultiClass() {
-        run(false,
+        run(false, false,
                 "out/test/classes/test/base/TestBase.class",
                 "out/test/classes/test/simple/TestSimple.class"
         );

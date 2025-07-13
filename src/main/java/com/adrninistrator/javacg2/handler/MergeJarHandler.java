@@ -3,8 +3,10 @@ package com.adrninistrator.javacg2.handler;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
 import com.adrninistrator.javacg2.conf.JavaCG2ConfigureWrapper;
+import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
+import com.adrninistrator.javacg2.dto.jar.MergeJarResult;
 import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
@@ -46,6 +48,8 @@ public class MergeJarHandler {
 
     private final List<String> jarOrDirPathList;
 
+    private final boolean mergeSeparateFatJar;
+
     private final Map<String, Integer> jarPathNumMap;
 
     private final JavaCG2Counter jarNumCounter;
@@ -61,6 +65,7 @@ public class MergeJarHandler {
      * @param jarPathNumMap           保存jar文件路径与对应序号的Map
      * @param jarNumCounter           jar文件序号计数器
      * @param javaCG2ElManager        表达式管理类
+     * @param onlyForOutputFile       是否仅用于获取输出文件路径
      */
     public MergeJarHandler(JavaCG2ConfigureWrapper javaCG2ConfigureWrapper, Map<String, Integer> jarPathNumMap, JavaCG2Counter jarNumCounter, JavaCG2ElManager javaCG2ElManager,
                            boolean onlyForOutputFile) {
@@ -70,6 +75,7 @@ public class MergeJarHandler {
             logger.error("请在配置文件中指定需要处理的jar文件或目录列表 {}", javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
             throw new JavaCG2RuntimeException("未指定需要处理的jar文件或目录列表");
         }
+        mergeSeparateFatJar = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_MERGE_SEPARATE_FAT_JAR);
 
         this.jarPathNumMap = jarPathNumMap;
         this.jarNumCounter = jarNumCounter;
@@ -90,21 +96,22 @@ public class MergeJarHandler {
      *
      * @return null: 处理失败，非null: 新生成的jar文件，或原有的jar文件
      */
-    public File mergeJar() {
-        // 生成的jar_info中的第一个元素是结果目录，以下jar文件序号从2开始
+    public MergeJarResult mergeJar() {
+        File mergeFile = null;
+        boolean onlyOneJar = false;
         if (jarOrDirPathList.size() == 1) {
             // List只指定了一个元素
             String jarOrDirPath = jarOrDirPathList.get(0);
-            File oneFile = new File(jarOrDirPath);
-            String oneFilePath = JavaCG2FileUtil.getCanonicalPath(oneFile);
+            mergeFile = new File(jarOrDirPath);
+            String oneFilePath = JavaCG2FileUtil.getCanonicalPath(mergeFile);
 
-            if (!oneFile.exists()) {
+            if (!mergeFile.exists()) {
                 logger.error("指定了一个jar文件或目录，不存在: {}", oneFilePath);
                 return null;
             }
 
-            if (oneFile.isFile()) {
-                if (!JavaCG2FileUtil.checkJarWarFile(oneFile.getName())) {
+            if (mergeFile.isFile()) {
+                if (!JavaCG2FileUtil.checkJarWarFile(mergeFile.getName())) {
                     logger.error("处理单个文件时只支持指定 {} 或 {} 格式，假如需要处理 {} 格式的文件，则需要指定其所在目录", JavaCG2Constants.EXT_JAR, JavaCG2Constants.EXT_WAR, JavaCG2Constants.EXT_CLASS);
                     return null;
                 }
@@ -118,23 +125,36 @@ public class MergeJarHandler {
                         jarPathNumMap.put(oneFilePath, jarNum);
                     }
                     logger.info("仅指定了一个jar/war文件，直接使用 {}", jarOrDirPath);
-                    return oneFile;
+                    onlyOneJar = true;
                 }
             }
         }
 
         long startTime = System.currentTimeMillis();
-        // 指定的是一个目录，或List指定了多于一个元素，需要合并生成jar文件
-        File resultFile = doMergeJar();
-        if (resultFile == null) {
+        if (!onlyOneJar) {
+            // 需要合并生成jar文件
+            mergeFile = doMergeJar();
+            if (mergeFile == null) {
+                return null;
+            }
+        }
+
+        if (onlyForOutputFile) {
+            // 仅用于获取输出文件路径
+            return MergeJarResult.genOne(mergeFile);
+        }
+        if (!mergeSeparateFatJar) {
+            // 不需要合并fat jar
+            String fileSizeDisplay = FileUtils.byteCountToDisplaySize(totalSize);
+            logger.info("合并jar文件完毕，耗时 {} 秒，（解压后）总大小约 {}", JavaCG2Util.getSpendSeconds(startTime), fileSizeDisplay);
+            return MergeJarResult.genOne(mergeFile);
+        }
+        // 需要合并fat jar
+        File fatJar = mergeFatJar(mergeFile);
+        if (fatJar == null) {
             return null;
         }
-        if (onlyForOutputFile) {
-            return resultFile;
-        }
-        String fileSizeDisplay = FileUtils.byteCountToDisplaySize(totalSize);
-        logger.info("合并jar文件完毕，耗时 {} 秒，（解压后）总大小约 {}", JavaCG2Util.getSpendSeconds(startTime), fileSizeDisplay);
-        return resultFile;
+        return MergeJarResult.genTwo(mergeFile, fatJar);
     }
 
     /**
@@ -170,7 +190,7 @@ public class MergeJarHandler {
      */
     private File doMergeJar() {
         // 获得新生成的jar文件，固定生成在参数中指定的第一个元素
-        File newJarFile = getNewJarFile(jarOrDirPathList.get(0));
+        File newJarFile = getNewJarFile(jarOrDirPathList.get(0), false);
         if (onlyForOutputFile) {
             return newJarFile;
         }
@@ -211,7 +231,7 @@ public class MergeJarHandler {
                 handlerDir(jarFileOrDir, dirNameInJar, jarFileInDirList, zos);
             }
 
-            // 合并从目录中找到的的后缀为jar/war的文件
+            // 合并从目录中找到的后缀为jar/war的文件
             for (File jarFileInDir : jarFileInDirList) {
                 String jarCanonicalPath = JavaCG2FileUtil.getCanonicalPath(jarFileInDir);
                 if (jarPathNumMap.containsKey(jarCanonicalPath)) {
@@ -296,15 +316,16 @@ public class MergeJarHandler {
     }
 
     // 获得新的jar文件
-    private static File getNewJarFile(String firstJarPath) {
+    private static File getNewJarFile(String firstJarPath, boolean mergeFatJar) {
+        String jarFlag = mergeFatJar ? JavaCG2Constants.MERGED_FAT_JAR_FLAG : JavaCG2Constants.MERGED_JAR_FLAG;
         File firstJarFile = new File(firstJarPath);
         if (firstJarFile.isFile()) {
             // List第一个元素为jar文件
-            return new File(firstJarPath + JavaCG2Constants.MERGED_JAR_FLAG);
+            return new File(firstJarPath + jarFlag);
         }
 
         // List第一个元素为目录
-        return new File(firstJarPath + File.separator + firstJarFile.getName() + JavaCG2Constants.MERGED_JAR_FLAG);
+        return new File(firstJarPath + File.separator + firstJarFile.getName() + jarFlag);
     }
 
     // 处理jar/war文件，将其中的文件添加到目标jar文件中
@@ -523,9 +544,71 @@ public class MergeJarHandler {
         }
     }
 
+    // 合并fat jar
+    private File mergeFatJar(File mergeJarFile) {
+        // 获得需要生成的fat jar文件，固定生成在参数中指定的第一个元素
+        File fatJarFile = getNewJarFile(jarOrDirPathList.get(0), true);
+        if (fatJarFile.exists()) {
+            // 新的jar文件已存在
+            if (fatJarFile.isDirectory()) {
+                logger.error("fat jar文件已存在，但是是目录: {}", JavaCG2FileUtil.getCanonicalPath(fatJarFile));
+                return null;
+            } else if (!JavaCG2FileUtil.deleteFile(fatJarFile)) {
+                logger.error("fat jar文件已存在，删除失败: {}", JavaCG2FileUtil.getCanonicalPath(fatJarFile));
+                return null;
+            }
+        }
+
+        try (ZipInputStream zipInputStream = new ZipInputStream(new BufferedInputStream(new FileInputStream(mergeJarFile)));
+             ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(fatJarFile))) {
+            LocalFileHeader fileHeader;
+            while ((fileHeader = zipInputStream.getNextEntry()) != null) {
+                if (fileHeader.isDirectory()) {
+                    continue;
+                }
+
+                String jarEntryPath = fileHeader.getFileName();
+                if (JavaCG2FileUtil.checkClassFile(jarEntryPath)) {
+                    // 处理jar/war文件中的一个class文件，获得fat jar中class文件路径
+                    String fatJarClassFilePath = genFatJarClassFilePath(jarEntryPath);
+                    ZipParameters zipParameters = new ZipParameters();
+                    zipParameters.setFileNameInZip(fatJarClassFilePath);
+                    zos.putNextEntry(zipParameters);
+
+                    // 向目标jar文件写入数据
+                    addInput2Jar(zipInputStream, zos);
+                }
+            }
+
+            return fatJarFile;
+        } catch (Exception e) {
+            logger.error("error ", e);
+            return null;
+        }
+    }
+
+    // 获得fat jar中class文件路径
+    private String genFatJarClassFilePath(String jarEntryPath) {
+        String classFilePath = jarEntryPath;
+        String firstLetter = jarEntryPath.substring(0, 1);
+        if (JavaCG2Util.isNumStr(firstLetter)) {
+            // class文件路径以数字开头，说明为合并后的第一层级目录，需要跳过
+            classFilePath = StringUtils.substringAfter(jarEntryPath, JavaCG2Constants.FLAG_SLASH);
+        }
+        if (classFilePath.startsWith(JavaCG2Constants.WEB_INF_CLASSES)) {
+            // class文件路径以 WEB-INF/classes/开头，去掉前缀
+            classFilePath = StringUtils.substringAfter(classFilePath, JavaCG2Constants.WEB_INF_CLASSES);
+        }
+        if (classFilePath.startsWith(JavaCG2Constants.BOOT_INF_CLASSES)) {
+            // class文件路径以 BOOT-INF/classes/开头，去掉前缀
+            classFilePath = StringUtils.substringAfter(classFilePath, JavaCG2Constants.BOOT_INF_CLASSES);
+        }
+        return classFilePath;
+    }
+
     // 根据文件名或路径忽略jar文件
     private boolean ignoreJarByNamePath(String jarFileNamePath) {
-        return jarFileNamePath.endsWith(JavaCG2Constants.MERGED_JAR_FLAG);
+        return StringUtils.endsWithAny(jarFileNamePath, JavaCG2Constants.MERGED_JAR_FLAG, JavaCG2Constants.MERGED_FAT_JAR_FLAG);
     }
 
     // 根据目录名忽略目录

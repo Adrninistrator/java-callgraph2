@@ -22,7 +22,7 @@ public class TestParseElMergeFile extends TestBase {
      */
     @Test
     public void testMergeFileIgnoreLibDir() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper("jar_output_dir");
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JavaCg2("jar_output_dir");
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_EL_DEBUG_MODE, Boolean.TRUE.toString());
         javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_DIR,
                 "string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR.getVariableName() + ", '/lib')"
@@ -37,7 +37,7 @@ public class TestParseElMergeFile extends TestBase {
      */
     @Test
     public void testMergeFileIgnoreJarLibDir() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper("build/jar_output_dir.jar");
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JavaCg2("build/jar_output_dir.jar");
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_EL_DEBUG_MODE, Boolean.TRUE.toString());
         javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_JAR_WAR,
                 JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + " == 'lib'"
@@ -47,12 +47,12 @@ public class TestParseElMergeFile extends TestBase {
     }
 
     /*
-        忽略class文件包名不包含com.adrninistrator、text的jar文件
+        忽略class文件包名不包含com.adrninistrator、test的jar文件
         需要先执行 gradlew gen_run_jar gen_jar_in_jar 命令生成对应jar文件
      */
     @Test
     public void testMergeFileIgnoreByJarClassDirPrefix1() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper("build/jar_output_dir.jar");
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JavaCg2("build/jar_output_dir.jar");
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_EL_DEBUG_MODE, Boolean.TRUE.toString());
         javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_WAR_BY_CLASS_DIR_PREFIX,
                 "!include(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_DIR_PREFIX_LEVEL.getVariableName() + "2, 'com/adrninistrator')" +

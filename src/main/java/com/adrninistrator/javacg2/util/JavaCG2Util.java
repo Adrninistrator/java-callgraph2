@@ -116,7 +116,7 @@ public class JavaCG2Util {
      * @return
      */
     public static String addSeparator4FilePath(String filePath) {
-        if (StringUtils.endsWithAny(filePath, JavaCG2Constants.FLAG_SLASH, "\\")) {
+        if (StringUtils.endsWithAny(filePath, JavaCG2Constants.FLAG_SLASH, JavaCG2Constants.FLAG_BACKSLASH)) {
             // 文件路径以分隔符结尾，则直接使用
             return filePath;
         }
@@ -137,7 +137,9 @@ public class JavaCG2Util {
             return "";
         }
 
-        return addSeparator4FilePath(dirPath);
+        String newDirPath = addSeparator4FilePath(dirPath);
+        logger.debug("获取到JVM参数 {} {} 在路径结尾增加分隔符为 {}", jvmOptionKey, dirPath, newDirPath);
+        return newDirPath;
     }
 
     /**
@@ -331,7 +333,7 @@ public class JavaCG2Util {
      * @return
      */
     public static String getInputRootPath() {
-        return getDirPathInJvmOptions(JavaCG2Constants.PROPERTY_INPUT_ROOT_PATH);
+        return getDirPathInJvmOptions(JavaCG2Constants.JVM_PROP_KEY_INPUT_ROOT_PATH);
     }
 
     /**

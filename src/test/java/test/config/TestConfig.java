@@ -19,7 +19,7 @@ public class TestConfig extends TestBase {
 
     @Before
     public void init() {
-        javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper();
+        javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JACGTest();
     }
 
     @Test

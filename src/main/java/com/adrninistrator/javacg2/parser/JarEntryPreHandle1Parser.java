@@ -6,9 +6,12 @@ import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum;
 import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
+import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.extensions.codeparser.JarEntryOtherFileParser;
 import com.adrninistrator.javacg2.extensions.manager.ExtensionsManager;
-import com.adrninistrator.javacg2.spring.DefineSpringBeanByAnnotationHandler;
+import com.adrninistrator.javacg2.spring.SpringDefineAopHandler;
+import com.adrninistrator.javacg2.spring.SpringDefineBeanHandler;
+import com.adrninistrator.javacg2.spring.SpringDefineComponentScanHandler;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2JarUtil;
@@ -38,6 +41,8 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     private static final Logger logger = LoggerFactory.getLogger(JarEntryPreHandle1Parser.class);
 
+    private final JavaCG2ElManager javaCG2ElManager;
+
     private Map<String, List<String>> classImplementsInfoMap;
 
     private Map<String, Map<MethodArgReturnTypes, Integer>> classExtendsImplMethodWithArgTypesMap;
@@ -56,15 +61,17 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     private ClassAndJarNum classAndJarNum;
 
-    private final ExtensionsManager extensionsManager;
+    private ExtensionsManager extensionsManager;
 
-    private final DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler;
+    private SpringDefineBeanHandler springDefineBeanHandler;
 
-    public JarEntryPreHandle1Parser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar, DefineSpringBeanByAnnotationHandler defineSpringBeanByAnnotationHandler,
-                                    ExtensionsManager extensionsManager) {
+    private SpringDefineComponentScanHandler springDefineComponentScanHandler;
+
+    private SpringDefineAopHandler springDefineAopHandler;
+
+    public JarEntryPreHandle1Parser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar, JavaCG2ElManager javaCG2ElManager) {
         super(javaCG2InputAndOutput, onlyOneJar);
-        this.defineSpringBeanByAnnotationHandler = defineSpringBeanByAnnotationHandler;
-        this.extensionsManager = extensionsManager;
+        this.javaCG2ElManager = javaCG2ElManager;
     }
 
     @Override
@@ -97,7 +104,10 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         for (JarEntryOtherFileParser jarEntryOtherFileParser : jarEntryOtherFileParserList) {
             try {
                 // 处理一个jar文件中的文件
-                jarEntryOtherFileParser.parseJarEntryOtherFile(cachedInputStream, jarEntryPath, jarEntryName);
+                if (!jarEntryOtherFileParser.parseJarEntryOtherFile(cachedInputStream, jarEntryPath, jarEntryName)) {
+                    logger.error("处理一个jar文件中的文件失败 {} {}", jarEntryOtherFileParser.getClass().getName(), jarEntryPath);
+                    return false;
+                }
             } catch (Throwable e) {
                 // 内部有可能抛出Error等非Exception异常，需要捕获
                 logger.error("处理文件出现未知异常 {} ", jarEntryPath, e);
@@ -112,6 +122,18 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     @Override
     protected boolean handleClassEntry(JavaClass javaClass, String jarEntryPath) {
+        String className = javaClass.getClassName();
+        if (JavaCG2ClassMethodUtil.isObjectClass(className)) {
+            logger.error("Object类所在jar文件不需要添加到需要分析的jar文件参数中，假如需要添加JDK中的类，可以解压相关的class文件到目录中，并在配置文件中指定 {}",
+                    javaCG2InputAndOutput.getJavaCG2ConfigureWrapper().genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
+            return false;
+        }
+
+        if (javaCG2ElManager.checkIgnoreParseClass(className)) {
+            logger.debug("跳过解析类 {}", className);
+            return true;
+        }
+
         // 记录类名及所在的jar文件序号
         classAndJarNum.put(javaClass.getClassName(), lastJarNum);
 
@@ -125,9 +147,15 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         preHandle1Class(javaClass);
 
         if (javaCG2InputAndOutput.getJavaCG2ConfInfo().isParseMethodCallTypeValue()) {
-            // 处理Spring Bean相关注解
-            return defineSpringBeanByAnnotationHandler.recordSpringBeanInfo(javaClass);
+            // 处理通过注解定义的Spring Bean信息
+            if (!springDefineBeanHandler.recordSpringInfo(javaClass)) {
+                return false;
+            }
         }
+        // 处理通过注解定义的Spring包扫描路径
+        springDefineComponentScanHandler.recordSpringInfo(javaClass);
+        // 处理通过注解定义的Spring AOP信息
+        springDefineAopHandler.recordSpringInfo(javaClass);
         return true;
     }
 
@@ -158,11 +186,6 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
     // 对一个Class进行预处理
     private boolean preHandle1Class(JavaClass javaClass) {
         String className = javaClass.getClassName();
-        if (JavaCG2ClassMethodUtil.isObjectClass(className)) {
-            logger.error("Object类所在jar文件不需要添加到需要分析的jar文件参数中，假如需要添加JDK中的类，可以解压相关的class文件到目录中，并在配置文件中指定 {}",
-                    javaCG2InputAndOutput.getJavaCG2ConfigureWrapper().genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
-            return false;
-        }
         allClassNameSet.add(className);
 
         String[] interfaceNames = javaClass.getInterfaceNames();
@@ -263,5 +286,21 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     public void setClassAndJarNum(ClassAndJarNum classAndJarNum) {
         this.classAndJarNum = classAndJarNum;
+    }
+
+    public void setExtensionsManager(ExtensionsManager extensionsManager) {
+        this.extensionsManager = extensionsManager;
+    }
+
+    public void setSpringDefineBeanHandler(SpringDefineBeanHandler springDefineBeanHandler) {
+        this.springDefineBeanHandler = springDefineBeanHandler;
+    }
+
+    public void setSpringDefineComponentScanHandler(SpringDefineComponentScanHandler springDefineComponentScanHandler) {
+        this.springDefineComponentScanHandler = springDefineComponentScanHandler;
+    }
+
+    public void setSpringDefineAopHandler(SpringDefineAopHandler springDefineAopHandler) {
+        this.springDefineAopHandler = springDefineAopHandler;
     }
 }

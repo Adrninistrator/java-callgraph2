@@ -57,6 +57,10 @@ java-callgraph2 项目用于对 Java 代码（编译后的 class、jar、war 文
 |41|dto的set方法及字段|
 |42|static、final字段初始化方法信息（含枚举）|
 |43|Spring Bean信息|
+|44|Java代码中定义的Spring的包扫描路径|
+|45|Java代码中定义的Spring AOP Aspect|
+|46|Java代码中定义的Spring AOP Pointcut|
+|47|Java代码中定义的Spring AOP Advice|
 
 当前项目原本 fork 自 [https://github.com/gousiosg/java-callgraph](https://github.com/gousiosg/java-callgraph)，用于生成Java方法调用关系
 

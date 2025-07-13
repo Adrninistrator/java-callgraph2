@@ -18,6 +18,9 @@ package_name == 'a.b' && string.endsWith(simple_class_name, 'Test')
 
 # 表达式语法 - aviator 默认支持
 
+## aviator .av 文件中的注释格式
+在aviator .av 文件中，需要注释某一行时，需要在行首指定两个井号“##”
+
 ## 返回固定值
 
 ### true
