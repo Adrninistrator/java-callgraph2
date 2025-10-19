@@ -2,6 +2,7 @@ package com.adrninistrator.javacg2.el.function.ignorecase;
 
 import com.adrninistrator.javacg2.el.enums.ElStringFunctionTwoArgsEnum;
 import com.adrninistrator.javacg2.el.function.AbstractStringFunctionTwoArgs;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author adrninistrator
@@ -11,7 +12,7 @@ import com.adrninistrator.javacg2.el.function.AbstractStringFunctionTwoArgs;
 public class StringContainsICFunction extends AbstractStringFunctionTwoArgs {
     @Override
     protected boolean checkString(String argSrc, String argDst) {
-        return false;
+        return StringUtils.containsIgnoreCase(argSrc, argDst);
     }
 
     @Override

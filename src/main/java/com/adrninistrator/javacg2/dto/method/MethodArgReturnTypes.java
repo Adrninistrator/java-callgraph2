@@ -8,10 +8,10 @@ import java.util.Objects;
 /**
  * @author adrninistrator
  * @date 2022/10/1
- * @description: 方法名称、方法参数与返回类型
+ * @description: 方法名、方法参数与返回类型
  */
 public class MethodArgReturnTypes {
-    // 方法名称
+    // 方法名
     private final String methodName;
 
     // 方法参数类型字符串

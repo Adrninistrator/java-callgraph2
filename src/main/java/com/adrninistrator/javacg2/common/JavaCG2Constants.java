@@ -66,6 +66,7 @@ public class JavaCG2Constants {
     public static final String CONFIG_PROPERTIES = "properties";
     public static final String CONFIG_LIST = "list";
     public static final String CONFIG_SET = "set";
+    public static final String CONFIG_EL = "el";
 
     public static final String FLAG_HASHTAG = "#";
     public static final String FLAG_ARRAY = "[]";
@@ -79,9 +80,12 @@ public class JavaCG2Constants {
     public static final String FLAG_TAB = "\t";
     public static final String FLAG_SLASH = "/";
     public static final String FLAG_BACKSLASH = "\\";
+    public static final String FLAG_LEFT_RIGHT_BRACKET = FLAG_LEFT_BRACKET + FLAG_RIGHT_BRACKET;
 
     public static final char CHAR_SLASH = '/';
     public static final char CHAR_BACKSLASH = '\\';
+
+    public static final int SLASH_LENGTH = String.valueOf(CHAR_SLASH).length();
 
     public static final String COMMENT_PROPERTIES = "# ";
     public static final String COMMENT_AVIATOR = "## ";
@@ -98,25 +102,37 @@ public class JavaCG2Constants {
     public static final String MERGED_JAR_FLAG = "-javacg2_merged.jar";
     public static final String MERGED_FAT_JAR_FLAG = "-javacg2_merged_fat.jar";
 
+    public static final String DIR_NAME_CLASSES = "classes";
+    public static final String DIR_NAME_JAVACG2_JMOD_EXTRACT = "_javacg2_jmod_extract";
+
     public static final String DIR_TAIL_OUTPUT = "-output_javacg2";
 
-    public static final String EL_IGNORE_DATA_FILE_NAME = "el_ignore_data.log";
+    public static final String EL_IGNORE_DATA_LOG_FILE_NAME = "el_ignore_data.log";
 
-    // 保存全部的配置参数信息文件
+    public static final String EL_STRING_COMPARE_MD_FILE_NAME = "string_compare.md";
+
+    // 保存全部的配置参数文件
     public static final String FILE_JAVACG2_ALL_CONFIG_MD = "_javacg2_all_config.md";
-    // 保存当前有使用的配置参数信息文件
+    // 保存当前有使用的配置参数文件
     public static final String FILE_JAVACG2_USED_CONFIG_MD = "_javacg2_used_config.md";
 
     public static final String FILE_TYPE_CLASS = "class";
 
     public static final String EXT_JAR = ".jar";
     public static final String EXT_WAR = ".war";
+    public static final String EXT_JMOD = ".jmod";
     public static final String EXT_CLASS = "." + FILE_TYPE_CLASS;
     public static final String EXT_TXT = ".txt";
     public static final String EXT_MD = ".md";
 
     public static final String WEB_INF_CLASSES = "WEB-INF/classes/";
     public static final String BOOT_INF_CLASSES = "BOOT-INF/classes/";
+    public static final String META_INF_MANIFEST = "META-INF/MANIFEST.MF";
+    public static final String META_INF_VERSIONS = "META-INF/versions/";
+    public static final String MODULE_INFO_CLASS = "module-info.class";
+    public static final String MODULE_INFO_CLASS_SUFFIX = FLAG_SLASH + MODULE_INFO_CLASS;
+
+    public static final int META_INF_VERSIONS_LENGTH = META_INF_VERSIONS.length();
 
     public static final String THIS = "this";
 

@@ -13,6 +13,9 @@ public class SpringBeanInXml {
     // Spring Bean类名
     private String className;
 
+    // Spring Bean profile
+    private String profile;
+
     // XML文件路径
     private String xmlFilePath;
 
@@ -30,6 +33,14 @@ public class SpringBeanInXml {
 
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    public String getProfile() {
+        return profile;
+    }
+
+    public void setProfile(String profile) {
+        this.profile = profile;
     }
 
     public String getXmlFilePath() {

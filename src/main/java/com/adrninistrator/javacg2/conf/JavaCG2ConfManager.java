@@ -62,6 +62,18 @@ public class JavaCG2ConfManager {
             return null;
         }
 
+        boolean parseJarCompatibilityMode = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_JAR_COMPATIBILITY_MODE);
+        if (parseJarCompatibilityMode) {
+            logger.info("使用Jar兼容性检查模式，仅解析类、方法、字段等基础信息");
+        }
+        javaCG2ConfInfo.setParseJarCompatibilityMode(parseJarCompatibilityMode);
+
+        boolean parseOnlyClassMode = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_ONLY_CLASS_MODE);
+        if (parseOnlyClassMode) {
+            logger.info("仅解析类信息");
+        }
+        javaCG2ConfInfo.setParseOnlyClassMode(parseOnlyClassMode);
+
         return javaCG2ConfInfo;
     }
 

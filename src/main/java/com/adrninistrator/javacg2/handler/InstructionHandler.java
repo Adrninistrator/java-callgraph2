@@ -696,7 +696,7 @@ public class InstructionHandler {
 
         indexVariable.checkTypeString(JavaCG2ConstantTypeEnum.CONSTTE_INT.getType());
         if (!isAaload) {
-            String actualElementType = JavaCG2ByteCodeUtil.removeAllArrayFlag(arrayType);
+            String actualElementType = JavaCG2ClassMethodUtil.removeAllArrayFlag(arrayType);
             if (!JavaCG2ByteCodeUtil.checkTypeString(actualElementType, expectedElementType)) {
                 throw new JavaCG2RuntimeException("预期的数组类型 " + expectedElementType + " 与实际的不同 " + actualElementType);
             }
@@ -746,7 +746,7 @@ public class InstructionHandler {
 
         if (!isAastore) {
             valueVariable.checkTypeString(expectedElementType);
-            String actualElementType = JavaCG2ByteCodeUtil.removeAllArrayFlag(arrayVariable.getType());
+            String actualElementType = JavaCG2ClassMethodUtil.removeAllArrayFlag(arrayVariable.getType());
             if (!JavaCG2ByteCodeUtil.checkTypeString(actualElementType, expectedElementType)) {
                 throw new JavaCG2RuntimeException(callerFullMethod + " 预期的数组类型 " + expectedElementType + " 与实际的不同 " + actualElementType);
             }

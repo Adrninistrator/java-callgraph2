@@ -10,6 +10,7 @@ import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
 import com.adrninistrator.javacg2.exceptions.JavaCG2Error;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import org.apache.bcel.classfile.Method;
+import org.apache.bcel.classfile.Utility;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.Type;
 import org.apache.commons.lang3.ArrayUtils;
@@ -229,6 +230,17 @@ public class JavaCG2ClassMethodUtil {
     }
 
     /**
+     * 生成类名与字段名及字段的方法名
+     *
+     * @param className
+     * @param fieldName
+     * @return
+     */
+    public static String formatClassFieldAndMethod(String className, String fieldName, String methodName) {
+        return className + JavaCG2Constants.FLAG_COLON + fieldName + JavaCG2Constants.FLAG_COLON + methodName + JavaCG2Constants.FLAG_LEFT_BRACKET + JavaCG2Constants.FLAG_RIGHT_BRACKET;
+    }
+
+    /**
      * 生成字段名与字段类型
      *
      * @param fieldName
@@ -338,6 +350,9 @@ public class JavaCG2ClassMethodUtil {
      */
     public static int getMethodArgNum(String fullMethod) {
         String[] argTypes = getMethodArgTypeArray(getMethodArgTypes(fullMethod));
+        if (argTypes == null) {
+            return 0;
+        }
         return argTypes.length;
     }
 
@@ -482,6 +497,32 @@ public class JavaCG2ClassMethodUtil {
     }
 
     /**
+     * 去除类名中的数组形式
+     *
+     * @param className
+     * @return
+     */
+    public static String removeArrayInClassName(String className) {
+        if (!className.startsWith("[")) {
+            return className;
+        }
+
+        // 处理数组格式
+        String tmpClassName = Utility.typeSignatureToString(className, false);
+        return removeAllArrayFlag(tmpClassName);
+    }
+
+    /**
+     * 去掉数组形式中全部的[]
+     *
+     * @param type
+     * @return
+     */
+    public static String removeAllArrayFlag(String type) {
+        return StringUtils.replace(type, JavaCG2Constants.FLAG_ARRAY, "");
+    }
+
+    /**
      * 判断是否为自定义类型，非JDK中的类，也非基本类型
      *
      * @param type
@@ -489,7 +530,7 @@ public class JavaCG2ClassMethodUtil {
      */
     public static boolean isCustomType(String type) {
         // 去掉数组形式中全部的[]
-        String typeWithoutArray = JavaCG2ByteCodeUtil.removeAllArrayFlag(type);
+        String typeWithoutArray = removeAllArrayFlag(type);
         return !isClassInJdk(typeWithoutArray) && !JavaCG2ConstantTypeEnum.isConstantType(typeWithoutArray);
     }
 
@@ -562,7 +603,17 @@ public class JavaCG2ClassMethodUtil {
     }
 
     /**
-     * 判断方法名称是否以get开头
+     * 根据内部类类名获得外部类类名
+     *
+     * @param innerClassName
+     * @return
+     */
+    public static String parseOuterClassName(String innerClassName) {
+        return StringUtils.substringBeforeLast(innerClassName, JavaCG2Constants.FLAG_DOLOR);
+    }
+
+    /**
+     * 判断方法名是否以get开头
      *
      * @param methodName
      * @return
@@ -572,7 +623,7 @@ public class JavaCG2ClassMethodUtil {
     }
 
     /**
-     * 判断方法名称是否以set开头
+     * 判断方法名是否以set开头
      *
      * @param methodName
      * @return

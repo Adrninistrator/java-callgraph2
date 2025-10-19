@@ -2,6 +2,7 @@ package com.adrninistrator.javacg2.util;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
+import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -395,7 +397,7 @@ public class JavaCG2FileUtil {
      * @return
      */
     public static boolean checkFilePathContainsSeparator(String filePath) {
-        return StringUtils.containsAny(filePath, JavaCG2Constants.FLAG_SLASH,JavaCG2Constants.FLAG_BACKSLASH);
+        return StringUtils.containsAny(filePath, JavaCG2Constants.FLAG_SLASH, JavaCG2Constants.FLAG_BACKSLASH);
     }
 
     /**
@@ -469,13 +471,23 @@ public class JavaCG2FileUtil {
     }
 
     /**
-     * 检查是否为jar或war文件
+     * 检查是否为jar、war文件
      *
      * @param filePath
      * @return
      */
     public static boolean checkJarWarFile(String filePath) {
         return StringUtils.endsWithAny(StringUtils.lowerCase(filePath), JavaCG2Constants.EXT_JAR, JavaCG2Constants.EXT_WAR);
+    }
+
+    /**
+     * 检查是否为jar、war、jmod文件
+     *
+     * @param filePath
+     * @return
+     */
+    public static boolean checkJarWarJmodFile(String filePath) {
+        return StringUtils.endsWithAny(StringUtils.lowerCase(filePath), JavaCG2Constants.EXT_JAR, JavaCG2Constants.EXT_WAR, JavaCG2Constants.EXT_JMOD);
     }
 
     /**
@@ -496,6 +508,16 @@ public class JavaCG2FileUtil {
      */
     public static boolean checkWarFile(String filePath) {
         return StringUtils.endsWithIgnoreCase(filePath, JavaCG2Constants.EXT_WAR);
+    }
+
+    /**
+     * 检查是否为jmod文件
+     *
+     * @param filePath
+     * @return
+     */
+    public static boolean checkJmodFile(String filePath) {
+        return StringUtils.endsWithIgnoreCase(filePath, JavaCG2Constants.EXT_JMOD);
     }
 
     /**
@@ -534,6 +556,119 @@ public class JavaCG2FileUtil {
      */
     public static String genFilePath(String dirPath, String fileName, String fileExt) {
         return dirPath + fileName + fileExt;
+    }
+
+    /**
+     * 为文件路径结尾增加分隔符
+     *
+     * @param filePath
+     * @return
+     */
+    public static String addSeparator4FilePath(String filePath) {
+        if (StringUtils.endsWithAny(filePath, JavaCG2Constants.FLAG_SLASH, JavaCG2Constants.FLAG_BACKSLASH)) {
+            // 文件路径以分隔符结尾，则直接使用
+            return filePath;
+        }
+
+        // 文件路径没有以分隔符结尾，则在后面增加分隔符
+        return filePath + File.separator;
+    }
+
+    /**
+     * 从目录中查找需要处理的文件
+     *
+     * @param dirPath         需要查找的目录
+     * @param subDirPathSet   保存查找到的目录，可为空
+     * @param subFilePathList 保存查找到的文件列表
+     * @param fileExts        需要查找的文件后缀，可为空
+     */
+    public static void searchDir(String dirPath, Set<String> subDirPathSet, List<String> subFilePathList, String... fileExts) {
+        File dir = new File(dirPath);
+        File[] files = dir.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            if (file.isDirectory()) {
+                // 目录，递归
+                searchDir(file.getAbsolutePath(), subDirPathSet, subFilePathList, fileExts);
+            } else {
+                // 文件
+                String filePath = file.getAbsolutePath();
+                if (fileExts == null || checkFileExt(filePath, fileExts)) {
+                    // 若未指定文件后缀，则允许任意文件后缀；若有指定文件后缀，则需要判断是否符合预期
+                    if (subDirPathSet != null) {
+                        subDirPathSet.add(dirPath);
+                    }
+                    subFilePathList.add(filePath);
+                }
+            }
+        }
+    }
+
+    /**
+     * 判断文件后缀是否符合预期
+     *
+     * @param filePath
+     * @param fileExts
+     * @return
+     */
+    public static boolean checkFileExt(String filePath, String... fileExts) {
+        if (fileExts == null) {
+            // 未指定文件后缀时认为符合
+            return true;
+        }
+
+        for (String fileExt : fileExts) {
+            if (StringUtils.endsWithIgnoreCase(filePath, fileExt)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 判断文件是否存在
+     *
+     * @param filePath
+     * @return
+     */
+    public static boolean isFileExists(String filePath) {
+        File file = new File(filePath);
+        return file.exists() && file.isFile();
+    }
+
+    /**
+     * 将zip文件条件读取为String格式
+     *
+     * @param zipInputStream
+     * @return
+     */
+    public static String readZipEntryToString(ZipInputStream zipInputStream) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            byte[] data = new byte[8192];
+            int size;
+            while ((size = zipInputStream.read(data)) != -1) {
+                baos.write(data, 0, size);
+            }
+            byte[] allBytes = baos.toByteArray();
+            return new String(allBytes, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            logger.error("error ", e);
+            return null;
+        }
+    }
+
+    /**
+     * 获得类所在的jar文件路径
+     *
+     * @param clazz
+     * @return
+     */
+    public static String getJarFilePathOfClass(Class<?> clazz) {
+        return clazz.getProtectionDomain().getCodeSource().getLocation().getFile();
     }
 
     private JavaCG2FileUtil() {

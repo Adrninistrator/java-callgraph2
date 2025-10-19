@@ -195,8 +195,7 @@ public class ElHandler {
      * @return
      */
     public boolean checkVariableNameSpecified(ElAllowedVariableInterface elVariable) {
-        // 调试模式时所有变量都使用
-        return debugMode || elSpecifiedVariableNameSet.contains(elVariable.getVariableName());
+        return elSpecifiedVariableNameSet.contains(elVariable.getVariableName());
     }
 
     /**
@@ -207,8 +206,7 @@ public class ElHandler {
      * @return
      */
     public boolean checkVariableNamePrefixWithNumSpecified(ElAllowedVariableInterface elVariable) {
-        // 调试模式时所有变量都使用
-        return debugMode || prefixWithNumMap.containsKey(elVariable.getVariableName());
+        return prefixWithNumMap.containsKey(elVariable.getVariableName());
     }
 
     /**
@@ -220,11 +218,6 @@ public class ElHandler {
      * @return
      */
     public boolean checkVariableNamePrefixWithNumSpecified(ElAllowedVariableInterface elVariable, int num) {
-        if (debugMode) {
-            // 调试模式时所有变量都使用
-            return true;
-        }
-
         Set<Integer> numSet = prefixWithNumMap.get(elVariable.getVariableName());
         if (numSet == null) {
             return false;
@@ -235,10 +228,11 @@ public class ElHandler {
     /**
      * 执行表达式
      *
-     * @param map 包含变量名称与值的Map
+     * @param usedVariableMap 包含有使用的变量名称与值的Map
+     * @param displayMap      用于显示的变量名称与值的Map
      * @return
      */
-    public boolean runExpression(Map<String, Object> map) {
+    public boolean runExpression(Map<String, Object> usedVariableMap, Map<String, Object> displayMap) {
         if (expression == null) {
             // 若 Expression 对象为空，说明未指定表达式文本，则默认返回false
             return false;
@@ -246,12 +240,12 @@ public class ElHandler {
 
         Object executeResult;
         try {
-            executeResult = expression.execute(map);
+            executeResult = expression.execute(usedVariableMap);
             if (debugMode) {
-                logger.info("执行表达式 配置文件 [{}] 文本 [{}] 执行结果 [{}] 变量信息： {}", elConfigFile, expressionText, executeResult, JavaCG2Util.getMapValueStr(map));
+                logger.info("执行表达式 配置文件 [{}] 文本 [{}] 执行结果 [{}] 变量信息： {}", elConfigFile, expressionText, executeResult, JavaCG2Util.getMapValueStr(displayMap));
             }
         } catch (Exception e) {
-            logger.error("表达式执行失败 配置文件 [{}] 文本 [{}] 变量信息： [{}]", elConfigFile, expressionText, JavaCG2Util.getMapValueStr(map));
+            logger.error("表达式执行失败 配置文件 [{}] 文本 [{}] 变量信息： [{}] ", elConfigFile, expressionText, JavaCG2Util.getMapValueStr(displayMap), e);
             throw new JavaCG2RuntimeException("表达式执行失败");
         }
         if (!(executeResult instanceof Boolean)) {
@@ -262,8 +256,8 @@ public class ElHandler {
         if (result && ignoreData && !ElUtil.checkRunInCheckerFlag()) {
             // 表达式执行结果为true，且当前表达式是需要忽略数据，且没有执行用于检测的表达式标志
             writeFileTPE.execute(() -> {
-                String mapValueStr = JavaCG2Util.getMapValueStr(map);
-                String data = String.format("通过表达式执行结果判断需要忽略当前数据，表达式配置文件： {%s} 表达式： {%s} 表达式使用的变量值： %s%s", elConfigFile, expressionText, mapValueStr, JavaCG2Constants.NEW_LINE);
+                String mapValueStr = JavaCG2Util.getMapValueStr(displayMap);
+                String data = String.format("通过表达式执行结果判断需要忽略当前数据，表达式配置文件： {%s} 表达式： {%s} 使用的变量值： %s%s", elConfigFile, expressionText, mapValueStr, JavaCG2Constants.NEW_LINE);
                 try {
                     elIgnoreDataWriter.write(data);
                 } catch (IOException e) {
@@ -285,6 +279,15 @@ public class ElHandler {
             return null;
         }
         return new ArrayHashMap<>();
+    }
+
+    /**
+     * 检查表达式文本是否固定为true
+     *
+     * @return
+     */
+    public boolean checkExpressionTextFixedTrue() {
+        return Boolean.parseBoolean(expressionText);
     }
 
     public void setDebugMode(boolean debugMode) {

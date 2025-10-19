@@ -31,7 +31,9 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
             Boolean.class, false, Boolean.TRUE.toString()),
     CKE_OUTPUT_ROOT_PATH("output.root.path",
             new String[]{"生成文件的根目录，分隔符支持使用/或\\，末尾是否为分隔符不影响",
-                    "默认使用指定的需要解析的jar文件所在目录"},
+                    "生成解析结果文件时，根目录由该参数控制，默认生成到需要解析的jar文件所在目录",
+                    "在解析jar文件时，若需要合并jar、war文件、目录合并为新的jar文件，所在目录由该参数控制，默认生成到需要解析的第一个文件、目录所在目录",
+                    "假如需要解析jmod文件，则当前参数必须指定"},
             String.class, false, ""),
     CKE_OUTPUT_FILE_EXT("output.file.ext",
             new String[]{"指定生成文件后缀名，需要以“.”开头"},
@@ -54,6 +56,24 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
     CKE_MERGE_SEPARATE_FAT_JAR("merge.separate.fat.jar",
             new String[]{"在合并需要解析的jar文件时，是否合并出一个单独的fat jar。仅包含.class文件，且所有的jar文件都合并到从根目录开始"},
             Boolean.class, false, Boolean.FALSE.toString()),
+    CKE_PARSE_JAR_COMPATIBILITY_MODE("parse.jar.compatibility.mode",
+            new String[]{"是否使用Jar兼容性检查模式，仅解析类、方法、字段、类的注解等基础信息"},
+            Boolean.class, false, Boolean.FALSE.toString()),
+    CKE_PARSE_ONLY_CLASS_MODE("parse.only.class.mode",
+            new String[]{"是否仅解析类及类的注解信息，比 " + CKE_PARSE_JAR_COMPATIBILITY_MODE.getKey() + " 优先级高"},
+            Boolean.class, false, Boolean.FALSE.toString()),
+    CKE_JMOD_PROGRAM_PATH("jmod.program.path",
+            new String[]{"指定用于解析 .jmod 文件的jmod程序完整路径",
+                    "假如指定的 .jmod 文件在JDK的jmods目录中，可找到bin目录的jmod程序，则当前参数可省略",
+                    "假如无法找到JDK bin目录的jmod程序，则当前参数不能省略"
+            },
+            String.class, false, ""),
+    CKE_JDK_RUNTIME_MAJOR_VERSION("jdk.runtime.major.version",
+            new String[]{"解析的 jar 文件在运行时使用的 JDK 主版本号",
+                    "例如 8、11、17、21 等",
+                    "默认为 8 ，代表 JDK8 及以下版本"
+            },
+            Integer.class, false, "8"),
     ;
 
     // 参数key
@@ -76,7 +96,7 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
     }
 
     @Override
-    public String getEnumConstantsName() {
+    public String getEnumConstantName() {
         return name();
     }
 

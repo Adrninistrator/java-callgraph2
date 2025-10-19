@@ -16,9 +16,12 @@ test {
     }
 }
 
-// 生成包含jar文件的jar文件
+/*
+    生成包含jar文件的jar文件，需要先执行 gen_run_jar 任务
+    gradlew gen_run_jar gen_jar_in_jar
+ */
 tasks.register('gen_jar_in_jar', Jar) {
-    archiveFileName = 'jar_output_dir.jar'
+    archiveFileName = 'jar_output.jar'
     destinationDirectory = file("${buildDir}")
 
     from(sourceSets.test.output) {
@@ -30,7 +33,33 @@ tasks.register('gen_jar_in_jar', Jar) {
         into 'jar'
     }
 
+    copy {
+        from configurations.testRuntimeClasspath.getFiles().findAll {
+            File f -> (f.name.startsWith('bcprov'))
+        }
+        into "jar_output_dir/lib"
+    }
+
     from(fileTree('jar_output_dir/lib')) {
         into 'lib'
+    }
+}
+
+/*
+    生成包含jar文件的war文件
+    需要先执行 gen_run_jar 命令
+    gradlew gen_run_jar gen_jar_in_war
+ */
+tasks.register('gen_jar_in_war', Jar) {
+    archiveFileName = 'jar_output.war'
+    destinationDirectory = file("${buildDir}")
+
+    from(sourceSets.test.output) {
+        include 'test/**'
+        into 'WEB-INF/classes'
+    }
+
+    from(fileTree('jar_output_dir/lib')) {
+        into 'WEB-INF/lib'
     }
 }

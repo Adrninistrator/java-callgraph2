@@ -8,6 +8,7 @@ package com.adrninistrator.javacg2.markdown.enums;
 public enum MDCodeBlockTypeEnum {
     MDCBTE_SQL("sql"),
     MDCBTE_JAVA("java"),
+    MDCBTE_JS("js"),
     ;
 
     private final String type;

@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg2.el.function.any;
 
 import com.adrninistrator.javacg2.el.enums.ElStringAnyFunctionEnum;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author adrninistrator
@@ -16,6 +17,6 @@ public class StringStartsWithAnyFunction extends AbstractStringAnyFunction {
 
     @Override
     protected boolean checkString(String arg0, String argN) {
-        return arg0.startsWith(argN);
+        return StringUtils.startsWith(arg0, argN);
     }
 }

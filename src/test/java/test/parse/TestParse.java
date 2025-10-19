@@ -32,12 +32,30 @@ public class TestParse extends TestBase {
         Assert.assertTrue(javaCG2Entry.run());
     }
 
+    // 使用Jar兼容性检查模式，仅解析基础信息
+    @Test
+    public void testParseJarCompatibilityMode() {
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JACGTest();
+        javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_JAR_COMPATIBILITY_MODE, Boolean.TRUE.toString());
+        JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
+        Assert.assertTrue(javaCG2Entry.run());
+    }
+
+    // 仅解析类信息
+    @Test
+    public void testParseOnlyClassMode() {
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JACGTest();
+        javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_ONLY_CLASS_MODE, Boolean.TRUE.toString());
+        JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
+        Assert.assertTrue(javaCG2Entry.run());
+    }
+
     /*
         需要先执行 gradlew gen_run_jar gen_jar_in_jar 命令生成对应jar文件
      */
     @Test
     public void testJarInJar() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JavaCg2("build/jar_output_dir.jar");
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper4JavaCg2(JAR_OUTPUT_JAR);
         Assert.assertTrue(new JavaCG2Entry(javaCG2ConfigureWrapper).run());
     }
 }

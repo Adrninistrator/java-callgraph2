@@ -6,7 +6,7 @@ apply plugin: 'idea'
 apply from: 'unittest.gradle'
 
 group 'com.github.adrninistrator'
-version = "3.3.0"
+version = "4.0.0"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
@@ -78,9 +78,11 @@ List log4j = [
 
 List disruptor = ['com.lmax:disruptor:3.3.7']
 
+List bcprov_jdk18on = ['org.bouncycastle:bcprov-jdk18on:1.76']
+
 dependencies {
     api apache_ant, apache_common, aviator, bcel, zip4j, slf4j
-    testImplementation junit, log4j, disruptor
+    testImplementation junit, log4j, disruptor, bcprov_jdk18on
 }
 
 compileJava.options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"

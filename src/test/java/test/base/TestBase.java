@@ -7,6 +7,7 @@ import com.adrninistrator.javacg2.entry.JavaCG2Entry;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,11 @@ import java.util.List;
 public abstract class TestBase {
 
     private static final Logger logger = LoggerFactory.getLogger(TestBase.class);
+
+    public static final String JAR_OUTPUT_DIR = "jar_output_dir";
+    public static final String JAR_OUTPUT_JAR = "build/jar_output.jar";
+    public static final String JAR_OUTPUT_WAR = "build/jar_output.war";
+    public static final String OUT_TEST_DIR = "out/test";
 
     /**
      * 获取 java-all-call-graph 项目中的 test.jar 文件路径
@@ -57,6 +63,7 @@ public abstract class TestBase {
     protected JavaCG2ConfigureWrapper genJavaCG2ConfigureWrapper(boolean findInJacgDir, String... inputFiles) {
         JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper();
         List<String> jarList = genJarList(findInJacgDir, inputFiles);
+        logger.info("需要解析的jar或目录 {}", StringUtils.join(jarList, " "));
         javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, jarList);
 
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, Boolean.TRUE.toString());

@@ -1,0 +1,12 @@
+## 对应的枚举类名: JavaCG2ElConfigEnum.ECE_HANDLE_IGNORE_SPRING_BEAN_IN_XML
+## （作用）在 处理XML文件时 使用的表达式
+## （作用）若当前配置文件中的表达式执行结果为 true，则跳过对应的XML文件中的元素
+## （作用）若表达式执行结果为 false，或未指定表达式，则当前配置不会跳过对应的XML文件中的元素
+## （范围）指定处理XML文件中定义的Spring Bean需要跳过哪些Bean
+## （表达式使用通用说明文档）请参考 _el_example/el_usage.md
+## （表达式字符串比较说明文档）请参考 _el_example/string_compare.md
+## （当前表达式使用示例文档）请参考 _el_example/_javacg2_handle_xml_switch/handle_ignore_spring_bean_in_xml.av.md
+## （允许使用的变量）{变量名称} {变量类型} {变量描述} {变量值示例}
+## {bean_name} {String} {Spring Bean名称} {selectService1}
+## {class_name} {String} {Spring Bean类名} {test.callgraph.mybatis.service.select.SelectService1}
+## {profile} {String} {Spring Bean profile, 可能为空字符串，可能包含一级或多级，使用半角逗号拼接} {dev, dev,dev1}

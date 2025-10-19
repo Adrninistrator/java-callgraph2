@@ -89,9 +89,9 @@ public class JavaCG2Entry {
     private ExtendsImplHandler extendsImplHandler;
 
     /*
-        保存需要处理的jar包/目录的路径及对应的序号
-        key     jar包/目录路径
-        value   jar包/目录对应的序号
+        保存需要处理的jar文件/目录的路径及对应的序号
+        key     jar文件/目录路径
+        value   jar文件/目录对应的序号
      */
     private Map<String, Integer> jarPathNumMap;
 
@@ -142,7 +142,7 @@ public class JavaCG2Entry {
         try (JavaCG2ElManager javaCG2ElManager = new JavaCG2ElManager(javaCG2ConfigureWrapper, JavaCG2ElConfigEnum.values(), outputDirPath)) {
             JavaCG2Counter jarNumCounter = new JavaCG2Counter(JavaCG2Constants.JAR_NUM_MIN_BEFORE);
 
-            // 处理参数中指定的jar包
+            // 处理参数中指定的jar文件
             MergeJarResult mergeJarResult = handleJarInConf(jarNumCounter, javaCG2ElManager);
             if (mergeJarResult == null) {
                 return false;
@@ -152,9 +152,9 @@ public class JavaCG2Entry {
                 boolean success1 = parse(mergeJarResult, javaCG2ElManager, javaCG2ConfInfo);
                 logger.info("执行完毕，处理数量，类： {} 方法: {} 方法调用: {} 耗时: {} 秒", classNumCounter.getCount(), methodNumCounter.getCount(), callIdCounter.getCount(),
                         JavaCG2Util.getSpendSeconds(startTime));
-                // 打印所有的配置参数信息
+                // 打印所有的配置参数
                 boolean success2 = javaCG2ConfigureWrapper.printAllConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_ALL_CONFIG_MD);
-                // 打印当前使用的配置信息
+                // 打印当前使用的配置参数
                 boolean success3 = javaCG2ConfigureWrapper.printUsedConfigInfo(SIMPLE_CLASS_NAME, outputDirPath, JavaCG2Constants.FILE_JAVACG2_USED_CONFIG_MD);
                 return success1 && success2 && success3;
             } catch (Exception e) {
@@ -179,6 +179,7 @@ public class JavaCG2Entry {
              Writer classInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_INFO));
              Writer dupClassInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_DUP_CLASS_INFO));
              Writer classReferenceWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_REFERENCE));
+             Writer dupClassReferenceWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_DUP_CLASS_REFERENCE));
              Writer classSignatureGenericsTypeWriter =
                      JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_CLASS_SIGNATURE_GENERICS_TYPE));
              Writer classExtImplGenericsTypeWriter =
@@ -188,6 +189,7 @@ public class JavaCG2Entry {
              Writer fieldInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_FIELD_INFO));
              Writer fieldGenericsTypeWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_FIELD_GENERICS_TYPE));
              Writer fieldRelationshipWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_FIELD_RELATIONSHIP));
+             Writer fieldUsageOtherWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_FIELD_USAGE_OTHER));
              Writer getMethodWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_GET_METHOD));
              Writer innerClassWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_INNER_CLASS));
              Writer jarInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_JAR_INFO));
@@ -209,8 +211,10 @@ public class JavaCG2Entry {
              Writer methodReturnConstValueWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_CONST_VALUE));
              Writer methodReturnFieldInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_FIELD_INFO));
              Writer methodCallWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL));
+             Writer methodCallRawCalleeWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_RAW_CALLEE));
              Writer methodInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_INFO));
              Writer dupMethodInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_DUP_METHOD_INFO));
+             Writer dupFieldInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_DUP_FIELD_INFO));
              Writer enumInitArgFieldWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_ENUM_INIT_ARG_FIELD));
              Writer enumInitAssignInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_ENUM_INIT_ASSIGN_INFO));
              Writer methodLineNumberWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_LINE_NUMBER));
@@ -219,6 +223,7 @@ public class JavaCG2Entry {
              Writer methodCatchWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CATCH));
              Writer methodFinallyWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_FINALLY));
              Writer methodThrowWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_THROW));
+             Writer packageInfoWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_PACKAGE_INFO));
              Writer setMethodWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SET_METHOD));
              Writer springBeanWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_BEAN));
              Writer springScanPackageWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_SCAN_PACKAGE_JAVA));
@@ -232,6 +237,7 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setClassInfoWriter(classInfoWriter);
             jarEntryHandleParser.setDupClassInfoWriter(dupClassInfoWriter);
             jarEntryHandleParser.setClassReferenceWriter(classReferenceWriter);
+            jarEntryHandleParser.setDupClassReferenceWriter(dupClassReferenceWriter);
             jarEntryHandleParser.setClassSignatureGenericsTypeWriter(classSignatureGenericsTypeWriter);
             jarEntryHandleParser.setClassExtImplGenericsTypeWriter(classExtImplGenericsTypeWriter);
             jarEntryHandleParser.setExtendsImplWriter(extendsImplWriter);
@@ -239,6 +245,7 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setFieldInfoWriter(fieldInfoWriter);
             jarEntryHandleParser.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
             jarEntryHandleParser.setFieldRelationshipWriter(fieldRelationshipWriter);
+            jarEntryHandleParser.setFieldUsageOtherWriter(fieldUsageOtherWriter);
             jarEntryHandleParser.setGetMethodWriter(getMethodWriter);
             jarEntryHandleParser.setInnerClassWriter(innerClassWriter);
             jarEntryHandleParser.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
@@ -256,8 +263,10 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setMethodReturnConstValueWriter(methodReturnConstValueWriter);
             jarEntryHandleParser.setMethodReturnFieldInfoWriter(methodReturnFieldInfoWriter);
             jarEntryHandleParser.setMethodCallWriter(methodCallWriter);
+            jarEntryHandleParser.setMethodCallRawCalleeWriter(methodCallRawCalleeWriter);
             jarEntryHandleParser.setMethodInfoWriter(methodInfoWriter);
             jarEntryHandleParser.setDupMethodInfoWriter(dupMethodInfoWriter);
+            jarEntryHandleParser.setDupFieldInfoWriter(dupFieldInfoWriter);
             jarEntryHandleParser.setEnumInitArgFieldWriter(enumInitArgFieldWriter);
             jarEntryHandleParser.setEnumInitAssignInfoWriter(enumInitAssignInfoWriter);
             jarEntryHandleParser.setMethodLineNumberWriter(methodLineNumberWriter);
@@ -265,20 +274,22 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setMethodCatchWriter(methodCatchWriter);
             jarEntryHandleParser.setMethodFinallyWriter(methodFinallyWriter);
             jarEntryHandleParser.setMethodThrowWriter(methodThrowWriter);
+            jarEntryHandleParser.setPackageInfoWriter(packageInfoWriter);
             jarEntryHandleParser.setSetMethodWriter(setMethodWriter);
             jarEntryHandleParser.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
 
             jarEntryHandleParser.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
 
             String mergeJarFilePath = JavaCG2FileUtil.getCanonicalPath(mergeJarResult.getMergeJarFile());
-            // 处理jar包
-            if (!handleJar(mergeJarFilePath, methodCallWriter, springBeanWriter, springScanPackageWriter, springAopAspectWriter, springAopPointcutWriter, springAopAdviceWriter)
+            // 处理jar文件
+            if (!handleJar(mergeJarFilePath, methodCallWriter, springBeanWriter, springScanPackageWriter, springAopAspectWriter, springAopPointcutWriter, springAopAdviceWriter,
+                    javaCG2ElManager)
                     || failCounter.getCount() > 0) {
                 logger.error("处理失败，出错次数 {}", failCounter.getCount());
                 return false;
             }
 
-            // 记录处理的jar包信息
+            // 记录处理的jar文件信息
             int maxJarNum = 0;
             Map<Integer, String> jarNumPathMap = new HashMap<>(jarPathNumMap.size());
             for (Map.Entry<String, Integer> entry : jarPathNumMap.entrySet()) {
@@ -309,10 +320,9 @@ public class JavaCG2Entry {
                 JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, jarDirType, String.valueOf(jarNum), outerJarDirPath, innerJarPath);
             }
 
-            JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_RESULT_DIR, String.valueOf(++maxJarNum),
-                    javaCG2OutputInfo.getOutputDirPath(), "");
-            JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_PARSE_JAR_PATH, String.valueOf(++maxJarNum),
-                    mergeJarFilePath, "");
+            String resultDirPath = JavaCG2FileUtil.getCanonicalPath(javaCG2OutputInfo.getOutputDirPath());
+            JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_RESULT_DIR, String.valueOf(++maxJarNum), resultDirPath, "");
+            JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_PARSE_JAR_PATH, String.valueOf(++maxJarNum), mergeJarFilePath, "");
             if (mergeJarResult.getFatJarFile() != null) {
                 String fatJarFilePath = JavaCG2FileUtil.getCanonicalPath(mergeJarResult.getFatJarFile());
                 JavaCG2FileUtil.write2FileWithTab(jarInfoWriter, JavaCG2Constants.FILE_KEY_FAT_JAR_PATH, String.valueOf(++maxJarNum),
@@ -344,11 +354,11 @@ public class JavaCG2Entry {
         String outputRootPath = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH);
         String outputDirPath;
         if (StringUtils.isBlank(outputRootPath)) {
-            // 配置参数中未指定生成文件的根目录，生成在jar包所在目录
+            // 配置参数中未指定生成文件的根目录，生成在jar文件所在目录
             outputDirPath = newJarFilePath + JavaCG2Constants.DIR_TAIL_OUTPUT + File.separator;
         } else {
             // 配置参数中有指定生成文件的根目录，生成在指定目录
-            outputDirPath = JavaCG2Util.addSeparator4FilePath(outputRootPath) + mergeJarFile.getName() + JavaCG2Constants.DIR_TAIL_OUTPUT + File.separator;
+            outputDirPath = JavaCG2FileUtil.addSeparator4FilePath(outputRootPath) + mergeJarFile.getName() + JavaCG2Constants.DIR_TAIL_OUTPUT + File.separator;
         }
         logger.info("当前输出的根目录: {}", outputDirPath);
         if (!JavaCG2FileUtil.isDirectoryExists(outputDirPath, true)) {
@@ -358,11 +368,11 @@ public class JavaCG2Entry {
         return outputDirPath;
     }
 
-    // 处理配置参数中指定的jar包
+    // 处理配置参数中指定的jar文件
     private MergeJarResult handleJarInConf(JavaCG2Counter jarNumCounter, JavaCG2ElManager javaCG2ElManager) {
         jarPathNumMap = new HashMap<>();
 
-        // 对指定的jar包进行处理
+        // 对指定的jar文件进行处理
         MergeJarHandler mergeJarHandler = new MergeJarHandler(javaCG2ConfigureWrapper, jarPathNumMap, jarNumCounter, javaCG2ElManager, false);
         MergeJarResult mergeJarResult = mergeJarHandler.mergeJar();
         if (mergeJarResult == null) {
@@ -416,13 +426,13 @@ public class JavaCG2Entry {
         Map<String, String> classAndSuperMap = new HashMap<>(JavaCG2Constants.SIZE_100);
         // 涉及继承的接口名Set
         Set<String> interfaceExtendsSet = new HashSet<>(JavaCG2Constants.SIZE_100);
-        // 所有在jar包中出现的类名Set
+        // 所有在jar文件中出现的类名Set
         Set<String> allClassNameSet = new HashSet<>(JavaCG2Constants.SIZE_1000);
   
         /*
-           类名及所在的jar包序号Map
+           类名及所在的jar文件序号Map
            key    类名
-           value  类所在的jar包序号
+           value  类所在的jar文件序号
         */
         ClassAndJarNum classAndJarNum = new ClassAndJarNum();
 
@@ -437,7 +447,7 @@ public class JavaCG2Entry {
             涉及继承（父类非Object）、实现的类中，可能涉及继承（父类与子类）、实现（实现类）的方法
             key     类名
             value   相关方法
-                key     方法名称、参数、返回值
+                key     方法名、参数、返回值
                 value   方法access_flags
          */
         Map<String, Map<MethodArgReturnTypes, Integer>> classExtendsImplMethodWithArgTypesMap = new HashMap<>(JavaCG2Constants.SIZE_100);
@@ -455,7 +465,7 @@ public class JavaCG2Entry {
         springDefineComponentScanHandler = new SpringDefineComponentScanHandler();
         springDefineAopHandler = new SpringDefineAopHandler();
         boolean onlyOneJar = jarPathNumMap.size() == 1;
-        jarEntryPreHandle1Parser = new JarEntryPreHandle1Parser(javaCG2InputAndOutput, onlyOneJar, javaCG2ElManager);
+        jarEntryPreHandle1Parser = new JarEntryPreHandle1Parser(javaCG2InputAndOutput, onlyOneJar);
         jarEntryPreHandle1Parser.setClassImplementsInfoMap(classImplementsInfoMap);
         jarEntryPreHandle1Parser.setClassExtendsImplMethodWithArgTypesMap(classExtendsImplMethodWithArgTypesMap);
         jarEntryPreHandle1Parser.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
@@ -510,7 +520,7 @@ public class JavaCG2Entry {
                     springDefineBeanHandler,
                     extensionsManager.getSpringXmlBeanParser());
         }
-        jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCG2InputAndOutput, onlyOneJar, useSpringBeanByAnnotationHandler, javaCG2ElManager);
+        jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCG2InputAndOutput, onlyOneJar, useSpringBeanByAnnotationHandler);
         jarEntryPreHandle2Parser.setClassExtendsImplMethodWithArgTypesMap(classExtendsImplMethodWithArgTypesMap);
         jarEntryPreHandle2Parser.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);
         jarEntryPreHandle2Parser.setClassAndSuperMap(classAndSuperMap);
@@ -529,7 +539,7 @@ public class JavaCG2Entry {
         jarEntryHandleParser.setTransactionCallbackImplClassMap(transactionCallbackImplClassMap);
         jarEntryHandleParser.setTransactionCallbackWithoutResultChildClassMap(transactionCallbackWithoutResultChildClassMap);
         jarEntryHandleParser.setThreadChildClassMap(threadChildClassMap);
-        jarEntryHandleParser.setExtensionsManager(extensionsManager);
+        jarEntryHandleParser.recordExtensionsManager(extensionsManager);
         jarEntryHandleParser.setCallIdCounter(callIdCounter);
         jarEntryHandleParser.setClassNumCounter(classNumCounter);
         jarEntryHandleParser.setMethodNumCounter(methodNumCounter);
@@ -572,9 +582,9 @@ public class JavaCG2Entry {
         }
     }
 
-    // 处理一个jar包
+    // 处理一个jar文件
     private boolean handleJar(String jarFilePath, Writer methodCallWriter, Writer springBeanWriter, Writer springScanPackageWriter, Writer springAopAspectWriter,
-                              Writer springAopPointcutWriter, Writer springAopAdviceWriter) {
+                              Writer springAopPointcutWriter, Writer springAopAdviceWriter, JavaCG2ElManager javaCG2ElManager) {
         try {
             // 对Class进行预处理
             if (!preHandleClasses1(jarFilePath)) {
@@ -586,7 +596,7 @@ public class JavaCG2Entry {
                 return false;
             }
 
-            // 处理当前jar包中的class文件
+            // 处理当前jar文件中的class文件
             if (!jarEntryHandleParser.parse(jarFilePath)) {
                 return false;
             }
@@ -596,7 +606,7 @@ public class JavaCG2Entry {
             extendsImplHandler.handle();
 
             // 记录Spring Bean的名称及类型
-            recordSpringBeanNameAndType(springBeanWriter);
+            recordSpringBeanNameAndType(javaCG2ElManager, springBeanWriter);
 
             // 记录Spring包扫描路径
             recordSpringScanPackage(springScanPackageWriter);
@@ -605,7 +615,7 @@ public class JavaCG2Entry {
             recordSpringAop(springAopAspectWriter, springAopPointcutWriter, springAopAdviceWriter);
             return true;
         } catch (Exception e) {
-            logger.error("处理jar包出现异常 {} ", jarFilePath, e);
+            logger.error("处理jar文件出现异常 {} ", jarFilePath, e);
             return false;
         }
     }
@@ -621,7 +631,7 @@ public class JavaCG2Entry {
     }
 
     // 记录Spring Bean的名称及类型
-    private void recordSpringBeanNameAndType(Writer springBeanWriter) throws IOException {
+    private void recordSpringBeanNameAndType(JavaCG2ElManager javaCG2ElManager, Writer springBeanWriter) throws IOException {
         if (springDefineBeanHandler != null) {
             Map<String, SpringBeanInJava> springBeanInJavaMap = springDefineBeanHandler.getSpringBeanInJavaMap();
             if (!springBeanInJavaMap.isEmpty()) {
@@ -631,8 +641,15 @@ public class JavaCG2Entry {
                     SpringBeanInJava springBeanInJava = springBeanInJavaMap.get(springBeanName);
                     List<String> springBeanTypeList = springBeanInJava.getClassNameList();
                     for (int i = 0; i < springBeanTypeList.size(); i++) {
-                        JavaCG2FileUtil.write2FileWithTab(springBeanWriter, springBeanName, String.valueOf(i), springBeanTypeList.get(i),
-                                JavaCG2Constants.FILE_KEY_SPRING_DEFINE_IN_JAVA, springBeanInJava.getAnnotationClassName(), springBeanInJava.getDefineClassName());
+                        JavaCG2FileUtil.write2FileWithTab(springBeanWriter,
+                                springBeanName,
+                                String.valueOf(i),
+                                springBeanTypeList.get(i),
+                                "",
+                                JavaCG2Constants.FILE_KEY_SPRING_DEFINE_IN_JAVA,
+                                springBeanInJava.getAnnotationClassName(),
+                                springBeanInJava.getDefineClassName()
+                        );
                     }
                 }
             }
@@ -647,8 +664,20 @@ public class JavaCG2Entry {
         if (springXmlBeanParser != null) {
             List<SpringBeanInXml> springBeanListInXml = springXmlBeanParser.getBeanInXml();
             for (SpringBeanInXml springBeanNameInXml : springBeanListInXml) {
-                JavaCG2FileUtil.write2FileWithTab(springBeanWriter, springBeanNameInXml.getSpringBeanName(), "0", springBeanNameInXml.getClassName(),
-                        JavaCG2Constants.FILE_KEY_SPRING_DEFINE_IN_XML, "", springBeanNameInXml.getXmlFilePath());
+                if (javaCG2ElManager.checkIgnoreSpringBeanInXml(springBeanNameInXml.getSpringBeanName(), springBeanNameInXml.getClassName(), springBeanNameInXml.getProfile())) {
+                    // 通过表达式判断需要忽略对应的Spring Bean
+                    continue;
+                }
+
+                JavaCG2FileUtil.write2FileWithTab(springBeanWriter,
+                        springBeanNameInXml.getSpringBeanName(),
+                        "0",
+                        springBeanNameInXml.getClassName(),
+                        springBeanNameInXml.getProfile(),
+                        JavaCG2Constants.FILE_KEY_SPRING_DEFINE_IN_XML,
+                        "",
+                        springBeanNameInXml.getXmlFilePath()
+                );
             }
         }
     }
@@ -725,7 +754,7 @@ public class JavaCG2Entry {
     private boolean recordJavaCG2Config(Writer javaCG2ConfigWriter) {
         MainConfigInterface[][] mainConfigs = new MainConfigInterface[][]{JavaCG2ConfigKeyEnum.values()};
         return javaCG2ConfigureWrapper.recordAllConfigToFile(javaCG2ConfigWriter, mainConfigs, JavaCG2OtherConfigFileUseListEnum.values(),
-                JavaCG2OtherConfigFileUseSetEnum.values());
+                JavaCG2OtherConfigFileUseSetEnum.values(), JavaCG2ElConfigEnum.values());
     }
 
     // 获取扩展类管理类

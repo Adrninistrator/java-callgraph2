@@ -3,15 +3,17 @@ package com.adrninistrator.javacg2.parser;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
+import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.dto.classes.InnerClassInfo;
 import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
 import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg2.dto.type.JavaCG2GenericsType;
-import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
+import com.adrninistrator.javacg2.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
 import com.adrninistrator.javacg2.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg2.handler.ClassHandler;
 import com.adrninistrator.javacg2.spring.UseSpringBeanByAnnotationHandler;
+import com.adrninistrator.javacg2.util.JavaCG2AnnotationUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ByteCodeUtil;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
@@ -26,6 +28,7 @@ import org.apache.bcel.classfile.JavaClass;
 import org.apache.bcel.classfile.Signature;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +37,10 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author adrninistrator
@@ -46,16 +51,22 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     private static final Logger logger = LoggerFactory.getLogger(JarEntryHandleParser.class);
 
-    private final JavaCG2ElManager javaCG2ElManager;
-
     /*
-        记录已处理过的类名
-        key
-            类名
-        value
-            处理次数
+        记录已处理过的类名及次数
+        key 类名
+        value   处理次数
      */
     private final Map<String, JavaCG2Counter> handledClassNameTimesMap = new HashMap<>();
+
+    /*
+        已记录的包名
+            key 包名
+            value   包含包名的jar序号
+     */
+    private final Map<String, Set<Integer>> recordedPackageNameMap = new HashMap<>();
+
+    private final boolean parseJarCompatibilityMode;
+    private final boolean parseOnlyClassMode;
 
     private UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
 
@@ -69,9 +80,11 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer classExtImplGenericsTypeWriter;
     private Writer classInfoWriter;
     private Writer classReferenceWriter;
+    private Writer dupClassReferenceWriter;
     private Writer classSignatureGenericsTypeWriter;
     private Writer dupClassInfoWriter;
     private Writer dupMethodInfoWriter;
+    private Writer dupFieldInfoWriter;
     private Writer enumInitArgFieldWriter;
     private Writer enumInitAssignInfoWriter;
     private Writer extendsImplWriter;
@@ -79,6 +92,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer fieldGenericsTypeWriter;
     private Writer fieldInfoWriter;
     private Writer fieldRelationshipWriter;
+    private Writer fieldUsageOtherWriter;
     private Writer getMethodWriter;
     private Writer innerClassWriter;
     private Writer lambdaMethodInfoWriter;
@@ -92,6 +106,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer methodCallNonStaticFieldWriter;
     private Writer methodCallStaticFieldMCRWriter;
     private Writer methodCallWriter;
+    private Writer methodCallRawCalleeWriter;
     private Writer methodCatchWriter;
     private Writer methodFinallyWriter;
     private Writer methodInfoWriter;
@@ -102,6 +117,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer methodReturnFieldInfoWriter;
     private Writer methodReturnGenericsTypeWriter;
     private Writer methodThrowWriter;
+    private Writer packageInfoWriter;
     private Writer setMethodWriter;
     private Writer staticFinalFieldMethodCallIdWriter;
 
@@ -118,9 +134,13 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     private ClassAndJarNum classAndJarNum;
 
+    private AnnotationAttributesFormatterInterface annotationAttributesFormatter;
+
     public JarEntryHandleParser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar) {
         super(javaCG2InputAndOutput, onlyOneJar);
-        javaCG2ElManager = javaCG2InputAndOutput.getJavaCG2ElManager();
+        JavaCG2ConfInfo javaCG2ConfInfo = javaCG2InputAndOutput.getJavaCG2ConfInfo();
+        parseJarCompatibilityMode = javaCG2ConfInfo.isParseJarCompatibilityMode();
+        parseOnlyClassMode = javaCG2ConfInfo.isParseOnlyClassMode();
     }
 
     @Override
@@ -131,12 +151,21 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         }
 
         JavaClass javaClass = new ClassParser(zipInputStream, jarEntryPath).parse();
+//        if (!"xxx".equals(javaClass.getClassName())) {
+//            return true;
+//        }
+
         // 处理jar包中的class文件
         return handleClassEntry(javaClass, jarEntryPath);
     }
 
     @Override
     protected boolean handleClassEntry(JavaClass javaClass, String jarEntryPath) throws IOException {
+        if (JavaCG2Constants.MODULE_INFO_CLASS.equals(jarEntryPath) || jarEntryPath.endsWith(JavaCG2Constants.MODULE_INFO_CLASS_SUFFIX)) {
+            // 跳过 module-info.class
+            return true;
+        }
+
         // 处理Java类
         String className = javaClass.getClassName();
         if (javaCG2ElManager.checkIgnoreParseClass(className)) {
@@ -159,65 +188,26 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         if (onlyOneJar) {
             classJarNum = JavaCG2Constants.JAR_NUM_MIN;
         } else {
-            classJarNum = JavaCG2JarUtil.getJarNumFromDirName(jarEntryPath);
+            classJarNum = JavaCG2JarUtil.getJarNumFromDirName(lastFirstDirName);
         }
 
-        ClassHandler classHandler = new ClassHandler(javaClass, jarEntryPath, javaCG2InputAndOutput, classJarNum);
-        classHandler.setUseSpringBeanByAnnotationHandler(useSpringBeanByAnnotationHandler);
-        classHandler.setRunnableImplClassMap(runnableImplClassMap);
-        classHandler.setCallableImplClassMap(callableImplClassMap);
-        classHandler.setTransactionCallbackImplClassMap(transactionCallbackImplClassMap);
-        classHandler.setTransactionCallbackWithoutResultChildClassMap(transactionCallbackWithoutResultChildClassMap);
-        classHandler.setThreadChildClassMap(threadChildClassMap);
-        classHandler.setCallIdCounter(callIdCounter);
-        classHandler.setClassAnnotationWriter(classAnnotationWriter);
-        classHandler.setClassReferenceWriter(classReferenceWriter);
-        classHandler.setDupMethodInfoWriter(dupMethodInfoWriter);
-        classHandler.setEnumInitArgFieldWriter(enumInitArgFieldWriter);
-        classHandler.setEnumInitAssignInfoWriter(enumInitAssignInfoWriter);
-        classHandler.setFieldAnnotationWriter(fieldAnnotationWriter);
-        classHandler.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
-        classHandler.setFieldInfoWriter(fieldInfoWriter);
-        classHandler.setFieldRelationshipWriter(fieldRelationshipWriter);
-        classHandler.setGetMethodWriter(getMethodWriter);
-        classHandler.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
-        classHandler.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
-        classHandler.setMethodAnnotationWriter(methodAnnotationWriter);
-        classHandler.setMethodArgAnnotationWriter(methodArgAnnotationWriter);
-        classHandler.setMethodArgGenericsTypeWriter(methodArgGenericsTypeWriter);
-        classHandler.setMethodArgumentWriter(methodArgumentWriter);
-        classHandler.setMethodCallInfoWriter(methodCallInfoWriter);
-        classHandler.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
-        classHandler.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
-        classHandler.setMethodCallNonStaticFieldWriter(methodCallNonStaticFieldWriter);
-        classHandler.setMethodCallStaticFieldMCRWriter(methodCallStaticFieldMCRWriter);
-        classHandler.setMethodCallWriter(methodCallWriter);
-        classHandler.setMethodCatchWriter(methodCatchWriter);
-        classHandler.setMethodFinallyWriter(methodFinallyWriter);
-        classHandler.setMethodInfoWriter(methodInfoWriter);
-        classHandler.setMethodLineNumberWriter(methodLineNumberWriter);
-        classHandler.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
-        classHandler.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
-        classHandler.setMethodReturnConstValueWriter(methodReturnConstValueWriter);
-        classHandler.setMethodReturnFieldInfoWriter(methodReturnFieldInfoWriter);
-        classHandler.setMethodReturnGenericsTypeWriter(methodReturnGenericsTypeWriter);
-        classHandler.setMethodThrowWriter(methodThrowWriter);
-        classHandler.setSetMethodWriter(setMethodWriter);
-        classHandler.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
-        classHandler.setExtensionsManager(extensionsManager);
-        classHandler.setMethodNumCounter(methodNumCounter);
-        classHandler.setFailCounter(failCounter);
-        classHandler.setFieldRelationshipCounter(fieldRelationshipCounter);
-        classHandler.setClassAndJarNum(classAndJarNum);
+        // 记录包名
+        recordPackageName(javaClass.getPackageName());
 
+        ClassHandler classHandler = genClassHandler(javaClass, jarEntryPath, classJarNum);
         classNumCounter.addAndGet();
+        // 开始处理当前类
+        // 处理特殊模式
+        if (handleSpecialMode(javaClass, duplicateClass, classJarNum, jarEntryPath, classHandler)) {
+            return true;
+        }
+
         int failCountBefore = failCounter.getCount();
-        // 处理当前类
         boolean success;
         if (duplicateClass) {
             success = true;
-            // 处理重复类中的方法
-            classHandler.handleDuplicateClassMethod();
+            // 处理重复类
+            classHandler.handleDuplicateClass();
         } else {
             // 处理非重复的类
             success = classHandler.handleClass();
@@ -227,11 +217,8 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
             saveHandleFailClass(javaClass);
         }
 
-        String classMd5 = DigestUtils.md5Hex(javaClass.getBytes());
-
-        Writer usedClassInfoWriter = duplicateClass ? dupClassInfoWriter : classInfoWriter;
         // 记录类的信息
-        JavaCG2FileUtil.write2FileWithTab(usedClassInfoWriter, className, String.valueOf(javaClass.getAccessFlags()), classMd5, String.valueOf(classJarNum), jarEntryPath);
+        recordClassInfo(javaClass, duplicateClass, className, classJarNum, jarEntryPath);
 
         if (duplicateClass) {
             // 重复类不执行后续处理
@@ -247,6 +234,138 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         // 处理内部类信息
         handleInnerClass(javaClass);
         return success;
+    }
+
+    // 记录包名
+    private void recordPackageName(String packageName) throws IOException {
+        // 执行记录包名
+        if (!doRecordPackageName(packageName)) {
+            return;
+        }
+        // 对每个层级的包名进行记录
+        int lastIndex = 0;
+        while (true) {
+            int index = packageName.indexOf(JavaCG2Constants.FLAG_DOT, lastIndex);
+            if (index == -1) {
+                break;
+            }
+            String upperPackageName = packageName.substring(0, index);
+            lastIndex = index + 1;
+            // 记录上层包名
+            doRecordPackageName(upperPackageName);
+        }
+    }
+
+    // 执行记录包名
+    private boolean doRecordPackageName(String packageName) throws IOException {
+        Set<Integer> containsPackageJarNumSet = recordedPackageNameMap.computeIfAbsent(packageName, k -> new HashSet<>());
+        if (containsPackageJarNumSet.add(lastJarNum)) {
+            // 未记录时记录包名
+            int packageLevel = StringUtils.countMatches(packageName, JavaCG2Constants.FLAG_DOT) + 1;
+            JavaCG2FileUtil.write2FileWithTab(packageInfoWriter, packageName, String.valueOf(packageLevel), String.valueOf(lastJarNum), lastJarFileName);
+            return true;
+        }
+        return false;
+    }
+
+    // 处理特殊模式
+    private boolean handleSpecialMode(JavaClass javaClass, boolean duplicateClass, int classJarNum, String jarEntryPath, ClassHandler classHandler) throws IOException {
+        String className = javaClass.getClassName();
+        if (parseOnlyClassMode) {
+            // 记录类的信息
+            recordClassInfo(javaClass, duplicateClass, className, classJarNum, jarEntryPath);
+            // 记录类引用的类
+            classHandler.recordReferencedClass(duplicateClass);
+            // 记录类上的注解信息
+            recordClassAnnotation(javaClass);
+            return true;
+        }
+
+        if (parseJarCompatibilityMode) {
+            // 使用Jar兼容性检查模式
+            // 记录类的信息
+            recordClassInfo(javaClass, duplicateClass, className, classJarNum, jarEntryPath);
+
+            // 使用Jar兼容性检查模式，仅解析基础信息时，处理重复类中的方法
+            classHandler.parseCompatibilityMode(duplicateClass);
+
+            if (!duplicateClass) {
+                // 非重复类时，记录继承及实现相关信息
+                recordExtendsAndImplInfo(javaClass, className);
+
+                // 记录类上的注解信息
+                recordClassAnnotation(javaClass);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    // 记录类上的注解信息
+    private void recordClassAnnotation(JavaClass javaClass) {
+        JavaCG2AnnotationUtil.writeAnnotationInfo(classAnnotationWriter, javaClass.getAnnotationEntries(), annotationAttributesFormatter, javaClass.getClassName());
+    }
+
+    private ClassHandler genClassHandler(JavaClass javaClass, String jarEntryPath, int classJarNum) {
+        ClassHandler classHandler = new ClassHandler(javaClass, jarEntryPath, javaCG2InputAndOutput, classJarNum);
+        classHandler.setUseSpringBeanByAnnotationHandler(useSpringBeanByAnnotationHandler);
+        classHandler.setRunnableImplClassMap(runnableImplClassMap);
+        classHandler.setCallableImplClassMap(callableImplClassMap);
+        classHandler.setTransactionCallbackImplClassMap(transactionCallbackImplClassMap);
+        classHandler.setTransactionCallbackWithoutResultChildClassMap(transactionCallbackWithoutResultChildClassMap);
+        classHandler.setThreadChildClassMap(threadChildClassMap);
+        classHandler.setCallIdCounter(callIdCounter);
+        classHandler.setClassAnnotationWriter(classAnnotationWriter);
+        classHandler.setClassReferenceWriter(classReferenceWriter);
+        classHandler.setDupClassReferenceWriter(dupClassReferenceWriter);
+        classHandler.setDupMethodInfoWriter(dupMethodInfoWriter);
+        classHandler.setDupFieldInfoWriter(dupFieldInfoWriter);
+        classHandler.setEnumInitArgFieldWriter(enumInitArgFieldWriter);
+        classHandler.setEnumInitAssignInfoWriter(enumInitAssignInfoWriter);
+        classHandler.setFieldAnnotationWriter(fieldAnnotationWriter);
+        classHandler.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
+        classHandler.setFieldInfoWriter(fieldInfoWriter);
+        classHandler.setFieldRelationshipWriter(fieldRelationshipWriter);
+        classHandler.setFieldUsageOtherWriter(fieldUsageOtherWriter);
+        classHandler.setGetMethodWriter(getMethodWriter);
+        classHandler.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
+        classHandler.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
+        classHandler.setMethodAnnotationWriter(methodAnnotationWriter);
+        classHandler.setMethodArgAnnotationWriter(methodArgAnnotationWriter);
+        classHandler.setMethodArgGenericsTypeWriter(methodArgGenericsTypeWriter);
+        classHandler.setMethodArgumentWriter(methodArgumentWriter);
+        classHandler.setMethodCallInfoWriter(methodCallInfoWriter);
+        classHandler.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
+        classHandler.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
+        classHandler.setMethodCallNonStaticFieldWriter(methodCallNonStaticFieldWriter);
+        classHandler.setMethodCallStaticFieldMCRWriter(methodCallStaticFieldMCRWriter);
+        classHandler.setMethodCallWriter(methodCallWriter);
+        classHandler.setMethodCallRawCalleeWriter(methodCallRawCalleeWriter);
+        classHandler.setMethodCatchWriter(methodCatchWriter);
+        classHandler.setMethodFinallyWriter(methodFinallyWriter);
+        classHandler.setMethodInfoWriter(methodInfoWriter);
+        classHandler.setMethodLineNumberWriter(methodLineNumberWriter);
+        classHandler.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
+        classHandler.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
+        classHandler.setMethodReturnConstValueWriter(methodReturnConstValueWriter);
+        classHandler.setMethodReturnFieldInfoWriter(methodReturnFieldInfoWriter);
+        classHandler.setMethodReturnGenericsTypeWriter(methodReturnGenericsTypeWriter);
+        classHandler.setMethodThrowWriter(methodThrowWriter);
+        classHandler.setSetMethodWriter(setMethodWriter);
+        classHandler.setStaticFinalFieldMethodCallIdWriter(staticFinalFieldMethodCallIdWriter);
+        classHandler.recordExtensionsManager(extensionsManager);
+        classHandler.setMethodNumCounter(methodNumCounter);
+        classHandler.setFailCounter(failCounter);
+        classHandler.setFieldRelationshipCounter(fieldRelationshipCounter);
+        classHandler.setClassAndJarNum(classAndJarNum);
+        return classHandler;
+    }
+
+    // 记录类的信息
+    private void recordClassInfo(JavaClass javaClass, boolean duplicateClass, String className, int classJarNum, String jarEntryPath) throws IOException {
+        String classMd5 = DigestUtils.md5Hex(javaClass.getBytes());
+        Writer usedClassInfoWriter = duplicateClass ? dupClassInfoWriter : classInfoWriter;
+        JavaCG2FileUtil.write2FileWithTab(usedClassInfoWriter, className, String.valueOf(javaClass.getAccessFlags()), classMd5, String.valueOf(classJarNum), jarEntryPath);
     }
 
     // 将处理失败的类保存到目录中
@@ -394,6 +513,11 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         }
     }
 
+    public void recordExtensionsManager(ExtensionsManager extensionsManager) {
+        this.extensionsManager = extensionsManager;
+        annotationAttributesFormatter = extensionsManager.getAnnotationAttributesFormatter();
+    }
+
     //
     public void setUseSpringBeanByAnnotationHandler(UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler) {
         this.useSpringBeanByAnnotationHandler = useSpringBeanByAnnotationHandler;
@@ -435,6 +559,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.classReferenceWriter = classReferenceWriter;
     }
 
+    public void setDupClassReferenceWriter(Writer dupClassReferenceWriter) {
+        this.dupClassReferenceWriter = dupClassReferenceWriter;
+    }
+
     public void setClassSignatureGenericsTypeWriter(Writer classSignatureGenericsTypeWriter) {
         this.classSignatureGenericsTypeWriter = classSignatureGenericsTypeWriter;
     }
@@ -445,6 +573,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setDupMethodInfoWriter(Writer dupMethodInfoWriter) {
         this.dupMethodInfoWriter = dupMethodInfoWriter;
+    }
+
+    public void setDupFieldInfoWriter(Writer dupFieldInfoWriter) {
+        this.dupFieldInfoWriter = dupFieldInfoWriter;
     }
 
     public void setEnumInitArgFieldWriter(Writer enumInitArgFieldWriter) {
@@ -473,6 +605,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setFieldRelationshipWriter(Writer fieldRelationshipWriter) {
         this.fieldRelationshipWriter = fieldRelationshipWriter;
+    }
+
+    public void setFieldUsageOtherWriter(Writer fieldUsageOtherWriter) {
+        this.fieldUsageOtherWriter = fieldUsageOtherWriter;
     }
 
     public void setGetMethodWriter(Writer getMethodWriter) {
@@ -527,6 +663,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.methodCallWriter = methodCallWriter;
     }
 
+    public void setMethodCallRawCalleeWriter(Writer methodCallRawCalleeWriter) {
+        this.methodCallRawCalleeWriter = methodCallRawCalleeWriter;
+    }
+
     public void setMethodCatchWriter(Writer methodCatchWriter) {
         this.methodCatchWriter = methodCatchWriter;
     }
@@ -567,6 +707,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.methodThrowWriter = methodThrowWriter;
     }
 
+    public void setPackageInfoWriter(Writer packageInfoWriter) {
+        this.packageInfoWriter = packageInfoWriter;
+    }
+
     public void setSetMethodWriter(Writer setMethodWriter) {
         this.setMethodWriter = setMethodWriter;
     }
@@ -577,10 +721,6 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setLogMethodSpendTimeWriter(WriterSupportSkip logMethodSpendTimeWriter) {
         this.logMethodSpendTimeWriter = logMethodSpendTimeWriter;
-    }
-
-    public void setExtensionsManager(ExtensionsManager extensionsManager) {
-        this.extensionsManager = extensionsManager;
     }
 
     public void setCallIdCounter(JavaCG2Counter callIdCounter) {

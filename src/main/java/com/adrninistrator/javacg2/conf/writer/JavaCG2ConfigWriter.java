@@ -1,9 +1,8 @@
 package com.adrninistrator.javacg2.conf.writer;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
+import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
-import com.adrninistrator.javacg2.el.enums.JavaCG2ElAllowedVariableEnum;
-import com.adrninistrator.javacg2.el.enums.JavaCG2ElConfigEnum;
 
 /**
  * @author adrninistrator
@@ -19,13 +18,12 @@ public class JavaCG2ConfigWriter extends BaseConfigWriter {
     // 增加自定义的el函数说明
     @Override
     protected String chooseElExampleText() {
-        return "例如在 " + JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS.getKey() + " 配置文件中指定以下内容" +
-                JavaCG2Constants.NEW_LINE_WINDOWS + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_PACKAGE_NAME.getVariableName() + " == 'a.b' " +
-                "&& string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_SIMPLE_CLASS_NAME.getVariableName() + ", 'Test')" +
-                JavaCG2Constants.NEW_LINE_WINDOWS + "代表在解析类时，假如类的包名等于 'a.b'，且类的简单类名以 'Test' 结尾，则跳过解析对应的类";
+        return JavaCG2Constants.NEW_LINE_WINDOWS + "字符串比较的表达式示例可参考 " + JavaCG2DirEnum.IDE_EL_EXAMPLE.getDirName() + "/" + JavaCG2Constants.EL_STRING_COMPARE_MD_FILE_NAME +
+                JavaCG2Constants.NEW_LINE_WINDOWS +
+                JavaCG2Constants.NEW_LINE_WINDOWS + "不同场景的表达式示例可参考 " + JavaCG2DirEnum.IDE_EL_EXAMPLE.getDirName() + " 目录中子目录的对应文件"
+                ;
     }
 
-    // todo 在生成的_javacg2_all_config.md文件中，打印el配置
     @Override
     protected String chooseElDebugModeText() {
         return "将配置文件 " + JavaCG2ConfigKeyEnum.CKE_EL_DEBUG_MODE.getFileName() + " 的 " + JavaCG2ConfigKeyEnum.CKE_EL_DEBUG_MODE.getKey() + " 参数设置为 " +

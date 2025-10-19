@@ -71,7 +71,7 @@ public abstract class AbstractMethodHandler {
     // 当前方法是否为静态代码块
     protected boolean inClinitMethod;
 
-    // 当前类已记录过的set方法名称（get方法没有参数，只会有一个）
+    // 当前类已记录过的set方法名（get方法没有参数，只会有一个）
     protected Set<String> recordedSetMethodSet;
 
     protected JavaCG2Counter failCounter;

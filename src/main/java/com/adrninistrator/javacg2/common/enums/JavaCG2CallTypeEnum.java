@@ -17,66 +17,38 @@ import java.util.Map;
 
 public enum JavaCG2CallTypeEnum {
     // 原始的调用类型，不以“_”开头，其他的都需要以“_”开头
-    CTE_RAW_INVOKE_VIRTUAL("VIR", true, false, false, false, false,
-            false, "JVM的原始方法指令: INVOKEVIRTUAL"),
-    CTE_RAW_INVOKE_INTERFACE("INT", true, false, false, false, false,
-            false, "JVM的原始方法指令: INVOKEINTERFACE"),
-    CTE_RAW_INVOKE_SPECIAL("SPE", true, false, false, false, false,
-            false, "JVM的原始方法指令: INVOKESPECIAL"),
-    CTE_RAW_INVOKE_STATIC("STA", true, false, false, false, false,
-            false, "JVM的原始方法指令: INVOKESTATIC"),
-    CTE_RAW_INVOKE_DYNAMIC("DYN", true, false, false, false, false,
-            false, "JVM的原始方法指令: INVOKEDYNAMIC"),
+    CTE_RAW_INVOKE_VIRTUAL("VIR", true, false, false, false, false, false, false, "JVM的原始方法指令: INVOKEVIRTUAL"),
+    CTE_RAW_INVOKE_INTERFACE("INT", true, false, false, false, false, false, false, "JVM的原始方法指令: INVOKEINTERFACE"),
+    CTE_RAW_INVOKE_SPECIAL("SPE", true, false, false, false, false, false, false, "JVM的原始方法指令: INVOKESPECIAL"),
+    CTE_RAW_INVOKE_STATIC("STA", true, false, false, false, false, false, false, "JVM的原始方法指令: INVOKESTATIC"),
+    CTE_RAW_INVOKE_DYNAMIC("DYN", true, false, false, false, false, false, false, "JVM的原始方法指令: INVOKEDYNAMIC"),
     // Spring Bean相关的调用类型
-    CTE_SPRING_BEAN_ACTUAL_INTERFACE("_SPR_ACT_I", false, false, false, false, false,
-            false, "被调用接口为 Spring Bean ，替换为实际的实现类类型"),
-    CTE_SPRING_BEAN_ACTUAL_CLASS("_SPR_ACT_C", false, false, false, false, false,
-            false, "被调用类为 Spring Bean ，替换为实际的子类类型"),
+    CTE_SPRING_BEAN_ACTUAL_INTERFACE("_SPR_ACT_I", false, false, false, false, true, false, false, "被调用接口为 Spring Bean ，替换为实际的实现类类型"),
+    CTE_SPRING_BEAN_ACTUAL_CLASS("_SPR_ACT_C", false, false, false, false, true, false, false, "被调用类为 Spring Bean ，替换为实际的子类类型"),
     // 其他调用类型
-    CTE_ACTUAL_INTERFACE("_ACT_I", false, false, false, false, false,
-            false, "被调用接口替换为实际的实现类类型"),
-    CTE_ACTUAL_CLASS("_ACT_C", false, false, false, false, false,
-            false, "被调用类替换为实际的子类类型"),
-    CTE_INTERFACE_CALL_IMPL_CLASS("_ITF", false, false, true, false, false,
-            false, "接口调用实现类对应的方法"),
-    CTE_LAMBDA("_LM", false, false, false, false, false,
-            false, "Lambda表达式"),
-    CTE_RUNNABLE_INIT_RUN1("_RIR1", false, false, false, true, false,
-            false, "其他方法调用Runnable 构造函数"),
-    CTE_RUNNABLE_INIT_RUN2("_RIR2", false, false, false, true, true,
-            false, "Runnable 构造函数调用 run() 方法"),
-    CTE_CALLABLE_INIT_CALL1("_CIC1", false, false, false, true, false,
-            false, "其他方法调用Callable 构造函数"),
-    CTE_CALLABLE_INIT_CALL2("_CIC2", false, false, false, true, true,
-            false, "Callable 构造函数调用 call() 方法"),
-    CTE_TX_CALLBACK_INIT_CALL1("_TCID1", false, false, false, true, false,
-            false, "其他方法调用 TransactionCallback 构造函数"),
-    CTE_TX_CALLBACK_INIT_CALL2("_TCID2", false, false, false, true, false,
-            true, "TransactionCallback 构造函数调用 doInTransaction() 方法"),
-    CTE_TX_CALLBACK_WR_INIT_CALL1("_TCWRID1", false, false, false, true, false,
-            false, "其他方法调用 TransactionCallbackWithoutResult 构造函数"),
-    CTE_TX_CALLBACK_WR_INIT_CALL2("_TCWRID2", false, false, false, true, false,
-            true, "TransactionCallbackWithoutResult 构造函数调用 doInTransactionWithoutResult() 方法"),
-    CTE_THREAD_START_RUN("_TSR", false, false, false, false, true,
-            false, "Thread start() 方法调用 run() 方法"),
-    CTE_SUPER_CALL_CHILD("_SCC", false, false, true, false, false,
-            false, "父类调用子类对应的方法"),
-    CTE_CHILD_CALL_SUPER("_CCS", false, true, false, false, false,
-            false, "子类调用父类对应的方法"),
-    CTE_CHILD_CALL_SUPER_SPECIAL("_CCS_SPE", true, true, false, false, false,
-            false, "子类通过super.调用父类方法"),
-    CTE_CHILD_CALL_SUPER_INTERFACE("_CCS_I", false, false, false, false, false,
-            false, "子接口调用父接口对应的方法"),
-    CTE_CLASS_CALL_INTERFACE_DEFAULT("_CCID", false, true, false, false, false,
-            false, "实现类调用接口对应的default方法"),
-    CTE_INTERFACE_CALL_INTERFACE_DEFAULT("_ICID", false, true, false, false, false,
-            false, "子接口调用父接口对应的default方法"),
-    CTE_MANUAL_ADDED("_MA", false, false, false, false, false,
-            false, "人工添加的方法调用"),
-    CTE_METHOD_ANNOTATION_ADDED("_MAA", false, false, false, false, false,
-            false, "通过方法注解添加的调用关系"),
-    CTE_ILLEGAL("ILLEGAL", false, false, false, false, false,
-            false, "ILLEGAL"),
+    CTE_ACTUAL_INTERFACE("_ACT_I", false, false, false, false, true, false, false, "被调用接口替换为实际的实现类类型"),
+    CTE_ACTUAL_CLASS("_ACT_C", false, false, false, false, true, false, false, "被调用类替换为实际的子类类型"),
+    CTE_INTERFACE_CALL_IMPL_CLASS("_ITF", false, false, true, false, false, false, false, "接口调用实现类对应的方法"),
+    CTE_BOOTSTRAP_METHOD("_BSM", false, false, false, false, false, false, false, "INVOKEDYNAMIC指令调用的BootstrapMethod"),
+    CTE_LAMBDA("_LM", false, false, false, false, false, false, false, "Lambda表达式"),
+    CTE_RUNNABLE_INIT_RUN1("_RIR1", false, false, false, true, false, false, false, "其他方法调用Runnable 构造函数"),
+    CTE_RUNNABLE_INIT_RUN2("_RIR2", false, false, false, true, false, true, false, "Runnable 构造函数调用 run() 方法"),
+    CTE_CALLABLE_INIT_CALL1("_CIC1", false, false, false, true, false, false, false, "其他方法调用Callable 构造函数"),
+    CTE_CALLABLE_INIT_CALL2("_CIC2", false, false, false, true, false, true, false, "Callable 构造函数调用 call() 方法"),
+    CTE_TX_CALLBACK_INIT_CALL1("_TCID1", false, false, false, true, false, false, false, "其他方法调用 TransactionCallback 构造函数"),
+    CTE_TX_CALLBACK_INIT_CALL2("_TCID2", false, false, false, true, false, false, true, "TransactionCallback 构造函数调用 doInTransaction() 方法"),
+    CTE_TX_CALLBACK_WR_INIT_CALL1("_TCWRID1", false, false, false, true, false, false, false, "其他方法调用 TransactionCallbackWithoutResult 构造函数"),
+    CTE_TX_CALLBACK_WR_INIT_CALL2("_TCWRID2", false, false, false, true, false, false, true, "TransactionCallbackWithoutResult 构造函数调用 doInTransactionWithoutResult() 方法"),
+    CTE_THREAD_START_RUN("_TSR", false, false, false, false, false, true, false, "Thread start() 方法调用 run() 方法"),
+    CTE_SUPER_CALL_CHILD("_SCC", false, false, true, false, false, false, false, "父类调用子类对应的方法"),
+    CTE_CHILD_CALL_SUPER("_CCS", false, true, false, false, false, false, false, "子类调用父类对应的方法"),
+    CTE_CHILD_CALL_SUPER_SPECIAL("_CCS_SPE", true, true, false, false, false, false, false, "子类通过super.调用父类方法"),
+    CTE_CHILD_CALL_SUPER_INTERFACE("_CCS_I", false, false, false, false, false, false, false, "子接口调用父接口对应的方法"),
+    CTE_CLASS_CALL_INTERFACE_DEFAULT("_CCID", false, true, false, false, false, false, false, "实现类调用接口对应的default方法"),
+    CTE_INTERFACE_CALL_INTERFACE_DEFAULT("_ICID", false, true, false, false, false, false, false, "子接口调用父接口对应的default方法"),
+    CTE_MANUAL_ADDED("_MA", false, false, false, false, false, false, false, "人工添加的方法调用"),
+    CTE_METHOD_ANNOTATION_ADDED("_MAA", false, false, false, false, false, false, false, "通过方法注解添加的调用关系"),
+    CTE_ILLEGAL("ILLEGAL", false, false, false, false, false, false, false, "ILLEGAL"),
     ;
 
     // 类型
@@ -89,6 +61,8 @@ public enum JavaCG2CallTypeEnum {
     private final boolean superCallChild;
     // <init>方法和其他方法的调用
     private final boolean initMethodCall;
+    // 被调用对象从原始类型被替换为实际类型
+    private final boolean calleeReplaceType;
     // 在其他线程中执行
     private final boolean runInOtherThread;
     // 在Spring事务中执行
@@ -104,6 +78,8 @@ public enum JavaCG2CallTypeEnum {
     private static final List<String> SUPER_CALL_CHILD_LIST;
     // <init>方法和其他方法的调用类型列表
     private static final List<String> INIT_METHOD_CALL_LIST;
+    // 被调用对象从原始类型被替换为实际类型
+    private static final List<String> CALLEE_REPLACE_TYPE_LIST;
     // 在其他线程中执行类型列表
     private static final List<String> RUN_IN_OTHER_THREAD_LIST;
     // 在Spring事务中执行类型列表
@@ -114,6 +90,7 @@ public enum JavaCG2CallTypeEnum {
         List<String> childCallSuperList = new ArrayList<>();
         List<String> superCallChildList = new ArrayList<>();
         List<String> initMethodCallList = new ArrayList<>();
+        List<String> calleeReplaceTypeList = new ArrayList<>();
         List<String> runInOtherThreadList = new ArrayList<>();
         List<String> runInSpringTxList = new ArrayList<>();
 
@@ -130,6 +107,9 @@ public enum JavaCG2CallTypeEnum {
             if (callTypeEnum.isInitMethodCall()) {
                 initMethodCallList.add(callTypeEnum.getType());
             }
+            if (callTypeEnum.isCalleeReplaceType()) {
+                calleeReplaceTypeList.add(callTypeEnum.getType());
+            }
             if (callTypeEnum.isRunInOtherThread()) {
                 runInOtherThreadList.add(callTypeEnum.getType());
             }
@@ -142,11 +122,13 @@ public enum JavaCG2CallTypeEnum {
         CHILD_CALL_SUPER_LIST = Collections.unmodifiableList(childCallSuperList);
         SUPER_CALL_CHILD_LIST = Collections.unmodifiableList(superCallChildList);
         INIT_METHOD_CALL_LIST = Collections.unmodifiableList(initMethodCallList);
+        CALLEE_REPLACE_TYPE_LIST = Collections.unmodifiableList(calleeReplaceTypeList);
         RUN_IN_OTHER_THREAD_LIST = Collections.unmodifiableList(runInOtherThreadList);
         RUN_IN_SPRING_TX_LIST = Collections.unmodifiableList(runInSpringTxList);
     }
 
-    JavaCG2CallTypeEnum(String type, boolean existsInstruction, boolean childCallSuper, boolean superCallChild, boolean initMethodCall, boolean runInOtherThread,
+    JavaCG2CallTypeEnum(String type, boolean existsInstruction, boolean childCallSuper, boolean superCallChild, boolean initMethodCall, boolean calleeReplaceType,
+                        boolean runInOtherThread,
                         boolean runInSpringTx,
                         String desc) {
         this.type = type;
@@ -154,6 +136,7 @@ public enum JavaCG2CallTypeEnum {
         this.childCallSuper = childCallSuper;
         this.superCallChild = superCallChild;
         this.initMethodCall = initMethodCall;
+        this.calleeReplaceType = calleeReplaceType;
         this.runInOtherThread = runInOtherThread;
         this.runInSpringTx = runInSpringTx;
         this.desc = desc;
@@ -177,6 +160,10 @@ public enum JavaCG2CallTypeEnum {
 
     public boolean isInitMethodCall() {
         return initMethodCall;
+    }
+
+    public boolean isCalleeReplaceType() {
+        return calleeReplaceType;
     }
 
     public boolean isRunInOtherThread() {
@@ -237,6 +224,10 @@ public enum JavaCG2CallTypeEnum {
         return INIT_METHOD_CALL_LIST;
     }
 
+    public static List<String> getCalleeReplaceTypeList() {
+        return CALLEE_REPLACE_TYPE_LIST;
+    }
+
     public static List<String> getRunInOtherThreadList() {
         return RUN_IN_OTHER_THREAD_LIST;
     }
@@ -273,6 +264,16 @@ public enum JavaCG2CallTypeEnum {
      */
     public static boolean isInitMethodCallType(String callType) {
         return callType != null && INIT_METHOD_CALL_LIST.contains(callType);
+    }
+
+    /**
+     * 判断是否属于被调用对象从原始类型被替换为实际类型
+     *
+     * @param callType
+     * @return
+     */
+    public static boolean isCalleeReplaceType(String callType) {
+        return callType != null && CALLEE_REPLACE_TYPE_LIST.contains(callType);
     }
 
     /**

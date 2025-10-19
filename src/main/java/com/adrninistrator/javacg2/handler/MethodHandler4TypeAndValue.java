@@ -1396,7 +1396,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                     boolean staticField = (fieldElement instanceof StaticFieldElement);
                     boolean fieldOfThis = JavaCG2Constants.THIS.equals(fieldElement.getClassName());
                     int arrayDimensions = JavaCG2ByteCodeUtil.getTypeArrayDimensions(fieldElement.getType());
-                    String fieldType = JavaCG2ByteCodeUtil.removeAllArrayFlag(fieldElement.getType());
+                    String fieldType = JavaCG2ClassMethodUtil.removeAllArrayFlag(fieldElement.getType());
                     String fieldInClassName = fieldOfThis ? callerClassName : fieldElement.getClassName();
                     JavaCG2FileUtil.write2FileWithTab(methodReturnFieldInfoWriter, callerFullMethod, methodReturnType, String.valueOf(returnFieldSeq),
                             JavaCG2YesNoEnum.parseStrValue(staticField), JavaCG2YesNoEnum.parseStrValue(fieldOfThis), fieldInClassName, fieldType,

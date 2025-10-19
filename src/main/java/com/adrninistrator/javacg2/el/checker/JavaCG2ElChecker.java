@@ -2,7 +2,7 @@ package com.adrninistrator.javacg2.el.checker;
 
 import com.adrninistrator.javacg2.el.enums.JavaCG2ElConfigEnum;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
-import com.adrninistrator.javacg2.el.manager.ElManager;
+import com.adrninistrator.javacg2.el.manager.AbstractElManager;
 import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.el.util.ElUtil;
 
@@ -11,10 +11,10 @@ import com.adrninistrator.javacg2.el.util.ElUtil;
  * @date 2025/2/13
  * @description: 当前项目使用的表达式检查抽象父类
  */
-public abstract class JavaCG2ElChecker extends ElChecker {
+public abstract class JavaCG2ElChecker extends AbstractElChecker {
 
     @Override
-    protected void doCheck(ElManager elManager, ElConfigInterface elConfig) {
+    protected void doCheck(AbstractElManager elManager, ElConfigInterface elConfig) {
         try {
             // 设置执行用于检测的表达式标志
             ElUtil.setRunInCheckerFlag();

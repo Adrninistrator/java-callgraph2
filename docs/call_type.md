@@ -12,6 +12,7 @@
 |_ACT_I|被调用接口替换为实际的实现类类型|
 |_ACT_C|被调用类替换为实际的子类类型|
 |_ITF|接口调用实现类对应的方法|
+|_BSM|INVOKEDYNAMIC指令调用的BootstrapMethod|
 |_LM|Lambda表达式|
 |_RIR1|其他方法调用Runnable 构造函数|
 |_RIR2|Runnable 构造函数调用 run() 方法|

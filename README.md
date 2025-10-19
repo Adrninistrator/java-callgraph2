@@ -1,76 +1,32 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.adrninistrator/java-callgraph2.svg)](https://search.maven.org/artifact/com.github.adrninistrator/java-callgraph2/)
 
-# 1. `todo`配置文件    特性
+# 1. 让大模型基于项目回答问题
 
-# 2. DeepWiki 链接
+## 1.1. DeepWiki
 
 [https://deepwiki.com/Adrninistrator/java-callgraph2](https://deepwiki.com/Adrninistrator/java-callgraph2)
 
 通过大模型分析项目代码，可向大模型提出关于项目的问题，包括使用方法等
 
-# 3. 项目说明
+## 1.2. zread.ai
 
-java-callgraph2 项目用于对 Java 代码（编译后的 class、jar、war 文件）进行静态分析，支持输出以下文件
+[https://zread.ai/Adrninistrator/java-callgraph2](https://zread.ai/Adrninistrator/java-callgraph2)
 
-|序号|文件内容|
-|---|---|
-|1|类的注解|
-|2|类的继承或实现的泛型信息|
-|3|类的信息|
-|4|引用的类|
-|5|类的签名中的泛型信息|
-|6|重复类的信息|
-|7|重复类的方法的信息|
-|8|枚举类构造函数参数与字段赋值关系|
-|9|枚举类初始化赋值信息|
-|10|继承与实现相关信息|
-|11|字段的注解|
-|12|非静态字段集合中涉及的泛型类型|
-|13|字段信息|
-|14|通过get/set方法关联的字段关系|
-|15|dto的get方法及字段|
-|16|内部类信息|
-|17|jar包信息|
-|18|java-callgraph2组件使用的配置参数|
-|19|Lambda表达式方法信息|
-|20|日志-方法处理耗时|
-|21|方法的注解|
-|22|方法参数的注解|
-|23|方法参数集合中涉及的泛型类型|
-|24|方法参数|
-|25|方法调用|
-|26|方法调用的信息|
-|27|方法调用使用方法调用返回值|
-|28|方法调用使用静态字段信息|
-|29|方法调用使用非静态字段信息|
-|30|方法调用使用静态字段方法调用返回值|
-|31|方法的catch信息|
-|32|方法的finally信息|
-|33|方法的信息|
-|34|方法代码行号|
-|35|方法返回值对应的方法序号|
-|36|方法返回值对应的方法调用ID|
-|37|方法返回的常量值（含null）|
-|38|方法返回的字段（含枚举）|
-|39|方法返回集合中涉及的泛型类型|
-|40|方法通过throw抛出的异常信息|
-|41|dto的set方法及字段|
-|42|static、final字段初始化方法信息（含枚举）|
-|43|Spring Bean信息|
-|44|Java代码中定义的Spring的包扫描路径|
-|45|Java代码中定义的Spring AOP Aspect|
-|46|Java代码中定义的Spring AOP Pointcut|
-|47|Java代码中定义的Spring AOP Advice|
+作用同上
 
-当前项目原本 fork 自 [https://github.com/gousiosg/java-callgraph](https://github.com/gousiosg/java-callgraph)，用于生成Java方法调用关系
+# 2. 项目说明
+
+java-callgraph2 项目用于对 Java 代码（编译后的 class、jar、war 文件）进行静态分析，支持输出的文件见 [生成文件说明](docs/file_desc.md)
+
+当前项目原本 fork 自 [https://github.com/gousiosg/java-callgraph](https://github.com/gousiosg/java-callgraph)，用于生成 Java 方法调用关系
 
 后来进行了优化和增强，差别已比较大，不容易合并回原始项目中，且仅提供通过静态分析获取 Java 方法调用关系的功能，因此创建了该项目
 
-当前项目只会输出静态分析结果到文件，不会写入数据库；假如需要将结果写入数据库进行后续分析，例如生成Java代码完整方法调用链、生成调用堆栈、分析jar文件方法修改影响范围等，可使用项目[https://github.com/Adrninistrator/java-all-call-graph](https://github.com/Adrninistrator/java-all-call-graph)
+当前项目只会输出静态分析结果到文件，不会写入数据库；假如需要将结果写入数据库进行后续分析，例如生成 Java 代码完整方法调用链、生成调用堆栈、分析 jar 文件方法修改影响范围等，可使用项目 [https://github.com/Adrninistrator/java-all-call-graph](https://github.com/Adrninistrator/java-all-call-graph)
 
 `当前项目提供了插件功能，可用于为 Java 代码自动生成 UML 时序图（文档未完成，暂未提交）`，可参考 [https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram](https://github.com/Adrninistrator/gen-java-code-uml-sequence-diagram)。
 
-# 4. 特性说明
+# 3. 特性说明
 
 原始 java-callgraph 在多数场景下能够获取到 Java 方法调用关系，但以下场景的调用关系会缺失
 
@@ -146,22 +102,36 @@ list.stream().map(TestDto1::getStr).collect(Collectors.toList());
 
 对于更复杂的情况，例如存在接口 Interface1，及其抽象实现类 Abstract1，及其子类 ChildImpl1，若在某个类中引入了抽象实现类 Abstract1 并调用其方法的情况，生成的方法调用关系中也不会出现缺失。
 
-# 使用说明
+# 4. 配置参数说明
 
-见[使用说明](docs/how_to_use.md)
+## 4.1. 配置参数示例
 
-# 5. 支持输出的文件格式
+[配置参数示例](docs/_javacg2_all_config.md)
+
+## 4.2. 表达式使用通用说明文档
+
+[表达式使用通用说明文档](src/main/resources/_el_example/el_usage.md)
+
+## 4.3. 表达式字符串比较说明文档
+
+[表达式字符串比较说明文档](src/main/resources/_el_example/string_compare.md)
+
+# 5. 使用说明
+
+见 [使用说明](docs/how_to_use.md)
+
+# 6. 支持输出的文件格式
 
 具体文件格式见 [输出文件格式](docs/file_format.md) ，有部分文件需要使用 java-all-call-graph 组件时支持输出
 
-# 6. 方法调用类型
+# 7. 方法调用类型
 
 [方法调用类型](docs/call_type.md)
 
-# 7. 扩展功能
+# 8. 扩展功能
 
 参考 [https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md](https://github.com/Adrninistrator/java-all-call-graph/blob/main/extensions.md) 中的相关内容
 
-# 8. 更新说明
+# 9. 更新说明
 
 [更新说明](docs/change_log.md)

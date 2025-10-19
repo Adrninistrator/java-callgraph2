@@ -7,12 +7,14 @@ import com.adrninistrator.javacg2.comparator.Comparator4MainConfig;
 import com.adrninistrator.javacg2.conf.enums.interfaces.ConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.OtherConfigInterface;
+import com.adrninistrator.javacg2.dto.counter.JavaCG2Counter;
 import com.adrninistrator.javacg2.el.enums.ElStringAnyFunctionEnum;
 import com.adrninistrator.javacg2.el.enums.ElStringFunctionTwoArgsEnum;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.exceptions.JavaCG2Error;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
+import com.adrninistrator.javacg2.markdown.MarkdownConstants;
 import com.adrninistrator.javacg2.markdown.writer.MarkdownWriter;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import com.adrninistrator.javacg2.util.JavaCG2Util;
@@ -144,25 +146,32 @@ public abstract class BaseConfigureWrapper {
     // 自定义获取默认的参数值
     protected abstract Object customGetDefaultConfig(MainConfigInterface mainConfig);
 
-    // 自定义打印配置参数信息
+    // 自定义打印配置参数
     protected abstract void customPrintConfigInfo(MarkdownWriter markdownWriter, boolean printAllConfigInfo) throws IOException;
 
     // 获取主要配置的简单类名
     protected abstract String getMainConfigSCNFromFile(String mainConfigFile);
 
     /**
-     * 选择当前项目使用的不区分顺序的其他配置
+     * 选择当前项目使用的不区分顺序的其他配置参数
      *
      * @return
      */
-    protected abstract OtherConfigInterface chooseOtherConfigFileUseSetEnum();
+    public abstract OtherConfigInterface[] chooseOtherConfigFileUseSetEnums();
 
     /**
-     * 选择当前项目使用的区分顺序的其他配置
+     * 选择当前项目使用的区分顺序的其他配置参数
      *
      * @return
      */
-    protected abstract OtherConfigInterface chooseOtherConfigFileUseListEnum();
+    public abstract OtherConfigInterface[] chooseOtherConfigFileUseListEnums();
+
+    /**
+     * 选择当前项目使用的表达式配置参数
+     *
+     * @return
+     */
+    public abstract ElConfigInterface[] chooseElConfigEnums();
 
     /**
      * 选择允许使用的配置类名
@@ -279,6 +288,9 @@ public abstract class BaseConfigureWrapper {
      * @param configSet
      */
     public void setOtherConfigSet(OtherConfigInterface otherConfig, Set<String> configSet) {
+        if (!otherConfig.isSetOrList()) {
+            throw new JavaCG2Error("仅支持Set类型的配置参数 " + otherConfig.getConfigPrintInfo());
+        }
         checkAllowedConfigClassName(otherConfig);
         if (configSet == null) {
             throw new JavaCG2Error("不允许传入null，只能传入内容为空的Set " + otherConfig.getConfigPrintInfo());
@@ -335,6 +347,9 @@ public abstract class BaseConfigureWrapper {
      */
     public void setOtherConfigList(OtherConfigInterface otherConfig, List<String> configList) {
         checkAllowedConfigClassName(otherConfig);
+        if (otherConfig.isSetOrList()) {
+            throw new JavaCG2Error("仅支持List类型的配置参数 " + otherConfig.getConfigPrintInfo());
+        }
         if (configList == null) {
             throw new JavaCG2Error("不允许传入null，只能传入内容为空的List " + otherConfig.getConfigPrintInfo());
         }
@@ -423,7 +438,7 @@ public abstract class BaseConfigureWrapper {
         if (elText == null) {
             throw new JavaCG2Error("不允许传入null，只能传入空字符串 " + elConfig.getConfigPrintInfo());
         }
-        logger.info("设置表达式配置 {}", elConfig.getConfigPrintInfo());
+        logger.info("设置表达式配置 {} [{}]", elConfig.getConfigPrintInfo(), elText);
         elConfigMap.put(elConfig.getKey(), elText);
     }
 
@@ -791,39 +806,51 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 执行完毕时打印当前使用的配置信息
+     * 拷贝有使用的配置参数到另一个实例
+     *
+     * @param another
+     */
+    public void baseCopyUsedConfigTo(BaseConfigureWrapper another) {
+        another.usedMainConfigMap.putAll(this.usedMainConfigMap);
+        another.usedOtherListConfigSet.addAll(this.usedOtherListConfigSet);
+        another.usedOtherSetConfigSet.addAll(this.usedOtherSetConfigSet);
+        another.usedElConfigSet.addAll(this.usedElConfigSet);
+    }
+
+    /**
+     * 执行完毕时打印当前使用的配置参数
      *
      * @param simpleClassName
      * @param outputDirPath
      * @param fileName
      */
     public boolean printUsedConfigInfo(String simpleClassName, String outputDirPath, String fileName) {
-        String configMdFilePath = JavaCG2Util.addSeparator4FilePath(outputDirPath) + fileName;
-        logger.info("{} 使用的配置参数信息保存到以下文件 {}", simpleClassName, configMdFilePath);
-        // 打印使用的配置参数信息
+        String configMdFilePath = JavaCG2FileUtil.addSeparator4FilePath(outputDirPath) + fileName;
+        logger.info("{} 使用的配置参数保存到以下文件 {}", simpleClassName, configMdFilePath);
+        // 打印使用的配置参数
         return printConfigInfo(simpleClassName, configMdFilePath, false);
     }
 
     /**
-     * 执行完毕时打印当前所有配置信息
+     * 执行完毕时打印当前所有配置参数
      *
      * @param simpleClassName
      * @param outputDirPath
      * @param fileName
      */
     public boolean printAllConfigInfo(String simpleClassName, String outputDirPath, String fileName) {
-        String configMdFilePath = JavaCG2Util.addSeparator4FilePath(outputDirPath) + fileName;
-        logger.info("{} 所有配置参数信息保存到以下文件 {}", simpleClassName, configMdFilePath);
-        // 打印使用的配置参数信息
+        String configMdFilePath = JavaCG2FileUtil.addSeparator4FilePath(outputDirPath) + fileName;
+        logger.info("{} 所有配置参数保存到以下文件 {}", simpleClassName, configMdFilePath);
+        // 打印使用的配置参数
         return printConfigInfo(simpleClassName, configMdFilePath, true);
     }
 
     /**
-     * 打印配置参数信息
+     * 打印配置参数
      *
      * @param simpleClassName
      * @param configMdFilePath
-     * @param printAllConfigInfo true: 打印所有的配置参数信息 false: 打印使用的配置参数信息
+     * @param printAllConfigInfo true: 打印所有的配置参数 false: 打印使用的配置参数
      */
     private boolean printConfigInfo(String simpleClassName, String configMdFilePath, boolean printAllConfigInfo) {
         // 当前文件可能会写多次，最后一次写的内容覆盖前面的内容，所有使用过当前配置类的类名都会被记录
@@ -836,12 +863,13 @@ public abstract class BaseConfigureWrapper {
 
             if (!printAllConfigInfo) {
                 markdownWriter.addLineWithNewLine("当前文件代表本次执行时有使用的配置参数");
-                // 打印使用的配置参数信息，先打印当前有使用的配置参数
+                // 打印使用的配置参数，先打印当前有使用的配置参数
                 printUsedConfig(markdownWriter, StringUtils.join(useThisSimpleClassNameList, " "));
+            } else {
+                markdownWriter.addLineWithNewLine("当前文件代表所有支持的配置参数");
             }
-            markdownWriter.addLineWithNewLine("当前文件代表所有支持的配置参数");
 
-            // 自定义打印配置参数信息
+            // 自定义打印配置参数
             customPrintConfigInfo(markdownWriter, printAllConfigInfo);
 
             return true;
@@ -856,62 +884,76 @@ public abstract class BaseConfigureWrapper {
         markdownWriter.addTitle(1, "使用过当前配置类的简单类名列表");
         markdownWriter.addLineWithNewLine(simpleClassNames);
 
-        markdownWriter.addTitle(1, "当前有使用的配置参数");
+        markdownWriter.addTitle(1, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_USED + "配置参数");
         if (!usedMainConfigMap.isEmpty()) {
             // 当主要配置参数有使用时，打印有使用的主要的配置key及描述
-            markdownWriter.addTitle(2, "当前有使用的主要配置文件");
+            markdownWriter.addTitle(2, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_USED + JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_MAIN);
             List<String> usedMainConfigFileList = new ArrayList<>(usedMainConfigMap.keySet());
             Collections.sort(usedMainConfigFileList);
             for (String usedMainConfigFile : usedMainConfigFileList) {
                 markdownWriter.addTitle(3, usedMainConfigFile);
 
                 String mainConfigEnumSCN = getMainConfigSCNFromFile(usedMainConfigFile);
-                markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS);
+                markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_NAME);
                 markdownWriter.addLineWithNewLine(mainConfigEnumSCN);
 
-                List<MainConfigInterface> usedMainConfigKeyList = new ArrayList<>(usedMainConfigMap.get(usedMainConfigFile));
-                usedMainConfigKeyList.sort(Comparator4MainConfig.getInstance());
+                List<MainConfigInterface> usedMainConfigList = new ArrayList<>(usedMainConfigMap.get(usedMainConfigFile));
+                usedMainConfigList.sort(Comparator4MainConfig.getInstance());
 
                 markdownWriter.addTableHead(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_KEY, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_ENUM_NAME,
                         JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DESC);
 
-                for (MainConfigInterface usedMainConfig : usedMainConfigKeyList) {
-                    markdownWriter.addTableBody(usedMainConfig.getKey(), usedMainConfig.getEnumConstantsName(), StringUtils.join(usedMainConfig.getDescriptions(), " "));
+                for (MainConfigInterface usedMainConfig : usedMainConfigList) {
+                    markdownWriter.addTableBody(usedMainConfig.getKey(), usedMainConfig.getEnumConstantName(), StringUtils.join(usedMainConfig.getDescriptions(),
+                            MarkdownConstants.FLAG_HTML_NEW_LINE));
                 }
                 markdownWriter.addEmptyLine();
             }
         }
 
-        // 打印其他配置信息
-        OtherConfigInterface otherConfigFileUseListEnum = chooseOtherConfigFileUseListEnum();
-        markdownWriter.addTitle(2, "当前有使用的区分顺序的其他配置信息");
-        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS);
-        markdownWriter.addLineWithNewLine(otherConfigFileUseListEnum.getClass().getSimpleName());
+        // 打印其他配置参数
+        OtherConfigInterface[] otherConfigFileUseListEnums = chooseOtherConfigFileUseListEnums();
+        markdownWriter.addTitle(2, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_USED + JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_LIST);
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_NAME);
+        markdownWriter.addLineWithNewLine(otherConfigFileUseListEnums[0].getClass().getSimpleName());
 
         markdownWriter.addTableHead(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_KEY, JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_DESC,
-                JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS);
-        List<String> usedOtherListConfigFileList = new ArrayList<>(usedOtherListConfigSet);
-        Collections.sort(usedOtherListConfigFileList);
-        for (String usedOtherConfigFile : usedOtherListConfigFileList) {
-            OtherConfigInterface tmpOtherConfigFileUseListEnum = otherConfigFileUseListEnum.getFromKey(usedOtherConfigFile);
-            markdownWriter.addTableBody(usedOtherConfigFile, StringUtils.join(tmpOtherConfigFileUseListEnum.getDescriptions(), " "),
-                    tmpOtherConfigFileUseListEnum.getEnumConstantsName());
+                JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CONSTANT_NAME);
+        for (OtherConfigInterface otherConfigFileUseList : otherConfigFileUseListEnums) {
+            if (usedOtherListConfigSet.contains(otherConfigFileUseList.getKey())) {
+                markdownWriter.addTableBody(otherConfigFileUseList.getKey(), StringUtils.join(otherConfigFileUseList.getDescriptions(), MarkdownConstants.FLAG_HTML_NEW_LINE),
+                        otherConfigFileUseList.getEnumConstantName());
+            }
         }
         markdownWriter.addEmptyLine();
 
-        OtherConfigInterface otherConfigFileUseSetEnum = chooseOtherConfigFileUseSetEnum();
-        markdownWriter.addTitle(2, "当前有使用的不区分顺序的其他配置信息");
-        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS);
-        markdownWriter.addLineWithNewLine(otherConfigFileUseSetEnum.getClass().getSimpleName());
+        OtherConfigInterface[] otherConfigFileUseSetEnums = chooseOtherConfigFileUseSetEnums();
+        markdownWriter.addTitle(2, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_USED + JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_SET);
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_NAME);
+        markdownWriter.addLineWithNewLine(otherConfigFileUseSetEnums[0].getClass().getSimpleName());
 
         markdownWriter.addTableHead(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_KEY, JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_DESC,
-                JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS);
-        List<String> usedOtherSetConfigFileList = new ArrayList<>(usedOtherSetConfigSet);
-        Collections.sort(usedOtherSetConfigFileList);
-        for (String usedOtherConfigFile : usedOtherSetConfigFileList) {
-            OtherConfigInterface tmpOtherConfigFileUseSetEnum = otherConfigFileUseSetEnum.getFromKey(usedOtherConfigFile);
-            markdownWriter.addTableBody(usedOtherConfigFile, StringUtils.join(tmpOtherConfigFileUseSetEnum.getDescriptions(), " "),
-                    tmpOtherConfigFileUseSetEnum.getEnumConstantsName());
+                JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CONSTANT_NAME);
+        for (OtherConfigInterface otherConfigFileUseSet : otherConfigFileUseSetEnums) {
+            if (usedOtherListConfigSet.contains(otherConfigFileUseSet.getKey())) {
+                markdownWriter.addTableBody(otherConfigFileUseSet.getKey(), StringUtils.join(otherConfigFileUseSet.getDescriptions(), MarkdownConstants.FLAG_HTML_NEW_LINE),
+                        otherConfigFileUseSet.getEnumConstantName());
+            }
+        }
+        markdownWriter.addEmptyLine();
+
+        ElConfigInterface[] elConfigEnums = chooseElConfigEnums();
+        markdownWriter.addTitle(2, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_USED + JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_EL);
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_NAME);
+        markdownWriter.addLineWithNewLine(elConfigEnums[0].getClass().getSimpleName());
+
+        markdownWriter.addTableHead(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_KEY, JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_DESC,
+                JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CONSTANT_NAME);
+        for (ElConfigInterface elConfig : elConfigEnums) {
+            if (usedElConfigSet.contains(elConfig.getKey())) {
+                markdownWriter.addTableBody(elConfig.getKey(), StringUtils.join(elConfig.getDescriptions(), MarkdownConstants.FLAG_HTML_NEW_LINE),
+                        elConfig.getEnumConstantName());
+            }
         }
         markdownWriter.addEmptyLine();
     }
@@ -919,7 +961,7 @@ public abstract class BaseConfigureWrapper {
     // 打印主要的配置文件
     protected void printMainConfigInfo(MarkdownWriter markdownWriter, MainConfigInterface[] configs, boolean printAllConfigInfo) throws IOException {
         // 打印主要的配置文件
-        markdownWriter.addTitle(1, JavaCG2ConfigPrintConstants.MAIN_CONFIG);
+        markdownWriter.addTitle(1, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_MAIN);
 
         if (printAllConfigInfo) {
             // 打印主要的配置文件-全部
@@ -934,7 +976,7 @@ public abstract class BaseConfigureWrapper {
     protected void printMainConfigInfoAll(MarkdownWriter markdownWriter, MainConfigInterface[] configs) throws IOException {
         MainConfigInterface firstMainConfig = configs[0];
         markdownWriter.addTitle(2, firstMainConfig.getFileName());
-        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS);
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_NAME);
         markdownWriter.addLineWithNewLine(firstMainConfig.getClass().getSimpleName());
 
         for (MainConfigInterface mainConfig : configs) {
@@ -954,120 +996,163 @@ public abstract class BaseConfigureWrapper {
             String printValue = JavaCG2Util.getObjectPrintValue(value);
             markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE, printValue);
             markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DEFAULT_VALUE, mainConfig.getDefaultValue());
-            markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_ENUM_NAME, mainConfig.getEnumConstantsName());
+            markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_ENUM_NAME, mainConfig.getEnumConstantName());
             markdownWriter.addEmptyLine();
         }
-        // 最后写入空行
-        markdownWriter.addEmptyLine();
     }
 
     // 打印主要的配置文件-当前使用的
     protected void printMainConfigInfoUsed(MarkdownWriter markdownWriter, MainConfigInterface[] configs) throws IOException {
         if (usedMainConfigMap.isEmpty()) {
-            // 打印使用的配置参数信息，且主要的配置参数未使用，不打印
+            // 打印使用的配置参数，且主要的配置参数未使用，不打印
             return;
         }
         MainConfigInterface firstMainConfig = configs[0];
         markdownWriter.addTitle(2, firstMainConfig.getFileName());
-        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS);
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_NAME);
         markdownWriter.addLineWithNewLine(firstMainConfig.getClass().getSimpleName());
         markdownWriter.addTableHead(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_KEY, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DESC,
                 JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_ENUM_NAME, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE);
 
         for (MainConfigInterface mainConfig : configs) {
-            // 打印使用的配置参数信息
+            // 打印使用的配置参数
             Set<MainConfigInterface> usedMainConfigSet = usedMainConfigMap.get(mainConfig.getFileName());
             if (usedMainConfigSet == null || !usedMainConfigSet.contains(mainConfig)) {
                 // 当前配置参数未使用，不打印
                 continue;
             }
             // 执行打印主要的配置文件
-            doPrintMainConfigInfo(markdownWriter, mainConfig.getKey(), mainConfig.getDescriptions(), mainConfig.getEnumConstantsName(), getMainConfig(mainConfig, false));
+            Object value = getMainConfig(mainConfig, false);
+            String strValue = JavaCG2Util.getObjectPrintValue(value);
+            markdownWriter.addTableBody(mainConfig.getKey(), StringUtils.join(mainConfig.getDescriptions(), MarkdownConstants.FLAG_HTML_NEW_LINE),
+                    mainConfig.getEnumConstantName(), (value == null ? "" :
+                            strValue));
         }
+        markdownWriter.addEmptyLine();
     }
 
-    // 打印区分顺序的其他配置信息
+    // 打印区分顺序的其他配置参数
     protected void printOtherListConfigInfo(MarkdownWriter markdownWriter, OtherConfigInterface[] otherConfigs, boolean printAllConfigInfo) throws IOException {
         for (int i = 0; i < otherConfigs.length; i++) {
             OtherConfigInterface currentConfig = otherConfigs[i];
             if (!printAllConfigInfo && !usedOtherListConfigSet.contains(currentConfig.getKey())) {
-                // 打印使用的配置参数信息时，当前配置参数未使用，不打印
+                // 打印使用的配置参数时，当前配置参数未使用，不打印
                 continue;
             }
-            // 执行打印区分顺序的配置信息
-            doPrintListConfigInfo(markdownWriter, i, currentConfig.getKey(), currentConfig.getClass().getSimpleName(), currentConfig.getEnumConstantsName(),
-                    currentConfig.getDescriptions(), getOtherConfigList(currentConfig, false));
+            // 执行打印区分顺序的配置参数
+            doPrintListConfigInfo(markdownWriter, i, currentConfig);
         }
     }
 
-    // 打印不区分顺序的其他配置信息
+    // 打印不区分顺序的其他配置参数
     protected void printOtherSetConfigInfo(MarkdownWriter markdownWriter, OtherConfigInterface[] otherConfigs, boolean printAllConfigInfo) throws IOException {
         for (int i = 0; i < otherConfigs.length; i++) {
             OtherConfigInterface currentConfig = otherConfigs[i];
             if (!printAllConfigInfo && !usedOtherSetConfigSet.contains(currentConfig.getKey())) {
-                // 打印使用的配置参数信息时，当前配置参数未使用，不打印
+                // 打印使用的配置参数时，当前配置参数未使用，不打印
                 continue;
             }
-            // 执行打印不区分顺序的配置信息
-            doPrintSetConfigInfo(markdownWriter, i, currentConfig.getKey(), currentConfig.getClass().getSimpleName(), currentConfig.getEnumConstantsName(),
-                    currentConfig.getDescriptions(),
-                    getOtherConfigSet(currentConfig, false));
+            // 执行打印不区分顺序的配置参数
+            doPrintSetConfigInfo(markdownWriter, i, currentConfig);
         }
     }
 
-    // 执行打印主要配置信息
-    public void doPrintMainConfigInfo(MarkdownWriter markdownWriter, String key, String[] descriptions, String enumName, Object value) throws IOException {
-        // 写入配置信息
-        String strValue = JavaCG2Util.getObjectPrintValue(value);
-        markdownWriter.addTableBody(key, StringUtils.join(descriptions, " "), enumName, (value == null ? "" : strValue));
+    // 打印表达式配置参数
+    protected void printElConfigInfo(MarkdownWriter markdownWriter, ElConfigInterface[] elConfigs, boolean printAllConfigInfo) throws IOException {
+        JavaCG2Counter writeSeq = new JavaCG2Counter(0);
+        for (ElConfigInterface elConfig : elConfigs) {
+            if (!printAllConfigInfo && !usedElConfigSet.contains(elConfig.getKey())) {
+                // 打印使用的配置参数时，当前配置参数未使用，不打印
+                continue;
+            }
+            // 执行打印不区分顺序的配置参数
+            doPrintElConfigInfo(markdownWriter, writeSeq, elConfig);
+        }
     }
 
-    // 执行打印区分顺序的配置信息
-    public void doPrintListConfigInfo(MarkdownWriter markdownWriter, int index, String key, String configEnumSCN, String enumName, String[] descriptions,
-                                      List<String> configList) throws IOException {
+    // 执行打印区分顺序的配置参数
+    public void doPrintListConfigInfo(MarkdownWriter markdownWriter, int index, OtherConfigInterface currentConfig
+    ) throws IOException {
         if (index == 0) {
             // 写入配置文件名
             markdownWriter.addTitle(1, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_LIST);
         }
-        // 写入配置信息
-        markdownWriter.addTitle(2, key);
-        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_AND_NAME);
-        markdownWriter.addLineWithNewLine(configEnumSCN + JavaCG2Constants.FLAG_DOT + enumName);
+        // 写入配置参数
+        markdownWriter.addTitle(2, currentConfig.getKey());
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_CONSTANT_NAME);
+        markdownWriter.addLineWithNewLine(currentConfig.getClass().getSimpleName() + JavaCG2Constants.FLAG_DOT + currentConfig.getEnumConstantName());
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DESC);
-        for (String description : descriptions) {
+        for (String description : currentConfig.getDescriptions()) {
             markdownWriter.addLineWithNewLine(description);
         }
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE);
         markdownWriter.addCodeBlock();
-        for (String configValue : configList) {
+        List<String> otherConfigList = getOtherConfigList(currentConfig, false);
+        for (String configValue : otherConfigList) {
             markdownWriter.addLine(configValue);
         }
         markdownWriter.addCodeBlock();
     }
 
-    // 执行打印不区分顺序的配置信息
-    public void doPrintSetConfigInfo(MarkdownWriter markdownWriter, int index, String key, String configEnumSCN, String enumName, String[] descriptions,
-                                     Set<String> configSet) throws
-            IOException {
+    // 执行打印不区分顺序的配置参数
+    public void doPrintSetConfigInfo(MarkdownWriter markdownWriter, int index, OtherConfigInterface currentConfig) throws IOException {
         if (index == 0) {
             // 写入配置文件名
             markdownWriter.addTitle(1, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_SET);
         }
-        markdownWriter.addTitle(2, key);
-        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_AND_NAME);
-        markdownWriter.addLineWithNewLine(configEnumSCN + JavaCG2Constants.FLAG_DOT + enumName);
+        markdownWriter.addTitle(2, currentConfig.getKey());
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_CONSTANT_NAME);
+        markdownWriter.addLineWithNewLine(currentConfig.getClass().getSimpleName() + JavaCG2Constants.FLAG_DOT + currentConfig.getEnumConstantName());
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DESC);
-        for (String description : descriptions) {
+        for (String description : currentConfig.getDescriptions()) {
             markdownWriter.addLineWithNewLine(description);
         }
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE);
         markdownWriter.addCodeBlock();
-        List<String> configValueList = new ArrayList<>(configSet);
+        Set<String> otherConfigSet = getOtherConfigSet(currentConfig, false);
+        List<String> configValueList = new ArrayList<>(otherConfigSet);
         // 排序后打印
         Collections.sort(configValueList);
         for (String configValue : configValueList) {
             markdownWriter.addLine(configValue);
         }
+        markdownWriter.addCodeBlock();
+    }
+
+    // 执行打印表达式配置参数
+    public void doPrintElConfigInfo(MarkdownWriter markdownWriter, JavaCG2Counter writeSeq, ElConfigInterface elConfig) throws IOException {
+        if (JavaCG2Util.checkElExample(elConfig)) {
+            // 跳过示例表达式配置文件
+            return;
+        }
+        if (writeSeq.getCount() == 0) {
+            // 写入配置文件名
+            markdownWriter.addTitle(1, JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_EL);
+        }
+        writeSeq.addAndGet();
+        markdownWriter.addTitle(2, elConfig.getKey());
+
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_CONSTANT_NAME);
+        markdownWriter.addLineWithNewLine(elConfig.getClass().getSimpleName() + JavaCG2Constants.FLAG_DOT + elConfig.getEnumConstantName());
+
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DESC);
+        for (String description : elConfig.getDescriptions()) {
+            markdownWriter.addLineWithNewLine(description);
+        }
+
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_ALLOWED_VARIABLES);
+        markdownWriter.addTableHead(JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_NAME, JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_TYPE,
+                JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_DESC, JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_VALUE_EXAMPLE);
+        for (ElAllowedVariableInterface elAllowedVariableInterface : elConfig.getElAllowedVariableEnums()) {
+            String descriptions = StringUtils.join(elAllowedVariableInterface.getDescriptions(), MarkdownConstants.FLAG_HTML_NEW_LINE);
+            String valueExamples = StringUtils.join(elAllowedVariableInterface.getValueExamples(), MarkdownConstants.FLAG_HTML_NEW_LINE);
+            markdownWriter.addTableBody(elAllowedVariableInterface.getVariableName(), elAllowedVariableInterface.getType(), descriptions, valueExamples);
+        }
+        markdownWriter.addEmptyLine();
+
+        markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE);
+        markdownWriter.addCodeBlock();
+        markdownWriter.addLine(getElConfigText(elConfig, false));
         markdownWriter.addCodeBlock();
     }
 
@@ -1086,7 +1171,7 @@ public abstract class BaseConfigureWrapper {
     public String genConfigUsage(ConfigInterface configInterface) {
         String configWrapperClassName = this.getClass().getSimpleName();
         String enumSimpleClassName = configInterface.getClass().getSimpleName();
-        String enumConstantName = configInterface.getEnumConstantsName();
+        String enumConstantName = configInterface.getEnumConstantName();
         String configFileName = null;
         String configFileKeyName = null;
         String configMethodName = null;
@@ -1121,15 +1206,16 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 将所有的配置信息写入文件
+     * 将所有的配置参数写入文件
      *
      * @param writer
      * @param mainConfigInterfaceArrays
      * @param otherConfigListArray
      * @param otherConfigSetArray
+     * @param elConfigSetArray
      */
     public boolean recordAllConfigToFile(Writer writer, MainConfigInterface[][] mainConfigInterfaceArrays, OtherConfigInterface[] otherConfigListArray,
-                                         OtherConfigInterface[] otherConfigSetArray) {
+                                         OtherConfigInterface[] otherConfigSetArray, ElConfigInterface[] elConfigSetArray) {
         try {
             for (MainConfigInterface[] mainConfigInterfaceArray : mainConfigInterfaceArrays) {
                 for (MainConfigInterface mainConfig : mainConfigInterfaceArray) {
@@ -1161,6 +1247,15 @@ public abstract class BaseConfigureWrapper {
                     seq++;
                 }
             }
+
+            for (ElConfigInterface elConfig : elConfigSetArray) {
+                if (JavaCG2Util.checkElExample(elConfig)) {
+                    // 跳过示例表达式配置文件
+                    continue;
+                }
+                String value = getElConfigText(elConfig, false);
+                JavaCG2FileUtil.write2FileWithTab(writer, elConfig.getKey(), "", value, JavaCG2Constants.CONFIG_EL);
+            }
             return true;
         } catch (Exception e) {
             logger.error("error ", e);
@@ -1168,7 +1263,19 @@ public abstract class BaseConfigureWrapper {
         }
     }
 
-    public List<String> getUseThisSimpleClassNameList() {
-        return Collections.unmodifiableList(useThisSimpleClassNameList);
+    public Map<String, Set<MainConfigInterface>> getUsedMainConfigMap() {
+        return usedMainConfigMap;
+    }
+
+    public Set<String> getUsedOtherListConfigSet() {
+        return usedOtherListConfigSet;
+    }
+
+    public Set<String> getUsedOtherSetConfigSet() {
+        return usedOtherSetConfigSet;
+    }
+
+    public Set<String> getUsedElConfigSet() {
+        return usedElConfigSet;
     }
 }

@@ -27,22 +27,22 @@ public class TestMergeFatJar extends TestBase {
 
     /*
         合并fat jar，包含jar文件的jar文件
-        需要先在java-all-call-graph项目执行 gradlew gen_run_jar gen_jar_in_jar 命令生成对应war文件
+        需要先执行 gradlew gen_run_jar gen_jar_in_jar 命令生成对应war文件
      */
     @Test
     public void testMergeFatJarInJar() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper(true, "build/jar_output_dir.jar");
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper(false, "build/jar_output.jar");
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_MERGE_SEPARATE_FAT_JAR, Boolean.TRUE.toString());
         Assert.assertTrue(new JavaCG2Entry(javaCG2ConfigureWrapper).run());
     }
 
     /*
         合并fat jar，war文件
-        需要先在java-all-call-graph项目执行 gradlew gen_run_jar gen_jar_in_war 命令生成对应war文件
+        需要先执行 gradlew gen_run_jar gen_jar_in_war 命令生成对应war文件
      */
     @Test
     public void testMergeFatJarWar() {
-        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper(true, "build/jar_output_dir.war");
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = genJavaCG2ConfigureWrapper(false, JAR_OUTPUT_WAR);
         javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_MERGE_SEPARATE_FAT_JAR, Boolean.TRUE.toString());
         Assert.assertTrue(new JavaCG2Entry(javaCG2ConfigureWrapper).run());
     }

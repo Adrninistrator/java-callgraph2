@@ -1,6 +1,7 @@
 package com.adrninistrator.javacg2.util;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
+import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -9,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.nio.charset.StandardCharsets;
@@ -110,22 +110,6 @@ public class JavaCG2Util {
     }
 
     /**
-     * 为文件路径增加分隔符
-     *
-     * @param filePath
-     * @return
-     */
-    public static String addSeparator4FilePath(String filePath) {
-        if (StringUtils.endsWithAny(filePath, JavaCG2Constants.FLAG_SLASH, JavaCG2Constants.FLAG_BACKSLASH)) {
-            // 文件路径以分隔符结尾，则直接使用
-            return filePath;
-        }
-
-        // 文件路径没有以分隔符结尾，则在后面增加分隔符
-        return filePath + File.separator;
-    }
-
-    /**
      * 获取JVM参数中指定的目录路径
      *
      * @param jvmOptionKey
@@ -137,7 +121,7 @@ public class JavaCG2Util {
             return "";
         }
 
-        String newDirPath = addSeparator4FilePath(dirPath);
+        String newDirPath = JavaCG2FileUtil.addSeparator4FilePath(dirPath);
         logger.debug("获取到JVM参数 {} {} 在路径结尾增加分隔符为 {}", jvmOptionKey, dirPath, newDirPath);
         return newDirPath;
     }
@@ -377,6 +361,50 @@ public class JavaCG2Util {
             first = false;
         }
         return stringBuilder.append("}").toString();
+    }
+
+    /**
+     * 等待指定时间
+     *
+     * @param time
+     */
+    public static void sleep(long time) {
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            logger.error("error ", e);
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * 检查是否为Windows操作系统
+     *
+     * @return
+     */
+    public static boolean checkWindowsOs() {
+        String osName = System.getProperty("os.name");
+        return StringUtils.startsWithIgnoreCase(osName, "Windows");
+    }
+
+    /**
+     * 检查是否为示例表达式配置文件
+     *
+     * @param elConfig
+     * @return
+     */
+    public static boolean checkElExample(ElConfigInterface elConfig) {
+        return elConfig.getKey().endsWith(JavaCG2Constants.EXT_MD);
+    }
+
+    /**
+     * 在字符串前后增加双引号
+     *
+     * @param data
+     * @return
+     */
+    public static String wrapWithQuotes(String data) {
+        return "\"" + data + "\"";
     }
 
     private JavaCG2Util() {

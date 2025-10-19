@@ -24,7 +24,7 @@ public class StaticFieldMethodCallReturnElement extends LocalVariableElement {
     // 被调用的字段类型
     private final String fieldType;
 
-    // 被调用的方法名称
+    // 被调用的方法名
     private final String methodName;
 
     // 被调用的方法参数类型

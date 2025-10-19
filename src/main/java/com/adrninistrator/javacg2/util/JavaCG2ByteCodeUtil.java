@@ -11,6 +11,7 @@ import org.apache.bcel.Const;
 import org.apache.bcel.classfile.AccessFlags;
 import org.apache.bcel.classfile.Attribute;
 import org.apache.bcel.classfile.ConstantPool;
+import org.apache.bcel.classfile.EnclosingMethod;
 import org.apache.bcel.classfile.InnerClass;
 import org.apache.bcel.classfile.InnerClasses;
 import org.apache.bcel.classfile.JavaClass;
@@ -170,22 +171,6 @@ public class JavaCG2ByteCodeUtil {
     }
 
     /**
-     * 去除类名中的数组形式
-     *
-     * @param className
-     * @return
-     */
-    public static String removeArrayInClassName(String className) {
-        if (!className.startsWith("[")) {
-            return className;
-        }
-
-        // 处理数组格式
-        String tmpClassName = Utility.typeSignatureToString(className, false);
-        return removeOneArrayFlag(tmpClassName);
-    }
-
-    /**
      * 为类型增加数组类型
      *
      * @param className
@@ -218,16 +203,6 @@ public class JavaCG2ByteCodeUtil {
         }
 
         return arrayType.substring(0, arrayType.length() - JavaCG2Constants.FLAG_ARRAY.length());
-    }
-
-    /**
-     * 去掉数组形式中全部的[]
-     *
-     * @param type
-     * @return
-     */
-    public static String removeAllArrayFlag(String type) {
-        return StringUtils.replace(type, JavaCG2Constants.FLAG_ARRAY, "");
     }
 
     /**
@@ -373,6 +348,36 @@ public class JavaCG2ByteCodeUtil {
      */
     public static boolean isPublicFlag(int accessFlags) {
         return (accessFlags & Const.ACC_PUBLIC) != 0;
+    }
+
+    /**
+     * 通过修饰符判断是否为public
+     *
+     * @param modifiers
+     * @return
+     */
+    public static boolean isPublic(String modifiers) {
+        return JavaCG2CommonNameConstants.MODIFIERS_PUBLIC.equals(modifiers);
+    }
+
+    /**
+     * 通过修饰符判断是否为protected
+     *
+     * @param modifiers
+     * @return
+     */
+    public static boolean isProtected(String modifiers) {
+        return JavaCG2CommonNameConstants.MODIFIERS_PROTECTED.equals(modifiers);
+    }
+
+    /**
+     * 通过修饰符判断是否为private
+     *
+     * @param modifiers
+     * @return
+     */
+    public static boolean isPrivate(String modifiers) {
+        return JavaCG2CommonNameConstants.MODIFIERS_PRIVATE.equals(modifiers);
     }
 
     /**
@@ -567,8 +572,18 @@ public class JavaCG2ByteCodeUtil {
      */
     public static List<InnerClassInfo> getInnerClassInfo(JavaClass javaClass) {
         List<InnerClassInfo> innerClassInfoList = new ArrayList<>(0);
-        String className = javaClass.getClassName();
         ConstantPool constantPool = javaClass.getConstantPool();
+
+        // 查找EnclosingMethod
+        String enclosingClassName = null;
+        for (Attribute attribute : javaClass.getAttributes()) {
+            if (attribute instanceof EnclosingMethod) {
+                EnclosingMethod enclosingMethod = (EnclosingMethod) attribute;
+                enclosingClassName = constantPool.getConstantString(enclosingMethod.getEnclosingClassIndex(), Const.CONSTANT_Class);
+                enclosingClassName = Utility.compactClassName(enclosingClassName, false);
+            }
+        }
+
         for (Attribute attribute : javaClass.getAttributes()) {
             if (!(attribute instanceof InnerClasses)) {
                 continue;
@@ -576,25 +591,28 @@ public class JavaCG2ByteCodeUtil {
             InnerClasses innerClasses = (InnerClasses) attribute;
             for (InnerClass innerClass : innerClasses.getInnerClasses()) {
                 int innerClassIndex = innerClass.getInnerClassIndex();
-                if (innerClassIndex == javaClass.getClassNameIndex()) {
-                    // 当前类是内部类，跳过
+                if (innerClass.getInnerClassIndex() != javaClass.getClassNameIndex()) {
                     continue;
                 }
-
+                // 当前类是内部类时的对应记录，处理
                 String innerClassName = constantPool.getConstantString(innerClassIndex, Const.CONSTANT_Class);
                 innerClassName = Utility.compactClassName(innerClassName, false);
-                if (JavaCG2ClassMethodUtil.isClassInJdk(innerClassName) ||
-                        !innerClassName.startsWith(className) ||
-                        StringUtils.countMatches(innerClassName, '$') < StringUtils.countMatches(className, '$')) {
-                    /*
-                        JDK中的类，跳过
-                        当前内部类不是当前类的内部类，跳过
-                        当前类是当前内部类对应的外部类，跳过
-                     */
-                    continue;
+
+                String outerClassName;
+                if (enclosingClassName != null) {
+                    outerClassName = enclosingClassName;
+                } else {
+                    int outerClassIndex = innerClass.getOuterClassIndex();
+                    if (outerClassIndex != 0) {
+                        outerClassName = constantPool.getConstantString(outerClassIndex, Const.CONSTANT_Class);
+                        outerClassName = Utility.compactClassName(outerClassName, false);
+                    } else {
+                        // 通过匿名内部类类名获得外部类类名
+                        outerClassName = JavaCG2ClassMethodUtil.parseOuterClassName(innerClassName);
+                    }
                 }
 
-                InnerClassInfo innerClassInfo = new InnerClassInfo(innerClassName, className, JavaCG2ClassMethodUtil.isInnerAnonymousClass(innerClassName));
+                InnerClassInfo innerClassInfo = new InnerClassInfo(innerClassName, outerClassName, JavaCG2ClassMethodUtil.isInnerAnonymousClass(innerClassName));
                 innerClassInfoList.add(innerClassInfo);
             }
         }

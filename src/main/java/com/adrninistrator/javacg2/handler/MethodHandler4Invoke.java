@@ -24,6 +24,7 @@ import com.adrninistrator.javacg2.dto.fieldrelationship.GetSetFieldRelationship;
 import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.instruction.InvokeInstructionPosAndCallee;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
+import com.adrninistrator.javacg2.dto.method.JavaCG2BootstrapMethod;
 import com.adrninistrator.javacg2.dto.method.JavaCG2MethodInfo;
 import com.adrninistrator.javacg2.dto.type.JavaCG2Type;
 import com.adrninistrator.javacg2.extensions.annotationattributes.AnnotationAttributesFormatterInterface;
@@ -50,6 +51,8 @@ import org.apache.bcel.classfile.ParameterAnnotationEntry;
 import org.apache.bcel.classfile.Utility;
 import org.apache.bcel.generic.CHECKCAST;
 import org.apache.bcel.generic.CodeExceptionGen;
+import org.apache.bcel.generic.FieldInstruction;
+import org.apache.bcel.generic.GETFIELD;
 import org.apache.bcel.generic.GETSTATIC;
 import org.apache.bcel.generic.GotoInstruction;
 import org.apache.bcel.generic.INVOKEDYNAMIC;
@@ -64,6 +67,7 @@ import org.apache.bcel.generic.InstructionList;
 import org.apache.bcel.generic.InvokeInstruction;
 import org.apache.bcel.generic.MethodGen;
 import org.apache.bcel.generic.ObjectType;
+import org.apache.bcel.generic.PUTSTATIC;
 import org.apache.bcel.generic.Type;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -128,6 +132,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     private Writer lambdaMethodInfoWriter;
     private Writer methodCallWriter;
+    private Writer methodCallRawCalleeWriter;
     private Writer methodAnnotationWriter;
     private Writer methodArgAnnotationWriter;
     private Writer methodLineNumberWriter;
@@ -143,7 +148,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
     private Writer methodThrowWriter;
     private Writer staticFinalFieldMethodCallIdWriter;
     private Writer fieldRelationshipWriter;
-
+    private Writer fieldUsageOtherWriter;
 
     private ClassAndJarNum classAndJarNum;
 
@@ -234,51 +239,68 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         return ih != null;
     }
 
+    // 处理方法调用时解析被调用对象和参数可能的类型与值准备工作
+    private boolean prepareParseMethodCallTypeAndValue() {
+        // 判断是否需要解析方法调用被调用对象和参数可能的类型与值
+        if (!parseMethodCallTypeValueFlag) {
+            return true;
+        }
+        if (javaCG2ElManager.checkIgnoreMethodCallTypeValueCaller(callerFullMethod)) {
+            // 不需要解析方法调用被调用对象和参数可能的类型与值
+            parseMethodCallTypeValueFlag = false;
+            return true;
+        }
+
+        // 需要获取方法调用指令对应的类型与值
+        methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(method, mg, javaClass, callerFullMethod, javaCG2InputAndOutput);
+        methodHandler4TypeAndValue.setFailCounter(failCounter);
+        methodHandler4TypeAndValue.setParseMethodCallTypeValueFlag(true);
+        methodHandler4TypeAndValue.setEnumInitArgFieldWriter(enumInitArgFieldWriter);
+        methodHandler4TypeAndValue.setEnumInitAssignInfoWriter(enumInitAssignInfoWriter);
+        methodHandler4TypeAndValue.setGetMethodWriter(getMethodWriter);
+        methodHandler4TypeAndValue.setSetMethodWriter(setMethodWriter);
+        methodHandler4TypeAndValue.setMethodReturnConstValueWriter(methodReturnConstValueWriter);
+        methodHandler4TypeAndValue.setMethodReturnFieldInfoWriter(methodReturnFieldInfoWriter);
+        methodHandler4TypeAndValue.setRecordedSetMethodSet(recordedSetMethodSet);
+        methodHandler4TypeAndValue.setNonStaticFieldNameTypeMap(nonStaticFieldNameTypeMap);
+        methodHandler4TypeAndValue.setNonStaticFieldNameGenericsTypeMap(nonStaticFieldNameGenericsTypeMap);
+        methodHandler4TypeAndValue.setMethodReturnArgSeqList(methodReturnArgSeqList);
+        methodHandler4TypeAndValue.setMethodReturnPositionList(methodReturnPositionList);
+        methodHandler4TypeAndValue.setMethodReturnArgSeqEQCList(methodReturnArgSeqEQCList);
+        methodHandler4TypeAndValue.setMethodReturnPositionEQCList(methodReturnPositionEQCList);
+        methodHandler4TypeAndValue.setOnlyAnalyseReturnTypeFlag(false);
+        methodHandler4TypeAndValue.setFieldWithGetMethodNameSet(fieldWithGetMethodNameSet);
+        methodHandler4TypeAndValue.setFieldWithSetMethodNameSet(fieldWithSetMethodNameSet);
+        if (inClinitMethod) {
+            methodHandler4TypeAndValue.setInClinitMethod(true);
+            methodHandler4TypeAndValue.setSfFieldInvokeInstructionMap(sfFieldInvokeInstructionMap);
+        }
+        if (javaCG2ConfInfo.isFirstParseInitMethodType()) {
+            // 处理类的方法前需要先解析构造函数以非静态字段可能的类型
+            methodHandler4TypeAndValue.setRecordFieldPossibleTypeFlag(false);
+            methodHandler4TypeAndValue.setUseFieldPossibleTypeFlag(true);
+            methodHandler4TypeAndValue.setNonStaticFieldPossibleTypes(nonStaticFieldPossibleTypes);
+        }
+        if (javaCG2ConfInfo.isAnalyseFieldRelationship()) {
+            // 需要分析dto的字段之间的关联关系
+            methodHandler4TypeAndValue.setAnalyseFieldRelationshipFlag(true);
+            methodHandler4TypeAndValue.setFieldRelationshipCounter(fieldRelationshipCounter);
+            methodHandler4TypeAndValue.setGetSetFieldRelationshipList(getSetFieldRelationshipList);
+        }
+        // 获取方法调用指令对应的类型与值
+        if (!methodHandler4TypeAndValue.handleMethod()) {
+            return false;
+        }
+        // 在遍历指令之前创建
+        invokeInstructionPositionCallIdMap = new HashMap<>();
+        return true;
+    }
+
     @Override
     protected boolean doHandleMethod() throws IOException {
-        if (parseMethodCallTypeValueFlag) {
-            // 需要获取方法调用指令对应的类型与值
-            methodHandler4TypeAndValue = new MethodHandler4TypeAndValue(method, mg, javaClass, callerFullMethod, javaCG2InputAndOutput);
-            methodHandler4TypeAndValue.setFailCounter(failCounter);
-            methodHandler4TypeAndValue.setParseMethodCallTypeValueFlag(true);
-            methodHandler4TypeAndValue.setEnumInitArgFieldWriter(enumInitArgFieldWriter);
-            methodHandler4TypeAndValue.setEnumInitAssignInfoWriter(enumInitAssignInfoWriter);
-            methodHandler4TypeAndValue.setGetMethodWriter(getMethodWriter);
-            methodHandler4TypeAndValue.setSetMethodWriter(setMethodWriter);
-            methodHandler4TypeAndValue.setMethodReturnConstValueWriter(methodReturnConstValueWriter);
-            methodHandler4TypeAndValue.setMethodReturnFieldInfoWriter(methodReturnFieldInfoWriter);
-            methodHandler4TypeAndValue.setRecordedSetMethodSet(recordedSetMethodSet);
-            methodHandler4TypeAndValue.setNonStaticFieldNameTypeMap(nonStaticFieldNameTypeMap);
-            methodHandler4TypeAndValue.setNonStaticFieldNameGenericsTypeMap(nonStaticFieldNameGenericsTypeMap);
-            methodHandler4TypeAndValue.setMethodReturnArgSeqList(methodReturnArgSeqList);
-            methodHandler4TypeAndValue.setMethodReturnPositionList(methodReturnPositionList);
-            methodHandler4TypeAndValue.setMethodReturnArgSeqEQCList(methodReturnArgSeqEQCList);
-            methodHandler4TypeAndValue.setMethodReturnPositionEQCList(methodReturnPositionEQCList);
-            methodHandler4TypeAndValue.setOnlyAnalyseReturnTypeFlag(false);
-            methodHandler4TypeAndValue.setFieldWithGetMethodNameSet(fieldWithGetMethodNameSet);
-            methodHandler4TypeAndValue.setFieldWithSetMethodNameSet(fieldWithSetMethodNameSet);
-            if (inClinitMethod) {
-                methodHandler4TypeAndValue.setInClinitMethod(true);
-                methodHandler4TypeAndValue.setSfFieldInvokeInstructionMap(sfFieldInvokeInstructionMap);
-            }
-            if (javaCG2ConfInfo.isFirstParseInitMethodType()) {
-                // 处理类的方法前需要先解析构造函数以非静态字段可能的类型
-                methodHandler4TypeAndValue.setRecordFieldPossibleTypeFlag(false);
-                methodHandler4TypeAndValue.setUseFieldPossibleTypeFlag(true);
-                methodHandler4TypeAndValue.setNonStaticFieldPossibleTypes(nonStaticFieldPossibleTypes);
-            }
-            if (javaCG2ConfInfo.isAnalyseFieldRelationship()) {
-                // 需要分析dto的字段之间的关联关系
-                methodHandler4TypeAndValue.setAnalyseFieldRelationshipFlag(true);
-                methodHandler4TypeAndValue.setFieldRelationshipCounter(fieldRelationshipCounter);
-                methodHandler4TypeAndValue.setGetSetFieldRelationshipList(getSetFieldRelationshipList);
-            }
-            // 获取方法调用指令对应的类型与值
-            if (!methodHandler4TypeAndValue.handleMethod()) {
-                return false;
-            }
-            // 在遍历指令之前创建
-            invokeInstructionPositionCallIdMap = new HashMap<>();
+        // 处理方法调用时解析被调用对象和参数可能的类型与值准备工作
+        if (!prepareParseMethodCallTypeAndValue()) {
+            return false;
         }
 
         // 遍历指令
@@ -300,6 +322,9 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                         handleATHROW(throwInfoList);
                     }
                 }
+            } else if (JavaCG2InstructionUtil.isFieldInstruction(opCode)) {
+                // 处理字段操作指令
+                handleFieldInstruction();
             }
             ih = ih.getNext();
         } while (ih != null);
@@ -607,7 +632,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 return "";
             }
             for (MethodCallPossibleEntry arg1PossibleEntry : arg1PossibleList.getMethodCallPossibleEntryList()) {
-                if (arg1PossibleEntry.getCatchExceptionStartPosition() == catchInfo.getTargetPosition()) {
+                Integer catchExceptionStartPosition = arg1PossibleEntry.getCatchExceptionStartPosition();
+                if (catchExceptionStartPosition != null && catchExceptionStartPosition == catchInfo.getTargetPosition()) {
                     return JavaCG2Constants.FILE_KEY_CATCH_FLAG_TRY_WITH_RESOURCE;
                 }
             }
@@ -857,8 +883,29 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         }
     }
 
+    // 处理字段操作指令
+    private void handleFieldInstruction() throws IOException {
+        Instruction instruction = ih.getInstruction();
+        FieldInstruction fieldInstruction = (FieldInstruction) instruction;
+        String fieldInClassName = fieldInstruction.getLoadClassType(cpg).getClassName();
+        if (callerClassName.equals(fieldInClassName)) {
+            // 使用当前类的字段，跳过
+            return;
+        }
+
+        String fieldType = fieldInstruction.getFieldType(cpg).toString();
+        int lineNumber = getSourceLine();
+        boolean staticOrNot = fieldInstruction instanceof GETSTATIC || fieldInstruction instanceof PUTSTATIC;
+        boolean getOrPut = fieldInstruction instanceof GETSTATIC || fieldInstruction instanceof GETFIELD;
+
+        String fieldInClassJarNum = classAndJarNum.getJarNum(fieldInClassName);
+        JavaCG2FileUtil.write2FileWithTab(fieldUsageOtherWriter, callerFullMethod, methodReturnType, JavaCG2YesNoEnum.parseStrValue(staticOrNot),
+                JavaCG2YesNoEnum.parseStrValue(getOrPut), fieldInClassName, fieldInstruction.getFieldName(cpg), fieldType, String.valueOf(lineNumber), String.valueOf(classJarNum),
+                fieldInClassJarNum);
+    }
+
     // 处理INVOKEVIRTUAL指令
-    private void handleINVOKEVIRTUAL(INVOKEVIRTUAL invokevirtual, JavaCG2MethodInfo calleeMethodInfo, MethodCallPossibleInfo methodCallPossibleInfo) {
+    private void handleINVOKEVIRTUAL(INVOKEVIRTUAL invokevirtual, JavaCG2MethodInfo calleeMethodInfo, MethodCallPossibleInfo methodCallPossibleInfo) throws IOException {
         String calleeClassName = calleeMethodInfo.getClassName();
         String calleeMethodName = calleeMethodInfo.getMethodName();
         Type[] calleeArgTypes = calleeMethodInfo.getMethodArgumentTypes();
@@ -879,7 +926,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
     }
 
     // 处理INVOKEINTERFACE指令
-    private void handleINVOKEINTERFACE(INVOKEINTERFACE invokeinterface, JavaCG2MethodInfo calleeMethodInfo, MethodCallPossibleInfo methodCallPossibleInfo) {
+    private void handleINVOKEINTERFACE(INVOKEINTERFACE invokeinterface, JavaCG2MethodInfo calleeMethodInfo, MethodCallPossibleInfo methodCallPossibleInfo) throws IOException {
         String calleeClassName = calleeMethodInfo.getClassName();
         String calleeMethodName = calleeMethodInfo.getMethodName();
         Type[] calleeArgTypes = calleeMethodInfo.getMethodArgumentTypes();
@@ -945,38 +992,61 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         String calleeClassName = calleeMethodInfo.getClassName();
         String calleeMethodName = calleeMethodInfo.getMethodName();
         Type[] calleeArgTypes = calleeMethodInfo.getMethodArgumentTypes();
-        int calleeArrayDimensions = calleeMethodInfo.getArrayDimensions();
 
-        // 记录INVOKEDYNAMIC指令对应的方法调用信息
-        addCommonMethodCallWithInfo(invokedynamic, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_DYNAMIC, null, calleeClassName, calleeMethodName,
-                calleeArgTypes, calleeArrayDimensions, methodCallPossibleInfo);
-
-        // 判断是否为Lambda表达式
+        // 判断是否为InvokeDynamic常量
         Constant constant = cpg.getConstant(invokedynamic.getIndex());
         if (!(constant instanceof ConstantInvokeDynamic)) {
+            // 记录INVOKEDYNAMIC指令对应的方法调用信息，被调用方法参数使用原始的
+            recordInvokeDynamicMethodCall(invokedynamic, calleeMethodInfo, methodCallPossibleInfo, calleeArgTypes, calleeArgTypes);
             return;
         }
 
-        // 处理Lambda表达式
         ConstantInvokeDynamic cid = (ConstantInvokeDynamic) constant;
         // 获得JavaClass中指定序号的BootstrapMethod
         BootstrapMethod bootstrapMethod = JavaCG2BootstrapMethodUtil.getBootstrapMethod(javaClass, cid.getBootstrapMethodAttrIndex());
         if (bootstrapMethod == null) {
-            logger.warn("无法找到bootstrapMethod {} {}", callerClassName, cid.getBootstrapMethodAttrIndex());
+            logger.warn("无法找到bootstrapMethod {} {}", callerFullMethod, cid.getBootstrapMethodAttrIndex());
+            // 记录INVOKEDYNAMIC指令对应的方法调用信息，被调用方法参数使用原始的
+            recordInvokeDynamicMethodCall(invokedynamic, calleeMethodInfo, methodCallPossibleInfo, calleeArgTypes, calleeArgTypes);
             return;
         }
 
         // 获得BootstrapMethod的方法信息
-        JavaCG2MethodInfo bootstrapMethodInfo = JavaCG2BootstrapMethodUtil.getBootstrapMethodInfo(bootstrapMethod, javaClass);
-        if (bootstrapMethodInfo == null) {
-            logger.warn("无法找到bootstrapMethod的方法信息 {} {}", callerClassName, bootstrapMethod);
+        JavaCG2BootstrapMethod javaCG2BootstrapMethod = JavaCG2BootstrapMethodUtil.getBootstrapMethodInfo(bootstrapMethod, javaClass);
+        if (javaCG2BootstrapMethod == null) {
+            logger.warn("无法找到bootstrapMethod的方法信息 {} {}", callerFullMethod, bootstrapMethod);
+            // 记录INVOKEDYNAMIC指令对应的方法调用信息，被调用方法参数使用原始的
+            recordInvokeDynamicMethodCall(invokedynamic, calleeMethodInfo, methodCallPossibleInfo, calleeArgTypes, calleeArgTypes);
             return;
         }
 
+        JavaCG2MethodInfo lambdaMethodInfo = javaCG2BootstrapMethod.getLambdaMethodInfo();
+        Type[] lambdaMethodArgumentTypes = javaCG2BootstrapMethod.getLambdaMethodActualArgumentTypes();
+        Type[] displayCalleeArgTypes = calleeArgTypes;
+        if (lambdaMethodArgumentTypes != null) {
+            // INVOKEDYNAMIC指令调用Lambda表达式时，替换被调用方法的参数类型
+            displayCalleeArgTypes = lambdaMethodArgumentTypes;
+        }
+
+        if (lambdaMethodInfo != null) {
+            // 属于Lambda表达式调用时，记录INVOKEDYNAMIC指令对应的方法调用信息，被调用方法参数与返回值类型使用Lambda表达式对应的
+            addCommonMethodCallWithInfo(invokedynamic, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_DYNAMIC, null, calleeMethodInfo.getClassName(), calleeMethodInfo.getMethodName(),
+                    calleeArgTypes, displayCalleeArgTypes, calleeMethodInfo.getArrayDimensions(), javaCG2BootstrapMethod.getLambdaMethodActualReturnType(), methodCallPossibleInfo);
+        }
+
+        // 处理BootstrapMethod
+        JavaCG2MethodInfo bootstrapMethodInfo = javaCG2BootstrapMethod.getBootstrapMethodInfo();
+        addCommonMethodCall(invokedynamic, JavaCG2CallTypeEnum.CTE_BOOTSTRAP_METHOD, null, bootstrapMethodInfo.getClassName(), bootstrapMethodInfo.getMethodName(),
+                bootstrapMethodInfo.getMethodArgumentTypes(), 0, bootstrapMethodInfo.getMethodReturnType(), null);
+
+        if (lambdaMethodInfo == null) {
+            // 不是Lambda表达式，返回
+            return;
+        }
         // 记录Lambda表达式实际的方法调用信息
-        MethodCall methodCall = addCommonMethodCall(invokedynamic, JavaCG2CallTypeEnum.CTE_LAMBDA, null, bootstrapMethodInfo.getClassName(),
-                bootstrapMethodInfo.getMethodName(), bootstrapMethodInfo.getMethodArgumentTypes(), 0, bootstrapMethodInfo.getMethodReturnType(), null);
-        if (methodCall == null) {
+        MethodCall lambdaMethodCall = addCommonMethodCall(invokedynamic, JavaCG2CallTypeEnum.CTE_LAMBDA, null, lambdaMethodInfo.getClassName(), lambdaMethodInfo.getMethodName(),
+                lambdaMethodInfo.getMethodArgumentTypes(), 0, lambdaMethodInfo.getMethodReturnType(), null);
+        if (lambdaMethodCall == null) {
             // 当前方法调用不记录，返回
             return;
         }
@@ -1002,14 +1072,21 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             nextIh = nextIh.getNext();
         }
 
-        String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes);
+        String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, displayCalleeArgTypes);
         if (nextCalleeFullMethod == null) {
             // 记录被调用的Lambda表达式方法信息，不包含下一个被调用方法信息
-            JavaCG2FileUtil.write2FileWithTab(lambdaMethodInfoWriter, String.valueOf(methodCall.getCallId()), calleeFullMethod);
+            JavaCG2FileUtil.write2FileWithTab(lambdaMethodInfoWriter, String.valueOf(lambdaMethodCall.getCallId()), calleeFullMethod);
         } else {
             // 记录被调用的Lambda表达式方法信息，包含下一个被调用方法信息
-            JavaCG2FileUtil.write2FileWithTab(lambdaMethodInfoWriter, String.valueOf(methodCall.getCallId()), calleeFullMethod, nextCalleeFullMethod);
+            JavaCG2FileUtil.write2FileWithTab(lambdaMethodInfoWriter, String.valueOf(lambdaMethodCall.getCallId()), calleeFullMethod, nextCalleeFullMethod);
         }
+    }
+
+    // 记录INVOKEDYNAMIC指令对应的方法调用信息
+    private void recordInvokeDynamicMethodCall(INVOKEDYNAMIC invokedynamic, JavaCG2MethodInfo calleeMethodInfo, MethodCallPossibleInfo methodCallPossibleInfo,
+                                               Type[] rawCalleeArgTypes, Type[] displayCalleeArgTypes) {
+        addCommonMethodCallWithInfo(invokedynamic, JavaCG2CallTypeEnum.CTE_RAW_INVOKE_DYNAMIC, null, calleeMethodInfo.getClassName(), calleeMethodInfo.getMethodName(),
+                rawCalleeArgTypes, displayCalleeArgTypes, calleeMethodInfo.getArrayDimensions(), null, methodCallPossibleInfo);
     }
 
     /**
@@ -1029,7 +1106,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                                             String calleeMethodName,
                                             Type[] calleeArgTypes,
                                             int calleeArrayDimensions,
-                                            MethodCallPossibleInfo methodCallPossibleInfo) {
+                                            MethodCallPossibleInfo methodCallPossibleInfo) throws IOException {
         // 记录已处理过的被调用对象类型
         Set<String> handledCalleeTypeSet = new HashSet<>();
 
@@ -1052,8 +1129,11 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             }
         }
 
-        // 判断原始被调用对象类型是否需要记录
         if (addedReplacedMethodCall != null) {
+            // 将原始被调用对象类型记录到单独的表中
+            JavaCG2FileUtil.write2FileWithTab(methodCallRawCalleeWriter, String.valueOf(addedReplacedMethodCall.getCallId()), calleeClassName);
+
+            // 判断原始被调用对象类型是否需要记录一条方法调用
             if (addCalleeActualTypeBySpringBean && !javaCG2ConfInfo.isHandleCalleeSpringBeanRaw()) {
                 return;
             }
@@ -1109,8 +1189,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
     private MethodCall handleCalleeNew(MethodCallPossibleList methodCallPossibleList4Object, Set<String> handledCalleeTypeSet, InvokeInstruction invokeInstruction,
                                        boolean isInterface, String calleeClassName, String calleeMethodName, Type[] calleeArgTypes, int calleeArrayDimensions,
                                        MethodCallPossibleInfo methodCallPossibleInfo) {
-        if (!javaCG2ConfInfo.isHandleCalleeNewActual() ||
-                !methodCallPossibleList4Object.hasType()) {
+        if (!javaCG2ConfInfo.isHandleCalleeNewActual() || !methodCallPossibleList4Object.hasType()) {
             return null;
         }
         for (MethodCallPossibleEntry methodCallPossibleEntry : methodCallPossibleList4Object.getMethodCallPossibleEntryList()) {
@@ -1168,14 +1247,12 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                                                 MethodCallPossibleInfo methodCallPossibleInfo) {
         if (handledCalleeTypeSet.contains(calleeTypeRuntime) ||
                 StringUtils.equals(calleeClassName, calleeTypeRuntime) ||
-                JavaCG2ByteCodeUtil.isNullType(calleeTypeRuntime) ||
-                JavaCG2ClassMethodUtil.isObjectClass(calleeTypeRuntime)) {
+                JavaCG2ByteCodeUtil.isNullType(calleeTypeRuntime)) {
                 /*
                     以下情况不处理：
                         已处理过的被调用类型
                         被调用类型与方法调用指令中被调用类相同
                         被调用类型为null
-                        被调用类型为Object
                  */
             return null;
         }
@@ -1197,7 +1274,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      * @param calleeTypeRuntime      运行时的被调用类型
      * @param calleeClassName        方法调用指令中的被调用类名
      * @param calleeMethodName       被调用方法名
-     * @param calleeArgTypes         被调用方法参数类型数组
+     * @param rawCalleeArgTypes      被调用方法参数类型数组，原始的
      * @param calleeArrayDimensions  被调用方对象数组的维度，为0代表不是数组类型
      * @param methodCallPossibleInfo 方法调用可能的信息
      */
@@ -1206,16 +1283,44 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                                                    String calleeTypeRuntime,
                                                    String calleeClassName,
                                                    String calleeMethodName,
-                                                   Type[] calleeArgTypes,
+                                                   Type[] rawCalleeArgTypes,
                                                    int calleeArrayDimensions,
                                                    MethodCallPossibleInfo methodCallPossibleInfo) {
+        return addCommonMethodCallWithInfo(invokeInstruction, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, rawCalleeArgTypes, rawCalleeArgTypes,
+                calleeArrayDimensions, null, methodCallPossibleInfo);
+    }
+
+    /**
+     * 记录方法调用信息，尝试记录处理可能的信息
+     *
+     * @param invokeInstruction       方法调用指令
+     * @param callTypeEnum            调用类型
+     * @param calleeTypeRuntime       运行时的被调用类型
+     * @param calleeClassName         方法调用指令中的被调用类名
+     * @param calleeMethodName        被调用方法名
+     * @param rawCalleeArgTypes       被调用方法参数类型数组，原始的
+     * @param displayCalleeArgTypes   被调用方法参数类型数组，用于显示的
+     * @param calleeArrayDimensions   被调用方对象数组的维度，为0代表不是数组类型
+     * @param displayCalleeReturnType 被调用方法返回类型数，用于显示的
+     * @param methodCallPossibleInfo  方法调用可能的信息
+     */
+    private MethodCall addCommonMethodCallWithInfo(InvokeInstruction invokeInstruction,
+                                                   JavaCG2CallTypeEnum callTypeEnum,
+                                                   String calleeTypeRuntime,
+                                                   String calleeClassName,
+                                                   String calleeMethodName,
+                                                   Type[] rawCalleeArgTypes,
+                                                   Type[] displayCalleeArgTypes,
+                                                   int calleeArrayDimensions,
+                                                   Type displayCalleeReturnType,
+                                                   MethodCallPossibleInfo methodCallPossibleInfo) {
         if (methodCallPossibleInfo == null) {
-            return addCommonMethodCall(invokeInstruction, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, calleeArgTypes, calleeArrayDimensions,
-                    null, null);
+            return addCommonMethodCall(invokeInstruction, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, rawCalleeArgTypes, displayCalleeArgTypes,
+                    calleeArrayDimensions, displayCalleeReturnType, null);
         }
 
-        MethodCall methodCall = addCommonMethodCall(invokeInstruction, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, calleeArgTypes,
-                calleeArrayDimensions, null, methodCallPossibleInfo.getObjTypeEnum());
+        MethodCall methodCall = addCommonMethodCall(invokeInstruction, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, rawCalleeArgTypes,
+                displayCalleeArgTypes, calleeArrayDimensions, displayCalleeReturnType, methodCallPossibleInfo.getObjTypeEnum());
         if (methodCall == null) {
             return null;
         }
@@ -1232,6 +1337,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         return methodCall;
     }
 
+
     /**
      * 记录方法调用信息
      *
@@ -1240,7 +1346,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      * @param calleeTypeRuntime     运行时的被调用类型
      * @param calleeClassName       方法调用指令中的被调用类名
      * @param calleeMethodName      被调用方法名
-     * @param calleeArgTypes        被调用方法参数类型数组
+     * @param rawCalleeArgTypes     被调用方法参数类型数组，原始的
      * @param calleeArrayDimensions 被调用对象数组的维度，为0代表不是数组类型
      * @param calleeReturnType      被调用方法返回类型
      * @param objTypeEnum           被调用对象类型
@@ -1250,13 +1356,42 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                                            String calleeTypeRuntime,
                                            String calleeClassName,
                                            String calleeMethodName,
-                                           Type[] calleeArgTypes,
+                                           Type[] rawCalleeArgTypes,
                                            int calleeArrayDimensions,
                                            Type calleeReturnType,
                                            JavaCG2CalleeObjTypeEnum objTypeEnum) {
-        String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeArgTypes);
+        return addCommonMethodCall(invokeInstruction, callTypeEnum, calleeTypeRuntime, calleeClassName, calleeMethodName, rawCalleeArgTypes, rawCalleeArgTypes,
+                calleeArrayDimensions, calleeReturnType, objTypeEnum);
+    }
+
+    /**
+     * 记录方法调用信息
+     *
+     * @param invokeInstruction     方法调用指令
+     * @param callTypeEnum          调用类型
+     * @param calleeTypeRuntime     运行时的被调用类型
+     * @param calleeClassName       方法调用指令中的被调用类名
+     * @param calleeMethodName      被调用方法名
+     * @param rawCalleeArgTypes     被调用方法参数类型数组，原始的
+     * @param displayCalleeArgTypes 被调用方法参数类型数组，用于显示的
+     * @param calleeArrayDimensions 被调用对象数组的维度，为0代表不是数组类型
+     * @param calleeReturnType      被调用方法返回类型，原始的
+     * @param objTypeEnum           被调用对象类型
+     */
+    private MethodCall addCommonMethodCall(InvokeInstruction invokeInstruction,
+                                           JavaCG2CallTypeEnum callTypeEnum,
+                                           String calleeTypeRuntime,
+                                           String calleeClassName,
+                                           String calleeMethodName,
+                                           Type[] rawCalleeArgTypes,
+                                           Type[] displayCalleeArgTypes,
+                                           int calleeArrayDimensions,
+                                           Type calleeReturnType,
+                                           JavaCG2CalleeObjTypeEnum objTypeEnum) {
+        String usedCalleeClassName = calleeTypeRuntime != null ? calleeTypeRuntime : calleeClassName;
+        String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(usedCalleeClassName, calleeMethodName, displayCalleeArgTypes);
         // 判断当前方法调用是否需要忽略
-        if (javaCG2ElManager.checkIgnoreMethodCallByErEeAll(callTypeEnum.getType(), callerFullMethod, calleeFullMethod)) {
+        if (javaCG2ElManager.checkIgnoreMethodCall(callTypeEnum.getType(), callerFullMethod, calleeFullMethod)) {
             return null;
         }
 
@@ -1290,10 +1425,10 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         methodCall.setCallerMethodArgTypes(callerMethodArgTypes);
         methodCall.setCallerSourceLine(getSourceLine());
         methodCall.setCallerReturnType(methodReturnType);
-        methodCall.setCalleeClassName(calleeTypeRuntime != null ? calleeTypeRuntime : calleeClassName);
+        methodCall.setCalleeClassName(usedCalleeClassName);
         methodCall.setCalleeMethodName(calleeMethodName);
-        methodCall.setCalleeMethodArgTypes(JavaCG2ClassMethodUtil.genArgTypeStr(calleeArgTypes));
-        methodCall.setCalleeArgTypes(calleeArgTypes);
+        methodCall.setCalleeMethodArgTypes(JavaCG2ClassMethodUtil.genArgTypeStr(displayCalleeArgTypes));
+        methodCall.setRawCalleeArgTypes(rawCalleeArgTypes);
         methodCall.setCalleeArrayDimensions(calleeArrayDimensions);
         methodCall.setCalleeObjTypeEnum(objTypeEnum);
         // 假如指定的返回类型calleeReturnType非空则使用，若为空则使用通过方法调用指令获取的方法返回类型
@@ -1317,7 +1452,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                                     int callerSourceLine) {
         String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgTypes);
         // 判断当前方法调用是否需要忽略
-        if (javaCG2ElManager.checkIgnoreMethodCallByErEeAll(methodCallType.getType(), callerFullMethod, calleeFullMethod)) {
+        if (javaCG2ElManager.checkIgnoreMethodCall(methodCallType.getType(), callerFullMethod, calleeFullMethod)) {
             return;
         }
 
@@ -1370,7 +1505,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
         // 处理 TransactionCallback 实现类，doInTransaction 方法返回类型使用 Object
         if (handleSpecialInitMethod(transactionCallbackImplClassMap, calleeClassName, calleeMethodName, calleeMethodArgTypes, JavaCG2CallTypeEnum.CTE_TX_CALLBACK_INIT_CALL1,
-                JavaCG2CallTypeEnum.CTE_TX_CALLBACK_INIT_CALL2, JavaCG2CommonNameConstants.METHOD_DO_IN_TRANSACTION, JavaCG2CommonNameConstants.ARGS_TRANSACTION_STATUS,
+                JavaCG2CallTypeEnum.CTE_TX_CALLBACK_INIT_CALL2, JavaCG2CommonNameConstants.METHOD_NAME_DO_IN_TRANSACTION, JavaCG2CommonNameConstants.ARGS_TRANSACTION_STATUS,
                 JavaCG2CommonNameConstants.CLASS_NAME_OBJECT)) {
             skipRawMethodCall = true;
         }
@@ -1378,7 +1513,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         // 处理TransactionCallbackWithoutResult实现类，doInTransactionWithoutResult 方法返回类型为void
         if (handleSpecialInitMethod(transactionCallbackWithoutResultChildClassMap, calleeClassName, calleeMethodName, calleeMethodArgTypes,
                 JavaCG2CallTypeEnum.CTE_TX_CALLBACK_WR_INIT_CALL1, JavaCG2CallTypeEnum.CTE_TX_CALLBACK_WR_INIT_CALL2,
-                JavaCG2CommonNameConstants.METHOD_DO_IN_TRANSACTION_WITHOUT_RESULT, JavaCG2CommonNameConstants.ARGS_TRANSACTION_STATUS,
+                JavaCG2CommonNameConstants.METHOD_NAME_DO_IN_TRANSACTION_WITHOUT_RESULT, JavaCG2CommonNameConstants.ARGS_TRANSACTION_STATUS,
                 JavaCG2CommonNameConstants.RETURN_TYPE_VOID)) {
             skipRawMethodCall = true;
         }
@@ -1451,7 +1586,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         recordMethodCallPossibleInfo(methodCall.getCallId(), JavaCG2Constants.METHOD_CALL_OBJECT_SEQ, methodCall.getCalleeClassName(),
                 methodCallPossibleInfo.getPossibleInfo4Object());
 
-        Type[] argTypes = methodCall.getCalleeArgTypes();
+        Type[] argTypes = methodCall.getRawCalleeArgTypes();
         // 记录方法调用可能的信息，参数
         for (int i = 0; i < methodCallPossibleInfo.getPossibleInfoNum4Args(); i++) {
             String argType = argTypes[i].toString();
@@ -1461,7 +1596,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
     }
 
     // 记录方法调用可能的信息
-    private void recordMethodCallPossibleInfo(int methodCallId, int argSeq, String argType, MethodCallPossibleList methodCallPossibleList) throws IOException {
+    private void recordMethodCallPossibleInfo(int methodCallId, int objArgSeq, String objArgType, MethodCallPossibleList methodCallPossibleList) throws IOException {
         if (methodCallPossibleList == null) {
             return;
         }
@@ -1477,19 +1612,19 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         for (int seq = 0; seq < methodCallPossibleEntryList.size(); seq++) {
             MethodCallPossibleEntry methodCallPossibleEntry = methodCallPossibleEntryList.get(seq);
             // 记录方法调用可能的类型，类型的序号可能比以上list的元素数量多，需要每次累计
-            recordStringMethodCallPossibleType(stringBuilder, methodCallPossibleEntry, methodCallId, argSeq, typeCounter, arrayElementFlag);
+            recordStringMethodCallPossibleType(stringBuilder, methodCallPossibleEntry, methodCallId, objArgSeq, typeCounter, arrayElementFlag);
 
             // 处理方法调用可能的值
-            recordStringMethodCallPossibleValue(stringBuilder, methodCallPossibleEntry, methodCallId, argSeq, argType, seq, arrayElementFlag);
+            recordStringMethodCallPossibleValue(stringBuilder, methodCallPossibleEntry, methodCallId, objArgSeq, objArgType, seq, arrayElementFlag);
 
             // 处理方法调用可能的被调用静态变量
             ClassFieldTypeAndName staticField = methodCallPossibleEntry.getStaticField();
             if (staticField != null) {
-                recordStringMethodCallPossibleInfo(stringBuilder, staticField.getClassAndFieldName(), methodCallId, argSeq,
+                recordStringMethodCallPossibleInfo(stringBuilder, staticField.getClassAndFieldName(), methodCallId, objArgSeq,
                         JavaCG2MethodCallInfoTypeEnum.MCIT_STATIC_FIELD, seq, arrayElementFlag, "");
                 JavaCG2FileUtil.write2FileWithTab(methodCallStaticFieldWriter,
                         String.valueOf(methodCallId),
-                        String.valueOf(argSeq),
+                        String.valueOf(objArgSeq),
                         String.valueOf(seq),
                         staticField.getClassName(),
                         staticField.getFieldName(),
@@ -1501,11 +1636,11 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             // 处理方法调用可能的被调用非静态变量
             ClassFieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
             if (nonStaticField != null) {
-                recordStringMethodCallPossibleInfo(stringBuilder, nonStaticField.getClassAndFieldName(), methodCallId, argSeq,
+                recordStringMethodCallPossibleInfo(stringBuilder, nonStaticField.getClassAndFieldName(), methodCallId, objArgSeq,
                         JavaCG2MethodCallInfoTypeEnum.MCIT_NON_STATIC_FIELD, seq, arrayElementFlag, "");
                 JavaCG2FileUtil.write2FileWithTab(methodCallNonStaticFieldWriter,
                         String.valueOf(methodCallId),
-                        String.valueOf(argSeq),
+                        String.valueOf(objArgSeq),
                         String.valueOf(seq),
                         nonStaticField.getClassName(),
                         nonStaticField.getFieldName(),
@@ -1517,12 +1652,12 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             // 处理被调用对象或参数是静态字段方法返回值的可能信息
             String staticFieldMethodCallStr = methodCallPossibleEntry.getStaticFieldMethodCall();
             if (staticFieldMethodCallStr != null) {
-                recordStringMethodCallPossibleInfo(stringBuilder, staticFieldMethodCallStr, methodCallId, argSeq, JavaCG2MethodCallInfoTypeEnum.MCIT_STATIC_FIELD_MCR,
+                recordStringMethodCallPossibleInfo(stringBuilder, staticFieldMethodCallStr, methodCallId, objArgSeq, JavaCG2MethodCallInfoTypeEnum.MCIT_STATIC_FIELD_MCR,
                         seq, arrayElementFlag, "");
                 ClassFieldMethodCall classFieldMethodCall = JavaCG2ClassMethodUtil.parseClassFieldMethodCall(staticFieldMethodCallStr);
                 JavaCG2FileUtil.write2FileWithTab(methodCallStaticFieldMCRWriter,
                         String.valueOf(methodCallId),
-                        String.valueOf(argSeq),
+                        String.valueOf(objArgSeq),
                         String.valueOf(seq),
                         classFieldMethodCall.getClassName(),
                         classFieldMethodCall.getFieldName(),
@@ -1534,7 +1669,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             }
 
             // 处理被调用对象或参数的变量名称可能信息
-            recordStringMethodCallPossibleInfo(stringBuilder, methodCallPossibleEntry.getNameOfVariable(), methodCallId, argSeq,
+            recordStringMethodCallPossibleInfo(stringBuilder, methodCallPossibleEntry.getNameOfVariable(), methodCallId, objArgSeq,
                     JavaCG2MethodCallInfoTypeEnum.MCIT_NAME_OF_VARIABLE, seq, arrayElementFlag, "");
 
             // 处理被调用对象或参数的方法调用返回call_id可能信息
@@ -1544,12 +1679,12 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 Integer methodCallReturnCallId = getInvokeInstructionCallId(methodCallReturnInstructionPosition);
                 if (methodCallReturnCallId != null && methodCallReturnCallId != methodCallId) {
                     // 仅当当前call_id与被调用对象或参数的方法调用返回call_id不同时才记录
-                    recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodCallReturnCallId), methodCallId, argSeq,
+                    recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodCallReturnCallId), methodCallId, objArgSeq,
                             JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_CALL_RETURN_CALL_ID, seq, arrayElementFlag, "");
                     // 记录方法调用使用方法调用返回值
                     JavaCG2FileUtil.write2FileWithTab(methodCallMethodCallReturnWriter,
                             String.valueOf(methodCallId),
-                            String.valueOf(argSeq),
+                            String.valueOf(objArgSeq),
                             String.valueOf(seq),
                             String.valueOf(arrayElementFlag),
                             String.valueOf(methodCallReturnCallId),
@@ -1561,7 +1696,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             // 处理被调用对象或参数的方法参数序号可能信息
             Integer methodArgSeq = methodCallPossibleEntry.getMethodArgSeq();
             if (methodArgSeq != null) {
-                recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodArgSeq), methodCallId, argSeq,
+                recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodArgSeq), methodCallId, objArgSeq,
                         JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_ARG_SEQ, seq, arrayElementFlag, "");
             }
 
@@ -1572,7 +1707,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 Integer methodCallReturnCallIdEQC = getInvokeInstructionCallId(methodCallReturnInstructionPositionEQC);
                 if (methodCallReturnCallIdEQC != null && methodCallReturnCallIdEQC != methodCallId) {
                     // 仅当当前call_id与被调用对象或参数的方法调用返回call_id不同时才记录
-                    recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodCallReturnCallIdEQC), methodCallId, argSeq,
+                    recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodCallReturnCallIdEQC), methodCallId, objArgSeq,
                             JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_CALL_RETURN_CALL_ID_EQC, seq, arrayElementFlag, "");
                 }
             }
@@ -1580,14 +1715,14 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             // 处理被调用对象或参数等值转换前的方法参数序号可能信息
             Integer methodArgSeqEQC = methodCallPossibleEntry.getMethodArgSeqEQC();
             if (methodArgSeqEQC != null) {
-                recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodArgSeqEQC), methodCallId, argSeq,
+                recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodArgSeqEQC), methodCallId, objArgSeq,
                         JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_ARG_SEQ_EQC, seq, arrayElementFlag, "");
             }
 
             // 处理被调用对象或参数的catch异常对象对应的catch代码块开始指令偏移量可能信息
             Integer catchExceptionStartPosition = methodCallPossibleEntry.getCatchExceptionStartPosition();
             if (catchExceptionStartPosition != null) {
-                recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(catchExceptionStartPosition), methodCallId, argSeq,
+                recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(catchExceptionStartPosition), methodCallId, objArgSeq,
                         JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_CATCH_EXCEPTION_FROM_OFFSET, seq, arrayElementFlag, "");
             }
         }
@@ -1691,7 +1826,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      */
     private int genNewCallId() {
         int newCallId = callIdCounter.addAndGet();
-        if (parseMethodCallTypeValueFlag) {
+        if (invokeInstructionPositionCallIdMap != null) {
             // 记录方法调用指令位置与call_id对应关系
             invokeInstructionPositionCallIdMap.put(ih.getPosition(), newCallId);
         }
@@ -1736,6 +1871,10 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     public void setMethodCallWriter(Writer methodCallWriter) {
         this.methodCallWriter = methodCallWriter;
+    }
+
+    public void setMethodCallRawCalleeWriter(Writer methodCallRawCalleeWriter) {
+        this.methodCallRawCalleeWriter = methodCallRawCalleeWriter;
     }
 
     public void setLambdaMethodInfoWriter(Writer lambdaMethodInfoWriter) {
@@ -1800,6 +1939,10 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     public void setFieldRelationshipWriter(Writer fieldRelationshipWriter) {
         this.fieldRelationshipWriter = fieldRelationshipWriter;
+    }
+
+    public void setFieldUsageOtherWriter(Writer fieldUsageOtherWriter) {
+        this.fieldUsageOtherWriter = fieldUsageOtherWriter;
     }
 
     public void setClassAndJarNum(ClassAndJarNum classAndJarNum) {

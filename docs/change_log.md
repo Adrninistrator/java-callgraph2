@@ -525,3 +525,164 @@ Java 代码中定义的 Spring AOP Advice
 - merge.separate.fat.jar
 
 在合并需要解析的 jar 文件时，是否合并出一个单独的 fat jar。仅包含 .class 文件，且所有的 jar 文件都合并到从根目录开始
+
+## 1.25. (4.0.0)
+
+### 1.25.1. INVOKEDYNAMIC 指令被调用方法信息修正
+
+#### 1.25.1.1. 增加方法调用类型 `_BSM`
+
+对应 INVOKEDYNAMIC 指令调用的 BootstrapMethod
+
+#### 1.25.1.2. INVOKEDYNAMIC 指令调用 Lambda 表达式被调用方法参数类型
+
+之前版本中对于 INVOKEDYNAMIC 指令调用 Lambda 表达式的被调用方法，获取的方法参数类型不正确，从当前版本开始会进行修正
+
+#### 1.25.1.3. INVOKEDYNAMIC 指令调用非 Lambda 表达式的调用关系不输出
+
+若 INVOKEDYNAMIC 指令调用的方法不是 Lambda 表达式，则对应的 DYN 类型的方法调用关系不输出到文件，仅输出新增的`_BSM`类型的方法调用
+
+### 1.25.2. _javacg2_config/config.properties 配置参数修改
+
+- output.root.path 配置参数作用修改
+
+当前参数增加以下作用
+
+在解析 jar 文件时，若需要合并 jar、war 文件、目录合并为新的 jar 文件，所在目录由该参数控制，默认生成到需要解析的第一个文件、目录所在目录
+
+### 1.25.3. _javacg2_config/config.properties 配置参数增加
+
+- 增加配置参数 parse.component.compatibility.mode
+
+是否使用 Java 组件兼容性检查模式，仅解析类、方法、字段等基础信息
+
+- 增加配置参数 parse.only.class.mode
+
+是否仅解析类信息，比 parse.component.compatibility.mode 优先级高
+
+### 1.25.4. 修改输出文件
+
+- class_reference
+
+增加字段 jar_num，类所在的 jar 文件序号
+
+- field_info
+
+增加字段 jar_num，字段所在的 jar 文件序号
+
+- spring_bean
+
+增加字段 profile，Spring Bean 的 profile
+
+### 1.25.5. 增加输出文件
+
+- dup_class_reference
+
+重复同名类引用的类
+
+- dup_field_info
+
+重复同名类的字段信息
+
+- field_usage_other
+
+使用其他类中字段的使用情况
+
+- jacg_config
+
+java-all-call-graph组件使用的配置参数
+
+- method_call_raw_callee
+
+方法调用被调用对象的原始类型
+
+- package_info
+
+包名信息
+
+### 1.25.6. 支持 JDK9 及以上版本-处理 .jmod 文件
+
+- 增加配置参数
+
+_javacg2_config/config.properties 配置文件增加以下参数
+
+jmod.program.path
+
+指定用于解析 .jmod 文件的 jmod 程序完整路径
+
+假如指定的 .jmod 文件在 JDK 的 jmods 目录中，可找到 bin 目录的 jmod 程序，则当前参数可省略
+
+假如无法找到 JDK bin 目录的 jmod 程序，则当前参数不能省略
+
+- .jmod 文件处理
+
+于 .jmod 文件，仅合并其中 classes/ 目录下的 .class 文件
+
+### 1.25.7. 支持 JDK9 及以上版本-处理 Multi-release jar 文件
+
+对于 META-INF/MANIFEST.MF 文件中有指定“Multi-Release: true”的 jar 文件，支持处理 META-INF/versions/{N} 目录中的 class 文件，按照类加载器的顺序选择对应的类并解析
+
+- 增加配置参数
+
+_javacg2_config/config.properties 配置文件增加以下参数
+
+jdk.runtime.major.version
+
+解析的 jar 文件在运行时使用的 JDK 主版本号
+
+例如 8、11、17、21 等
+					
+默认为 8 ，代表 JDK8 及以下版本
+
+### 1.25.8. 生成的配置参数使用情况文件增加表达式参数
+
+在生成的配置参数使用情况文件_javacg2_all_config.md、_javacg2_used_config.md 中，增加输出表达式参数
+
+### 1.25.9. 表达式配置参数修改
+
+#### 1.25.9.1. 允许使用表达式的变量枚举修改
+
+增加公共的允许使用表达式的变量枚举 com.adrninistrator.javacg2.el.enums.CommonElAllowedVariableEnum
+
+原有的 com.adrninistrator.javacg2.el.enums.JavaCG2ElConfigEnum 枚举中的以下常量移动到以上新增的枚举中
+
+```
+EAVE_METHOD_CALL_TYPE
+EAVE_MC_ER_CLASS_NAME
+EAVE_MC_ER_PACKAGE_NAME
+EAVE_MC_ER_SIMPLE_CLASS_NAME
+EAVE_MC_ER_METHOD_NAME
+EAVE_MC_ER_METHOD_ARG_NUM
+EAVE_MC_ER_FULL_METHOD
+EAVE_MC_EE_CLASS_NAME
+EAVE_MC_EE_PACKAGE_NAME
+EAVE_MC_EE_SIMPLE_CLASS_NAME
+EAVE_MC_EE_METHOD_NAME
+EAVE_MC_EE_METHOD_ARG_NUM
+EAVE_MC_EE_FULL_METHOD
+```
+
+#### 1.25.9.2. 方法调用相关的表达式配置修改
+
+删除以下方法调用相关的表达式配置文件及 JavaCG2ElConfigEnum 枚举中的对应常量
+
+```
+_javacg2_parse_method_call_switch/parse_ignore_method_call_ee.av
+_javacg2_parse_method_call_switch/parse_ignore_method_call_er.av
+```
+
+原有的方法调用相关的表达式配置文件由_javacg2_parse_method_call_switch/parse_ignore_method_call_er_ee.av 改名为_javacg2_parse_method_call_switch/parse_ignore_method_call.av，对应的枚举常量从 JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_ER_EE 修改为 JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL
+
+即方法调用相关的表达式不再单独保留通过调用方法或被调用方法指定是否需要解析方法调用的配置文件，都合并到一个配置文件中
+
+### 1.25.10. 表达式配置增加
+
+- _javacg2_parse_method_call_switch/parse_ignore_method_call_type_value_caller.av
+
+指定处理方法调用时解析被调用对象和参数可能的类型与值需要跳过哪些方法，通过调用方法判断
+
+### 1.25.11. XML 中的 Spring Bean 支持通过表达式过滤，包括 profile
+
+增加表达式配置文件 _javacg2_handle_xml_switch/handle_ignore_spring_bean_in_xml.av ，支持通过 Spring Bean 名称、类名、profile 指定 XML 中定义的哪些 Spring Bean 需要写入文件
+
+示例见 java-all-call-graph 项目的 test.runbycodemain.TestRBCRunnerWriteCallGraphFile 类

@@ -34,7 +34,7 @@ public enum JavaCG2OtherConfigFileUseSetEnum implements OtherConfigInterface {
     }
 
     @Override
-    public String getEnumConstantsName() {
+    public String getEnumConstantName() {
         return name();
     }
 

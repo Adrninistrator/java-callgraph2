@@ -63,6 +63,19 @@ public class JavaCG2InstructionUtil {
     }
 
     /**
+     * 判断是否为字段操作类指令
+     *
+     * @param opCode
+     * @return
+     */
+    public static boolean isFieldInstruction(int opCode) {
+        return opCode == Const.GETFIELD ||
+                opCode == Const.PUTFIELD ||
+                opCode == Const.GETSTATIC ||
+                opCode == Const.PUTSTATIC;
+    }
+
+    /**
      * 判断是否为if类指令
      *
      * @param opCode

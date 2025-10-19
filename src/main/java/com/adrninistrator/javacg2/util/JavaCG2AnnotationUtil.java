@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author adrninistrator
@@ -116,6 +117,27 @@ public class JavaCG2AnnotationUtil {
                     String formattedValue = annotationAttributesFormatter.format(elementValuePair);
                     JavaCG2FileUtil.write2FileWithTab(writer, objectInfoStr, annotationClassName, elementValuePair.getNameString(), formattedValue);
                 }
+            }
+        } catch (Exception e) {
+            logger.error("error ", e);
+        }
+    }
+
+    /**
+     * 记录所有的注解类型
+     *
+     * @param annotationEntries
+     * @param annotationTypeSet
+     */
+    public static void recordAllAnnotationType(AnnotationEntry[] annotationEntries, Set<String> annotationTypeSet) {
+        if (annotationEntries == null || annotationEntries.length == 0) {
+            return;
+        }
+
+        try {
+            for (AnnotationEntry annotationEntry : annotationEntries) {
+                String annotationClassName = Utility.typeSignatureToString(annotationEntry.getAnnotationType(), false);
+                annotationTypeSet.add(annotationClassName);
             }
         } catch (Exception e) {
             logger.error("error ", e);

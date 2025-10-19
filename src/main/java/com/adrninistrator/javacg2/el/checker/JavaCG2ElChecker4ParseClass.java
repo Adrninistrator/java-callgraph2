@@ -10,8 +10,10 @@ import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
  */
 public class JavaCG2ElChecker4ParseClass extends JavaCG2ElChecker {
 
+    public static final String CLASS_NAME_EXAMPLE = "a.b.C";
+
     @Override
     protected void javaCG2DoCheck(JavaCG2ElManager elManager, JavaCG2ElConfigEnum elConfig) {
-        elManager.checkIgnoreParseClass("a.b.C");
+        elManager.checkIgnoreParseClass(CLASS_NAME_EXAMPLE);
     }
 }

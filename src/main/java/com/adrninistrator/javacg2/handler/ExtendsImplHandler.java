@@ -481,7 +481,7 @@ public class ExtendsImplHandler {
         String calleeFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(calleeClassName, calleeMethodName, calleeMethodArgTypes);
         String callerFullMethod = JavaCG2ClassMethodUtil.formatFullMethod(callerClassName, callerMethodName, callerMethodArgTypes);
         // 判断当前方法调用是否需要忽略
-        if (javaCG2ElManager.checkIgnoreMethodCallByErEeAll(methodCallType.getType(), callerFullMethod, calleeFullMethod)) {
+        if (javaCG2ElManager.checkIgnoreMethodCall(methodCallType.getType(), callerFullMethod, calleeFullMethod)) {
             return;
         }
 

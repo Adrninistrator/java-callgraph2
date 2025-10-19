@@ -2,6 +2,7 @@ package com.adrninistrator.javacg2.el.util;
 
 import com.googlecode.aviator.exception.ExpressionRuntimeException;
 import com.googlecode.aviator.runtime.type.AviatorObject;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
@@ -16,6 +17,16 @@ public class ElUtil {
     private static final ThreadLocal<Boolean> RUN_IN_CHECKER_FLAG = new ThreadLocal<>();
 
     /**
+     * 将字符串数组转换为“'a', 'b', ... 'z'”的形式
+     *
+     * @param array
+     * @return
+     */
+    public static String genStringFromArray(String[] array) {
+        return "'" + StringUtils.join(array, "', '") + "'";
+    }
+
+    /**
      * 获取参数的字符串类型的值
      *
      * @param arg
@@ -24,6 +35,9 @@ public class ElUtil {
      */
     public static String getArgStringValue(AviatorObject arg, Map<String, Object> env) {
         Object argValue = arg.getValue(env);
+        if (argValue == null) {
+            return null;
+        }
         if (!(argValue instanceof String)) {
             throw new ExpressionRuntimeException("只允许使用字符串类型参数");
         }

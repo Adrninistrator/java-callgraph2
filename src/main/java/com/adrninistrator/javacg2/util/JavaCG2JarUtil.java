@@ -10,9 +10,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.jar.Manifest;
 
 /**
  * @author adrninistrator
@@ -24,9 +26,9 @@ public class JavaCG2JarUtil {
     private static final Logger logger = LoggerFactory.getLogger(JavaCG2JarUtil.class);
 
     /**
-     * 从jar包中的文件路径获取文件名称
+     * 从jar文件中的文件路径获取文件名称
      *
-     * @param jarEntryPath jar包中的文件路径
+     * @param jarEntryPath jar文件中的文件路径
      * @return
      */
     public static String getJarEntryNameFromPath(String jarEntryPath) {
@@ -34,20 +36,20 @@ public class JavaCG2JarUtil {
     }
 
     /**
-     * 获得生成的jar包中的目录名称，使用jar包序号与名称合并的结果，以支持同名的文件/目录
+     * 获得生成的jar文件中的目录名称，使用jar文件序号与名称合并的结果，以支持同名的文件/目录
      *
-     * @param jarNum     jar包序号
+     * @param jarNum     jar文件序号
      * @param jarDirName jar文件或目录的名称
      * @return
      */
     public static String genDirNameInJar(int jarNum, String jarDirName) {
         String dirName = String.format("%04d%s%s", jarNum, JavaCG2Constants.JAR_SEQ_FLAG, jarDirName);
-        logger.info("获得生成的jar包中的目录名称 {}", dirName);
+        logger.info("获得生成的jar文件中的目录名称 {}", dirName);
         return dirName;
     }
 
     /**
-     * 根据生成的jar包中的目录名称，获得对应的jar包序号
+     * 根据生成的jar文件中的目录名称，获得对应的jar文件序号
      *
      * @param dirNameInJar
      * @return
@@ -55,6 +57,16 @@ public class JavaCG2JarUtil {
     public static Integer getJarNumFromDirName(String dirNameInJar) {
         String jarNumStr = StringUtils.substringBefore(dirNameInJar, JavaCG2Constants.JAR_SEQ_FLAG);
         return Integer.valueOf(jarNumStr);
+    }
+
+    /**
+     * 根据生成的jar文件中的目录名称，获得对应的jar文件序号
+     *
+     * @param dirNameInJar
+     * @return
+     */
+    public static String getJarFileNameFromDirName(String dirNameInJar) {
+        return StringUtils.substringAfter(dirNameInJar, JavaCG2Constants.JAR_SEQ_FLAG);
     }
 
     /**
@@ -104,6 +116,23 @@ public class JavaCG2JarUtil {
         } catch (Exception e) {
             logger.error("获取jar文件中所有的文件及目录的路径异常 ", e);
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 根据 META-INF/MANIFEST.MF 文件输入流判断是否为Multi-release JAR
+     *
+     * @param inputStream
+     * @return
+     */
+    public static boolean checkMultiReleaseJar(InputStream inputStream) {
+        try {
+            Manifest manifest = new Manifest(inputStream);
+            String multiReleaseValue = manifest.getMainAttributes().getValue("Multi-Release");
+            return Boolean.parseBoolean(multiReleaseValue);
+        } catch (Exception e) {
+            logger.error("error ", e);
+            return false;
         }
     }
 

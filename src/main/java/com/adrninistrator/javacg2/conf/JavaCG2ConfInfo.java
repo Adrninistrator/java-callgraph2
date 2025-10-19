@@ -42,6 +42,12 @@ public class JavaCG2ConfInfo {
      */
     private Map<String, Map<String, Integer>> frEqConversionMethodMap;
 
+    // 是否使用Jar兼容性检查模式，仅解析类、方法、字段等基础信息
+    private boolean parseJarCompatibilityMode;
+
+    // 是否仅解析类信息
+    private boolean parseOnlyClassMode;
+
     public String getOutputDirPath() {
         return outputDirPath;
     }
@@ -112,5 +118,21 @@ public class JavaCG2ConfInfo {
 
     public void setFrEqConversionMethodMap(Map<String, Map<String, Integer>> frEqConversionMethodMap) {
         this.frEqConversionMethodMap = frEqConversionMethodMap;
+    }
+
+    public boolean isParseJarCompatibilityMode() {
+        return parseJarCompatibilityMode;
+    }
+
+    public void setParseJarCompatibilityMode(boolean parseJarCompatibilityMode) {
+        this.parseJarCompatibilityMode = parseJarCompatibilityMode;
+    }
+
+    public boolean isParseOnlyClassMode() {
+        return parseOnlyClassMode;
+    }
+
+    public void setParseOnlyClassMode(boolean parseOnlyClassMode) {
+        this.parseOnlyClassMode = parseOnlyClassMode;
     }
 }

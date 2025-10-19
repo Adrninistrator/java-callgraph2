@@ -2,7 +2,6 @@ package com.adrninistrator.javacg2.dto.output;
 
 import com.adrninistrator.javacg2.common.enums.JavaCG2OutPutFileTypeEnum;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
-import com.adrninistrator.javacg2.util.JavaCG2Util;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,12 +36,12 @@ public class JavaCG2OutputInfo {
 
     public JavaCG2OutputInfo(String outputDirPath, String outputFileExt) {
         // 路径后面增加路径分隔符
-        this.outputDirPath = JavaCG2Util.addSeparator4FilePath(outputDirPath);
+        this.outputDirPath = JavaCG2FileUtil.addSeparator4FilePath(outputDirPath);
         this.outputFileExt = outputFileExt;
     }
 
     /**
-     * 增加其他文件信息，返回对应的文件路径
+     * 增加其他文件信息
      *
      * @param fileName 文件名，不需要指定文件后缀
      */

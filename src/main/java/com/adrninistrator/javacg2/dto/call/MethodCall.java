@@ -1,7 +1,6 @@
 package com.adrninistrator.javacg2.dto.call;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
-import com.adrninistrator.javacg2.common.enums.JavaCG2CallTypeEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2CalleeObjTypeEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
 import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
@@ -48,8 +47,11 @@ public class MethodCall {
     // 被调用者方法参数类型
     private String calleeMethodArgTypes;
 
-    // 被调用方法的参数类型数组
-    private Type[] calleeArgTypes;
+    // 被调用方法的参数类型数组，原始的
+    private Type[] rawCalleeArgTypes;
+
+    // 被调用方法的参数类型数组，用于显示的
+    private Type[] displayCalleeArgTypes;
 
     // 被调用者类的数组维度，0代表非数组
     private int calleeArrayDimensions;
@@ -193,12 +195,20 @@ public class MethodCall {
         this.calleeMethodArgTypes = calleeMethodArgTypes;
     }
 
-    public Type[] getCalleeArgTypes() {
-        return calleeArgTypes;
+    public Type[] getRawCalleeArgTypes() {
+        return rawCalleeArgTypes;
     }
 
-    public void setCalleeArgTypes(Type[] calleeArgTypes) {
-        this.calleeArgTypes = calleeArgTypes;
+    public void setRawCalleeArgTypes(Type[] rawCalleeArgTypes) {
+        this.rawCalleeArgTypes = rawCalleeArgTypes;
+    }
+
+    public Type[] getDisplayCalleeArgTypes() {
+        return displayCalleeArgTypes;
+    }
+
+    public void setDisplayCalleeArgTypes(Type[] displayCalleeArgTypes) {
+        this.displayCalleeArgTypes = displayCalleeArgTypes;
     }
 
     public int getCalleeArrayDimensions() {

@@ -1,7 +1,10 @@
 package com.adrninistrator.javacg2.conf.writer;
 
+import com.adrninistrator.javacg2.common.JavaCG2ConfigPrintConstants;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
+import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
 import com.adrninistrator.javacg2.conf.BaseConfigureWrapper;
+import com.adrninistrator.javacg2.conf.enums.interfaces.ConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.OtherConfigInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
@@ -37,7 +40,7 @@ public abstract class BaseConfigWriter {
 
     public BaseConfigWriter(String rootDirPath) {
         // 记录根目录时，在最后增加文件目录分隔符
-        this.rootDirPath = JavaCG2Util.addSeparator4FilePath(rootDirPath);
+        this.rootDirPath = JavaCG2FileUtil.addSeparator4FilePath(rootDirPath);
     }
 
     private void writeCommentLine(Writer writer, String data) throws IOException {
@@ -60,6 +63,7 @@ public abstract class BaseConfigWriter {
      */
     public boolean genMainConfig(MainConfigInterface[] mainConfigs) {
         try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + mainConfigs[0].getFileName())) {
+            writeConfigClassName(writer, mainConfigs[0]);
             for (MainConfigInterface mainConfig : mainConfigs) {
                 for (String description : mainConfig.getDescriptions()) {
                     writeCommentLine(writer, description);
@@ -84,6 +88,7 @@ public abstract class BaseConfigWriter {
     public boolean genOtherConfig(OtherConfigInterface[] otherConfigs) {
         for (OtherConfigInterface otherConfig : otherConfigs) {
             try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + otherConfig.getKey())) {
+                writeConfigClassName(writer, otherConfig);
                 for (String description : otherConfig.getDescriptions()) {
                     writeCommentLine(writer, description);
                 }
@@ -105,23 +110,25 @@ public abstract class BaseConfigWriter {
      * 生成EL表达式配置参数
      *
      * @param elConfigs
-     * @param fileUsageMap
+     * @param elDirUsageMap
      * @return
      */
-    public boolean genElConfig(ElConfigInterface[] elConfigs, Map<String, String[]> fileUsageMap) {
+    public boolean genElConfig(ElConfigInterface[] elConfigs, Map<String, String[]> elDirUsageMap) {
         String elExampleName = "";
         for (ElConfigInterface elConfig : elConfigs) {
-            String fileName = elConfig.getKey();
-            if (fileName.endsWith(JavaCG2Constants.EXT_MD)) {
-                elExampleName = fileName;
+            if (JavaCG2Util.checkElExample(elConfig)) {
+                elExampleName = elConfig.getKey();
             }
         }
         for (ElConfigInterface elConfig : elConfigs) {
+            boolean elExample = JavaCG2Util.checkElExample(elConfig);
             String fileName = elConfig.getKey();
-            boolean elExample = fileName.endsWith(JavaCG2Constants.EXT_MD);
             try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + elConfig.getKey())) {
+                if (!elExample) {
+                    writeConfigClassName(writer, elConfig);
+                }
                 String[] usages = null;
-                for (Map.Entry<String, String[]> entry : fileUsageMap.entrySet()) {
+                for (Map.Entry<String, String[]> entry : elDirUsageMap.entrySet()) {
                     if (fileName.startsWith(entry.getKey() + JavaCG2Constants.FLAG_SLASH)) {
                         usages = entry.getValue();
                         break;
@@ -144,8 +151,12 @@ public abstract class BaseConfigWriter {
                     for (String description : elConfig.getDescriptions()) {
                         writeAVCommentLine(writer, "（范围）" + description);
                     }
-                    writeAVCommentLine(writer, "（表达式使用示例文件）请参考 " + elExampleName);
-                    writeAVCommentLine(writer, "（允许使用的变量）{" + StringUtils.joinWith("} {", "变量名称", "变量类型", "变量描述", "变量值示例") + "}");
+                    writeAVCommentLine(writer, "（表达式使用通用说明文档）请参考 " + elExampleName);
+                    writeAVCommentLine(writer, "（表达式字符串比较说明文档）请参考 " + JavaCG2DirEnum.IDE_EL_EXAMPLE.getDirName() + "/" + JavaCG2Constants.EL_STRING_COMPARE_MD_FILE_NAME);
+                    writeAVCommentLine(writer, "（当前表达式使用示例文档）请参考 " + JavaCG2DirEnum.IDE_EL_EXAMPLE.getDirName() + "/" + fileName + JavaCG2Constants.EXT_MD);
+                    writeAVCommentLine(writer, "（" + JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_ALLOWED_VARIABLES + "）{" + StringUtils.joinWith("} {",
+                            JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_NAME, JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_TYPE,
+                            JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_DESC, JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_VALUE_EXAMPLE) + "}");
                     Set<String> allowedVariableNameSet = new HashSet<>();
                     for (ElAllowedVariableInterface elAllowedVariable : elConfig.getElAllowedVariableEnums()) {
                         if (!allowedVariableNameSet.add(elAllowedVariable.getVariableName())) {
@@ -157,12 +168,29 @@ public abstract class BaseConfigWriter {
                                 valueExamples) + "}");
                     }
                 }
+
+                if (baseConfigureWrapper != null) {
+                    String text = baseConfigureWrapper.getElConfigText(elConfig);
+                    writeNewLine(writer, text);
+                }
             } catch (Exception e) {
                 logger.error("error ", e);
                 return false;
             }
         }
         return true;
+    }
+
+    private void writeConfigClassName(Writer writer, ConfigInterface configInterface) throws IOException {
+        String configClassName = "对应的枚举类名: " + configInterface.getClass().getSimpleName();
+        if (!(configInterface instanceof MainConfigInterface)) {
+            configClassName = configClassName + JavaCG2Constants.FLAG_DOT + configInterface.getEnumConstantName();
+        }
+        if (configInterface instanceof ElConfigInterface) {
+            writeAVCommentLine(writer, configClassName);
+        } else {
+            writeCommentLine(writer, configClassName);
+        }
     }
 
     private String[] genElExampleDescriptions() {
@@ -174,7 +202,7 @@ public abstract class BaseConfigWriter {
                 "通过表达式的执行结果，决定配置文件所对应场景下执行什么操作",
                 "配置文件中有说明允许使用的变量信息",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 查看表达式忽略的数据",
-                "若表达式用于忽略数据，则被忽略的数据会记录在日志文件中，保存在当前输出目录中，文件名为 " + JavaCG2Constants.EL_IGNORE_DATA_FILE_NAME,
+                "若表达式用于忽略数据，则被忽略的数据会记录在日志文件中，保存在当前输出目录中，文件名为 " + JavaCG2Constants.EL_IGNORE_DATA_LOG_FILE_NAME,
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式示例",
                 chooseElExampleText(),
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式调试方式",
@@ -201,6 +229,12 @@ public abstract class BaseConfigWriter {
                 "（语法）{字符串变量/常量/运算结果} == {字符串变量/常量/运算结果}",
                 "（示例）str1 == 'abc'",
                 "（示例）str1 == str2 + 'abc'",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "### nil（对应Java中的null）",
+                "（作用）判断变量（包括字符串类型）为空，对应Java中的null",
+                "（语法）{变量} == nil",
+                "（语法）{变量} != nil",
+                "（示例）str1 == nil",
+                "（示例）str1 != nil",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "### string.startsWith()",
                 "（作用）判断字符串类型的变量是否以指定内容开头",
                 "（语法）string.startsWith({字符串变量/常量/运算结果}, {字符串变量/常量/运算结果})",

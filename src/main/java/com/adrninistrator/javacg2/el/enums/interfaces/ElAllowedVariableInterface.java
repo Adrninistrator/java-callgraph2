@@ -21,4 +21,7 @@ public interface ElAllowedVariableInterface {
 
     // 获取变量示例
     String[] getValueExamples();
+
+    // 获取枚举常量名称
+    String getEnumConstantName();
 }

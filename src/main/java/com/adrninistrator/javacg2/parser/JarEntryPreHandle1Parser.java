@@ -2,11 +2,10 @@ package com.adrninistrator.javacg2.parser;
 
 import com.adrninistrator.javacg2.common.JavaCG2CommonNameConstants;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
-import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum;
+import com.adrninistrator.javacg2.conf.JavaCG2ConfInfo;
 import com.adrninistrator.javacg2.dto.inputoutput.JavaCG2InputAndOutput;
 import com.adrninistrator.javacg2.dto.jar.ClassAndJarNum;
 import com.adrninistrator.javacg2.dto.method.MethodArgReturnTypes;
-import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
 import com.adrninistrator.javacg2.extensions.codeparser.JarEntryOtherFileParser;
 import com.adrninistrator.javacg2.extensions.manager.ExtensionsManager;
 import com.adrninistrator.javacg2.spring.SpringDefineAopHandler;
@@ -41,7 +40,9 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     private static final Logger logger = LoggerFactory.getLogger(JarEntryPreHandle1Parser.class);
 
-    private final JavaCG2ElManager javaCG2ElManager;
+    private final boolean parseMethodCallTypeValue;
+    private final boolean parseJarCompatibilityMode;
+    private final boolean parseOnlyClassMode;
 
     private Map<String, List<String>> classImplementsInfoMap;
 
@@ -69,13 +70,21 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     private SpringDefineAopHandler springDefineAopHandler;
 
-    public JarEntryPreHandle1Parser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar, JavaCG2ElManager javaCG2ElManager) {
+    public JarEntryPreHandle1Parser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar) {
         super(javaCG2InputAndOutput, onlyOneJar);
-        this.javaCG2ElManager = javaCG2ElManager;
+        JavaCG2ConfInfo javaCG2ConfInfo = javaCG2InputAndOutput.getJavaCG2ConfInfo();
+        parseMethodCallTypeValue = javaCG2ConfInfo.isParseMethodCallTypeValue();
+        parseJarCompatibilityMode = javaCG2ConfInfo.isParseJarCompatibilityMode();
+        parseOnlyClassMode = javaCG2ConfInfo.isParseOnlyClassMode();
     }
 
     @Override
     protected boolean handleEntry(ZipInputStream zipInputStream, String jarEntryPath) throws IOException {
+        if (parseJarCompatibilityMode || parseOnlyClassMode) {
+            // 使用Jar兼容性检查模式，仅解析基础信息时，或仅解析类时，跳过后续处理
+            return true;
+        }
+
         // 尝试处理jar文件中的class文件
         if (tryHandleClassEntry(zipInputStream, jarEntryPath)) {
             // 是class文件，不再处理
@@ -123,12 +132,6 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
     @Override
     protected boolean handleClassEntry(JavaClass javaClass, String jarEntryPath) {
         String className = javaClass.getClassName();
-        if (JavaCG2ClassMethodUtil.isObjectClass(className)) {
-            logger.error("Object类所在jar文件不需要添加到需要分析的jar文件参数中，假如需要添加JDK中的类，可以解压相关的class文件到目录中，并在配置文件中指定 {}",
-                    javaCG2InputAndOutput.getJavaCG2ConfigureWrapper().genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
-            return false;
-        }
-
         if (javaCG2ElManager.checkIgnoreParseClass(className)) {
             logger.debug("跳过解析类 {}", className);
             return true;
@@ -146,7 +149,7 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         // 对一个类进行预处理
         preHandle1Class(javaClass);
 
-        if (javaCG2InputAndOutput.getJavaCG2ConfInfo().isParseMethodCallTypeValue()) {
+        if (parseMethodCallTypeValue) {
             // 处理通过注解定义的Spring Bean信息
             if (!springDefineBeanHandler.recordSpringInfo(javaClass)) {
                 return false;

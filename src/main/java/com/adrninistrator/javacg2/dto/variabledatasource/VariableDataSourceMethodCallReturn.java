@@ -20,7 +20,7 @@ public class VariableDataSourceMethodCallReturn extends AbstractVariableDataSour
     // 被调用类名
     private final String calleeClassName;
 
-    // 被调用方法名称
+    // 被调用方法名
     private final String calleeMethodName;
 
     // 被调用方法参数类型字符串（包括括号）

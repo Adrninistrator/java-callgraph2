@@ -9,7 +9,7 @@ import com.adrninistrator.javacg2.util.JavaCG2ClassMethodUtil;
  */
 public class ClassFieldMethodCall extends ClassField {
 
-    // 被调用的方法名称
+    // 被调用的方法名
     private String methodName;
 
     // 被调用的方法参数类型

@@ -1,7 +1,7 @@
 package com.adrninistrator.javacg2.el.enums.interfaces;
 
 import com.adrninistrator.javacg2.conf.enums.interfaces.ConfigInterface;
-import com.adrninistrator.javacg2.el.checker.ElChecker;
+import com.adrninistrator.javacg2.el.checker.AbstractElChecker;
 
 /**
  * @author adrninistrator
@@ -14,7 +14,7 @@ public interface ElConfigInterface extends ConfigInterface {
     ElAllowedVariableInterface[] getElAllowedVariableEnums();
 
     // 用于提前执行表达式进行检查的类
-    Class<? extends ElChecker> getElCheckClass();
+    Class<? extends AbstractElChecker> getElCheckClass();
 
     // 当前参数是否用于忽略数据
     boolean isIgnoreData();
