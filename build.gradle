@@ -118,21 +118,15 @@ tasks.register('gen_run_jar', Jar) {
             from "${buildDir}/libs/run_javacg2.jar"
             into "${jar_output_dir}/jar/"
         }
-        copy {
-            from 'src/main/resources/_javacg2_config/'
-            into "${jar_output_dir}/_javacg2_config/"
-        }
-        copy {
-            from 'src/main/resources/_javacg2_merge_file_switch/'
-            into "${jar_output_dir}/_javacg2_merge_file_switch/"
-        }
-        copy {
-            from 'src/main/resources/_javacg2_parse_class_method_switch/'
-            into "${jar_output_dir}/_javacg2_parse_class_method_switch/"
-        }
-        copy {
-            from 'src/main/resources/_javacg2_parse_method_call_switch/'
-            into "${jar_output_dir}/_javacg2_parse_method_call_switch/"
+        def javaCG2ConfigDirs = new File('src/main/resources').listFiles().findAll { File f -> (f.isDirectory() && f.name.startsWith('_javacg2_')) }
+        // 拷贝配置文件目录
+        javaCG2ConfigDirs.each { jacgConfigDir ->
+            def dirName = jacgConfigDir.getName()
+
+            copy {
+                from 'src/main/resources/' + dirName
+                into "${jar_output_dir}/" + dirName
+            }
         }
         copy {
             from 'src/test/resources/log4j2.xml'

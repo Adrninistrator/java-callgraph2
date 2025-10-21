@@ -16,6 +16,16 @@ test {
     }
 }
 
+// 将test包测试代码生成jar包
+tasks.register('test_gen_jar', Jar) {
+    archiveFileName.set('test.jar')
+    destinationDirectory = file("${buildDir}")
+    from(sourceSets.test.output) {
+        include 'test/**'
+        into '/'
+    }
+}
+
 /*
     生成包含jar文件的jar文件，需要先执行 gen_run_jar 任务
     gradlew gen_run_jar gen_jar_in_jar

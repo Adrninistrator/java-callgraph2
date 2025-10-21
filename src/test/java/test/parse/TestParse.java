@@ -16,10 +16,19 @@ public class TestParse extends TestBase {
 
     /*
         正常解析
+        需要先在当前项目执行 gradlew test_gen_jar 命令生成对应jar文件
+     */
+    @Test
+    public void testParseJavaCG2TestLib() {
+        run(true, false, "build/test.jar");
+    }
+
+    /*
+        正常解析
         需要先在java-all-call-graph项目执行 gradlew test_gen_jar 命令生成对应jar文件
      */
     @Test
-    public void testParse() {
+    public void testParseJacgTestLib() {
         run(true, true);
     }
 
