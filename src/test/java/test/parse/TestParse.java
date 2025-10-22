@@ -2,6 +2,7 @@ package test.parse;
 
 import com.adrninistrator.javacg2.conf.JavaCG2ConfigureWrapper;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
+import com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum;
 import com.adrninistrator.javacg2.entry.JavaCG2Entry;
 import org.junit.Assert;
 import org.junit.Test;
@@ -20,7 +21,10 @@ public class TestParse extends TestBase {
      */
     @Test
     public void testParseJavaCG2TestLib() {
-        run(true, false, "build/test.jar");
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper();
+        javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, "build/test.jar");
+        JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
+        Assert.assertTrue(javaCG2Entry.run());
     }
 
     /*

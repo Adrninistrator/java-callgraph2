@@ -4,134 +4,185 @@
 
 需要使用 JDK8 及以上版本
 
-若需要通过源码启动，建议安装 Gradle
+若需要通过 IDE 打开项目源码运行，建议安装 Gradle 管理依赖库
 
-## 1.2. 运行与配置方式
+## 1.2. 配置参数
 
-unzipfile
-
-## 1.3. 通过源码编译
-
-### 1.3.1. 编译方式
-
-执行以下命令
+### 1.2.1. 支持的参数配置方式
 
 ```
-gradlew jar
+通过配置文件指定
+通过代码指定
 ```
 
-### 1.3.2. 执行方式
+以上两种方式的效果是相同的，每个配置文件及配置参数在代码中都存在对应项
 
-执行命令可参考脚本文件`run.bat`、`run.sh`
+### 1.2.2. 支持的配置参数格式
 
-### 1.3.3. 程序主类
+支持以下三种格式的配置参数
 
-```java
-com.adrninistrator.javacg2.entry.JavaCG2Entry
-```
+#### 1.2.2.1. Map 格式-key value 形式的参数
 
-## 1.4. 通过组件引用
+当前项目中各个参数的对应枚举为 com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum
 
-可在其他项目中通过组件方式引用当前项目，添加的 Gradle 格式的组件依赖如下
+每个枚举常量代表一个参数，对应的配置文件都是 _javacg2_config/config.properties
 
-```
-com.github.adrninistrator:java-callgraph2: 版本号
-```
+参数为键值对形式，每个参数指定唯一的值
 
-## 1.5. 配置参数
+#### 1.2.2.2. List 格式-区分顺序的参数
 
-### 1.5.1. 配置参数说明及示例
+当前项目中的对应枚举为 com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseListEnum
 
-参考 [_javacg2_all_config.md](docs/_javacg2_all_config.md)
+每个枚举常量代表一个参数，对应一个配置文件
 
-### 1.5.2. _javacg2_config 目录
+参数值区分顺序，可指定多个值
 
-|配置文件名|配置文件作用|
-|---|---|
-|config.properties|主要的开关及输出目录等配置|
-|fr_eq_conversion_method.properties|通常不需要指定，处理 get/set 方法对应的字段关联关系时使用|
-|jar_dir.properties|指定需要解析的目录、jar/war 文件路径|
+#### 1.2.2.3. Set 格式-不区分顺序的参数
 
-### 1.5.3. _javacg2_merge_file_switch 目录
+当前项目中的对应枚举为 com.adrninistrator.javacg2.conf.enums.JavaCG2OtherConfigFileUseSetEnum
 
-用于控制在合并 jar 文件时需要忽略特定内容的开关，包括目录中的 class、jar、war 文件，jar/war 文件中的 class、jar 文件，目录、jar/war 文件中的其他类型文件等
+每个枚举常量代表一个参数，对应一个配置文件
 
-`在 _javacg2_config/jar_dir.properties 中指定的配置包含多个 jar/war/class 文件时，仅当某个 jar/war/class 文件会被合并到最终用于解析析的 jar 文件时，才会被解析`
+参数值不区分顺序，可指定多个值
 
-每个文件用于控制以上一种场景，使用表达式语言方式配置
+#### 1.2.2.4. EL 表达式
 
-```
-ignore_class_in_dir.av
-ignore_class_in_jar_war.av
-ignore_jar_in_dir.av
-ignore_jar_in_jar_war.av
-ignore_other_in_dir.av
-ignore_other_in_jar_war.av
-ignore_war_in_dir.av
-```
+当前项目中的对应枚举为 com.adrninistrator.javacg2.el.enums.JavaCG2ElConfigEnum
 
-### 1.5.4. _javacg2_parse_class_method_switch 目录
+每个枚举常量代表一个参数，对应一个配置文件
 
-控制解析类及方法时是否需要忽略的开关
+参数值需要指定 EL 表达式，整个参数值是一个表达式
 
-每个文件用于控制以上一种场景，使用表达式语言方式配置
+### 1.2.3. 配置参数示例
 
-```
-parse_ignore_class.av
-parse_ignore_method.av
-```
+参考 [配置参数示例](docs/_javacg2_all_config.md)
 
-### 1.5.5. _javacg2_parse_method_call_switch 目录
+### 1.2.4. 主要的配置文件
 
-控制解析方法调用时是否需要忽略的开关，包括仅通过被调用方法判断、仅通过调用方法判断、通过调用方法与被调用方法判断
+_javacg2_config/jar_dir.properties
 
-每个文件用于控制以上一种场景，使用表达式语言方式配置
+指定需要解析的 jar、war、jmod 文件路径，或保存 class、jar、war、jmod 文件的目录路径
 
-```
-parse_ignore_method_call_ee.av
-parse_ignore_method_call_er.av
-parse_ignore_method_call_er_ee.av
-```
+### 1.2.5. 表达式使用通用说明文档
 
-### 1.5.6. 表达式语言配置示例
+参考 [表达式使用通用说明文档](src/main/resources/_el_example/el_usage.md)
 
-以上表达式语言配置示例可参考项目中的文件 src/main/resources/el_example.md
+### 1.2.6. 表达式字符串比较说明文档
 
-## 1.6. 配置参数-通过代码指定
+参考 [表达式字符串比较说明文档](src/main/resources/_el_example/string_compare.md)
+
+### 1.2.7. 通过代码指定配置参数
 
 在代码中使用 com.adrninistrator.javacg2.conf.JavaCG2ConfigureWrapper 类可以指定配置参数
 
 在创建 com.adrninistrator.javacg2.entry.JavaCG2Entry 类实例时需要有参数的构造函数“JavaCG2Entry(JavaCG2ConfigureWrapper javaCG2ConfigureWrapper)”
 
-示例如下
+以下为 JavaCG2ConfigureWrapper 用于指定配置参数的方法
 
-```java
-JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper();
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE, parseMethodCallTypeValue);
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_FIRST_PARSE_INIT_METHOD_TYPE, firstParseInitMethodType);
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_ANALYSE_FIELD_RELATIONSHIP, analyseFieldRelationship);
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR, continueWhenError);
-javaCG2ConfigureWrapper.setMainConfig(JavaCG2ConfigKeyEnum.CKE_LOG_METHOD_SPEND_TIME, logMethodSpendTime);
-javaCG2ConfigureWrapper.setOtherConfigSet(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD,
-        "java.lang.Boolean:<init>=1"
-);
-javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, "../java-all-call-graph/build/libs/test.jar");
+|方法名称|方法作用|
+|---|---|
+|setMainConfig|设置 key value 形式的参数|
+|setOtherConfigList|设置区分顺序的参数|
+|setOtherConfigSet|设置不区分顺序的参数|
+|setElConfigText|设置 EL 表达式|
 
-JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
+## 1.3. 运行方式
+
+### 1.3.1. 项目入口类
+
+执行以下类可对指定的 jar 文件等进行静态分析
+
+```
+com.adrninistrator.javacg2.entry.JavaCG2Entry
 ```
 
-# 2. 生成可以直接执行的文件
+### 1.3.2. 支持的运行方式
 
-## 2.1. 编译方式
+```
+通过 IDE 打开项目源码运行
+在其他项目中引用当前项目的库运行
+使用项目源码构建后通过 Java 命令运行
+```
 
-执行以下命令
+### 1.3.3. 各种运行方式支持的参数配置方式
+
+|运行方式|支持的参数配置方式|
+|---|---|
+|通过 IDE 打开项目源码运行|通过配置文件指定<br>通过代码指定|
+|在其他项目中引用当前项目的库运行|通过配置文件指定<br>通过代码指定|
+|使用项目源码构建后通过 Java 命令运行|通过配置文件指定|
+
+### 1.3.4. 通过 IDE 打开项目源码运行
+
+通过 IDE 打开当前项目，由 Gradle 管理依赖库，可使用源码运行
+
+### 1.3.5. 在其他项目中引用当前项目的库运行
+
+在其他的项目中，使用 Maven/Gradle 等管理依赖库，并添加对当前项目的依赖
+
+- 使用 Maven 管理依赖
+
+```xml
+<dependency>
+    <groupId>com.github.adrninistrator</groupId>
+    <artifactId>java-callgraph2</artifactId>
+    <version>版本号</version>
+    <type>pom</type>
+</dependency>
+```
+
+- 使用 Gradle 管理依赖
+
+```
+implementation("com.github.adrninistrator:java-callgraph2: 版本号")
+```
+
+### 1.3.6. 使用项目源码构建后通过 Java 命令运行
+
+#### 1.3.6.1. 构建方式
+
+在项目根目录执行以下命令
 
 ```
 gradlew gen_run_jar
 ```
 
-## 2.2. 执行方式
+#### 1.3.6.2. 生成的文件
 
-执行以上命令后，会在`jar_output_dir`目录中生成可以直接执行的文件
+构建完成后，会在项目根目录 jar_output_dir 生成相关目录及文件
 
-在 Windows/Linux 等操作系统中分别执行对应的脚本文件`run.bat`、`run.sh`
+|目录、文件名|作用|
+|---|---|
+|_javacg2_xxx|当前项目使用的配置文件保存目录|
+|config|log4j2 配置文件保存目录|
+|jar|当前项目编译生成的 jar 文件保存目录|
+|lib|当前项目的依赖库 jar 文件|
+|run.bat|用于执行当前项目解析 Java 代码的脚本|
+|run.sh|用于执行当前项目解析 Java 代码的脚本|
+
+#### 1.3.6.3. 执行方式
+
+对配置文件进行配置后，可执行 run.bat 或 run.sh 脚本，解析指定的 Java 代码
+
+## 1.4. 示例代码
+
+### 1.4.1. 生成用于解析的示例 jar 文件
+
+在项目根目录执行以下命令，可生成用于解析的示例 jar 文件 build/test.jar
+
+```shell
+gradlew test_gen_jar
+```
+
+### 1.4.2. 可直接执行的示例方法
+
+参考示例方法 test.parse.TestParse:testParseJavaCG2TestLib，会对以上生成的示例 jar 文件进行解析
+
+示例方法代码如下：
+
+```java
+        JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper();
+        javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, "build/test.jar");
+        JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
+        Assert.assertTrue(javaCG2Entry.run());
+```
