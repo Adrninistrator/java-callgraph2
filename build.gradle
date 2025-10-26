@@ -119,7 +119,7 @@ tasks.register('gen_run_jar', Jar) {
             into "${jar_output_dir}/jar/"
         }
         def javaCG2ConfigDirs = new File('src/main/resources').listFiles().findAll
-                { File f -> (f.isDirectory() && (f.name.startsWith('_javacg2_')) || f.name.startsWith('_el_')) }
+                { File f -> (f.isDirectory() && (f.name.startsWith('_javacg2_') || f.name.startsWith('_el_'))) }
         // 拷贝配置文件目录
         javaCG2ConfigDirs.each { jacgConfigDir ->
             def dirName = jacgConfigDir.getName()
