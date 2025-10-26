@@ -172,7 +172,9 @@ idea {
         // and some extra dirs that should be excluded by IDEA
         excludeDirs += file('.idea')
         excludeDirs += file('gradle')
-        excludeDirs += file('jar_output_dir')
+        excludeDirs += file("${jar_output_dir}")
+        excludeDirs += file('bat')
+        excludeDirs += file('shell')
         excludeDirs += file('log_javacg2')
     }
 }

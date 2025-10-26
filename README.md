@@ -300,7 +300,7 @@ com.adrninistrator.javacg2.entry.JavaCG2Entry
 
 #### 7.3.4.2. 通过代码指定参数运行
 
-假如需要通过代码指定参数，可直接执行示例方法 test.parse.TestParse:testParseJavaCG2TestLib 进行验证，或修改参数后解析指定的 jar 文件
+假如需要通过代码指定参数，可直接执行后续说明的示例方法，或者参考示例方法进行修改
 
 ### 7.3.5. 在其他项目中引用当前项目的库运行
 
@@ -325,6 +325,8 @@ com.adrninistrator.javacg2.entry.JavaCG2Entry
 implementation("com.github.adrninistrator:java-callgraph2: 版本号")
 ```
 
+最新版本号可查看 [https://mvnrepository.com/artifact/com.github.adrninistrator/java-callgraph2](https://mvnrepository.com/artifact/com.github.adrninistrator/java-callgraph2)
+
 #### 7.3.5.2. 通过配置文件指定参数运行
 
 假如需要通过配置文件指定参数，则需要将 java-callgraph2 项目的 src/main/resources 目录中以`_javacg2_`开头的目录复制到其他项目的 src/main/resources 或 src/test/resources 目录
@@ -333,7 +335,7 @@ implementation("com.github.adrninistrator:java-callgraph2: 版本号")
 
 #### 7.3.5.3. 通过代码指定参数运行
 
-同上
+与“通过 IDE 打开项目源码运行”的说明相同
 
 ### 7.3.6. 使用项目源码构建后运行
 
@@ -356,6 +358,7 @@ gradlew gen_run_jar
 |config|log4j2 配置文件保存目录|
 |jar|当前项目编译生成的 jar 文件保存目录|
 |lib|当前项目的依赖库 jar 文件|
+|log_javacg2|保存日志文件目录，运行后会生成|
 |run.bat|用于执行当前项目解析 Java 代码的脚本|
 |run.sh|用于执行当前项目解析 Java 代码的脚本|
 
