@@ -292,7 +292,19 @@ com.adrninistrator.javacg2.entry.JavaCG2Entry
 
 通过 IDE 打开当前项目，由 Gradle 管理依赖库，可使用源码运行
 
+#### 7.3.4.1. 通过配置文件指定参数运行
+
+假如需要通过配置文件指定参数，可修改项目中的配置文件相关，再运行项目入口类
+
+项目运行模块需要选择 test，以使 test 模块中的 log4j2 配置文件生效
+
+#### 7.3.4.2. 通过代码指定参数运行
+
+假如需要通过代码指定参数，可直接执行示例方法 test.parse.TestParse:testParseJavaCG2TestLib 进行验证，或修改参数后解析指定的 jar 文件
+
 ### 7.3.5. 在其他项目中引用当前项目的库运行
+
+#### 7.3.5.1. 依赖库管理
 
 在其他的项目中，使用 Maven/Gradle 等管理依赖库，并添加对当前项目的依赖
 
@@ -313,6 +325,16 @@ com.adrninistrator.javacg2.entry.JavaCG2Entry
 implementation("com.github.adrninistrator:java-callgraph2: 版本号")
 ```
 
+#### 7.3.5.2. 通过配置文件指定参数运行
+
+假如需要通过配置文件指定参数，则需要将 java-callgraph2 项目的 src/main/resources 目录中以`_javacg2_`开头的目录复制到其他项目的 src/main/resources 或 src/test/resources 目录
+
+修改配置文件相关参数后，可运行入口类
+
+#### 7.3.5.3. 通过代码指定参数运行
+
+同上
+
 ### 7.3.6. 使用项目源码构建后通过 Java 命令运行
 
 #### 7.3.6.1. 构建方式
@@ -329,6 +351,7 @@ gradlew gen_run_jar
 
 |目录、文件名|作用|
 |---|---|
+|_el_example|表达式相关的示例与说明文件|
 |_javacg2_xxx|当前项目使用的配置文件保存目录|
 |config|log4j2 配置文件保存目录|
 |jar|当前项目编译生成的 jar 文件保存目录|
@@ -336,9 +359,9 @@ gradlew gen_run_jar
 |run.bat|用于执行当前项目解析 Java 代码的脚本|
 |run.sh|用于执行当前项目解析 Java 代码的脚本|
 
-#### 7.3.6.3. 执行方式
+#### 7.3.6.3. 通过配置文件指定参数运行
 
-对配置文件进行配置后，可执行 run.bat 或 run.sh 脚本，解析指定的 Java 代码
+对配置文件参数进行配置后，可执行 run.bat 或 run.sh 脚本，解析指定的 Java 代码
 
 ## 7.4. 示例代码
 
