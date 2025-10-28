@@ -233,11 +233,11 @@ list.stream().map(TestDto1::getStr).collect(Collectors.toList());
 
 参考 [配置参数示例](docs/_javacg2_all_config.md)
 
-### 7.2.4. 重要配置文件
+### 7.2.4. 重要配置参数
 
-_javacg2_config/jar_dir.properties
+java-callgraph2 需要使用的重要配置参数是配置文件 _javacg2_config/jar_dir.properties
 
-指定需要解析的 jar、war、jmod 文件路径，或保存 class、jar、war、jmod 文件的目录路径
+用于指定需要解析的 jar、war、jmod 文件路径，或保存 class、jar、war、jmod 文件的目录路径
 
 ### 7.2.5. 表达式使用通用说明文档
 

@@ -176,5 +176,6 @@ idea {
         excludeDirs += file('bat')
         excludeDirs += file('shell')
         excludeDirs += file('log_javacg2')
+        excludeDirs += file('docs')
     }
 }
