@@ -2,7 +2,7 @@
 
 每个配置参数可以通过配置文件或对应的枚举进行修改，效果相同
 
-当前文件代表所有支持的的配置参数
+当前文件代表所有支持的配置参数
 
 # 2. 主要的配置文件参数
 
@@ -58,7 +58,7 @@ JavaCG2ConfigKeyEnum
 |---|---|
 |参数类型|Boolean|
 |参数值是否必填|否|
-|当前使用参数值|true|
+|当前使用参数值|false|
 |参数默认值|false|
 |参数枚举名|CKE_ANALYSE_FIELD_RELATIONSHIP|
 
@@ -101,7 +101,9 @@ JavaCG2ConfigKeyEnum
 
 ```
 生成文件的根目录，分隔符支持使用/或\，末尾是否为分隔符不影响
-默认使用指定的需要解析的jar文件所在目录
+生成解析结果文件时，根目录由该参数控制，默认生成到需要解析的jar文件所在目录
+在解析jar文件时，若需要合并jar、war文件、目录合并为新的jar文件，所在目录由该参数控制，默认生成到需要解析的第一个文件、目录所在目录
+假如需要解析jmod文件，则当前参数必须指定
 ```
 
 |描述|内容|
@@ -124,7 +126,7 @@ JavaCG2ConfigKeyEnum
 |---|---|
 |参数类型|String|
 |参数值是否必填|否|
-|当前使用参数值|.md|
+|当前使用参数值|.txt|
 |参数默认值|.txt|
 |参数枚举名|CKE_OUTPUT_FILE_EXT|
 
@@ -180,12 +182,95 @@ only_raw: 记录一条方法调用关系，被调用类型使用：原始类型	
 |参数默认值|only_actual|
 |参数枚举名|CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL|
 
+### 2.1.11. merge.separate.fat.jar
 
-# 3. 不区分顺序的其他配置信息
+- 参数说明
+
+```
+在合并需要解析的jar文件时，是否合并出一个单独的fat jar。仅包含.class文件，且所有的jar文件都合并到从根目录开始
+```
+
+|描述|内容|
+|---|---|
+|参数类型|Boolean|
+|参数值是否必填|否|
+|当前使用参数值|false|
+|参数默认值|false|
+|参数枚举名|CKE_MERGE_SEPARATE_FAT_JAR|
+
+### 2.1.12. parse.jar.compatibility.mode
+
+- 参数说明
+
+```
+是否使用Jar兼容性检查模式，仅解析类、方法、字段、类的注解等基础信息
+```
+
+|描述|内容|
+|---|---|
+|参数类型|Boolean|
+|参数值是否必填|否|
+|当前使用参数值|false|
+|参数默认值|false|
+|参数枚举名|CKE_PARSE_JAR_COMPATIBILITY_MODE|
+
+### 2.1.13. parse.only.class.mode
+
+- 参数说明
+
+```
+是否仅解析类及类的注解信息，比 parse.jar.compatibility.mode 优先级高
+```
+
+|描述|内容|
+|---|---|
+|参数类型|Boolean|
+|参数值是否必填|否|
+|当前使用参数值|false|
+|参数默认值|false|
+|参数枚举名|CKE_PARSE_ONLY_CLASS_MODE|
+
+### 2.1.14. jmod.program.path
+
+- 参数说明
+
+```
+指定用于解析 .jmod 文件的jmod程序完整路径
+假如指定的 .jmod 文件在JDK的jmods目录中，可找到bin目录的jmod程序，则当前参数可省略
+假如无法找到JDK bin目录的jmod程序，则当前参数不能省略
+```
+
+|描述|内容|
+|---|---|
+|参数类型|String|
+|参数值是否必填|否|
+|当前使用参数值||
+|参数默认值||
+|参数枚举名|CKE_JMOD_PROGRAM_PATH|
+
+### 2.1.15. jdk.runtime.major.version
+
+- 参数说明
+
+```
+解析的 jar 文件在运行时使用的 JDK 主版本号
+例如 8、11、17、21 等
+默认为 8 ，代表 JDK8 及以下版本
+```
+
+|描述|内容|
+|---|---|
+|参数类型|Integer|
+|参数值是否必填|否|
+|当前使用参数值|8|
+|参数默认值|8|
+|参数枚举名|CKE_JDK_RUNTIME_MAJOR_VERSION|
+
+# 3. 不区分顺序的其他配置参数
 
 ## 3.1. _javacg2_config/fr_eq_conversion_method.properties
 
-- 配置文件枚举类名与枚举名
+- 配置文件枚举类名与常量名
 
 JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD
 
@@ -248,17 +333,17 @@ org.apache.commons.lang3.math.NumberUtils:createLong=1
 org.apache.commons.lang3.math.NumberUtils:createNumber=1
 ```
 
-# 4. 区分顺序的其他配置信息
+# 4. 区分顺序的其他配置参数
 
 ## 4.1. _javacg2_config/jar_dir.properties
 
-- 配置文件枚举类名与枚举名
+- 配置文件枚举类名与常量名
 
 JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR
 
 - 参数说明
 
-(作用) 指定需要解析的jar、war文件路径，或保存class、jar、war文件的目录路径（每行代表一条记录，支持多行）
+(作用) 指定需要解析的jar、war、jmod文件路径，或保存class、jar、war、jmod文件的目录路径（每行代表一条记录，支持多行）
 
 (格式) 路径中的分隔符支持使用/或\，目录最后指定或不指定分隔符均可
 
@@ -268,9 +353,354 @@ JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR
 
 (示例) D:/test/build/test.jar
 
+(示例) jdk-21.0.4+7/jmods/java.base.jmod
+
 - 当前使用参数值
 
 ```
 build/test.jar
+```
+
+# 5. 表达式配置参数
+
+## 5.1. _javacg2_merge_file_switch/ignore_jar_in_dir.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_DIR
+
+- 参数说明
+
+指定是否跳过合并目录中的jar文件
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|file_path|String|目录中的文件绝对路径<br>以斜杠/为分隔符|D:/a/b.jar<br>/tmp/a/b.jar|
+|file_dir_path|String|目录中的文件所在目录绝对路径<br>以斜杠/为分隔符，不以分隔符结尾|D:/a<br>/tmp/a|
+|file_name|String|文件名称|a.class<br>a.xml|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.2. _javacg2_merge_file_switch/ignore_war_in_dir.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_WAR_IN_DIR
+
+- 参数说明
+
+指定是否跳过合并目录中的war文件
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|file_path|String|目录中的文件绝对路径<br>以斜杠/为分隔符|D:/a/b.jar<br>/tmp/a/b.jar|
+|file_dir_path|String|目录中的文件所在目录绝对路径<br>以斜杠/为分隔符，不以分隔符结尾|D:/a<br>/tmp/a|
+|file_name|String|文件名称|a.class<br>a.xml|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.3. _javacg2_merge_file_switch/ignore_class_in_dir.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_DIR
+
+- 参数说明
+
+指定是否跳过合并目录中的class文件
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|file_path|String|目录中的文件绝对路径<br>以斜杠/为分隔符|D:/a/b.jar<br>/tmp/a/b.jar|
+|file_dir_path|String|目录中的文件所在目录绝对路径<br>以斜杠/为分隔符，不以分隔符结尾|D:/a<br>/tmp/a|
+|file_name|String|文件名称|a.class<br>a.xml|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.4. _javacg2_merge_file_switch/ignore_other_in_dir.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_DIR
+
+- 参数说明
+
+指定是否跳过合并目录中的非jar、war、class文件
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|file_path|String|目录中的文件绝对路径<br>以斜杠/为分隔符|D:/a/b.jar<br>/tmp/a/b.jar|
+|file_dir_path|String|目录中的文件所在目录绝对路径<br>以斜杠/为分隔符，不以分隔符结尾|D:/a<br>/tmp/a|
+|file_name|String|文件名称|a.class<br>a.xml|
+|file_ext|String|非jar、war、class文件后缀<br>以.开头|.xml<br>.properties|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.5. _javacg2_merge_file_switch/ignore_jar_in_jar_war.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_JAR_WAR
+
+- 参数说明
+
+指定是否跳过合并jar、war中的jar文件
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|file_path|String|jar/war文件中的文件相对路径<br>相对根目录的路径<br>以斜杠/为分隔符，不以分隔符开头|a/b/c.jar<br>a/b/c.xml|
+|file_dir_path|String|jar/war文件中的文件所在目录相对路径<br>相对根目录的路径<br>以斜杠/为分隔符，不以分隔符开头或结尾|a<br>a/b|
+|file_name|String|文件名称|a.class<br>a.xml|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.6. _javacg2_merge_file_switch/ignore_class_in_jar_war.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR
+
+- 参数说明
+
+指定是否跳过合并jar、war中的class文件
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|file_path|String|jar/war文件中的文件相对路径<br>相对根目录的路径<br>以斜杠/为分隔符，不以分隔符开头|a/b/c.jar<br>a/b/c.xml|
+|file_dir_path|String|jar/war文件中的文件所在目录相对路径<br>相对根目录的路径<br>以斜杠/为分隔符，不以分隔符开头或结尾|a<br>a/b|
+|file_name|String|文件名称|a.class<br>a.xml|
+|class_file_path|String|jar/war文件中的class文件的相对路径<br>相对根目录，或WEB-INF/classes、BOOT-INF/classes目录的路径<br>以斜杠/为分隔符，不以分隔符开头|a/b/c.class|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.7. _javacg2_merge_file_switch/ignore_other_in_jar_war.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR
+
+- 参数说明
+
+指定是否跳过合并jar、war中的非jar、war、class文件
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|file_path|String|jar/war文件中的文件相对路径<br>相对根目录的路径<br>以斜杠/为分隔符，不以分隔符开头|a/b/c.jar<br>a/b/c.xml|
+|file_dir_path|String|jar/war文件中的文件所在目录相对路径<br>相对根目录的路径<br>以斜杠/为分隔符，不以分隔符开头或结尾|a<br>a/b|
+|file_name|String|文件名称|a.class<br>a.xml|
+|file_ext|String|非jar、war、class文件后缀<br>以.开头|.xml<br>.properties|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.8. _javacg2_merge_file_switch/ignore_jar_war_by_class_dir_prefix.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_WAR_BY_CLASS_DIR_PREFIX
+
+- 参数说明
+
+通过class文件对应指定层级的目录路径判断是否跳过合并当前jar、war文件
+
+相当于通过jar、war文件中类的包名控制是否跳过合并当前jar、war文件
+
+以下参数为jar、war文件中的class文件对应指定层级的目录路径集合。在表达式中可通过“include”方法判断集合中是否包含指定元素
+
+集合中的元素类型为字符串，以/作为分隔符，不会以分隔符开头或结尾
+
+例如jar文件中有a1/c1.class、a2/b2/c2.class，则该jar文件中的class文件目录1级路径有a1、a2，2级路径有a2/b2，没有层级大于2级的路径
+
+在使用以下 class_dir_prefix_level_ 参数时，需要以 class_dir_prefix_level_ 开头，后续通过数字指定class文件路径层级
+
+例如 class_dir_prefix_level_3 代表第3级class文件路径集合
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|class_dir_prefix_level_|Set|jar/war文件中的class文件对应指定层级的目录路径集合|集合：('a')<br>集合：('a', 'a/b')|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.9. _javacg2_parse_class_method_switch/parse_ignore_class.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS
+
+- 参数说明
+
+指定是否跳过解析类
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|class_name|String|完整类名|a.b.Class1|
+|package_name|String|完整包名<br>不会以.结束|a.b|
+|simple_class_name|String|简单类名|Class1|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.10. _javacg2_parse_class_method_switch/parse_ignore_method.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD
+
+- 参数说明
+
+指定是否跳过解析方法
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|class_name|String|完整类名|a.b.Class1|
+|package_name|String|完整包名<br>不会以.结束|a.b|
+|simple_class_name|String|简单类名|Class1|
+|method_name|String|方法名<br>不包括括号及方法参数|method1|
+|method_arg_num|int|方法参数数量|0<br>1|
+|full_method|String|完整方法|a.b.Class1:f1()<br>a.b.Class1:f2(int,java.lang.String)|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.11. _javacg2_parse_method_call_switch/parse_ignore_method_call.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL
+
+- 参数说明
+
+指定是否跳过解析方法调用，支持通过方法调用类型、调用方法或被调用方法等判断
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|method_call_type|String|方法调用类型<br>参考 JavaCG2CallTypeEnum 类|VIR INT SPE STA DYN _SPR_ACT_I _SPR_ACT_C _ACT_I _ACT_C _ITF _BSM _LM _RIR1 _RIR2 _CIC1 _CIC2 _TCID1 _TCID2 _TCWRID1 _TCWRID2 _TSR _SCC _CCS _CCS_SPE _CCS_I _CCID _ICID _MA _MAA ILLEGAL|
+|er_class_name|String|调用方完整类名|a.b.Class1|
+|er_package_name|String|调用方完整包名<br>不会以.结束|a.b|
+|er_simple_class_name|String|调用方简单类名|Class1|
+|er_method_name|String|调用方方法名<br>不包括括号及方法参数|method1|
+|er_method_arg_num|int|调用方方法参数数量|0<br>1|
+|er_full_method|String|调用方完整方法<br>包括括号及方法参数|a.b.Class1:method1(int)|
+|ee_class_name|String|被调用方完整类名|a.b.Class1|
+|ee_package_name|String|被调用方完整包名<br>不会以.结束|a.b|
+|ee_simple_class_name|String|被调用方简单类名|Class1|
+|ee_method_name|String|被调用方方法名<br>不包括括号及方法参数|method1|
+|ee_method_arg_num|int|被调用方方法参数数量|0<br>1|
+|ee_full_method|String|被调用方完整方法<br>包括括号及方法参数|a.b.Class1:method1(int)|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.12. _javacg2_parse_method_call_switch/parse_ignore_method_call_type_value_caller.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER
+
+- 参数说明
+
+指定解析方法调用被调用对象和参数可能的类型与值需要跳过哪些方法，通过调用方法判断
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|er_class_name|String|调用方完整类名|a.b.Class1|
+|er_package_name|String|调用方完整包名<br>不会以.结束|a.b|
+|er_simple_class_name|String|调用方简单类名|Class1|
+|er_method_name|String|调用方方法名<br>不包括括号及方法参数|method1|
+|er_method_arg_num|int|调用方方法参数数量|0<br>1|
+|er_full_method|String|调用方完整方法<br>包括括号及方法参数|a.b.Class1:method1(int)|
+
+- 当前使用参数值
+
+```
+
+```
+
+## 5.13. _javacg2_handle_xml_switch/handle_ignore_spring_bean_in_xml.av
+
+- 配置文件枚举类名与常量名
+
+JavaCG2ElConfigEnum.ECE_HANDLE_IGNORE_SPRING_BEAN_IN_XML
+
+- 参数说明
+
+指定处理XML文件中定义的Spring Bean需要跳过哪些Bean
+
+- 允许使用的变量
+
+|变量名称|变量类型|变量描述|变量值示例|
+|---|---|---|---|
+|bean_name|String|Spring Bean名称|selectService1|
+|class_name|String|Spring Bean类名|test.callgraph.mybatis.service.select.SelectService1|
+|profile|String|Spring Bean profile<br>可能为空字符串，可能包含一级或多级，使用半角逗号拼接|dev<br>dev,dev1|
+
+- 当前使用参数值
+
+```
+
 ```
 
