@@ -46,28 +46,13 @@ public abstract class CommonElManager extends AbstractElManager {
      * @param usedVariableMap
      * @param displayMap
      */
-    protected void methodCallAddData4Caller(ElHandler elHandler, String callerFullMethod, Map<String, Object> usedVariableMap, Map<String, Object> displayMap) {
+    protected void methodCallAddData4CallerMethod(ElHandler elHandler, String callerFullMethod, Map<String, Object> usedVariableMap, Map<String, Object> displayMap) {
         if (StringUtils.isBlank(callerFullMethod)) {
             return;
         }
 
         String callerClassName = JavaCG2ClassMethodUtil.getClassNameFromMethod(callerFullMethod);
-        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_CLASS_NAME.getVariableName(), callerClassName);
-        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_ER_CLASS_NAME)) {
-            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_CLASS_NAME.getVariableName(), callerClassName);
-        }
-
-        String callerPackageName = JavaCG2ClassMethodUtil.getPackageName(callerClassName);
-        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_PACKAGE_NAME.getVariableName(), callerPackageName);
-        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_ER_PACKAGE_NAME)) {
-            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_PACKAGE_NAME.getVariableName(), callerPackageName);
-        }
-
-        String callerSimpleClassName = JavaCG2ClassMethodUtil.getSimpleClassNameFromFull(callerClassName);
-        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_SIMPLE_CLASS_NAME.getVariableName(), callerSimpleClassName);
-        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_ER_SIMPLE_CLASS_NAME)) {
-            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_SIMPLE_CLASS_NAME.getVariableName(), callerSimpleClassName);
-        }
+        methodCallAddData4CallerClass(elHandler, callerClassName, usedVariableMap, displayMap);
 
         String callerMethodName = JavaCG2ClassMethodUtil.getMethodNameFromFull(callerFullMethod);
         displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_METHOD_NAME.getVariableName(), callerMethodName);
@@ -88,6 +73,37 @@ public abstract class CommonElManager extends AbstractElManager {
     }
 
     /**
+     * 为调用类添加数据
+     *
+     * @param elHandler
+     * @param callerClassName
+     * @param usedVariableMap
+     * @param displayMap
+     */
+    protected void methodCallAddData4CallerClass(ElHandler elHandler, String callerClassName, Map<String, Object> usedVariableMap, Map<String, Object> displayMap) {
+        if (StringUtils.isBlank(callerClassName)) {
+            return;
+        }
+
+        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_CLASS_NAME.getVariableName(), callerClassName);
+        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_ER_CLASS_NAME)) {
+            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_CLASS_NAME.getVariableName(), callerClassName);
+        }
+
+        String callerPackageName = JavaCG2ClassMethodUtil.getPackageName(callerClassName);
+        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_PACKAGE_NAME.getVariableName(), callerPackageName);
+        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_ER_PACKAGE_NAME)) {
+            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_PACKAGE_NAME.getVariableName(), callerPackageName);
+        }
+
+        String callerSimpleClassName = JavaCG2ClassMethodUtil.getSimpleClassNameFromFull(callerClassName);
+        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_SIMPLE_CLASS_NAME.getVariableName(), callerSimpleClassName);
+        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_ER_SIMPLE_CLASS_NAME)) {
+            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_ER_SIMPLE_CLASS_NAME.getVariableName(), callerSimpleClassName);
+        }
+    }
+
+    /**
      * 为方法调用添加数据，被调用方法
      *
      * @param elHandler
@@ -95,27 +111,12 @@ public abstract class CommonElManager extends AbstractElManager {
      * @param usedVariableMap
      * @param displayMap
      */
-    protected void methodCallAddData4Callee(ElHandler elHandler, String calleeFullMethod, Map<String, Object> usedVariableMap, Map<String, Object> displayMap) {
+    protected void methodCallAddData4CalleeMethod(ElHandler elHandler, String calleeFullMethod, Map<String, Object> usedVariableMap, Map<String, Object> displayMap) {
         if (StringUtils.isBlank(calleeFullMethod)) {
             return;
         }
         String calleeClassName = JavaCG2ClassMethodUtil.getClassNameFromMethod(calleeFullMethod);
-        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_CLASS_NAME.getVariableName(), calleeClassName);
-        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_EE_CLASS_NAME)) {
-            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_CLASS_NAME.getVariableName(), calleeClassName);
-        }
-
-        String calleePackageName = JavaCG2ClassMethodUtil.getPackageName(calleeClassName);
-        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_PACKAGE_NAME.getVariableName(), calleePackageName);
-        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_EE_PACKAGE_NAME)) {
-            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_PACKAGE_NAME.getVariableName(), calleePackageName);
-        }
-
-        String calleeSimpleClassName = JavaCG2ClassMethodUtil.getSimpleClassNameFromFull(calleeClassName);
-        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_SIMPLE_CLASS_NAME.getVariableName(), calleeSimpleClassName);
-        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_EE_SIMPLE_CLASS_NAME)) {
-            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_SIMPLE_CLASS_NAME.getVariableName(), calleeSimpleClassName);
-        }
+        methodCallAddData4CalleeClass(elHandler, calleeClassName, usedVariableMap, displayMap);
 
         String calleeMethodName = JavaCG2ClassMethodUtil.getMethodNameFromFull(calleeFullMethod);
         displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_METHOD_NAME.getVariableName(), calleeMethodName);
@@ -132,6 +133,36 @@ public abstract class CommonElManager extends AbstractElManager {
         displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_FULL_METHOD.getVariableName(), calleeFullMethod);
         if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_EE_FULL_METHOD)) {
             usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_FULL_METHOD.getVariableName(), calleeFullMethod);
+        }
+    }
+
+    /**
+     * 为被调用类添加数据
+     *
+     * @param elHandler
+     * @param calleeClassName
+     * @param usedVariableMap
+     * @param displayMap
+     */
+    protected void methodCallAddData4CalleeClass(ElHandler elHandler, String calleeClassName, Map<String, Object> usedVariableMap, Map<String, Object> displayMap) {
+        if (StringUtils.isBlank(calleeClassName)) {
+            return;
+        }
+        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_CLASS_NAME.getVariableName(), calleeClassName);
+        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_EE_CLASS_NAME)) {
+            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_CLASS_NAME.getVariableName(), calleeClassName);
+        }
+
+        String calleePackageName = JavaCG2ClassMethodUtil.getPackageName(calleeClassName);
+        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_PACKAGE_NAME.getVariableName(), calleePackageName);
+        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_EE_PACKAGE_NAME)) {
+            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_PACKAGE_NAME.getVariableName(), calleePackageName);
+        }
+
+        String calleeSimpleClassName = JavaCG2ClassMethodUtil.getSimpleClassNameFromFull(calleeClassName);
+        displayMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_SIMPLE_CLASS_NAME.getVariableName(), calleeSimpleClassName);
+        if (elHandler.checkVariableNameSpecified(CommonElAllowedVariableEnum.EAVE_MC_EE_SIMPLE_CLASS_NAME)) {
+            usedVariableMap.put(CommonElAllowedVariableEnum.EAVE_MC_EE_SIMPLE_CLASS_NAME.getVariableName(), calleeSimpleClassName);
         }
     }
 

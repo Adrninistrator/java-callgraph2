@@ -118,7 +118,7 @@ public class JavaCG2ConfManager {
         String handleCalleeNewRawActualStr = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL);
         JavaCG2CalleeRawActualEnum calleeNewRawActual = JavaCG2CalleeRawActualEnum.getFromType(handleCalleeNewRawActualStr);
         if (calleeNewRawActual == null) {
-            logger.error("参数值非法，允许使用的值为 {} {}", JavaCG2CalleeRawActualEnum.getAllInfo(),
+            logger.error("参数值非法，允许使用的值为 {} {}", JavaCG2CalleeRawActualEnum.getAllInfoOneLine(),
                     javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL));
             return false;
         }
@@ -144,7 +144,7 @@ public class JavaCG2ConfManager {
         String handleCalleeSpringBeanRawActualStr = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL);
         JavaCG2CalleeRawActualEnum springBeanCalleeNewRawActual = JavaCG2CalleeRawActualEnum.getFromType(handleCalleeSpringBeanRawActualStr);
         if (springBeanCalleeNewRawActual == null) {
-            logger.error("参数值非法，允许使用的值为： {} {}", JavaCG2CalleeRawActualEnum.getAllInfo(),
+            logger.error("参数值非法，允许使用的值为： {} {}", JavaCG2CalleeRawActualEnum.getAllInfoOneLine(),
                     javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL));
             return false;
         }

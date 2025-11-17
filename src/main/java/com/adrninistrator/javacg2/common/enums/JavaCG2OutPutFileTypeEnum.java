@@ -45,7 +45,7 @@ public enum JavaCG2OutPutFileTypeEnum {
     OPFTE_METHOD_FINALLY("method_finally", "方法的finally信息"),
     OPFTE_METHOD_INFO("method_info", "方法的信息"),
     OPFTE_METHOD_LINE_NUMBER("method_line_number", "方法代码行号"),
-    OPFTE_METHOD_RETURN_ARG_SEQ("method_return_arg_seq", "方法返回值对应的方法序号"),
+    OPFTE_METHOD_RETURN_ARG_SEQ("method_return_arg_seq", "方法返回值对应的参数序号"),
     OPFTE_METHOD_RETURN_CALL_ID("method_return_call_id", "方法返回值对应的方法调用ID"),
     OPFTE_METHOD_RETURN_CONST_VALUE("method_return_const_value", "方法返回的常量值（含null）"),
     OPFTE_METHOD_RETURN_FIELD_INFO("method_return_field_info", "方法返回的字段（含枚举）"),

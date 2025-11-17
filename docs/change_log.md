@@ -686,3 +686,18 @@ _javacg2_parse_method_call_switch/parse_ignore_method_call_er.av
 增加表达式配置文件 _javacg2_handle_xml_switch/handle_ignore_spring_bean_in_xml.av ，支持通过 Spring Bean 名称、类名、profile 指定 XML 中定义的哪些 Spring Bean 需要写入文件
 
 示例见 java-all-call-graph 项目的 test.runbycodemain.TestRBCRunnerWriteCallGraphFile 类
+
+## 1.26. (4.0.1)
+
+### 1.26.1. 问题修复
+
+- 记录有使用的EL表达式配置修复
+
+在之前的版本中，记录有使用的EL表达式配置修复有误，在当前版本修复
+
+### 1.26.2. 修改内部方法
+
+```
+表达式处理相关
+打印配置参数相关
+```

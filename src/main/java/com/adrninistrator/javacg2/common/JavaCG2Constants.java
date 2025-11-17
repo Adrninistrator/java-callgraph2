@@ -124,6 +124,7 @@ public class JavaCG2Constants {
     public static final String EXT_CLASS = "." + FILE_TYPE_CLASS;
     public static final String EXT_TXT = ".txt";
     public static final String EXT_MD = ".md";
+    public static final String EXT_AV = ".av";
 
     public static final String WEB_INF_CLASSES = "WEB-INF/classes/";
     public static final String BOOT_INF_CLASSES = "BOOT-INF/classes/";

@@ -197,6 +197,9 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         ClassHandler classHandler = genClassHandler(javaClass, jarEntryPath, classJarNum);
         classNumCounter.addAndGet();
         // 开始处理当前类
+        // 处理内部类信息
+        handleInnerClass(javaClass);
+
         // 处理特殊模式
         if (handleSpecialMode(javaClass, duplicateClass, classJarNum, jarEntryPath, classHandler)) {
             return true;
@@ -230,9 +233,6 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
         // 处理类的签名
         handleClassSignature(javaClass, className);
-
-        // 处理内部类信息
-        handleInnerClass(javaClass);
         return success;
     }
 
@@ -276,8 +276,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
             recordClassInfo(javaClass, duplicateClass, className, classJarNum, jarEntryPath);
             // 记录类引用的类
             classHandler.recordReferencedClass(duplicateClass);
-            // 记录类上的注解信息
-            recordClassAnnotation(javaClass);
+            if (!duplicateClass) {
+                // 非重复类时，记录类上的注解信息
+                recordClassAnnotation(javaClass);
+            }
             return true;
         }
 

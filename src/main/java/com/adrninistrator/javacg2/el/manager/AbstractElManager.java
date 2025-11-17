@@ -5,6 +5,7 @@ import com.adrninistrator.javacg2.conf.BaseConfigureWrapper;
 import com.adrninistrator.javacg2.el.checker.AbstractElChecker;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.el.handler.ElHandler;
+import com.adrninistrator.javacg2.el.util.ElUtil;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.thread.ThreadFactory4TPE;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
@@ -47,6 +48,8 @@ public abstract class AbstractElManager implements Closeable {
     // 是否调试模式
     private final boolean debugMode;
 
+    private final BaseConfigureWrapper configureWrapper;
+
     private boolean closed = false;
 
     protected AbstractElManager(BaseConfigureWrapper configureWrapper, ElConfigInterface[] elConfigInterfaces, String outputDirPath) {
@@ -59,7 +62,7 @@ public abstract class AbstractElManager implements Closeable {
             throw new JavaCG2RuntimeException();
         }
 
-        ThreadFactory4TPE threadFactory4TPE = new ThreadFactory4TPE(JavaCG2Constants.THREAD_NAME_PREFIX_EL_WRITE_IGNORE_DATA);
+        ThreadFactory4TPE threadFactory4TPE = new ThreadFactory4TPE(JavaCG2Constants.THREAD_NAME_PREFIX_EL_WRITE_IGNORE_DATA, false);
         writeFileTPE = new ThreadPoolExecutor(1, 1, 10L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), threadFactory4TPE);
 
         // 在JVM关闭时检查是否有执行关闭操作
@@ -98,6 +101,7 @@ public abstract class AbstractElManager implements Closeable {
                 elHandler.setDebugMode(true);
             }
         }
+        this.configureWrapper = configureWrapper;
     }
 
     /**
@@ -113,6 +117,10 @@ public abstract class AbstractElManager implements Closeable {
         if (elHandler == null) {
             throw new JavaCG2RuntimeException("未找到对应的表达式处理类 " + elConfig.getKey());
         }
+        if (!ElUtil.checkRunInCheckerFlag()) {
+            // 不是用于检查时，记录有使用的EL表达式配置
+            configureWrapper.recordUsedElConfig(elConfig);
+        }
         return elHandler;
     }
 
@@ -122,7 +130,14 @@ public abstract class AbstractElManager implements Closeable {
         if (writeFileTPE != null) {
             logger.info("开始等待EL表达式执行结果写文件线程执行");
             JavaCG2ThreadUtil.wait4TPEDone(this.getClass().getSimpleName(), writeFileTPE, new AtomicInteger(0));
-            logger.info("等待EL表达式执行结果写文件线程执行完毕");
+            writeFileTPE.shutdown();
+            try {
+                boolean result = writeFileTPE.awaitTermination(30, TimeUnit.SECONDS);
+                logger.info("等待EL表达式执行结果写文件线程执行完毕 {}", result);
+            } catch (InterruptedException e) {
+                logger.error("error ", e);
+                Thread.currentThread().interrupt();
+            }
         }
         if (elIgnoreDataWriter != null) {
             IOUtils.closeQuietly(elIgnoreDataWriter);

@@ -16,9 +16,11 @@ public class ThreadFactory4TPE implements ThreadFactory {
     private final JavaCG2UncaughtExceptionHandler javaCG2UncaughtExceptionHandler = new JavaCG2UncaughtExceptionHandler();
 
     private final String threadNamePrefix;
+    private final boolean daemon;
 
-    public ThreadFactory4TPE(String threadNamePrefix) {
+    public ThreadFactory4TPE(String threadNamePrefix, boolean daemon) {
         this.threadNamePrefix = threadNamePrefix;
+        this.daemon = daemon;
     }
 
     @Override
@@ -26,8 +28,7 @@ public class ThreadFactory4TPE implements ThreadFactory {
         Thread thread = new Thread(r);
         thread.setName(threadNamePrefix + "-" + ai.addAndGet(1));
         thread.setUncaughtExceptionHandler(javaCG2UncaughtExceptionHandler);
-        // 设置线程为非守护线程
-        thread.setDaemon(false);
+        thread.setDaemon(daemon);
 
         return thread;
     }

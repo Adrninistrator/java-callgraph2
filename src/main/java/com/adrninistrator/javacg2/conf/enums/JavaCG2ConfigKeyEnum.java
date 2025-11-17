@@ -43,13 +43,13 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
             Boolean.class, false, Boolean.FALSE.toString()),
     CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL("handle.callee.new.raw.actual",
             new String[]{"解析方法调用时，通过new创建的被调用类型使用原始类型还是实际类型的开关",
-                    JavaCG2CalleeRawActualEnum.getAllInfo(),
+                    JavaCG2CalleeRawActualEnum.getAllInfoMultiLine(),
                     "例如 Super1 obj = new Child1(); obj.func1(); ，被调用对象的原始类型为Super1，实际类型为Child1，通过该开关选择被调用对象使用的类型"
             },
             String.class, false, JavaCG2CalleeRawActualEnum.CRAE_ONLY_ACTUAL.getType()),
     CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL("handle.callee.spring.bean.raw.actual",
             new String[]{"解析方法调用时，被调用对象为Spring Bean时（支持字段注入），类型使用原始类型还是实际类型的开关",
-                    JavaCG2CalleeRawActualEnum.getAllInfo(),
+                    JavaCG2CalleeRawActualEnum.getAllInfoMultiLine(),
                     "例如Spring Bean字段定义的类型为Super1，实际注入的类型为Child1，被调用对象的原始类型为Super1，实际类型为Child1，通过该开关选择被调用对象使用的类型"
             },
             String.class, false, JavaCG2CalleeRawActualEnum.CRAE_ONLY_ACTUAL.getType()),

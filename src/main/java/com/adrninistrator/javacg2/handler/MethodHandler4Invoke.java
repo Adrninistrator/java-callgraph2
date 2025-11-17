@@ -1539,7 +1539,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         addOtherMethodCall(callerClassName, callerMethodName, callerMethodArgTypes, methodReturnType, callTypeEnum1, calleeClassName, calleeMethodName, calleeMethodArgTypes,
                 JavaCG2CommonNameConstants.RETURN_TYPE_VOID, getSourceLine());
 
-        if (Boolean.FALSE.equals(recorded)) {
+        if (!recorded) {
             // 对应类的<init>方法调用需要增加的方法，<init>方法返回类型为void
             addOtherMethodCall(calleeClassName, calleeMethodName, calleeMethodArgTypes, JavaCG2CommonNameConstants.RETURN_TYPE_VOID, callTypeEnum2, calleeClassName,
                     addedCalleeMethodName, addedCalleeMethodArgTypes, addedCalleeReturnType, JavaCG2Constants.DEFAULT_LINE_NUMBER);

@@ -4,7 +4,6 @@ import com.adrninistrator.javacg2.el.enums.JavaCG2ElConfigEnum;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.el.manager.AbstractElManager;
 import com.adrninistrator.javacg2.el.manager.JavaCG2ElManager;
-import com.adrninistrator.javacg2.el.util.ElUtil;
 
 /**
  * @author adrninistrator
@@ -15,14 +14,7 @@ public abstract class JavaCG2ElChecker extends AbstractElChecker {
 
     @Override
     protected void doCheck(AbstractElManager elManager, ElConfigInterface elConfig) {
-        try {
-            // 设置执行用于检测的表达式标志
-            ElUtil.setRunInCheckerFlag();
-            javaCG2DoCheck((JavaCG2ElManager) elManager, (JavaCG2ElConfigEnum) elConfig);
-        } finally {
-            // 清理执行用于检测的表达式标志
-            ElUtil.clearRunInCheckerFlag();
-        }
+        javaCG2DoCheck((JavaCG2ElManager) elManager, (JavaCG2ElConfigEnum) elConfig);
     }
 
     /**

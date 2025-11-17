@@ -448,10 +448,10 @@ public class MergeJarHandler {
             logger.info("未找到jmod文件，不需要处理");
             return true;
         }
-        logger.info("找到 {} 个jmod文件，开始处理", jmodFilePathWithNameList.size());
-
+        logger.info("找到 {} 个jmod文件，开始处理 {}", jmodFilePathWithNameList.size(), StringUtils.join(jmodFilePathWithNameList, " "));
         if (StringUtils.isBlank(outputRootPath)) {
-            logger.error("需要处理jmod文件，缺少配置参数 {}", javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH));
+            logger.error("需要处理jmod文件，缺少配置参数 {} 假如不需要处理jmod文件，请从指定的需要解析的文件范围中去掉，或者删除对应目录中的jmod文件",
+                    javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH));
             return false;
         }
 

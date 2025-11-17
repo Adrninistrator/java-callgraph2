@@ -394,7 +394,7 @@ public class JavaCG2Util {
      * @return
      */
     public static boolean checkElExample(ElConfigInterface elConfig) {
-        return elConfig.getKey().endsWith(JavaCG2Constants.EXT_MD);
+        return !elConfig.getKey().endsWith(JavaCG2Constants.EXT_AV);
     }
 
     /**

@@ -283,8 +283,8 @@ public class JavaCG2ElManager extends CommonElManager {
         }
         Map<String, Object> displayMap = new HashMap<>();
         methodCallAddData4Type(elHandler, methodCallType, usedVariableMap, displayMap);
-        methodCallAddData4Caller(elHandler, callerFullMethod, usedVariableMap, displayMap);
-        methodCallAddData4Callee(elHandler, calleeFullMethod, usedVariableMap, displayMap);
+        methodCallAddData4CallerMethod(elHandler, callerFullMethod, usedVariableMap, displayMap);
+        methodCallAddData4CalleeMethod(elHandler, calleeFullMethod, usedVariableMap, displayMap);
         return elHandler.runExpression(usedVariableMap, displayMap);
     }
 
@@ -301,7 +301,7 @@ public class JavaCG2ElManager extends CommonElManager {
             return false;
         }
         Map<String, Object> displayMap = new HashMap<>();
-        methodCallAddData4Caller(elHandler, callerFullMethod, usedVariableMap, displayMap);
+        methodCallAddData4CallerMethod(elHandler, callerFullMethod, usedVariableMap, displayMap);
         return elHandler.runExpression(usedVariableMap, displayMap);
     }
 

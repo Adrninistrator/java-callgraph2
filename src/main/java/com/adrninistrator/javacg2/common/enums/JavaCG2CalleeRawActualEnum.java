@@ -1,5 +1,7 @@
 package com.adrninistrator.javacg2.common.enums;
 
+import com.adrninistrator.javacg2.common.JavaCG2Constants;
+
 /**
  * @author adrninistrator
  * @date 2025/3/23
@@ -36,11 +38,19 @@ public enum JavaCG2CalleeRawActualEnum {
         return null;
     }
 
-    public static String getAllInfo() {
+    public static String getAllInfoOneLine() {
+        return getAllInfo(true);
+    }
+
+    public static String getAllInfoMultiLine() {
+        return getAllInfo(false);
+    }
+
+    private static String getAllInfo(boolean oneLine) {
         StringBuilder stringBuilder = new StringBuilder();
         for (JavaCG2CalleeRawActualEnum javaCG2CalleeRawActualEnum : JavaCG2CalleeRawActualEnum.values()) {
             if (stringBuilder.length() > 0) {
-                stringBuilder.append("\t");
+                stringBuilder.append(oneLine ? JavaCG2Constants.FLAG_TAB : JavaCG2Constants.NEW_LINE_WINDOWS);
             }
             stringBuilder.append(javaCG2CalleeRawActualEnum.getType()).append(": ").append(javaCG2CalleeRawActualEnum.getDesc());
         }

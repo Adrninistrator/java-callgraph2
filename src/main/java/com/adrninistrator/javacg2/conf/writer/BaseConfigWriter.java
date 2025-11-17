@@ -44,7 +44,10 @@ public abstract class BaseConfigWriter {
     }
 
     private void writeCommentLine(Writer writer, String data) throws IOException {
-        writeNewLine(writer, JavaCG2Constants.COMMENT_PROPERTIES + data);
+        String[] array = StringUtils.split(data, JavaCG2Constants.NEW_LINE_WINDOWS);
+        for (String str : array) {
+            writeNewLine(writer, JavaCG2Constants.COMMENT_PROPERTIES + str);
+        }
     }
 
     private void writeAVCommentLine(Writer writer, String data) throws IOException {
