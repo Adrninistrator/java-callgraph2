@@ -46,6 +46,14 @@ string.startsWith(file_path, 'lib/')
 "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'lib/')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_JAR_WAR, 
+    "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'lib/')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreJarInJarFPIJW
@@ -74,6 +82,14 @@ string.contains(file_path, '/lib/')
 
 ```java
 "string.contains(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", '/lib/')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_JAR_WAR, 
+    "string.contains(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", '/lib/')"
+);
 ```
 
 - 表达式示例类名
@@ -106,6 +122,14 @@ file_dir_path == 'lib'
 JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + " == 'lib'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_JAR_WAR, 
+    JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + " == 'lib'"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreJarInJarFDPIJW
@@ -136,6 +160,14 @@ file_dir_path == 'WEB-INF/lib'
 JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + " == 'WEB-INF/lib'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_JAR_WAR, 
+    JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + " == 'WEB-INF/lib'"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreJarInWarFDPIJW
@@ -162,6 +194,14 @@ string.startsWith(file_name, 'bcel-')
 "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'bcel-')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_JAR_WAR, 
+    "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'bcel-')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreJarInJarFN
@@ -186,6 +226,14 @@ string.startsWith(file_name, 'bcel-')
 
 ```java
 "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'bcel-')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_JAR_WAR, 
+    "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'bcel-')"
+);
 ```
 
 - 表达式示例类名

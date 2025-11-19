@@ -44,6 +44,14 @@ string.startsWith(class_name, 'test.callgraph.annotation.') && string.endsWith(c
 "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.') && string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'CallMethodWithAnnotation')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.') && string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'CallMethodWithAnnotation')"
+);
+```
+
 - 表达式示例类名
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameAnd
@@ -68,6 +76,14 @@ string.contains(class_name, 'test.callgraph.annotation.CallMethodWithAnnotation'
 
 ```java
 "string.contains(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.contains(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+);
 ```
 
 - 表达式示例类名
@@ -96,6 +112,14 @@ string.containsAny(class_name, 'test.callgraph.annotation.CallMethodWithAnnotati
 "string.containsAny(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation', 'test.callgraph.annotation.MethodWithAnnotation')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.containsAny(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation', 'test.callgraph.annotation.MethodWithAnnotation')"
+);
+```
+
 - 表达式示例类名
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameContainsAny
@@ -120,6 +144,14 @@ string.containsIC(class_name, 'test.callgraph.annotation.CallMethodWithAnnotatio
 
 ```java
 "string.containsIC(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.containsIC(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+);
 ```
 
 - 表达式示例类名
@@ -148,6 +180,14 @@ string.endsWith(class_name, 'test.callgraph.annotation.CallMethodWithAnnotation'
 "string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+);
+```
+
 - 表达式示例类名
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameEndsWith
@@ -172,6 +212,14 @@ string.endsWithAny(class_name, 'test.callgraph.annotation.CallMethodWithAnnotati
 
 ```java
 "string.endsWithAny(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation', 'test.callgraph.annotation.MethodWithAnnotation')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.endsWithAny(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation', 'test.callgraph.annotation.MethodWithAnnotation')"
+);
 ```
 
 - 表达式示例类名
@@ -200,6 +248,14 @@ string.endsWithIC(class_name, 'test.callgraph.annotation.CallMethodWithAnnotatio
 "string.endsWithIC(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.endsWithIC(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+);
+```
+
 - 表达式示例类名
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameEndsWithIC
@@ -224,6 +280,14 @@ class_name != 'test.callgraph.annotation.CallMethodWithAnnotation'
 
 ```java
 JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + " != 'test.callgraph.annotation.CallMethodWithAnnotation'"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + " != 'test.callgraph.annotation.CallMethodWithAnnotation'"
+);
 ```
 
 - 表达式示例类名
@@ -252,6 +316,14 @@ string.equalsAny(class_name, 'test.callgraph.annotation.CallMethodWithAnnotation
 "string.equalsAny(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation', 'test.callgraph.annotation.MethodWithAnnotation')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.equalsAny(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation', 'test.callgraph.annotation.MethodWithAnnotation')"
+);
+```
+
 - 表达式示例类名
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameEqualsAny
@@ -276,6 +348,14 @@ string.equalsIC(class_name, 'test.callgraph.annotation.CallMethodWithAnnotation'
 
 ```java
 "string.equalsIC(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.equalsIC(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+);
 ```
 
 - 表达式示例类名
@@ -304,6 +384,14 @@ class_name == 'test.callgraph.annotation.CallMethodWithAnnotation' || class_name
 JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + " == 'test.callgraph.annotation.CallMethodWithAnnotation' || " + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + " == 'test.callgraph.annotation.MethodWithAnnotation'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + " == 'test.callgraph.annotation.CallMethodWithAnnotation' || " + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + " == 'test.callgraph.annotation.MethodWithAnnotation'"
+);
+```
+
 - 表达式示例类名
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameOr
@@ -328,6 +416,14 @@ string.startsWith(class_name, 'test.callgraph.annotation.CallMethodWithAnnotatio
 
 ```java
 "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+);
 ```
 
 - 表达式示例类名
@@ -356,6 +452,14 @@ string.startsWithAny(class_name, 'test.callgraph.annotation.CallMethodWithAnnota
 "string.startsWithAny(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation', 'test.callgraph.annotation.MethodWithAnnotation')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.startsWithAny(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation', 'test.callgraph.annotation.MethodWithAnnotation')"
+);
+```
+
 - 表达式示例类名
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameStartsWithAny
@@ -380,6 +484,14 @@ string.startsWithIC(class_name, 'test.callgraph.annotation.CallMethodWithAnnotat
 
 ```java
 "string.startsWithIC(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS, 
+    "string.startsWithIC(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.CallMethodWithAnnotation')"
+);
 ```
 
 - 表达式示例类名

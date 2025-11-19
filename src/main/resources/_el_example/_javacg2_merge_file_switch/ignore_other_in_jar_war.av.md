@@ -46,6 +46,14 @@ jar/war文件中的文件相对路径
 "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'META-INF/')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR, 
+    "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'META-INF/')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInJarFPIJW
@@ -74,6 +82,14 @@ jar/war文件中的文件相对路径
 
 ```java
 "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'META-INF/')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR, 
+    "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'META-INF/')"
+);
 ```
 
 - 表达式示例类名
@@ -106,6 +122,14 @@ file_dir_path != 'META-INF'
 JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + " != 'META-INF'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR, 
+    JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + " != 'META-INF'"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInJarFDPIJW
@@ -136,6 +160,14 @@ file_dir_path != 'META-INF'
 JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + " != 'META-INF'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR, 
+    JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + " != 'META-INF'"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInWarFDPIJW
@@ -162,6 +194,14 @@ test.el.mergefile.TestElMergeFileIgnoreOtherInWarFDPIJW
 "!string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", '.MF')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR, 
+    "!string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", '.MF')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInJarFN
@@ -186,6 +226,14 @@ test.el.mergefile.TestElMergeFileIgnoreOtherInJarFN
 
 ```java
 "!string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", '.MF')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR, 
+    "!string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", '.MF')"
+);
 ```
 
 - 表达式示例类名
@@ -216,6 +264,14 @@ file_ext != '.MF'
 JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT.getVariableName() + " != '.MF'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR, 
+    JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT.getVariableName() + " != '.MF'"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInJarOFE
@@ -242,6 +298,14 @@ file_ext != '.MF'
 
 ```java
 JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT.getVariableName() + " != '.MF'"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR, 
+    JavaCG2ElAllowedVariableEnum.EAVE_MF_OTHER_FILE_EXT.getVariableName() + " != '.MF'"
+);
 ```
 
 - 表达式示例类名

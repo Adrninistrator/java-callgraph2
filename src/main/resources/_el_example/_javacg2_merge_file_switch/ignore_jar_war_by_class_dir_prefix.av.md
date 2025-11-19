@@ -54,6 +54,14 @@ jar/war文件中的class文件对应指定层级的目录路径集合
 "!include(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_DIR_PREFIX_LEVEL.getVariableName() + "2, 'com/adrninistrator') && !include(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_DIR_PREFIX_LEVEL.getVariableName() + "3, 'org/apache/bcel')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_WAR_BY_CLASS_DIR_PREFIX, 
+    "!include(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_DIR_PREFIX_LEVEL.getVariableName() + "2, 'com/adrninistrator') && !include(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_DIR_PREFIX_LEVEL.getVariableName() + "3, 'org/apache/bcel')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreJarByClassDirPrefix

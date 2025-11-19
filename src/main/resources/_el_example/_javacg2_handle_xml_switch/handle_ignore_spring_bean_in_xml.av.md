@@ -42,6 +42,14 @@ bean_name != 'testService1'
 JavaCG2ElAllowedVariableEnum.EAVE_SPB_BEAN_NAME.getVariableName() + " != 'testService1'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_HANDLE_IGNORE_SPRING_BEAN_IN_XML, 
+    JavaCG2ElAllowedVariableEnum.EAVE_SPB_BEAN_NAME.getVariableName() + " != 'testService1'"
+);
+```
+
 - 表达式示例类名
 
 test.el.handlespbinxml.TestElHandleIgnoreSPBInXmlBeanName
@@ -66,6 +74,14 @@ class_name != 'a.b.C'
 
 ```java
 JavaCG2ElAllowedVariableEnum.EAVE_SPB_CLASS_NAME.getVariableName() + " != 'a.b.C'"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_HANDLE_IGNORE_SPRING_BEAN_IN_XML, 
+    JavaCG2ElAllowedVariableEnum.EAVE_SPB_CLASS_NAME.getVariableName() + " != 'a.b.C'"
+);
 ```
 
 - 表达式示例类名
@@ -94,6 +110,14 @@ profile != 'dev'
 
 ```java
 JavaCG2ElAllowedVariableEnum.EAVE_SPB_PROFILE.getVariableName() + " != 'dev'"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_HANDLE_IGNORE_SPRING_BEAN_IN_XML, 
+    JavaCG2ElAllowedVariableEnum.EAVE_SPB_PROFILE.getVariableName() + " != 'dev'"
+);
 ```
 
 - 表达式示例类名

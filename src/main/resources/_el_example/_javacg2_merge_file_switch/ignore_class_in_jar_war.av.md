@@ -46,6 +46,14 @@ string.startsWith(file_path, 'test/')
 "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'test/')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR, 
+    "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'test/')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreClassInJarFPIJW
@@ -74,6 +82,14 @@ jar/war文件中的文件相对路径
 
 ```java
 "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'WEB-INF/classes/test/')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR, 
+    "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'WEB-INF/classes/test/')"
+);
 ```
 
 - 表达式示例类名
@@ -106,6 +122,14 @@ string.startsWith(file_dir_path, 'test/')
 "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + ", 'test/')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR, 
+    "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + ", 'test/')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreClassInJarFDPIJW
@@ -136,6 +160,14 @@ jar/war文件中的文件所在目录相对路径
 "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + ", 'WEB-INF/classes/test/')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR, 
+    "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_DIR_PATH_IN_JAR_WAR.getVariableName() + ", 'WEB-INF/classes/test/')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreClassInWarFDPIJW
@@ -162,6 +194,14 @@ test.el.mergefile.TestElMergeFileIgnoreClassInWarFDPIJW
 "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'Test')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR, 
+    "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'Test')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreClassInJarFN
@@ -186,6 +226,14 @@ test.el.mergefile.TestElMergeFileIgnoreClassInJarFN
 
 ```java
 "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'Test')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR, 
+    "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'Test')"
+);
 ```
 
 - 表达式示例类名
@@ -218,6 +266,14 @@ string.startsWith(class_file_path, 'test/')
 "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'test/')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR, 
+    "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'test/')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreClassInJarCFPIJW
@@ -246,6 +302,14 @@ jar/war文件中的class文件的相对路径
 
 ```java
 "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'test/')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_JAR_WAR, 
+    "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_CLASS_FILE_PATH_IN_JAR_WAR.getVariableName() + ", 'test/')"
+);
 ```
 
 - 表达式示例类名

@@ -44,6 +44,14 @@ string.contains(file_path, '/lib/bcel-')
 "string.contains(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_PATH_IN_DIR.getVariableName() + ", '/lib/bcel-')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_DIR, 
+    "string.contains(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_PATH_IN_DIR.getVariableName() + ", '/lib/bcel-')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreJarInDirAFPID
@@ -72,6 +80,14 @@ string.endsWith(file_dir_path, '/lib')
 "string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR.getVariableName() + ", '/lib')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_DIR, 
+    "string.endsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_ABSOLUTE_FILE_DIR_PATH_IN_DIR.getVariableName() + ", '/lib')"
+);
+```
+
 - 表达式示例类名
 
 test.el.mergefile.TestElMergeFileIgnoreJarInDirAFDPID
@@ -96,6 +112,14 @@ string.startsWith(file_name, 'bcel-')
 
 ```java
 "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'bcel-')"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_IN_DIR, 
+    "string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_MF_FILE_NAME.getVariableName() + ", 'bcel-')"
+);
 ```
 
 - 表达式示例类名

@@ -42,6 +42,14 @@ JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD
 "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.')"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD, 
+    "!string.startsWith(" + JavaCG2ElAllowedVariableEnum.EAVE_PARSE_CLASS_NAME.getVariableName() + ", 'test.callgraph.annotation.')"
+);
+```
+
 - 表达式示例类名
 
 test.el.classmethod.TestElParseIgnoreMethodClassName
@@ -70,6 +78,14 @@ package_name != 'test.callgraph.annotation'
 JavaCG2ElAllowedVariableEnum.EAVE_PARSE_PACKAGE_NAME.getVariableName() + " != 'test.callgraph.annotation'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD, 
+    JavaCG2ElAllowedVariableEnum.EAVE_PARSE_PACKAGE_NAME.getVariableName() + " != 'test.callgraph.annotation'"
+);
+```
+
 - 表达式示例类名
 
 test.el.classmethod.TestElParseIgnoreMethodPackageName
@@ -94,6 +110,14 @@ simple_class_name != 'ArgCalleeTypeService1'
 
 ```java
 JavaCG2ElAllowedVariableEnum.EAVE_PARSE_SIMPLE_CLASS_NAME.getVariableName() + " != 'ArgCalleeTypeService1'"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD, 
+    JavaCG2ElAllowedVariableEnum.EAVE_PARSE_SIMPLE_CLASS_NAME.getVariableName() + " != 'ArgCalleeTypeService1'"
+);
 ```
 
 - 表达式示例类名
@@ -124,6 +148,14 @@ method_name != '<init>'
 JavaCG2ElAllowedVariableEnum.EAVE_PARSE_METHOD_NAME.getVariableName() + " != '" + "<init>" + "'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD, 
+    JavaCG2ElAllowedVariableEnum.EAVE_PARSE_METHOD_NAME.getVariableName() + " != '" + "<init>" + "'"
+);
+```
+
 - 表达式示例类名
 
 test.el.classmethod.TestElParseIgnoreMethodMethodName
@@ -150,6 +182,14 @@ method_arg_num != 4
 JavaCG2ElAllowedVariableEnum.EAVE_PARSE_METHOD_ARG_NUM.getVariableName() + " != 4"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD, 
+    JavaCG2ElAllowedVariableEnum.EAVE_PARSE_METHOD_ARG_NUM.getVariableName() + " != 4"
+);
+```
+
 - 表达式示例类名
 
 test.el.classmethod.TestElParseIgnoreMethodMethodArgNum
@@ -174,6 +214,14 @@ full_method != 'test.callgraph.implement.AbstractClass1:test()'
 
 ```java
 JavaCG2ElAllowedVariableEnum.EAVE_PARSE_FULL_METHOD.getVariableName() + " != 'test.callgraph.implement.AbstractClass1:test()'"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD, 
+    JavaCG2ElAllowedVariableEnum.EAVE_PARSE_FULL_METHOD.getVariableName() + " != 'test.callgraph.implement.AbstractClass1:test()'"
+);
 ```
 
 - 表达式示例类名

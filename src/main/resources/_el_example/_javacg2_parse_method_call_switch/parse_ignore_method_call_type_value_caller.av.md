@@ -42,6 +42,14 @@ er_class_name != 'test.callgraph.annotation.CallMethodWithAnnotation'
 CommonElAllowedVariableEnum.EAVE_MC_ER_CLASS_NAME.getVariableName() + " != 'test.callgraph.annotation.CallMethodWithAnnotation'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER, 
+    CommonElAllowedVariableEnum.EAVE_MC_ER_CLASS_NAME.getVariableName() + " != 'test.callgraph.annotation.CallMethodWithAnnotation'"
+);
+```
+
 - 表达式示例类名
 
 test.el.methodcalltypevalue.TestElParseIgnoreMethodCallTypeValueErClassName
@@ -70,6 +78,14 @@ er_package_name != 'test.callgraph.annotation'
 CommonElAllowedVariableEnum.EAVE_MC_ER_PACKAGE_NAME.getVariableName() + " != 'test.callgraph.annotation'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER, 
+    CommonElAllowedVariableEnum.EAVE_MC_ER_PACKAGE_NAME.getVariableName() + " != 'test.callgraph.annotation'"
+);
+```
+
 - 表达式示例类名
 
 test.el.methodcalltypevalue.TestElParseIgnoreMethodCallTypeValueErPackageName
@@ -94,6 +110,14 @@ er_simple_class_name != 'ArgCalleeTypeService1'
 
 ```java
 CommonElAllowedVariableEnum.EAVE_MC_ER_SIMPLE_CLASS_NAME.getVariableName() + " != 'ArgCalleeTypeService1'"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER, 
+    CommonElAllowedVariableEnum.EAVE_MC_ER_SIMPLE_CLASS_NAME.getVariableName() + " != 'ArgCalleeTypeService1'"
+);
 ```
 
 - 表达式示例类名
@@ -124,6 +148,14 @@ er_method_name != 'test5'
 CommonElAllowedVariableEnum.EAVE_MC_ER_METHOD_NAME.getVariableName() + " != 'test5'"
 ```
 
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER, 
+    CommonElAllowedVariableEnum.EAVE_MC_ER_METHOD_NAME.getVariableName() + " != 'test5'"
+);
+```
+
 - 表达式示例类名
 
 test.el.methodcalltypevalue.TestElParseIgnoreMethodCallTypeValueErMethodName
@@ -148,6 +180,14 @@ er_method_arg_num != 5
 
 ```java
 CommonElAllowedVariableEnum.EAVE_MC_ER_METHOD_ARG_NUM.getVariableName() + " != 5"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER, 
+    CommonElAllowedVariableEnum.EAVE_MC_ER_METHOD_ARG_NUM.getVariableName() + " != 5"
+);
 ```
 
 - 表达式示例类名
@@ -176,6 +216,14 @@ er_full_method != 'test.callgraph.annotation.CallMethodWithAnnotation:test1()'
 
 ```java
 CommonElAllowedVariableEnum.EAVE_MC_ER_FULL_METHOD.getVariableName() + " != 'test.callgraph.annotation.CallMethodWithAnnotation:test1()'"
+```
+
+- 代码中指定表达式示例
+
+```java
+javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER, 
+    CommonElAllowedVariableEnum.EAVE_MC_ER_FULL_METHOD.getVariableName() + " != 'test.callgraph.annotation.CallMethodWithAnnotation:test1()'"
+);
 ```
 
 - 表达式示例类名
