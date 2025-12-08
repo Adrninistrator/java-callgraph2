@@ -4,6 +4,7 @@ import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2CalleeRawActualEnum;
 import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
 import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
+import com.adrninistrator.javacg2.conf.writer.JavaCG2ConfigWriter;
 
 /**
  * @author adrninistrator
@@ -113,6 +114,11 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
     @Override
     public String getConfigPrintInfo() {
         return key + " " + JavaCG2ConfigKeyEnum.class.getSimpleName() + "." + name();
+    }
+
+    @Override
+    public String genConfigUsage() {
+        return doGenConfigUsage(JavaCG2ConfigWriter.class);
     }
 
     @Override

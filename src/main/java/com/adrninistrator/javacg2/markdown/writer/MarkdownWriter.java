@@ -5,6 +5,7 @@ import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.markdown.MarkdownConstants;
 import com.adrninistrator.javacg2.markdown.enums.MDCodeBlockTypeEnum;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
+import com.adrninistrator.javacg2.util.JavaCG2MarkDownUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -230,7 +231,7 @@ public class MarkdownWriter implements AutoCloseable {
         }
 
         tableColumnNum = columns.length;
-        addLine(genTableContent(columns));
+        addLine(JavaCG2MarkDownUtil.genTableContent(columns));
 
         StringBuilder tableLine = new StringBuilder(MarkdownConstants.FLAG_VERTICAL_BAR);
         for (int i = 0; i < tableColumnNum; i++) {
@@ -253,11 +254,7 @@ public class MarkdownWriter implements AutoCloseable {
             throw new JavaCG2RuntimeException("当前指定的列数量与表格头列数量不一致 " + columns.length + " " + tableColumnNum);
         }
 
-        addLine(genTableContent(columns));
-    }
-
-    private String genTableContent(String... columns) {
-        return MarkdownConstants.FLAG_VERTICAL_BAR + StringUtils.join(columns, MarkdownConstants.FLAG_VERTICAL_BAR) + MarkdownConstants.FLAG_VERTICAL_BAR;
+        addLine(JavaCG2MarkDownUtil.genTableContent(columns));
     }
 
     @Override

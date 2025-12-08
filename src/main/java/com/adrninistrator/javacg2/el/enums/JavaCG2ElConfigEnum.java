@@ -2,6 +2,7 @@ package com.adrninistrator.javacg2.el.enums;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
+import com.adrninistrator.javacg2.conf.writer.JavaCG2ConfigWriter;
 import com.adrninistrator.javacg2.el.checker.AbstractElChecker;
 import com.adrninistrator.javacg2.el.checker.JavaCG2ElChecker4HandleSpringBean;
 import com.adrninistrator.javacg2.el.checker.JavaCG2ElChecker4MergeFileInDir;
@@ -187,6 +188,11 @@ public enum JavaCG2ElConfigEnum implements ElConfigInterface {
     @Override
     public String getConfigPrintInfo() {
         return fileName + " " + JavaCG2ElConfigEnum.class.getSimpleName() + "." + name();
+    }
+
+    @Override
+    public String genConfigUsage() {
+        return doGenConfigUsage(JavaCG2ConfigWriter.class);
     }
 
     @Override

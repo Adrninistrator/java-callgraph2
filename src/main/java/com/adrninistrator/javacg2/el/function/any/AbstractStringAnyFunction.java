@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg2.el.function.any;
 
-import com.adrninistrator.javacg2.el.util.ElUtil;
+import com.adrninistrator.javacg2.el.util.JavaCG2ElUtil;
 import com.googlecode.aviator.exception.ExpressionRuntimeException;
 import com.googlecode.aviator.runtime.function.AbstractVariadicFunction;
 import com.googlecode.aviator.runtime.type.AviatorBoolean;
@@ -35,9 +35,9 @@ public abstract class AbstractStringAnyFunction extends AbstractVariadicFunction
             throw new ExpressionRuntimeException("至少需要有两个参数");
         }
 
-        String arg0String = ElUtil.getArgStringValue(args[0], env);
+        String arg0String = JavaCG2ElUtil.getArgStringValue(args[0], env);
         for (int i = 1; i < args.length; i++) {
-            String argString = ElUtil.getArgStringValue(args[i], env);
+            String argString = JavaCG2ElUtil.getArgStringValue(args[i], env);
             if (checkString(arg0String, argString)) {
                 return AviatorBoolean.TRUE;
             }

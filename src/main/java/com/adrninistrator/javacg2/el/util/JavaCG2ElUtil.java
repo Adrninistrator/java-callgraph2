@@ -1,5 +1,7 @@
 package com.adrninistrator.javacg2.el.util;
 
+import com.adrninistrator.javacg2.common.JavaCG2Constants;
+import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.googlecode.aviator.exception.ExpressionRuntimeException;
 import com.googlecode.aviator.runtime.type.AviatorObject;
 import org.apache.commons.lang3.StringUtils;
@@ -11,10 +13,20 @@ import java.util.Map;
  * @date 2025/2/22
  * @description: 表达式工具类
  */
-public class ElUtil {
+public class JavaCG2ElUtil {
 
     // 判断是否是执行用于检测的表达式
     private static final ThreadLocal<Boolean> RUN_IN_CHECKER_FLAG = new ThreadLocal<>();
+
+    /**
+     * 检查是否为示例表达式配置文件
+     *
+     * @param elConfig
+     * @return
+     */
+    public static boolean checkElExample(ElConfigInterface elConfig) {
+        return !elConfig.getKey().endsWith(JavaCG2Constants.EXT_AV);
+    }
 
     /**
      * 将字符串数组转换为“'a', 'b', ... 'z'”的形式
@@ -22,7 +34,7 @@ public class ElUtil {
      * @param array
      * @return
      */
-    public static String genStringFromArray(String[] array) {
+    public static String genStringFromArray(String... array) {
         return "'" + StringUtils.join(array, "', '") + "'";
     }
 
@@ -59,7 +71,7 @@ public class ElUtil {
         return Boolean.TRUE.equals(RUN_IN_CHECKER_FLAG.get());
     }
 
-    private ElUtil() {
+    private JavaCG2ElUtil() {
         throw new IllegalStateException("illegal");
     }
 }

@@ -11,7 +11,7 @@ import com.adrninistrator.javacg2.el.function.ignorecase.StringContainsICFunctio
 import com.adrninistrator.javacg2.el.function.ignorecase.StringEndsWithICFunction;
 import com.adrninistrator.javacg2.el.function.ignorecase.StringEqualsICFunction;
 import com.adrninistrator.javacg2.el.function.ignorecase.StringStartsWithICFunction;
-import com.adrninistrator.javacg2.el.util.ElUtil;
+import com.adrninistrator.javacg2.el.util.JavaCG2ElUtil;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2Util;
 import com.googlecode.aviator.AviatorEvaluator;
@@ -253,7 +253,7 @@ public class ElHandler {
             throw new JavaCG2RuntimeException("表达式执行结果返回值非法");
         }
         boolean result = (boolean) executeResult;
-        if (result && ignoreData && !ElUtil.checkRunInCheckerFlag()) {
+        if (result && ignoreData && !JavaCG2ElUtil.checkRunInCheckerFlag()) {
             // 表达式执行结果为true，且当前表达式是需要忽略数据，且没有执行用于检测的表达式标志
             writeFileTPE.execute(() -> {
                 String mapValueStr = JavaCG2Util.getMapValueStr(displayMap);

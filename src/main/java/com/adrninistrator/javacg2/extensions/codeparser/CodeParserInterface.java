@@ -3,7 +3,7 @@ package com.adrninistrator.javacg2.extensions.codeparser;
 /**
  * @author Adrninistrator
  * @date 2021/8/10
- * @description: 对jar包中的文件或字节码解析类的基础接口
+ * @description: 对jar文件中的文件或字节码解析类的基础接口
  */
 public interface CodeParserInterface {
 

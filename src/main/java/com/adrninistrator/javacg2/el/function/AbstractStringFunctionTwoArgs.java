@@ -1,6 +1,6 @@
 package com.adrninistrator.javacg2.el.function;
 
-import com.adrninistrator.javacg2.el.util.ElUtil;
+import com.adrninistrator.javacg2.el.util.JavaCG2ElUtil;
 import com.googlecode.aviator.runtime.function.AbstractFunction;
 import com.googlecode.aviator.runtime.type.AviatorBoolean;
 import com.googlecode.aviator.runtime.type.AviatorObject;
@@ -18,8 +18,8 @@ public abstract class AbstractStringFunctionTwoArgs extends AbstractFunction {
 
     @Override
     public AviatorObject call(Map<String, Object> env, AviatorObject arg1, AviatorObject arg2) {
-        String target = ElUtil.getArgStringValue(arg1, env);
-        String param = ElUtil.getArgStringValue(arg2, env);
+        String target = JavaCG2ElUtil.getArgStringValue(arg1, env);
+        String param = JavaCG2ElUtil.getArgStringValue(arg2, env);
 
         return checkString(target, param) ? AviatorBoolean.TRUE : AviatorBoolean.FALSE;
     }

@@ -590,7 +590,7 @@ Java 代码中定义的 Spring AOP Advice
 
 - jacg_config
 
-java-all-call-graph组件使用的配置参数
+java-all-call-graph 组件使用的配置参数
 
 - method_call_raw_callee
 
@@ -691,9 +691,13 @@ _javacg2_parse_method_call_switch/parse_ignore_method_call_er.av
 
 ### 1.26.1. 问题修复
 
-- 记录有使用的EL表达式配置修复
+- 记录有使用的 EL 表达式配置修复
 
-在之前的版本中，记录有使用的EL表达式配置修复有误，在当前版本修复
+在之前的版本中，记录有使用的 EL 表达式配置修复有误，在当前版本修复
+
+- 记录 EL 表达式忽略数据日志线程可能无法结束
+
+在之前的版本中，记录 EL 表达式忽略数据日志的线程可能无法在操作完毕后自动结束，在当前版本修复
 
 ### 1.26.2. 修改内部方法
 
@@ -701,3 +705,9 @@ _javacg2_parse_method_call_switch/parse_ignore_method_call_er.av
 表达式处理相关
 打印配置参数相关
 ```
+
+## 1.27. (4.0.2)
+
+### 1.27.1. 示例修改
+
+不影响功能

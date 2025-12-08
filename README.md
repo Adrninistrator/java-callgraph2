@@ -1,4 +1,6 @@
-[![Maven Central](https://img.shields.io/maven-central/v/com.github.adrninistrator/java-callgraph2.svg)](https://search.maven.org/artifact/com.github.adrninistrator/java-callgraph2/)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.adrninistrator/java-callgraph2.svg)]()
+
+[![Apache License 2.0](https://img.shields.io/badge/license-Apache%20License%202.0-green.svg)]()
 
 # 1. 项目说明
 
@@ -1217,7 +1219,7 @@ com.adrninistrator.javacg2.entry.JavaCG2Entry
 <dependency>
     <groupId>com.github.adrninistrator</groupId>
     <artifactId>java-callgraph2</artifactId>
-    <version>版本号</version>
+    <version>{版本号}</version>
     <type>pom</type>
 </dependency>
 ```
@@ -1225,10 +1227,10 @@ com.adrninistrator.javacg2.entry.JavaCG2Entry
 - 使用 Gradle 管理依赖
 
 ```
-implementation("com.github.adrninistrator:java-callgraph2: 版本号")
+implementation("com.github.adrninistrator:java-callgraph2:{版本号}")
 ```
 
-最新版本号可查看 [https://mvnrepository.com/artifact/com.github.adrninistrator/java-callgraph2](https://mvnrepository.com/artifact/com.github.adrninistrator/java-callgraph2)
+最新版本号可查看 [https://central.sonatype.com/artifact/com.github.adrninistrator/java-callgraph2/versions](https://central.sonatype.com/artifact/com.github.adrninistrator/java-callgraph2/versions)
 
 #### 7.3.5.2. 通过配置文件指定参数运行
 
@@ -1294,7 +1296,7 @@ gradlew test_gen_jar
 
 # 8. 人工增加方法调用关系
 
-对于某些方法调用关系，不存在对应的方法调用指令，需要人工增加，可参考 java-all-call-graph 项目说明
+对于某些方法调用关系，不存在对应的方法调用指令，需要人工增加，可参考 java-all-call-graph 项目相关说明
 
 # 9. 更新说明
 

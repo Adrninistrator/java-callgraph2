@@ -31,7 +31,7 @@ public class TestConfigUsage {
 
     private void doTest(ConfigInterface[] configInterfaces) {
         for (ConfigInterface configInterface : configInterfaces) {
-            String usage = javaCG2ConfigureWrapper.genConfigUsage(configInterface);
+            String usage = configInterface.genConfigUsage();
             logger.info("### {}", usage);
         }
     }

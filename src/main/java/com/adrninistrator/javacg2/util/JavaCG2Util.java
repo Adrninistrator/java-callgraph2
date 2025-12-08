@@ -388,16 +388,6 @@ public class JavaCG2Util {
     }
 
     /**
-     * 检查是否为示例表达式配置文件
-     *
-     * @param elConfig
-     * @return
-     */
-    public static boolean checkElExample(ElConfigInterface elConfig) {
-        return !elConfig.getKey().endsWith(JavaCG2Constants.EXT_AV);
-    }
-
-    /**
      * 在字符串前后增加双引号
      *
      * @param data

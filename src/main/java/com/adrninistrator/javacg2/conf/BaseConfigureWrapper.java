@@ -11,6 +11,7 @@ import com.adrninistrator.javacg2.el.enums.ElStringAnyFunctionEnum;
 import com.adrninistrator.javacg2.el.enums.ElStringFunctionTwoArgsEnum;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
+import com.adrninistrator.javacg2.el.util.JavaCG2ElUtil;
 import com.adrninistrator.javacg2.exceptions.JavaCG2Error;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.markdown.MarkdownConstants;
@@ -1063,7 +1064,7 @@ public abstract class BaseConfigureWrapper {
                 // 打印使用的配置参数时，当前配置参数未使用，不打印
                 continue;
             }
-            if (JavaCG2Util.checkElExample(elConfig)) {
+            if (JavaCG2ElUtil.checkElExample(elConfig)) {
                 // 跳过示例表达式配置文件
                 continue;
             }
@@ -1152,49 +1153,6 @@ public abstract class BaseConfigureWrapper {
     }
 
     /**
-     * 生成配置参数的使用说明
-     *
-     * @param configInterface
-     * @return
-     */
-    public String genConfigUsage(ConfigInterface configInterface) {
-        String configWrapperClassName = this.getClass().getSimpleName();
-        String enumSimpleClassName = configInterface.getClass().getSimpleName();
-        String enumConstantName = configInterface.getEnumConstantName();
-        String configFileName = null;
-        String configFileKeyName = null;
-        String configMethodName = null;
-        if (configInterface instanceof ElConfigInterface) {
-            ElConfigInterface elConfigInterface = (ElConfigInterface) configInterface;
-            configFileName = elConfigInterface.getKey();
-            configMethodName = "setElConfigText";
-        }
-        if (configInterface instanceof MainConfigInterface) {
-            MainConfigInterface mainConfigInterface = (MainConfigInterface) configInterface;
-            configFileName = mainConfigInterface.getFileName();
-            configFileKeyName = mainConfigInterface.getKey();
-            configMethodName = "setMainConfig";
-        }
-        if (configInterface instanceof OtherConfigInterface) {
-            OtherConfigInterface otherConfigInterface = (OtherConfigInterface) configInterface;
-            configFileName = otherConfigInterface.getKey();
-            configMethodName = otherConfigInterface.isSetOrList() ? "setOtherConfigSet" : "setOtherConfigList";
-        }
-        if (configFileName == null) {
-            return "不支持的配置参数类型 " + configInterface.getClass().getName();
-        }
-        StringBuilder stringBuilder = new StringBuilder("当前参数可通过以下方式进行配置 ");
-        stringBuilder.append("1. 通过配置文件进行配置: ").append(configFileName);
-        if (configFileKeyName != null) {
-            stringBuilder.append(" 配置参数名称为： ").append(configFileKeyName);
-        }
-        stringBuilder.append(" 2. 通过代码进行配置: ").append(configWrapperClassName)
-                .append(".").append(configMethodName).append("(").append(enumSimpleClassName)
-                .append(".").append(enumConstantName).append(", ...);");
-        return stringBuilder.toString();
-    }
-
-    /**
      * 将所有的配置参数写入文件
      *
      * @param writer
@@ -1238,7 +1196,7 @@ public abstract class BaseConfigureWrapper {
             }
 
             for (ElConfigInterface elConfig : elConfigSetArray) {
-                if (JavaCG2Util.checkElExample(elConfig)) {
+                if (JavaCG2ElUtil.checkElExample(elConfig)) {
                     // 跳过示例表达式配置文件
                     continue;
                 }

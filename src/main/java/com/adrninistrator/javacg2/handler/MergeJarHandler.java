@@ -13,7 +13,7 @@ import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
 import com.adrninistrator.javacg2.util.JavaCG2JarUtil;
 import com.adrninistrator.javacg2.util.JavaCG2Util;
-import com.adrninistrator.javacg2.util.RunProcessUtil;
+import com.adrninistrator.javacg2.util.JavaCG2RunProcessUtil;
 import net.lingala.zip4j.io.inputstream.ZipInputStream;
 import net.lingala.zip4j.io.outputstream.ZipOutputStream;
 import net.lingala.zip4j.model.LocalFileHeader;
@@ -94,7 +94,7 @@ public class MergeJarHandler {
         this.javaCG2ConfigureWrapper = javaCG2ConfigureWrapper;
         jarOrDirPathList = javaCG2ConfigureWrapper.getOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR);
         if (jarOrDirPathList.isEmpty()) {
-            logger.error("请在配置文件中指定需要解析的jar文件或目录列表 {}", javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
+            logger.error("请在配置文件中指定需要解析的jar文件或目录列表 {}", JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR.genConfigUsage());
             throw new JavaCG2RuntimeException("未指定需要解析的jar文件或目录列表");
         }
         this.jarPathNumMap = jarPathNumMap;
@@ -362,7 +362,7 @@ public class MergeJarHandler {
             File jarFileOrDir = new File(currentJarOrDirPath);
             String jarDirCanonicalPath = JavaCG2FileUtil.getCanonicalPath(jarFileOrDir);
             if (!jarFileOrDir.exists()) {
-                logger.error("配置文件中指定的需要解析的文件或目录不存在 {} {}", jarDirCanonicalPath, javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
+                logger.error("配置文件中指定的需要解析的文件或目录不存在 {} {}", jarDirCanonicalPath, JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR.genConfigUsage());
                 return false;
             }
             if (jarFileOrDir.isFile()) {
@@ -409,7 +409,7 @@ public class MergeJarHandler {
             return true;
         }
         logger.error("在配置文件中指定的需要解析的文件非法 {} 只允许指定 {} {}", fileCanonicalPath, ALLOWED_FILE_TYPES,
-                javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR));
+                JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR.genConfigUsage());
         return false;
     }
 
@@ -451,21 +451,21 @@ public class MergeJarHandler {
         logger.info("找到 {} 个jmod文件，开始处理 {}", jmodFilePathWithNameList.size(), StringUtils.join(jmodFilePathWithNameList, " "));
         if (StringUtils.isBlank(outputRootPath)) {
             logger.error("需要处理jmod文件，缺少配置参数 {} 假如不需要处理jmod文件，请从指定的需要解析的文件范围中去掉，或者删除对应目录中的jmod文件",
-                    javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH));
+                    JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH.genConfigUsage());
             return false;
         }
 
         String jmodProgramPath = javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_JMOD_PROGRAM_PATH);
         if (StringUtils.isNotBlank(jmodProgramPath)) {
             if (!JavaCG2FileUtil.isFileExists(jmodProgramPath)) {
-                logger.error("配置参数指定的jmod程序不存在 {} {}", jmodProgramPath, javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH));
+                logger.error("配置参数指定的jmod程序不存在 {} {}", jmodProgramPath, JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH.genConfigUsage());
                 return false;
             }
         } else {
             // 通过需要解析的jmod文件查找jmod程序
             jmodProgramPath = getJmodProgramPathFromJmodFile();
             if (jmodProgramPath == null) {
-                logger.error("通过需要解析的jmod文件未找到jmod程序，需要通过配置参数指定的jmod程序路径 {}", javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH));
+                logger.error("通过需要解析的jmod文件未找到jmod程序，需要通过配置参数指定的jmod程序路径 {}", JavaCG2ConfigKeyEnum.CKE_OUTPUT_ROOT_PATH.genConfigUsage());
                 return false;
             }
         }
@@ -501,13 +501,13 @@ public class MergeJarHandler {
             }
             logger.info("使用jmod程序 [{}] 解压.jmod文件 [{}] 到目录 [{}]", jmodProgramPath, jmodFilePathWithName.getFilePath(), jmodExtractDirPath);
             String[] args = new String[]{
-                    RunProcessUtil.handleProcessArg(jmodProgramPath),
+                    JavaCG2RunProcessUtil.handleProcessArg(jmodProgramPath),
                     "extract",
                     "--dir",
-                    RunProcessUtil.handleProcessArg(jmodExtractDirPath),
-                    RunProcessUtil.handleProcessArg(jmodFilePathWithName.getFilePath())
+                    JavaCG2RunProcessUtil.handleProcessArg(jmodExtractDirPath),
+                    JavaCG2RunProcessUtil.handleProcessArg(jmodFilePathWithName.getFilePath())
             };
-            if (!RunProcessUtil.runProcess(args)) {
+            if (!JavaCG2RunProcessUtil.runProcess(args)) {
                 logger.error("解压.jmod文件失败 {}", jmodFilePathWithName.getFilePath());
                 return false;
             }

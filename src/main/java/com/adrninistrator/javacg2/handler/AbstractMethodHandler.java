@@ -230,7 +230,7 @@ public abstract class AbstractMethodHandler {
                 return true;
             }
             logger.info("假如在处理方法出现异常时需要继续执行，请配置参数值为 {} {}", Boolean.TRUE,
-                    javaCG2InputAndOutput.getJavaCG2ConfigureWrapper().genConfigUsage(JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR)
+                    JavaCG2ConfigKeyEnum.CKE_CONTINUE_WHEN_ERROR.genConfigUsage()
             );
             return false;
         }

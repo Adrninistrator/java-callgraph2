@@ -5,7 +5,7 @@ import com.adrninistrator.javacg2.conf.BaseConfigureWrapper;
 import com.adrninistrator.javacg2.el.checker.AbstractElChecker;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.el.handler.ElHandler;
-import com.adrninistrator.javacg2.el.util.ElUtil;
+import com.adrninistrator.javacg2.el.util.JavaCG2ElUtil;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.thread.ThreadFactory4TPE;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
@@ -117,7 +117,7 @@ public abstract class AbstractElManager implements Closeable {
         if (elHandler == null) {
             throw new JavaCG2RuntimeException("未找到对应的表达式处理类 " + elConfig.getKey());
         }
-        if (!ElUtil.checkRunInCheckerFlag()) {
+        if (!JavaCG2ElUtil.checkRunInCheckerFlag()) {
             // 不是用于检查时，记录有使用的EL表达式配置
             configureWrapper.recordUsedElConfig(elConfig);
         }

@@ -89,20 +89,20 @@ public class JavaCG2ConfManager {
             String[] data1 = StringUtils.splitPreserveAllTokens(frEqConversionMethod, JavaCG2Constants.FLAG_EQUAL);
             if (data1.length != 2) {
                 logger.error("配置文件内容不是合法的properties参数 {} {}", frEqConversionMethod,
-                        javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD));
+                        JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD.genConfigUsage());
                 return false;
             }
             String classAndMethod = data1[0];
             int argObjSeq = Integer.parseInt(data1[1]);
             if (argObjSeq < 0) {
                 logger.error("配置文件被调用对象（使用0表示）或方法参数（从1开始）序号非法 {} {}", frEqConversionMethod,
-                        javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD));
+                        JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD.genConfigUsage());
                 return false;
             }
             String[] data2 = StringUtils.splitPreserveAllTokens(classAndMethod, JavaCG2Constants.FLAG_COLON);
             if (data2.length != 2) {
                 logger.error("配置文件内容不是合法的类名与方法名 {} {}", frEqConversionMethod,
-                        javaCG2ConfigureWrapper.genConfigUsage(JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD));
+                        JavaCG2OtherConfigFileUseSetEnum.OCFUSE_FR_EQ_CONVERSION_METHOD.genConfigUsage());
                 return false;
             }
             String className = data2[0];
@@ -119,7 +119,7 @@ public class JavaCG2ConfManager {
         JavaCG2CalleeRawActualEnum calleeNewRawActual = JavaCG2CalleeRawActualEnum.getFromType(handleCalleeNewRawActualStr);
         if (calleeNewRawActual == null) {
             logger.error("参数值非法，允许使用的值为 {} {}", JavaCG2CalleeRawActualEnum.getAllInfoOneLine(),
-                    javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL));
+                    JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_NEW_RAW_ACTUAL.genConfigUsage());
             return false;
         }
         switch (calleeNewRawActual) {
@@ -145,7 +145,7 @@ public class JavaCG2ConfManager {
         JavaCG2CalleeRawActualEnum springBeanCalleeNewRawActual = JavaCG2CalleeRawActualEnum.getFromType(handleCalleeSpringBeanRawActualStr);
         if (springBeanCalleeNewRawActual == null) {
             logger.error("参数值非法，允许使用的值为： {} {}", JavaCG2CalleeRawActualEnum.getAllInfoOneLine(),
-                    javaCG2ConfigureWrapper.genConfigUsage(JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL));
+                    JavaCG2ConfigKeyEnum.CKE_HANDLE_CALLEE_SPRING_BEAN_RAW_ACTUAL.genConfigUsage());
             return false;
         }
         switch (springBeanCalleeNewRawActual) {

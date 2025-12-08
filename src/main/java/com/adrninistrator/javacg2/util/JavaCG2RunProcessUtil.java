@@ -14,9 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2025/7/9
  * @description: 启动进程工具
  */
-public class RunProcessUtil {
+public class JavaCG2RunProcessUtil {
 
-    private static final Logger logger = LoggerFactory.getLogger(RunProcessUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(JavaCG2RunProcessUtil.class);
 
     private static final ThreadFactory threadFactoryStdout = genThreadFactory("wait_stdout");
     private static final ThreadFactory threadFactoryStderr = genThreadFactory("wait_stderr");
@@ -48,7 +48,7 @@ public class RunProcessUtil {
             Process childProcess = processBuilder.start();
 
             // 等待子进程结束
-            int exitCode = RunProcessUtil.waitProcess(childProcess);
+            int exitCode = JavaCG2RunProcessUtil.waitProcess(childProcess);
             if (exitCode != 0) {
                 logger.error("子进程执行失败，返回码 {}", exitCode);
                 return false;

@@ -9,9 +9,10 @@ import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.OtherConfigInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
+import com.adrninistrator.javacg2.el.util.JavaCG2ElUtil;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
-import com.adrninistrator.javacg2.util.JavaCG2Util;
+import com.adrninistrator.javacg2.util.JavaCG2MarkDownUtil;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -119,12 +120,12 @@ public abstract class BaseConfigWriter {
     public boolean genElConfig(ElConfigInterface[] elConfigs, Map<String, String[]> elDirUsageMap) {
         String elExampleName = "";
         for (ElConfigInterface elConfig : elConfigs) {
-            if (JavaCG2Util.checkElExample(elConfig)) {
+            if (JavaCG2ElUtil.checkElExample(elConfig)) {
                 elExampleName = elConfig.getKey();
             }
         }
         for (ElConfigInterface elConfig : elConfigs) {
-            boolean elExample = JavaCG2Util.checkElExample(elConfig);
+            boolean elExample = JavaCG2ElUtil.checkElExample(elConfig);
             String fileName = elConfig.getKey();
             try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + elConfig.getKey())) {
                 if (!elExample) {
@@ -206,6 +207,8 @@ public abstract class BaseConfigWriter {
                 "配置文件中有说明允许使用的变量信息",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 查看表达式忽略的数据",
                 "若表达式用于忽略数据，则被忽略的数据会记录在日志文件中，保存在当前输出目录中，文件名为 " + JavaCG2Constants.EL_IGNORE_DATA_LOG_FILE_NAME,
+                JavaCG2Constants.NEW_LINE_WINDOWS + "# 支持使用的表达式配置",
+                genElConfigInfoText(),
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式示例",
                 chooseElExampleText(),
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式调试方式",
@@ -335,6 +338,9 @@ public abstract class BaseConfigWriter {
     // 选择需要生成的调试模式文本
     protected abstract String chooseElDebugModeText();
 
+    // 选择对应的EL表达式枚举
+    protected abstract ElConfigInterface[] chooseElConfigEnums();
+
     // 选择使用的主要配置参数值
     protected String chooseMainConfig(MainConfigInterface mainConfig) {
         if (baseConfigureWrapper != null) {
@@ -355,6 +361,21 @@ public abstract class BaseConfigWriter {
             }
         }
         return otherConfigInterface.getDefaultValues();
+    }
+
+    // 选择需要生成的EL表达式配置信息
+    protected String genElConfigInfoText() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(JavaCG2MarkDownUtil.addTableHead("表达式作用", "表达式配置文件", "表达式枚举常量名"));
+
+        for (ElConfigInterface elConfigInterface : chooseElConfigEnums()) {
+            if (JavaCG2ElUtil.checkElExample(elConfigInterface)) {
+                continue;
+            }
+            stringBuilder.append(JavaCG2MarkDownUtil.addTableBody(elConfigInterface.getDescriptions()[0], elConfigInterface.getKey(),
+                    elConfigInterface.getClass().getSimpleName() + JavaCG2Constants.FLAG_DOT + elConfigInterface.getEnumConstantName()));
+        }
+        return stringBuilder.toString();
     }
 
     public void setBaseConfigureWrapper(BaseConfigureWrapper baseConfigureWrapper) {
