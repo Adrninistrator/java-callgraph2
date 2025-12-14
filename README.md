@@ -1220,7 +1220,6 @@ com.adrninistrator.javacg2.entry.JavaCG2Entry
     <groupId>com.github.adrninistrator</groupId>
     <artifactId>java-callgraph2</artifactId>
     <version>{版本号}</version>
-    <type>pom</type>
 </dependency>
 ```
 
