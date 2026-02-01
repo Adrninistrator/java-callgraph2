@@ -860,12 +860,18 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         int sourceLine = getSourceLine(position);
         for (int i = 0; i < throwInfoList.size(); i++) {
             ThrowInfo throwInfo = throwInfoList.get(i);
-            Integer methodThrowReturnCallId = null;
+            String methodThrowReturnCallIdStr = null;
             Integer invokeInstructionPosition = throwInfo.getInvokeInstructionPosition();
             if (invokeInstructionPosition != null) {
-                methodThrowReturnCallId = getInvokeInstructionCallId(invokeInstructionPosition);
+                Integer methodThrowReturnCallId = getInvokeInstructionCallId(invokeInstructionPosition);
+                if (methodThrowReturnCallId != null) {
+                    methodThrowReturnCallIdStr = String.valueOf(methodThrowReturnCallId);
+                }
+            } else if (JavaCG2Constants.FILE_KEY_THROW_TYPE_CATCH_EXCEPTION.equals(throwInfo.getThrowFlag())) {
+                // 假如throw的异常属于catch的对象，则将以下字段设置为空字符串，使得不被后续continue跳过
+                methodThrowReturnCallIdStr = "";
             }
-            if (methodThrowReturnCallId == null) {
+            if (methodThrowReturnCallIdStr == null) {
                 // 对应的方法调用未解析，不能处理
                 continue;
             }
@@ -879,7 +885,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                     throwInfo.getThrowFlag(),
                     JavaCG2Util.genStringFromInteger(throwInfo.getCatchStartPosition()),
                     throwInfo.getCatchExceptionVariableName(),
-                    JavaCG2Util.genStringFromInteger(methodThrowReturnCallId));
+                    methodThrowReturnCallIdStr);
         }
     }
 

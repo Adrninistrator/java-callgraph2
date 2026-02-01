@@ -711,3 +711,22 @@ _javacg2_parse_method_call_switch/parse_ignore_method_call_er.av
 ### 1.27.1. 示例修改
 
 不影响功能
+
+## 1.28. (4.0.3)
+
+### 1.28.1. 解决解析 throw 的对象未识别到 catch 的异常对象问题
+
+```java
+public class TestException1 {
+
+    public static void test1(int a) {
+        try {
+            int b = 1 / (a - 1);
+        } catch (ArithmeticException e) {
+            throw e;
+        }
+    }
+}
+```
+
+在之前的版本中输出的 method_throw 文件中没有包含 throw 的对象属于 catch 的异常对象的情况，解决该问题
