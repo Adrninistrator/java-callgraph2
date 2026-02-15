@@ -730,3 +730,152 @@ public class TestException1 {
 ```
 
 在之前的版本中输出的 method_throw 文件中没有包含 throw 的对象属于 catch 的异常对象的情况，解决该问题
+
+## 1.29. (4.0.4)
+
+### 1.29.1. method_annotation 文件增加字段
+
+在生成 method_annotation 文件时，增加对应的 jar 文件序号字段
+
+### 1.29.2. 支持解析方法调用中数组类型的信息
+
+#### 1.29.2.1. 常见方法
+
+在 Java 代码中，变长参数以数组形式实现，常见的方法如下：
+
+```java
+// JDK 常用方法
+String.format(String format, Object... args)
+System.out.printf(String format, Object... args)
+Arrays.asList(T... a)
+
+// 日志相关
+Logger.info(String msg, Object... params)
+
+// 反射相关
+Class.getDeclaredMethod(String name, Class<?>... parameterTypes)
+Constructor.newInstance(Object... initargs)
+Method.invoke(Object obj, Object... args)
+
+// Spring 相关
+JdbcTemplate.update(String sql, Object... args)
+```
+
+#### 1.29.2.2. 支持解析的内容
+
+对于方法调用中被调用对象或方法参数使用数组形式的场景，支持解析对应数组元素的类型或常量值等信息
+
+假如数组元素可能有不同的组合，也支持分别解析，通过以下“数组值组合序号”区分不同的组合
+
+#### 1.29.2.3. 解析结果格式
+
+解析结果生成在 method_call_info 文件中，文件包含以下列：
+
+```
+方法调用序号，从 1 开始
+被调用对象或参数序号，0 代表被调用对象，1 开始为参数
+序号，从 0 开始，大于 0 代表有多种可能
+类型，含义参考 JavaCG2MethodCallInfoTypeEnum 类
+是否为数组格式，1: 是，0: 否
+数组值组合序号，从 0 开始，非数组时为-1
+数组维度，从 1 开始，非数组时为 0
+数组下标，逗号分隔，如"0"、"0,1"、"0,1,2"
+值的类型，含义参考 JavaCG2ConstantTypeEnum 类
+对应的值
+调用方，完整方法（类名+方法名+参数）
+方法返回类型，包含数组标志
+```
+
+#### 1.29.2.4. 代码与结果示例-1
+
+- 代码示例
+
+```java
+    private void useArray(Object obj) {
+    }
+
+    private void testUse3() {
+        useArray(new int[]{3241, 3241});
+        useArray(new int[]{2896, 746});
+    }
+```
+
+- 结果示例
+
+以上 testUse3 方法中两次调用 useArray 方法的方法调用序号分别为 142、143
+
+|方法调用序号|被调用对象或参数序号|序号|类型|是否为数组格式|数组值组合序号|数组维度|数组下标|值的类型|对应的值|调用方完整方法（类名+方法名+参数）|方法返回类型|
+|---|---|---|---|---|---|---|---|---|---|---|---|
+|142|0|0|nov|0|-1|0|||this|test.callgraph.array.TestUseArray1:testUse3()|void|
+|142|1|0|t|1|0|1|0||int|test.callgraph.array.TestUseArray1:testUse3()|void|
+|142|1|0|v|1|0|1|0|int|3241|test.callgraph.array.TestUseArray1:testUse3()|void|
+|142|1|1|t|1|0|1|1||int|test.callgraph.array.TestUseArray1:testUse3()|void|
+|142|1|1|v|1|0|1|1|int|3241|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|0|0|nov|0|-1|0|||this|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|1|0|t|1|0|1|0||int|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|1|0|v|1|0|1|0|int|2896|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|1|1|t|1|0|1|1||int|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|1|1|v|1|0|1|1|int|746|test.callgraph.array.TestUseArray1:testUse3()|void|
+
+#### 1.29.2.5. 代码与结果示例-2
+
+- 代码示例
+
+```java
+    private void useArray(Object obj) {
+    }
+
+    private void testUse5() {
+        int a = 100;
+        int b = 200;
+        long v = System.currentTimeMillis();
+        if (v % 7 == 0) {
+            a = 111;
+            b = 112;
+        } else {
+            if (v % 3 == 0) {
+                a = 221;
+            }
+            if (v % 2 == 0) {
+                b = 332;
+            }
+        }
+        useArray(new int[]{a, b});
+    }
+```
+
+- 结果示例
+
+|方法调用序号|被调用对象或参数序号|序号|类型|是否为数组格式|数组值组合序号|数组维度|数组下标|值的类型|对应的值|调用方完整方法（类名+方法名+参数）|方法返回类型|
+|---|---|---|---|---|---|---|---|---|---|---|---|
+|148|0|0|nov|0|-1|0|||this|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|0|t|1|0|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|0|v|1|0|1|0|int|111|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|0|nov|1|0|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|1|t|1|0|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|1|v|1|0|1|1|int|112|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|1|nov|1|0|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|2|t|1|1|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|2|v|1|1|1|0|int|221|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|2|nov|1|1|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|3|t|1|1|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|3|v|1|1|1|1|int|332|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|3|nov|1|1|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|4|t|1|2|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|4|v|1|2|1|0|int|221|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|4|nov|1|2|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|5|t|1|2|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|5|v|1|2|1|1|int|200|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|5|nov|1|2|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|6|t|1|3|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|6|v|1|3|1|0|int|100|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|6|nov|1|3|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|7|t|1|3|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|7|v|1|3|1|1|int|332|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|7|nov|1|3|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|8|t|1|4|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|8|v|1|4|1|0|int|100|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|8|nov|1|4|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|9|t|1|4|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|9|v|1|4|1|1|int|200|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|9|nov|1|4|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|

@@ -4,7 +4,7 @@
 
 # 1. 项目说明
 
-java-callgraph2 项目用于对 Java 代码（编译生成的 class、jar、war、jmod 等文件）进行静态分析，包括类、方法、字段、注解、泛型、方法调用、枚举等，支持生成的文件见 [生成文件说明](docs/file_desc.md)。将非结构化的Java代码解析为结构化数据，可基于这些数据实现对代码的自动化分析，也可做为基础数据提供给大模型进行分析
+java-callgraph2 项目用于对 Java 代码（编译生成的 class、jar、war、jmod 等文件）进行静态分析，包括类、方法、字段、注解、泛型、方法调用、枚举等，支持生成的文件见 [生成文件说明](docs/file_desc.md)。将非结构化的 Java 代码解析为结构化数据，可基于这些数据实现对代码的自动化分析，也可做为基础数据提供给大模型进行分析
 
 当前项目原本 fork 自 [https://github.com/gousiosg/java-callgraph](https://github.com/gousiosg/java-callgraph)，用于生成 Java 方法调用关系
 
@@ -254,9 +254,152 @@ superClassA.entryA();
 
 例如以上代码，会记录 superClassA.entryA(); 方法的调用 ID，及 superClassA 变量定义时的父类类型 test.callgraph.extendcomplex.AbstractSuperClassA
 
-## 3.8. 方法返回的信息
+## 3.8. 方法调用中数组类型的信息
 
-### 3.8.1. 方法返回值对应的参数序号
+### 3.8.1. 常见方法
+
+在 Java 代码中，变长参数以数组形式实现，常见的方法如下：
+
+```java
+// JDK 常用方法
+String.format(String format, Object... args)
+System.out.printf(String format, Object... args)
+Arrays.asList(T... a)
+
+// 日志相关
+Logger.info(String msg, Object... params)
+
+// 反射相关
+Class.getDeclaredMethod(String name, Class<?>... parameterTypes)
+Constructor.newInstance(Object... initargs)
+Method.invoke(Object obj, Object... args)
+
+// Spring 相关
+JdbcTemplate.update(String sql, Object... args)
+```
+
+### 3.8.2. 支持解析的内容
+
+对于方法调用中被调用对象或方法参数使用数组形式的场景，支持解析对应数组元素的类型或常量值等信息
+
+假如数组元素可能有不同的组合，也支持分别解析，通过以下“数组值组合序号”区分不同的组合
+
+### 3.8.3. 解析结果格式
+
+解析结果生成在 method_call_info 文件中，文件包含以下列：
+
+```
+方法调用序号，从 1 开始
+被调用对象或参数序号，0 代表被调用对象，1 开始为参数
+序号，从 0 开始，大于 0 代表有多种可能
+类型，含义参考 JavaCG2MethodCallInfoTypeEnum 类
+是否为数组格式，1: 是，0: 否
+数组值组合序号，从 0 开始，非数组时为-1
+数组维度，从 1 开始，非数组时为 0
+数组下标，逗号分隔，如"0"、"0,1"、"0,1,2"
+值的类型，含义参考 JavaCG2ConstantTypeEnum 类
+对应的值
+调用方，完整方法（类名+方法名+参数）
+方法返回类型，包含数组标志
+```
+
+### 3.8.4. 代码与结果示例-1
+
+- 代码示例
+
+```java
+    private void useArray(Object obj) {
+    }
+
+    private void testUse3() {
+        useArray(new int[]{3241, 3241});
+        useArray(new int[]{2896, 746});
+    }
+```
+
+- 结果示例
+
+以上 testUse3 方法中两次调用 useArray 方法的方法调用序号分别为 142、143
+
+|方法调用序号|被调用对象或参数序号|序号|类型|是否为数组格式|数组值组合序号|数组维度|数组下标|值的类型|对应的值|调用方完整方法（类名+方法名+参数）|方法返回类型|
+|---|---|---|---|---|---|---|---|---|---|---|---|
+|142|0|0|nov|0|-1|0|||this|test.callgraph.array.TestUseArray1:testUse3()|void|
+|142|1|0|t|1|0|1|0||int|test.callgraph.array.TestUseArray1:testUse3()|void|
+|142|1|0|v|1|0|1|0|int|3241|test.callgraph.array.TestUseArray1:testUse3()|void|
+|142|1|1|t|1|0|1|1||int|test.callgraph.array.TestUseArray1:testUse3()|void|
+|142|1|1|v|1|0|1|1|int|3241|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|0|0|nov|0|-1|0|||this|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|1|0|t|1|0|1|0||int|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|1|0|v|1|0|1|0|int|2896|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|1|1|t|1|0|1|1||int|test.callgraph.array.TestUseArray1:testUse3()|void|
+|143|1|1|v|1|0|1|1|int|746|test.callgraph.array.TestUseArray1:testUse3()|void|
+
+### 3.8.5. 代码与结果示例-2
+
+- 代码示例
+
+```java
+    private void useArray(Object obj) {
+    }
+
+    private void testUse5() {
+        int a = 100;
+        int b = 200;
+        long v = System.currentTimeMillis();
+        if (v % 7 == 0) {
+            a = 111;
+            b = 112;
+        } else {
+            if (v % 3 == 0) {
+                a = 221;
+            }
+            if (v % 2 == 0) {
+                b = 332;
+            }
+        }
+        useArray(new int[]{a, b});
+    }
+```
+
+- 结果示例
+
+|方法调用序号|被调用对象或参数序号|序号|类型|是否为数组格式|数组值组合序号|数组维度|数组下标|值的类型|对应的值|调用方完整方法（类名+方法名+参数）|方法返回类型|
+|---|---|---|---|---|---|---|---|---|---|---|---|
+|148|0|0|nov|0|-1|0|||this|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|0|t|1|0|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|0|v|1|0|1|0|int|111|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|0|nov|1|0|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|1|t|1|0|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|1|v|1|0|1|1|int|112|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|1|nov|1|0|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|2|t|1|1|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|2|v|1|1|1|0|int|221|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|2|nov|1|1|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|3|t|1|1|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|3|v|1|1|1|1|int|332|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|3|nov|1|1|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|4|t|1|2|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|4|v|1|2|1|0|int|221|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|4|nov|1|2|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|5|t|1|2|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|5|v|1|2|1|1|int|200|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|5|nov|1|2|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|6|t|1|3|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|6|v|1|3|1|0|int|100|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|6|nov|1|3|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|7|t|1|3|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|7|v|1|3|1|1|int|332|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|7|nov|1|3|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|8|t|1|4|1|0||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|8|v|1|4|1|0|int|100|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|8|nov|1|4|1|0||a|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|9|t|1|4|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|9|v|1|4|1|1|int|200|test.callgraph.array.TestUseArray1:testUse5()|void|
+|148|1|9|nov|1|4|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+
+## 3.9. 方法返回的信息
+
+### 3.9.1. 方法返回值对应的参数序号
 
 - 示例代码
 
@@ -272,7 +415,7 @@ private String f1(String str1) {
 
 解析结果的内容为，方法返回当前方法参数的序号
 
-### 3.8.2. 方法返回值对应的方法调用 ID
+### 3.9.2. 方法返回值对应的方法调用 ID
 
 - 示例代码
 
@@ -288,7 +431,7 @@ private String f1() {
 
 解析结果的内容为，方法返回其他方法调用的 call_id
 
-### 3.8.3. 方法返回的字段（含枚举）
+### 3.9.3. 方法返回的字段（含枚举）
 
 - 示例代码
 
@@ -360,7 +503,7 @@ public enum DbStatementEnum {
 
 解析结果的内容如上表格
 
-### 3.8.4. 方法返回的常量值（含 null）
+### 3.9.4. 方法返回的常量值（含 null）
 
 - 示例代码
 
@@ -382,17 +525,17 @@ private String f2() {
 
 解析结果的内容为方法返回的常量值，包括返回 null 的情况
 
-## 3.9. 方法中的异常处理信息
+## 3.10. 方法中的异常处理信息
 
-### 3.9.1. 方法的 catch 信息
-
-略
-
-### 3.9.2. 方法的 finally 信息
+### 3.10.1. 方法的 catch 信息
 
 略
 
-### 3.9.3. 方法通过 throw 抛出的异常信息
+### 3.10.2. 方法的 finally 信息
+
+略
+
+### 3.10.3. 方法通过 throw 抛出的异常信息
 
 - 示例代码
 
@@ -436,13 +579,13 @@ private String f2() {
 |throw 的异常类型|java.lang.RuntimeException|
 |throw 的方法调用 ID|706|
 
-## 3.10. dto 的 get、set 方法及对应字段
+## 3.11. dto 的 get、set 方法及对应字段
 
 解析哪些方法属于 dto 的 get 方法或 set 方法，以及方法所对应的字段名称及类型
 
-## 3.11. 字段相关信息
+## 3.12. 字段相关信息
 
-### 3.11.1. 使用其他类中字段的使用情况
+### 3.12.1. 使用其他类中字段的使用情况
 
 - 示例代码
 
@@ -505,7 +648,7 @@ private String f2() {
 |字段是静态字段还是非静态字段|静态字段|
 |字段被读取还是赋值|被读取|
 
-### 3.11.2. static、final 字段初始化方法信息（含枚举）
+### 3.12.2. static、final 字段初始化方法信息（含枚举）
 
 支持解析 static、final 字段在初始化时进行赋值的方法调用，获取对应的方法调用 call_id
 
@@ -515,9 +658,9 @@ private String f2() {
 private static final Logger logger = LoggerFactory.getLogger(ElHandler.class);
 ```
 
-## 3.12. 枚举相关处理
+## 3.13. 枚举相关处理
 
-### 3.12.1. 枚举常量的使用情况
+### 3.13.1. 枚举常量的使用情况
 
 ```java
 public enum DbStatementEnum {
@@ -532,17 +675,17 @@ public enum DbStatementEnum {
 
 枚举常量与静态字段使用相同的方式进行了解析处理
 
-#### 3.12.1.1. 枚举常量在方法调用中的使用情况
+#### 3.13.1.1. 枚举常量在方法调用中的使用情况
 
 方法调用的被调用对象或方法参数中使用静态字段的情况，包含使用枚举常量的情况
 
 方法调用中使用静态字段的方法调用返回值的情况，包括使用枚举常量的方法调用返回值的情况
 
-#### 3.12.1.2. 枚举常量所有的使用情况
+#### 3.13.1.2. 枚举常量所有的使用情况
 
 使用其他类中字段的使用情况中，包括了枚举常量所有的使用情况
 
-### 3.12.2. 枚举类初始化赋值信息
+### 3.13.2. 枚举类初始化赋值信息
 
 - 示例代码
 
@@ -582,7 +725,7 @@ public enum DbStatementEnum {
 |被赋值的枚举字段类型|java.lang.String|
 |被赋值的枚举字段初始化值|查询|
 
-### 3.12.3. 枚举类构造函数参数与字段赋值关系
+### 3.13.3. 枚举类构造函数参数与字段赋值关系
 
 - 示例代码
 
@@ -606,15 +749,15 @@ public enum DbStatementEnum {
 |被赋值的枚举字段类型|java.lang.String|
 |被赋值的枚举字段名称|desc|
 
-## 3.13. 注解相关信息（使用 java-all-call-graph 项目解析生成格式更友好）
+## 3.14. 注解相关信息（使用 java-all-call-graph 项目解析生成格式更友好）
 
 对于类、方法、字段、方法参数上的注解，支持解析对应的注解类名，注解的属性类型、属性名称与属性类型
 
-## 3.14. 泛型相关信息
+## 3.15. 泛型相关信息
 
 对于以下场景，支持解析使用的泛型类型
 
-### 3.14.1. 方法参数集合中涉及的泛型类型
+### 3.15.1. 方法参数集合中涉及的泛型类型
 
 - 示例代码
 
@@ -626,7 +769,7 @@ private void setADT(RAR rar, List<AIV> aivList)
 
 解析到参数 2 的参数类型是 java.util.List，参数中的泛型类型是 test.callgraph.branch.dto.AIV
 
-### 3.14.2. 方法返回集合中涉及的泛型类型
+### 3.15.2. 方法返回集合中涉及的泛型类型
 
 - 示例代码
 
@@ -638,7 +781,7 @@ public static List<String> getPomeLineList() throws IOException {
 
 解析到方法返回类型为 java.util.List，方法返回类型中的泛型类型为 java.lang.String
 
-### 3.14.3. 类的签名中的泛型信息
+### 3.15.3. 类的签名中的泛型信息
 
 - 示例代码
 
@@ -650,7 +793,7 @@ public interface Common2Mapper<S extends java.lang.String, T1 extends java.lang.
 
 解析到以上接口签名中中有两个泛型信息，第一个泛型类型变量名称为 S，泛型的父类类名为 java.lang.String；第二个泛型类型变量名称为 T1，泛型的父类类名为 java.lang.String
 
-### 3.14.4. 类的继承或实现的泛型信息
+### 3.15.4. 类的继承或实现的泛型信息
 
 - 示例代码
 
@@ -666,7 +809,7 @@ public class GenericClassImplSuper2b3 extends GenericAbstractSuper2<List<String[
 
 第二个泛型信息中出现的类型为 java.util.Map、java.lang.String、java.util.Map、java.lang.Integer、byte[]
 
-### 3.14.5. 非静态字段集合中涉及的泛型类型
+### 3.15.5. 非静态字段集合中涉及的泛型类型
 
 - 示例代码
 
@@ -678,7 +821,7 @@ private final Set<InputStream> inputStreams = Collections.newSetFromMap(new Weak
 
 解析到以上非静态字段字段类型是 java.util.Set，泛型类型是 java.io.InputStream
 
-## 3.15. Lambda 表达式
+## 3.16. Lambda 表达式
 
 - 示例代码
 
@@ -737,67 +880,67 @@ boolean matches1 = map.values().stream().filter(Objects::nonNull).mapToDouble(va
 |Lambda 表达式下一个被调用方法是否为 Stream 的 intermediate（中间）操作|否|
 |Lambda 表达式下一个被调用方法是否为 Stream 的 terminal（终端）操作|是|
 
-## 3.16. MyBatis 相关信息（需要使用 java-all-call-graph 项目解析）
+## 3.17. MyBatis 相关信息（需要使用 java-all-call-graph 项目解析）
 
 支持解析使用 MySql 语法的 SQL 语句
 
-### 3.16.1. MyBatis 的 Entity 与数据库字段名信息
+### 3.17.1. MyBatis 的 Entity 与数据库字段名信息
 
 支持解析 MyBatis Entity 中的字段对应数据库的哪个字段及字段类型，对应的 MyBatis XML 的 resultMap ID
 
-### 3.16.2. MyBatis 的 Entity 与 Mapper、表名
+### 3.17.2. MyBatis 的 Entity 与 Mapper、表名
 
 支持解析哪些类属于 MyBatis Entity，及对应的 MyBatis Mapper 类、数据库表名、MyBatis XML 文件
 
-### 3.16.3. MyBatis XML 的 sql、Mapper 相关信息
+### 3.17.3. MyBatis XML 的 sql、Mapper 相关信息
 
 支持解析 MyBatis XML 文件中各个元素的 ID、数据库操作类型（select、insert、update、delete）、格式化后的 SQL 语句（XML 元素已被替换）、MyBatis Mapper 类名、MyBatis XML 文件路径
 
-### 3.16.4. MyBatis 的 XML 中 select 的字段信息
+### 3.17.4. MyBatis 的 XML 中 select 的字段信息
 
 支持解析 MyBatis Mapper 类的每个方法查询了哪些表的哪些字段，以及对应的 MyBatis XML 文件路径
 
-### 3.16.5. MyBatis 的 XML 中 update set 子句的字段信息
+### 3.17.5. MyBatis 的 XML 中 update set 子句的字段信息
 
 支持解析 MyBatis Mapper 类的每个执行 update 操作的方法的每个参数更新了哪些表的哪些字段，以及对应的 MyBatis XML 文件路径
 
-### 3.16.6. MyBatis Mapper 方法操作的数据库表信息
+### 3.17.6. MyBatis Mapper 方法操作的数据库表信息
 
 支持解析 MyBatis Mapper 类中的每个方法中执行数据库操作类型（select、insert、update、delete）与对应的数据库表名，以及对应的 MyBatis XML 文件路径
 
-### 3.16.7. MyBatis 的 XML 中 where 子句的字段信息
+### 3.17.7. MyBatis 的 XML 中 where 子句的字段信息
 
 支持解析 MyBatis Mapper 类中的每个方法中执行数据库操作对应的数据库表名，where 子句中进行判断的数据库字段、判断操作（=、>、<、<=、>=、!=、<>等）、MyBatis Mapper 方法的参数名称，以及对应的 MyBatis XML 文件路径
 
-### 3.16.8. MyBatis Mapper 方法写的数据库表信息
+### 3.17.8. MyBatis Mapper 方法写的数据库表信息
 
 支持解析 MyBatis Mapper 类中的每个写操作方法中执行数据库操作类型（insert、update、delete）与对应的数据库表名，以及对应的 MyBatis XML 文件路径
 
-## 3.17. Spring 相关信息（需要使用 java-all-call-graph 项目解析）
+## 3.18. Spring 相关信息（需要使用 java-all-call-graph 项目解析）
 
-### 3.17.1. Spring AOP
+### 3.18.1. Spring AOP
 
 支持解析 Spring AOP 的 advice 影响的方法，包括 Spring AOP advice 定义方式（XML 中定义、代码中定义）、XML 中定义的 aspect 的 ID 与方法名、advice 类型（after、afterReturning、afterThrowing、around、before 等）、XML 中的 pointcut-ref 名称、pointcut 表达式、aspect 的 Order 排序数值、advice 的完整方法、影响的完整方法等
 
-### 3.17.2. Spring Bean
+### 3.18.2. Spring Bean
 
 Java 代码中通过注解定义的 Spring Bean 不需要使用 java-all-call-graph 项目解析，支持解析 Spring Bean 的名称、Spring Bean 的类名、Spring Bean 定义时对应的注解类名、Spring Bean 定义时所在的类名
 
 Spring XML 文件中定义的 Bean 需要使用 java-all-call-graph 项目解析，支持解析 Spring Bean 的名称、Spring Bean 的类名、在 XML 中定义时对应的 profile、在 XML 中定义时对应的文件路径
 
-### 3.17.3. Spring Controller
+### 3.18.3. Spring Controller
 
 支持解析 Spring Controller 对应的完整方法、用于显示的 URI、类上的注解 path 属性原始值、方法上的注解 path 属性原始值、注解类名等
 
-### 3.17.4. Spring Task
+### 3.18.4. Spring Task
 
 支持解析 Spring Task 对应的 Spring Bean 的名称、完整方法、在 Java 代码中定义时所在的类名、在 XML 中定义时对应的文件路径
 
-### 3.17.5. Spring 包扫描路径
+### 3.18.5. Spring 包扫描路径
 
 支持解析 Spring 包扫描路径，包括 XML 或 Java 代码中定义的
 
-## 3.18. properties 文件内容（需要使用 java-all-call-graph 项目解析）
+## 3.19. properties 文件内容（需要使用 java-all-call-graph 项目解析）
 
 支持解析 properties 文件内容，包括 properties 配置名称、内容，以及 properties 文件路径
 

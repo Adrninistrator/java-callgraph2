@@ -1,5 +1,6 @@
 package com.adrninistrator.javacg2.dto.call;
 
+import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.dto.element.BaseElement;
 import com.adrninistrator.javacg2.dto.element.variable.FieldElement;
 import com.adrninistrator.javacg2.dto.element.variable.LocalVariableElement;
@@ -41,6 +42,9 @@ public class MethodCallPossibleList {
     // 是否为数组类型
     private boolean arrayElement;
 
+    // 数组元素的可能的信息组合列表，用于去重
+    private List<List<MethodCallPossibleEntry>> arrayElementEntryListList;
+
     /**
      * 添加可能的信息
      *
@@ -49,6 +53,19 @@ public class MethodCallPossibleList {
      * @param handledElementList 已经处理过的元素
      */
     public void addPossibleInfo(BaseElement baseElement, String definedType, List<BaseElement> handledElementList) {
+        addPossibleInfo(baseElement, definedType, handledElementList, null);
+    }
+
+    /**
+     * 添加可能的信息（带数组索引前缀）
+     *
+     * @param baseElement        操作数栈中的元素
+     * @param definedType        代码中定义的类型
+     * @param handledElementList 已经处理过的元素
+     * @param arrayIndexPrefix   数组索引前缀
+     */
+    public void addPossibleInfo(BaseElement baseElement, String definedType, List<BaseElement> handledElementList,
+                             String arrayIndexPrefix) {
         if (baseElement == null) {
             return;
         }
@@ -58,6 +75,12 @@ public class MethodCallPossibleList {
         String elementType = baseElement.getType();
 
         MethodCallPossibleEntry addedMethodCallPossibleEntry = new MethodCallPossibleEntry();
+
+        // 记录数组索引信息
+        if (arrayIndexPrefix != null) {
+            addedMethodCallPossibleEntry.setArrayIndex(arrayIndexPrefix);
+        }
+
         if (baseElement instanceof StaticFieldMethodCallReturnElement) {
             // 添加被调用对象或参数是静态字段方法返回值的可能信息
             String staticFieldMethodCallInfo = ((StaticFieldMethodCallReturnElement) baseElement).getDetailInfo();
@@ -114,7 +137,10 @@ public class MethodCallPossibleList {
             }
         }
 
-        if (!JavaCG2ByteCodeUtil.isNullType(elementType) &&
+        // 当元素本身是数组类型时，不记录类型信息（数组的中间层元素不需要记录类型）
+        boolean currentElementIsArray = baseElement.checkArrayElement();
+        if (!currentElementIsArray &&
+                !JavaCG2ByteCodeUtil.isNullType(elementType) &&
                 !elementType.equals(definedType) &&
                 !JavaCG2ByteCodeUtil.compareIntType(elementType, definedType) &&
                 !JavaCG2ByteCodeUtil.compareByteBooleanType(elementType, definedType)
@@ -124,6 +150,7 @@ public class MethodCallPossibleList {
                 若操作数栈中元素的类型与字节码中的类型相同，则不添加
                 若为int及兼容的类型，则不添加
                 若为兼容的byte、boolean类型，则不添加
+                若当前元素是数组类型（数组的中间层），则不添加
              */
             addedMethodCallPossibleEntry.setType(elementType);
         }
@@ -141,12 +168,14 @@ public class MethodCallPossibleList {
                 methodCallPossibleEntryList = new ArrayList<>();
             }
 
-            // 判断当前需要添加的信息是否已添加过相同的，若未添加过则添加
             boolean existed = false;
-            for (MethodCallPossibleEntry existedMethodCallPossibleEntry : methodCallPossibleEntryList) {
-                if (existedMethodCallPossibleEntry.compare(addedMethodCallPossibleEntry)) {
-                    existed = true;
-                    break;
+            if (!arrayElement) {
+                // 不属于数组元素时，判断当前需要添加的信息是否已添加过相同的，若未添加过则添加
+                for (MethodCallPossibleEntry existedMethodCallPossibleEntry : methodCallPossibleEntryList) {
+                    if (existedMethodCallPossibleEntry.compare(addedMethodCallPossibleEntry)) {
+                        existed = true;
+                        break;
+                    }
                 }
             }
             if (!existed) {
@@ -161,6 +190,11 @@ public class MethodCallPossibleList {
             // 处理数组中的元素
             Map<Integer, BaseElement> map = baseElement.getArrayValueMap();
             if (!map.isEmpty()) {
+                // 临时保存当前处理的数组元素信息
+                List<MethodCallPossibleEntry> currentArrayElementList = new ArrayList<>();
+                // 获取数组元素信息列表的大小（处理数组元素之前）
+                int entryListSizeBeforeArray = methodCallPossibleEntryList != null ? methodCallPossibleEntryList.size() : 0;
+
                 List<Integer> keyList = new ArrayList<>(map.keySet());
                 Collections.sort(keyList);
                 for (Integer key : keyList) {
@@ -181,11 +215,72 @@ public class MethodCallPossibleList {
                     } else {
                         arrayElementType = definedType;
                     }
+
+                    // 构造数组索引
+                    String newArrayIndexPrefix = combineArrayIndex(arrayIndexPrefix, key);
+
                     // 处理数组中的元素
-                    addPossibleInfo(arrayElement, arrayElementType, handledElementList);
+                    addPossibleInfo(arrayElement, arrayElementType, handledElementList, newArrayIndexPrefix);
+                }
+
+                // 收集新添加的数组元素信息
+                int entryListSizeAfterArray = methodCallPossibleEntryList != null ? methodCallPossibleEntryList.size() : 0;
+                for (int i = entryListSizeBeforeArray; i < entryListSizeAfterArray; i++) {
+                    currentArrayElementList.add(methodCallPossibleEntryList.get(i));
+                }
+
+                // 查找或确定数组元素组合的序号，并处理重复
+                int collectionSeq = findOrAddArrayElementCollectionSeq(currentArrayElementList, entryListSizeBeforeArray, entryListSizeAfterArray);
+
+                // 为当前保留的数组元素组合中的每个 entry 设置组合序号
+                // 注意：如果组合已存在，entry 可能已被移除，此时需要跳过
+                if (collectionSeq >= 0 && methodCallPossibleEntryList != null) {
+                    for (int i = entryListSizeBeforeArray; i < methodCallPossibleEntryList.size(); i++) {
+                        methodCallPossibleEntryList.get(i).setArrayCollectionSeq(collectionSeq);
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * 查找或添加数组元素组合的序号
+     *
+     * @param currentArrayElementList      当前数组元素组合
+     * @param entryListSizeBeforeArray     处理数组元素前列表大小
+     * @param entryListSizeAfterArray      处理数组元素后列表大小
+     * @return 组合序号；如果组合已存在并被移除，返回已存在的序号（负值表示需要跳过设置）
+     */
+    private int findOrAddArrayElementCollectionSeq(List<MethodCallPossibleEntry> currentArrayElementList,
+                                                   int entryListSizeBeforeArray, int entryListSizeAfterArray) {
+        if (arrayElementEntryListList == null) {
+            arrayElementEntryListList = new ArrayList<>();
+        }
+
+        // 查找是否已存在相同的组合
+        for (int i = 0; i < arrayElementEntryListList.size(); i++) {
+            if (compareArrayElementList(currentArrayElementList, arrayElementEntryListList.get(i))) {
+                // 找到已存在的组合，移除当前重复的元素
+                if (methodCallPossibleEntryList != null) {
+                    for (int j = entryListSizeAfterArray - 1; j >= entryListSizeBeforeArray; j--) {
+                        MethodCallPossibleEntry removedEntry = methodCallPossibleEntryList.remove(j);
+                        // 恢复内容数量
+                        if (removedEntry.getNonStaticField() != null) {
+                            nonStaticFieldNum--;
+                        }
+                        if (removedEntry.getType() != null) {
+                            typeNum--;
+                        }
+                    }
+                }
+                // 返回负值表示组合已存在，entry 已被移除
+                return -i - 1;
+            }
+        }
+
+        // 未找到相同组合，添加新组合
+        arrayElementEntryListList.add(currentArrayElementList);
+        return arrayElementEntryListList.size() - 1;
     }
 
     // 添加记录
@@ -214,5 +309,88 @@ public class MethodCallPossibleList {
 
     public boolean isArrayElement() {
         return arrayElement;
+    }
+
+    /**
+     * 获取数组维度
+     *
+     * @return 数组维度，0代表不是数组，1代表一维数组，2代表二维数组...
+     */
+    public int getArrayDimensions() {
+        if (!arrayElement) {
+            return 0;
+        }
+
+        // 遍历所有 entry，找到最大的数组索引长度
+        int maxDimensions = 0;
+        if (methodCallPossibleEntryList != null) {
+            for (MethodCallPossibleEntry entry : methodCallPossibleEntryList) {
+                String arrayIndex = entry.getArrayIndex();
+                if (arrayIndex != null && !arrayIndex.isEmpty()) {
+                    // 通过逗号数量计算维度（逗号数量 + 1）
+                    int dimensions = getArrayIndexDimensions(arrayIndex);
+                    if (dimensions > maxDimensions) {
+                        maxDimensions = dimensions;
+                    }
+                }
+            }
+        }
+        return maxDimensions;
+    }
+
+    /**
+     * 比较两个数组元素列表是否相同
+     *
+     * @param list1 数组元素列表1
+     * @param list2 数组元素列表2
+     * @return true: 相同；false: 不同
+     */
+    private boolean compareArrayElementList(List<MethodCallPossibleEntry> list1, List<MethodCallPossibleEntry> list2) {
+        if (list1 == null && list2 == null) {
+            return true;
+        }
+        if (list1 == null || list2 == null) {
+            return false;
+        }
+        if (list1.size() != list2.size()) {
+            return false;
+        }
+
+        for (int i = 0; i < list1.size(); i++) {
+            MethodCallPossibleEntry entry1 = list1.get(i);
+            MethodCallPossibleEntry entry2 = list2.get(i);
+            if (!entry1.compare(entry2)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 拼接数组索引
+     *
+     * @param prefix 索引前缀，可为null
+     * @param index  当前索引
+     * @return 拼接后的索引字符串，如 "0", "0,1", "0,1,2"
+     */
+    public static String combineArrayIndex(String prefix, int index) {
+        if (prefix == null) {
+            return String.valueOf(index);
+        }
+        return prefix + JavaCG2Constants.FLAG_COMMA + index;
+    }
+
+    /**
+     * 根据数组索引字符串计算维度
+     *
+     * @param arrayIndex 数组索引字符串，如 "0" 返回1，"0,1" 返回2，"0,1,2" 返回3
+     * @return 数组维度
+     */
+    public static int getArrayIndexDimensions(String arrayIndex) {
+        if (arrayIndex == null || arrayIndex.isEmpty()) {
+            return 0;
+        }
+        // 通过逗号数量计算维度（逗号数量 + 1）
+        return arrayIndex.split(JavaCG2Constants.FLAG_COMMA).length;
     }
 }

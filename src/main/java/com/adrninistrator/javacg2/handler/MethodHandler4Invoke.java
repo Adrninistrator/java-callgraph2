@@ -207,8 +207,9 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
      */
     @Override
     protected boolean preHandleMethod() throws IOException {
-        // 记录方法上的注解信息，在最后写入方法返回类型
-        JavaCG2AnnotationUtil.writeAnnotationInfo(methodAnnotationWriter, method.getAnnotationEntries(), annotationAttributesFormatter, callerFullMethod, methodReturnType);
+        // 记录方法上的注解信息，并写入方法返回类型
+        JavaCG2AnnotationUtil.writeAnnotationInfo(methodAnnotationWriter, method.getAnnotationEntries(), annotationAttributesFormatter, callerFullMethod, methodReturnType,
+                String.valueOf(classJarNum));
 
         // 记录方法参数上的注解信息
         ParameterAnnotationEntry[] parameterAnnotationEntries = method.getParameterAnnotationEntries();
@@ -1613,21 +1614,36 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         }
 
         String arrayElementFlag = JavaCG2YesNoEnum.parseStrValue(methodCallPossibleList.isArrayElement());
+
+        // 获取数组维度
+        int arrayDimensions = methodCallPossibleList.getArrayDimensions();
+
         StringBuilder stringBuilder = new StringBuilder();
         JavaCG2Counter typeCounter = new JavaCG2Counter(-1);
         for (int seq = 0; seq < methodCallPossibleEntryList.size(); seq++) {
             MethodCallPossibleEntry methodCallPossibleEntry = methodCallPossibleEntryList.get(seq);
+            String arrayIndex = methodCallPossibleEntry.getArrayIndex();
+
+            // 从 entry 获取数组值组合的序号
+            String arrayElementGroupIndexStr;
+            if (methodCallPossibleList.isArrayElement()) {
+                Integer arrayCollectionSeq = methodCallPossibleEntry.getArrayCollectionSeq();
+                arrayElementGroupIndexStr = arrayCollectionSeq != null ? String.valueOf(arrayCollectionSeq) : "0";
+            } else {
+                arrayElementGroupIndexStr = String.valueOf(JavaCG2Constants.NO_ARRAY_ELEMENT_COLLECTION_SEQ);
+            }
+
             // 记录方法调用可能的类型，类型的序号可能比以上list的元素数量多，需要每次累计
-            recordStringMethodCallPossibleType(stringBuilder, methodCallPossibleEntry, methodCallId, objArgSeq, typeCounter, arrayElementFlag);
+            recordStringMethodCallPossibleType(stringBuilder, methodCallPossibleEntry, methodCallId, objArgSeq, typeCounter, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex);
 
             // 处理方法调用可能的值
-            recordStringMethodCallPossibleValue(stringBuilder, methodCallPossibleEntry, methodCallId, objArgSeq, objArgType, seq, arrayElementFlag);
+            recordStringMethodCallPossibleValue(stringBuilder, methodCallPossibleEntry, methodCallId, objArgSeq, objArgType, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex);
 
             // 处理方法调用可能的被调用静态变量
             ClassFieldTypeAndName staticField = methodCallPossibleEntry.getStaticField();
             if (staticField != null) {
                 recordStringMethodCallPossibleInfo(stringBuilder, staticField.getClassAndFieldName(), methodCallId, objArgSeq,
-                        JavaCG2MethodCallInfoTypeEnum.MCIT_STATIC_FIELD, seq, arrayElementFlag, "");
+                        JavaCG2MethodCallInfoTypeEnum.MCIT_STATIC_FIELD, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
                 JavaCG2FileUtil.write2FileWithTab(methodCallStaticFieldWriter,
                         String.valueOf(methodCallId),
                         String.valueOf(objArgSeq),
@@ -1643,7 +1659,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             ClassFieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
             if (nonStaticField != null) {
                 recordStringMethodCallPossibleInfo(stringBuilder, nonStaticField.getClassAndFieldName(), methodCallId, objArgSeq,
-                        JavaCG2MethodCallInfoTypeEnum.MCIT_NON_STATIC_FIELD, seq, arrayElementFlag, "");
+                        JavaCG2MethodCallInfoTypeEnum.MCIT_NON_STATIC_FIELD, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
                 JavaCG2FileUtil.write2FileWithTab(methodCallNonStaticFieldWriter,
                         String.valueOf(methodCallId),
                         String.valueOf(objArgSeq),
@@ -1659,7 +1675,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             String staticFieldMethodCallStr = methodCallPossibleEntry.getStaticFieldMethodCall();
             if (staticFieldMethodCallStr != null) {
                 recordStringMethodCallPossibleInfo(stringBuilder, staticFieldMethodCallStr, methodCallId, objArgSeq, JavaCG2MethodCallInfoTypeEnum.MCIT_STATIC_FIELD_MCR,
-                        seq, arrayElementFlag, "");
+                        seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
                 ClassFieldMethodCall classFieldMethodCall = JavaCG2ClassMethodUtil.parseClassFieldMethodCall(staticFieldMethodCallStr);
                 JavaCG2FileUtil.write2FileWithTab(methodCallStaticFieldMCRWriter,
                         String.valueOf(methodCallId),
@@ -1676,7 +1692,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
             // 处理被调用对象或参数的变量名称可能信息
             recordStringMethodCallPossibleInfo(stringBuilder, methodCallPossibleEntry.getNameOfVariable(), methodCallId, objArgSeq,
-                    JavaCG2MethodCallInfoTypeEnum.MCIT_NAME_OF_VARIABLE, seq, arrayElementFlag, "");
+                    JavaCG2MethodCallInfoTypeEnum.MCIT_NAME_OF_VARIABLE, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
 
             // 处理被调用对象或参数的方法调用返回call_id可能信息
             Integer methodCallReturnInstructionPosition = methodCallPossibleEntry.getMethodCallReturnInstructionPosition();
@@ -1686,7 +1702,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 if (methodCallReturnCallId != null && methodCallReturnCallId != methodCallId) {
                     // 仅当当前call_id与被调用对象或参数的方法调用返回call_id不同时才记录
                     recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodCallReturnCallId), methodCallId, objArgSeq,
-                            JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_CALL_RETURN_CALL_ID, seq, arrayElementFlag, "");
+                            JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_CALL_RETURN_CALL_ID, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
                     // 记录方法调用使用方法调用返回值
                     JavaCG2FileUtil.write2FileWithTab(methodCallMethodCallReturnWriter,
                             String.valueOf(methodCallId),
@@ -1703,7 +1719,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             Integer methodArgSeq = methodCallPossibleEntry.getMethodArgSeq();
             if (methodArgSeq != null) {
                 recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodArgSeq), methodCallId, objArgSeq,
-                        JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_ARG_SEQ, seq, arrayElementFlag, "");
+                        JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_ARG_SEQ, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
             }
 
             // 处理被调用对象或参数等值转换前的方法调用返回call_id可能信息
@@ -1714,7 +1730,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 if (methodCallReturnCallIdEQC != null && methodCallReturnCallIdEQC != methodCallId) {
                     // 仅当当前call_id与被调用对象或参数的方法调用返回call_id不同时才记录
                     recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodCallReturnCallIdEQC), methodCallId, objArgSeq,
-                            JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_CALL_RETURN_CALL_ID_EQC, seq, arrayElementFlag, "");
+                            JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_CALL_RETURN_CALL_ID_EQC, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
                 }
             }
 
@@ -1722,14 +1738,14 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             Integer methodArgSeqEQC = methodCallPossibleEntry.getMethodArgSeqEQC();
             if (methodArgSeqEQC != null) {
                 recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(methodArgSeqEQC), methodCallId, objArgSeq,
-                        JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_ARG_SEQ_EQC, seq, arrayElementFlag, "");
+                        JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_ARG_SEQ_EQC, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
             }
 
             // 处理被调用对象或参数的catch异常对象对应的catch代码块开始指令偏移量可能信息
             Integer catchExceptionStartPosition = methodCallPossibleEntry.getCatchExceptionStartPosition();
             if (catchExceptionStartPosition != null) {
                 recordStringMethodCallPossibleInfo(stringBuilder, String.valueOf(catchExceptionStartPosition), methodCallId, objArgSeq,
-                        JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_CATCH_EXCEPTION_FROM_OFFSET, seq, arrayElementFlag, "");
+                        JavaCG2MethodCallInfoTypeEnum.MCIT_METHOD_CATCH_EXCEPTION_FROM_OFFSET, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
             }
         }
         JavaCG2FileUtil.write2FileNoLF(methodCallInfoWriter, stringBuilder.toString());
@@ -1737,7 +1753,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     // 记录方法调用可能的类型
     private void recordStringMethodCallPossibleType(StringBuilder stringBuilder, MethodCallPossibleEntry methodCallPossibleEntry, int methodCallId, int argSeq,
-                                                    JavaCG2Counter typeCounter, String arrayElementFlag) {
+                                                    JavaCG2Counter typeCounter, String arrayElementFlag, String arrayElementGroupIndexStr, int arrayDimensions, String arrayIndex) {
         if (useSpringBeanByAnnotationHandler.hasUseSpringBean()) {
             // 涉及Spring Bean，获取被调用对象可能的非静态字段名
             ClassFieldTypeAndName nonStaticField = methodCallPossibleEntry.getNonStaticField();
@@ -1748,7 +1764,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                     for (String springBeanFieldType : springBeanFieldTypeList) {
                         // 记录信息
                         recordStringMethodCallPossibleInfo(stringBuilder, springBeanFieldType, methodCallId, argSeq, JavaCG2MethodCallInfoTypeEnum.MCIT_TYPE,
-                                typeCounter.addAndGet(), arrayElementFlag, "");
+                                typeCounter.addAndGet(), arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
                     }
                     return;
                 }
@@ -1759,13 +1775,13 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         String type = methodCallPossibleEntry.getType();
         if (type != null) {
             recordStringMethodCallPossibleInfo(stringBuilder, type, methodCallId, argSeq, JavaCG2MethodCallInfoTypeEnum.MCIT_TYPE, typeCounter.addAndGet(),
-                    arrayElementFlag, "");
+                    arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, "");
         }
     }
 
     // 记录方法调用可能的信息
     private void recordStringMethodCallPossibleInfo(StringBuilder stringBuilder, String data, int methodCallId, int argSeq, JavaCG2MethodCallInfoTypeEnum type, int seq,
-                                                    String arrayElementFlag, String valueType) {
+                                                    String arrayElementFlag, String arrayElementGroupIndexStr, int arrayDimensions, String arrayIndex, String valueType) {
         /*
             文件格式：
                 方法调用ID
@@ -1773,7 +1789,13 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 值的序号
                 类型（类型/值/base64后的值/静态变量）
                 是否为数组类型
+                数组值组合的序号
+                数组维度
+                数组下标
+                值的类型
                 值（类型/值/base64后的值/静态变量）
+                调用方法
+                方法返回类型
          */
         if (data == null) {
             return;
@@ -1784,6 +1806,9 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 String.valueOf(seq),
                 type.getType(),
                 arrayElementFlag,
+                arrayElementGroupIndexStr,
+                String.valueOf(arrayDimensions),
+                arrayIndex,
                 valueType,
                 data,
                 callerFullMethod,
@@ -1794,7 +1819,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     // 处理方法调用可能的值
     private void recordStringMethodCallPossibleValue(StringBuilder stringBuilder, MethodCallPossibleEntry methodCallPossibleEntry, int methodCallId, int argSeq, String argType,
-                                                     int seq, String arrayElementFlag) {
+                                                     int seq, String arrayElementFlag, String arrayElementGroupIndexStr, int arrayDimensions, String arrayIndex) {
         Object value = methodCallPossibleEntry.getValue();
         if (value == null) {
             return;
@@ -1822,7 +1847,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             valueType = argType;
         }
         // 记录可能的值
-        recordStringMethodCallPossibleInfo(stringBuilder, strValue, methodCallId, argSeq, type, seq, arrayElementFlag, valueType);
+        recordStringMethodCallPossibleInfo(stringBuilder, strValue, methodCallId, argSeq, type, seq, arrayElementFlag, arrayElementGroupIndexStr, arrayDimensions, arrayIndex, valueType);
     }
 
     /**

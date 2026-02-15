@@ -60,6 +60,12 @@ public class MethodCallPossibleEntry {
     // catch异常对象对应的catch代码块开始指令偏移量
     private Integer catchExceptionStartPosition;
 
+    // 数组索引，格式为逗号分隔的索引，如"0"或"0,1"或"0,1,2"
+    private String arrayIndex;
+
+    // 数组值组合的序号
+    private Integer arrayCollectionSeq;
+
     // 以上增加字段后需要在compare()方法中增加对应的判断
 
     // 记录被设置的内容数量
@@ -96,7 +102,8 @@ public class MethodCallPossibleEntry {
                 && Objects.equals(methodCallReturnReturnTypeEQC, added.methodCallReturnReturnTypeEQC)
                 && Objects.equals(methodCallReturnInstructionPositionEQC, added.methodCallReturnInstructionPositionEQC)
                 && Objects.equals(methodArgSeqEQC, added.methodArgSeqEQC)
-                && Objects.equals(catchExceptionStartPosition, added.catchExceptionStartPosition);
+                && Objects.equals(catchExceptionStartPosition, added.catchExceptionStartPosition)
+                && StringUtils.equals(arrayIndex, added.arrayIndex);
     }
 
     public boolean hasContent() {
@@ -239,5 +246,21 @@ public class MethodCallPossibleEntry {
     public void setCatchExceptionStartPosition(Integer catchExceptionStartPosition) {
         this.catchExceptionStartPosition = catchExceptionStartPosition;
         addContentNum();
+    }
+
+    public String getArrayIndex() {
+        return arrayIndex;
+    }
+
+    public void setArrayIndex(String arrayIndex) {
+        this.arrayIndex = arrayIndex;
+    }
+
+    public Integer getArrayCollectionSeq() {
+        return arrayCollectionSeq;
+    }
+
+    public void setArrayCollectionSeq(Integer arrayCollectionSeq) {
+        this.arrayCollectionSeq = arrayCollectionSeq;
     }
 }

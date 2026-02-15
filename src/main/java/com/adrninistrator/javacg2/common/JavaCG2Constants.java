@@ -95,6 +95,9 @@ public class JavaCG2Constants {
     public static final int DEFAULT_LINE_NUMBER = 0;
     public static final String DEFAULT_LINE_NUMBER_STR = String.valueOf(DEFAULT_LINE_NUMBER);
 
+    // 非数组情况下，数组值组合的序号
+    public static final int NO_ARRAY_ELEMENT_COLLECTION_SEQ = -1;
+
     public static final String NEW_LINE = "\n";
     public static final String NEW_LINE_WINDOWS = "\r\n";
 

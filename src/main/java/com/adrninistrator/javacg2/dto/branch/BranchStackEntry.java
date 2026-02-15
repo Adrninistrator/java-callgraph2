@@ -1,5 +1,7 @@
 package com.adrninistrator.javacg2.dto.branch;
 
+import com.adrninistrator.javacg2.dto.frame.FrameSnapshotEntry;
+import com.adrninistrator.javacg2.dto.frame.InstructionStepList;
 import org.apache.bcel.generic.InstructionHandle;
 
 import java.util.ArrayList;
@@ -20,6 +22,12 @@ public class BranchStackEntry {
 
     // 当前处理的目标指令序号
     private int targetIhIndex;
+
+    // 栈桢信息快照
+    private FrameSnapshotEntry frameSnapshotEntry;
+
+    // 指令执行步骤
+    private InstructionStepList instructionStepList;
 
     public BranchStackEntry(InstructionHandle branchIh, int targetNum) {
         this.branchIh = branchIh;
@@ -46,6 +54,22 @@ public class BranchStackEntry {
 
     public void setTargetIhIndex(int targetIhIndex) {
         this.targetIhIndex = targetIhIndex;
+    }
+
+    public FrameSnapshotEntry getFrameSnapshotEntry() {
+        return frameSnapshotEntry;
+    }
+
+    public void setFrameSnapshotEntry(FrameSnapshotEntry frameSnapshotEntry) {
+        this.frameSnapshotEntry = frameSnapshotEntry;
+    }
+
+    public InstructionStepList getInstructionStepList() {
+        return instructionStepList;
+    }
+
+    public void setInstructionStepList(InstructionStepList instructionStepList) {
+        this.instructionStepList = instructionStepList;
     }
 
     @Override

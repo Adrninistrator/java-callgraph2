@@ -108,13 +108,6 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
     // 用于遍历分支指令的栈
     private ListAsStack<BranchStackEntry> branchStack;
 
-    /*
-        分支指令对应的栈桢信息快照
-        key     分支指令位置
-        value   栈桢信息快照
-     */
-    private Map<Integer, FrameSnapshotEntry> frameSnapshotMap4Branch;
-
     // 跳转目标指令与对应的栈桢信息快照列表
     private FrameSnapshotsOfIhs frameSnapshotsOfIhs4JumpTargets;
 
@@ -130,13 +123,6 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     // 指令执行的步骤
     private InstructionStepList instructionStepList;
-
-    /*
-        分支指令对应的执行步骤
-        key     分支指令位置
-        value   指令执行的步骤
-     */
-    private Map<Integer, InstructionStepList> instructionStepMap4Branch;
 
     /*
         方法调用可能的信息Map
@@ -355,11 +341,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         locals = new JavaCG2LocalVariables(localVariableTable, mg);
         nonStaticFieldInfoMap = new FieldInformationMap();
         staticFieldInfoMap = new FieldInformationMap();
-        frameSnapshotMap4Branch = new HashMap<>();
 
         if (JavaCG2Util.checkInDebugMode()) {
             instructionStepList = new InstructionStepList();
-            instructionStepMap4Branch = new HashMap<>();
         }
 
         if (parseMethodCallTypeValueFlag) {
@@ -412,6 +396,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                     break;
                 }
                 // 分支未处理完毕
+                logger.debug("分支未处理完毕 {} ({})", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih), getSourceLine());
                 continue;
             }
 
@@ -636,7 +621,7 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         branchStackEntry.addTargetIh(ifInstruction.getTarget());
 
         // 处理分支指令
-        return handleBranchInstruction(branchStackEntry);
+        return handleBranchInstruction(branchStackEntry, ih.getPosition());
     }
 
     /**
@@ -658,46 +643,45 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         branchStackEntry.addTargetIh(switchInstruction.getTarget());
 
         // 处理分支指令
-        return handleBranchInstruction(branchStackEntry);
+        return handleBranchInstruction(branchStackEntry, ih.getPosition());
     }
 
     /**
      * 处理分支指令
      *
      * @param branchStackEntry
+     * @param branchPosition 分支指令位置
      * @return false: 指令处理未完毕 true: 指令处理完毕
      */
-    private boolean handleBranchInstruction(BranchStackEntry branchStackEntry) {
+    private boolean handleBranchInstruction(BranchStackEntry branchStackEntry, int branchPosition) {
         if (branchStack == null) {
             branchStack = new ListAsStack<>();
         }
 
         // 检查是否出现循环/递归调用
-        int ihPosition = branchStackEntry.getBranchIh().getPosition();
         int head = branchStack.getHead();
         for (int i = 0; i <= head; i++) {
             BranchStackEntry tmpBranchStackEntry = branchStack.getElementAt(i);
-            if (ihPosition == tmpBranchStackEntry.getBranchIh().getPosition()) {
+            if (branchPosition == tmpBranchStackEntry.getBranchIh().getPosition()) {
                 // 当前指令已在栈中，处理用于遍历分支指令的栈中栈顶元素
                 return handleBranchStackTopEntry();
             }
         }
 
-        // 用于遍历分支指令的栈入栈
-        branchStack.push(branchStackEntry);
-        Integer branchStackIndex = branchStack.getHead();
-
         // 继续处理当前分支指令的第一个目标指令
         setIh2Next(branchStackEntry.getTargetIhList().get(0), "branch");
 
-        // 复制栈桢信息快照，记录与分支指令的关系
+        // 复制栈桢信息快照，保存到BranchStackEntry中
         FrameSnapshotEntry frameSnapshotEntry = new FrameSnapshotEntry(stack.copy(), locals.copy(), nonStaticFieldInfoMap.copy(), staticFieldInfoMap.copy());
-        frameSnapshotMap4Branch.put(branchStackIndex, frameSnapshotEntry);
+        branchStackEntry.setFrameSnapshotEntry(frameSnapshotEntry);
 
-        // 复制指令执行步骤，记录与分支指令的关系
+        // 复制指令执行步骤，保存到BranchStackEntry中
         if (instructionStepList != null) {
-            instructionStepMap4Branch.put(branchStackIndex, instructionStepList.copy());
+            branchStackEntry.setInstructionStepList(instructionStepList.copy());
         }
+
+        // 用于遍历分支指令的栈入栈
+        branchStack.push(branchStackEntry);
 
         // 指令未处理完毕
         return false;
@@ -752,23 +736,14 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
         // 获取用于遍历分支指令的栈中栈顶元素
         BranchStackEntry branchStackEntry = branchStack.peek();
         int branchPosition = branchStackEntry.getBranchIh().getPosition();
-        logger.debug("处理用于遍历分支指令的栈中栈顶元素 {}", branchPosition);
 
-        Integer branchStackIndex = branchStack.getHead();
         int targetIhIndex = branchStackEntry.getTargetIhIndex();
         targetIhIndex++;
 
         List<InstructionHandle> targetIhList = branchStackEntry.getTargetIhList();
         if (targetIhIndex >= targetIhList.size()) {
             // 当前分支目标指令已处理完毕
-
-            // 清除分支指令对应的栈桢信息快照
-            frameSnapshotMap4Branch.remove(branchStackIndex);
-
-            if (instructionStepList != null) {
-                // 清除分支指令对应的指令执行步骤快照
-                instructionStepMap4Branch.remove(branchStackIndex);
-            }
+            logger.debug("分支指令 {} 的所有分支处理完毕", branchPosition);
 
             // 用于遍历分支指令的栈删除栈顶元素
             branchStack.removeTop();
@@ -781,23 +756,30 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             return handleBranchStackTopEntry();
         }
 
+
         // 当前分支目标指令还未处理完毕
         // 继续处理当前分支指令的下一个目标指令
-        setIh2Next(branchStackEntry.getTargetIhList().get(targetIhIndex), "branch_next");
+        InstructionHandle nextIh = branchStackEntry.getTargetIhList().get(targetIhIndex);
+        setIh2Next(nextIh, "branch_next");
 
-        // 获取分支指令对应的栈桢信息快照
-        FrameSnapshotEntry frameSnapshot4Branch = frameSnapshotMap4Branch.get(branchStackIndex);
+        // 获取分支指令对应的栈桢信息快照（从BranchStackEntry中获取）
+        FrameSnapshotEntry frameSnapshot4Branch = branchStackEntry.getFrameSnapshotEntry();
         // 重新设置当前使用的栈桢对应的信息
         resetFrameInfo(frameSnapshot4Branch, null);
 
+        // 清除跳转目标指令的旧快照，确保从其他分支跳转过来的指令不会被跳过
+        if (frameSnapshotsOfIhs4JumpTargets != null) {
+            frameSnapshotsOfIhs4JumpTargets.clearSnapshot(nextIh.getPosition());
+        }
+
         if (instructionStepList != null) {
-            // 恢复本地变量到分支指令对应的情况
-            instructionStepList = instructionStepMap4Branch.get(branchStackIndex).copy();
+            // 恢复本地变量到分支指令对应的情况（从BranchStackEntry中获取）
+            instructionStepList = branchStackEntry.getInstructionStepList().copy();
         }
 
         branchStackEntry.setTargetIhIndex(targetIhIndex);
 
-        // 指令处理未完毕
+        // 指令未处理完毕
         return false;
     }
 

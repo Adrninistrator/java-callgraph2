@@ -52,6 +52,15 @@ public class FrameSnapshotsOfIhs {
     }
 
     /**
+     * 清除指定位置的快照
+     *
+     * @param position 指令位置
+     */
+    public void clearSnapshot(int position) {
+        frameSnapshotOfIhsMap.remove(position);
+    }
+
+    /**
      * 添加栈桢信息快照
      *
      * @param position
