@@ -20,11 +20,13 @@ JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD
 
 以下为支持的表达式变量示例
 
-# 2. class_name - 解析方法判断类名
+# 2. class_name
 
 - 表达式变量说明
 
 完整类名
+
+## 2.1. 解析方法判断类名
 
 - 表达式示例说明
 
@@ -54,13 +56,15 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.classmethod.TestElParseIgnoreMethodClassName
 
-# 3. package_name - 解析方法判断类的包名
+# 3. package_name
 
 - 表达式变量说明
 
 完整包名
 
 不会以.结束
+
+## 3.1. 解析方法判断类的包名
 
 - 表达式示例说明
 
@@ -90,11 +94,13 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.classmethod.TestElParseIgnoreMethodPackageName
 
-# 4. simple_class_name - 解析方法判断简单类名
+# 4. simple_class_name
 
 - 表达式变量说明
 
 简单类名
+
+## 4.1. 解析方法判断简单类名
 
 - 表达式示例说明
 
@@ -124,13 +130,15 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.classmethod.TestElParseIgnoreMethodSimpleClassName
 
-# 5. method_name - 解析方法判断方法名
+# 5. method_name
 
 - 表达式变量说明
 
 方法名
 
 不包括括号及方法参数
+
+## 5.1. 解析方法判断方法名
 
 - 表达式示例说明
 
@@ -160,11 +168,13 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.classmethod.TestElParseIgnoreMethodMethodName
 
-# 6. method_arg_num - 解析方法判断方法参数数量
+# 6. method_arg_num
 
 - 表达式变量说明
 
 方法参数数量
+
+## 6.1. 解析方法判断方法参数数量
 
 - 表达式示例说明
 
@@ -194,11 +204,13 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.classmethod.TestElParseIgnoreMethodMethodArgNum
 
-# 7. full_method - 解析方法判断完整方法
+# 7. full_method
 
 - 表达式变量说明
 
 完整方法
+
+## 7.1. 解析方法判断完整方法
 
 - 表达式示例说明
 

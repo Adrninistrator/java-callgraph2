@@ -22,11 +22,13 @@ JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS
 
 以下为支持的表达式变量示例
 
-# 2. class_name - 判断多个条件使用与
+# 2. class_name
 
 - 表达式变量说明
 
 完整类名
+
+## 2.1. 判断多个条件使用与
 
 - 表达式示例说明
 
@@ -56,11 +58,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameAnd
 
-# 3. class_name - 判断包含关键字
-
-- 表达式变量说明
-
-完整类名
+## 2.2. 判断包含关键字
 
 - 表达式示例说明
 
@@ -90,11 +88,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameContains
 
-# 4. class_name - 判断包含多个关键字之一
-
-- 表达式变量说明
-
-完整类名
+## 2.3. 判断包含多个关键字之一
 
 - 表达式示例说明
 
@@ -124,11 +118,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameContainsAny
 
-# 5. class_name - 判断包含关键字（忽略大小写）
-
-- 表达式变量说明
-
-完整类名
+## 2.4. 判断包含关键字（忽略大小写）
 
 - 表达式示例说明
 
@@ -158,11 +148,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameContainsIC
 
-# 6. class_name - 判断以关键字结尾
-
-- 表达式变量说明
-
-完整类名
+## 2.5. 判断以关键字结尾
 
 - 表达式示例说明
 
@@ -192,11 +178,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameEndsWith
 
-# 7. class_name - 判断以多个关键字之一结尾
-
-- 表达式变量说明
-
-完整类名
+## 2.6. 判断以多个关键字之一结尾
 
 - 表达式示例说明
 
@@ -226,11 +208,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameEndsWithAny
 
-# 8. class_name - 判断以关键字结尾（忽略大小写）
-
-- 表达式变量说明
-
-完整类名
+## 2.7. 判断以关键字结尾（忽略大小写）
 
 - 表达式示例说明
 
@@ -260,11 +238,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameEndsWithIC
 
-# 9. class_name - 判断等于关键字
-
-- 表达式变量说明
-
-完整类名
+## 2.8. 判断等于关键字
 
 - 表达式示例说明
 
@@ -294,11 +268,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameEquals
 
-# 10. class_name - 判断等于多个关键字之一
-
-- 表达式变量说明
-
-完整类名
+## 2.9. 判断等于多个关键字之一
 
 - 表达式示例说明
 
@@ -328,11 +298,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameEqualsAny
 
-# 11. class_name - 判断等于关键字（忽略大小写）
-
-- 表达式变量说明
-
-完整类名
+## 2.10. 判断等于关键字（忽略大小写）
 
 - 表达式示例说明
 
@@ -362,11 +328,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameEqualsIC
 
-# 12. class_name - 判断多个条件使用或
-
-- 表达式变量说明
-
-完整类名
+## 2.11. 判断多个条件使用或
 
 - 表达式示例说明
 
@@ -396,11 +358,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameOr
 
-# 13. class_name - 判断以关键字开头
-
-- 表达式变量说明
-
-完整类名
+## 2.12. 判断以关键字开头
 
 - 表达式示例说明
 
@@ -430,11 +388,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameStartsWith
 
-# 14. class_name - 判断以多个关键字之一开头
-
-- 表达式变量说明
-
-完整类名
+## 2.13. 判断以多个关键字之一开头
 
 - 表达式示例说明
 
@@ -464,11 +418,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.stringcompare.TestElParseIgnoreClassClassNameStartsWithAny
 
-# 15. class_name - 判断以关键字开头（忽略大小写）
-
-- 表达式变量说明
-
-完整类名
+## 2.14. 判断以关键字开头（忽略大小写）
 
 - 表达式示例说明
 

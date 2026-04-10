@@ -20,11 +20,13 @@ JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLASS
 
 以下为支持的表达式变量示例
 
-# 2. class_name - 解析类判断类名等于关键字
+# 2. class_name
 
 - 表达式变量说明
 
 完整类名
+
+## 2.1. 解析类判断类名等于关键字
 
 - 表达式示例说明
 
@@ -54,13 +56,15 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.classmethod.TestElParseIgnoreClassClassName
 
-# 3. package_name - 解析类判断包名
+# 3. package_name
 
 - 表达式变量说明
 
 完整包名
 
 不会以.结束
+
+## 3.1. 解析类判断包名
 
 - 表达式示例说明
 
@@ -90,11 +94,13 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_CLA
 
 test.el.classmethod.TestElParseIgnoreClassPackageName
 
-# 4. simple_class_name - 解析类判断简单类名
+# 4. simple_class_name
 
 - 表达式变量说明
 
 简单类名
+
+## 4.1. 解析类判断简单类名
 
 - 表达式示例说明
 

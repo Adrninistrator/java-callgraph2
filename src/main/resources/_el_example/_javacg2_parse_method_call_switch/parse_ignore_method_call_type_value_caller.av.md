@@ -20,11 +20,13 @@ JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_METHOD_CALL_TYPE_VALUE_CALLER
 
 以下为支持的表达式变量示例
 
-# 2. er_class_name - 方法调用类型与值判断调用类名
+# 2. er_class_name
 
 - 表达式变量说明
 
 调用方完整类名
+
+## 2.1. 方法调用类型与值判断调用类名
 
 - 表达式示例说明
 
@@ -54,13 +56,15 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.methodcalltypevalue.TestElParseIgnoreMethodCallTypeValueErClassName
 
-# 3. er_package_name - 方法调用类型与值判断调用类包名
+# 3. er_package_name
 
 - 表达式变量说明
 
 调用方完整包名
 
 不会以.结束
+
+## 3.1. 方法调用类型与值判断调用类包名
 
 - 表达式示例说明
 
@@ -90,11 +94,13 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.methodcalltypevalue.TestElParseIgnoreMethodCallTypeValueErPackageName
 
-# 4. er_simple_class_name - 方法调用类型与值判断调用简单类名
+# 4. er_simple_class_name
 
 - 表达式变量说明
 
 调用方简单类名
+
+## 4.1. 方法调用类型与值判断调用简单类名
 
 - 表达式示例说明
 
@@ -124,13 +130,15 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.methodcalltypevalue.TestElParseIgnoreMethodCallTypeValueErSimpleClassName
 
-# 5. er_method_name - 方法调用类型与值判断调用方法名
+# 5. er_method_name
 
 - 表达式变量说明
 
 调用方方法名
 
 不包括括号及方法参数
+
+## 5.1. 方法调用类型与值判断调用方法名
 
 - 表达式示例说明
 
@@ -160,11 +168,13 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.methodcalltypevalue.TestElParseIgnoreMethodCallTypeValueErMethodName
 
-# 6. er_method_arg_num - 方法调用类型与值判断调用方法参数数量
+# 6. er_method_arg_num
 
 - 表达式变量说明
 
 调用方方法参数数量
+
+## 6.1. 方法调用类型与值判断调用方法参数数量
 
 - 表达式示例说明
 
@@ -194,13 +204,15 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_PARSE_IGNORE_MET
 
 test.el.methodcalltypevalue.TestElParseIgnoreMethodCallTypeValueErMethodArgNum
 
-# 7. er_full_method - 方法调用类型与值判断调用完整方法
+# 7. er_full_method
 
 - 表达式变量说明
 
 调用方完整方法
 
 包括括号及方法参数
+
+## 7.1. 方法调用类型与值判断调用完整方法
 
 - 表达式示例说明
 

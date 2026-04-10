@@ -173,7 +173,7 @@ public class ElHandler {
         }
 
         logger.error("当前使用的表达式变量名称非法 {} 允许使用的变量查看表达式配置文件 {}", variableName, elConfigFile);
-        throw new JavaCG2RuntimeException("当前使用的表达式变量名称非法");
+        throw new JavaCG2RuntimeException("当前使用的表达式变量名称非法 " + variableName);
     }
 
     /**

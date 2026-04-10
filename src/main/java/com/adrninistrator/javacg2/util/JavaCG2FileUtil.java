@@ -213,6 +213,7 @@ public class JavaCG2FileUtil {
             return file;
         }
 
+        logger.info("通过文件路径未获取到文件，尝试从classpath中获取 {}", filePath);
         // 尝试从classpath中获取文件，路径以/开头
         URL url = JavaCG2FileUtil.class.getResource(JavaCG2Constants.FLAG_SLASH + filePath);
         if (url != null && "file".equals(url.getProtocol())) {

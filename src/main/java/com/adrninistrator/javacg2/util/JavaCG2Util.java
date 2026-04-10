@@ -1,7 +1,6 @@
 package com.adrninistrator.javacg2.util;
 
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
-import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -100,16 +99,6 @@ public class JavaCG2Util {
     }
 
     /**
-     * 获取当前时间
-     *
-     * @return
-     */
-    public static String currentTime() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd-HHmmss.SSS");
-        return sdf.format(new Date());
-    }
-
-    /**
      * 获取JVM参数中指定的目录路径
      *
      * @param jvmOptionKey
@@ -122,7 +111,7 @@ public class JavaCG2Util {
         }
 
         String newDirPath = JavaCG2FileUtil.addSeparator4FilePath(dirPath);
-        logger.debug("获取到JVM参数 {} {} 在路径结尾增加分隔符为 {}", jvmOptionKey, dirPath, newDirPath);
+        logger.info("获取到JVM参数 {} {} 在路径结尾增加分隔符为 {}", jvmOptionKey, dirPath, newDirPath);
         return newDirPath;
     }
 

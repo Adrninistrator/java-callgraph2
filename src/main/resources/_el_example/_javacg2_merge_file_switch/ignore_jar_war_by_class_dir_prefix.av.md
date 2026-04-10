@@ -32,11 +32,13 @@ JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_JAR_WAR_BY_CLASS_DIR_PREFIX
 
 以下为支持的表达式变量示例
 
-# 2. class_dir_prefix_level_ - 合并jar文件判断所有class文件所在指定层级的目录路径
+# 2. class_dir_prefix_level_
 
 - 表达式变量说明
 
 jar/war文件中的class文件对应指定层级的目录路径集合
+
+## 2.1. 合并jar文件判断所有class文件所在指定层级的目录路径
 
 - 表达式示例说明
 

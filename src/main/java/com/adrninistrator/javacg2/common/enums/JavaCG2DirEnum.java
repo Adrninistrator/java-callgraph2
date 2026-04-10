@@ -1,11 +1,13 @@
 package com.adrninistrator.javacg2.common.enums;
 
+import com.adrninistrator.javacg2.conf.enums.interfaces.DirInterface;
+
 /**
  * @author adrninistrator
  * @date 2025/1/30
  * @description:
  */
-public enum JavaCG2DirEnum {
+public enum JavaCG2DirEnum implements DirInterface {
 
     IDE_CONFIG("_javacg2_config", "java-callgraph2组件主要配置文件所在目录", true),
     IDE_MERGE_FILE_SWITCH("_javacg2_merge_file_switch", "合并jar/war文件、目录相关开关配置文件目录", true),
@@ -26,10 +28,12 @@ public enum JavaCG2DirEnum {
         this.input = input;
     }
 
+    @Override
     public String getDirName() {
         return dirName;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }

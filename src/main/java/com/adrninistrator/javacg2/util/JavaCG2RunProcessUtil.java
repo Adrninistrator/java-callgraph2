@@ -48,7 +48,7 @@ public class JavaCG2RunProcessUtil {
             Process childProcess = processBuilder.start();
 
             // 等待子进程结束
-            int exitCode = JavaCG2RunProcessUtil.waitProcess(childProcess);
+            int exitCode = waitProcess(childProcess);
             if (exitCode != 0) {
                 logger.error("子进程执行失败，返回码 {}", exitCode);
                 return false;

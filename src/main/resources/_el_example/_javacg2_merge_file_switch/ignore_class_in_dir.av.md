@@ -20,13 +20,15 @@ JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_CLASS_IN_DIR
 
 以下为支持的表达式变量示例
 
-# 2. file_path - 合并目录中的class文件判断文件绝对路径
+# 2. file_path
 
 - 表达式变量说明
 
 目录中的文件绝对路径
 
 以斜杠/为分隔符
+
+## 2.1. 合并目录中的class文件判断文件绝对路径
 
 - 表达式示例说明
 
@@ -56,13 +58,15 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNOR
 
 test.el.mergefile.TestElMergeFileIgnoreClassInDirAFPID
 
-# 3. file_dir_path - 合并目录中的class文件判断文件所在目录绝对路径
+# 3. file_dir_path
 
 - 表达式变量说明
 
 目录中的文件所在目录绝对路径
 
 以斜杠/为分隔符，不以分隔符结尾
+
+## 3.1. 合并目录中的class文件判断文件所在目录绝对路径
 
 - 表达式示例说明
 
@@ -92,11 +96,13 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNOR
 
 test.el.mergefile.TestElMergeFileIgnoreClassInDirAFDPID
 
-# 4. file_name - 合并目录中的class文件判断文件名
+# 4. file_name
 
 - 表达式变量说明
 
 文件名称
+
+## 4.1. 合并目录中的class文件判断文件名
 
 - 表达式示例说明
 

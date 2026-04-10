@@ -108,7 +108,7 @@ public class JavaCG2Entry {
     }
 
     public JavaCG2Entry() {
-        javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper(false);
+        javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper(false, null);
     }
 
     public JavaCG2Entry(JavaCG2ConfigureWrapper javaCG2ConfigureWrapper) {

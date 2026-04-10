@@ -879,3 +879,7 @@ JdbcTemplate.update(String sql, Object... args)
 |148|1|9|t|1|4|1|1||int|test.callgraph.array.TestUseArray1:testUse5()|void|
 |148|1|9|v|1|4|1|1|int|200|test.callgraph.array.TestUseArray1:testUse5()|void|
 |148|1|9|nov|1|4|1|1||b|test.callgraph.array.TestUseArray1:testUse5()|void|
+
+## 1.30. (4.0.5)
+
+使用配置文件指定配置参数时，支持通过代码指定配置文件根目录路径

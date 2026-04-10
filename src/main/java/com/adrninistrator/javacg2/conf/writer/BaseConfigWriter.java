@@ -5,6 +5,7 @@ import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
 import com.adrninistrator.javacg2.conf.BaseConfigureWrapper;
 import com.adrninistrator.javacg2.conf.enums.interfaces.ConfigInterface;
+import com.adrninistrator.javacg2.conf.enums.interfaces.DirInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.OtherConfigInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
@@ -66,13 +67,14 @@ public abstract class BaseConfigWriter {
      * @return
      */
     public boolean genMainConfig(MainConfigInterface[] mainConfigs) {
+        checkConfigDirName(mainConfigs[0].getFileName());
         try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + mainConfigs[0].getFileName())) {
             writeConfigClassName(writer, mainConfigs[0]);
             for (MainConfigInterface mainConfig : mainConfigs) {
                 for (String description : mainConfig.getDescriptions()) {
                     writeCommentLine(writer, description);
                 }
-                String value = chooseMainConfig(mainConfig);
+                Object value = chooseMainConfig(mainConfig);
                 writeNewLine(writer, mainConfig.getKey() + "=" + value);
                 writeNewLine(writer, "");
             }
@@ -91,6 +93,7 @@ public abstract class BaseConfigWriter {
      */
     public boolean genOtherConfig(OtherConfigInterface[] otherConfigs) {
         for (OtherConfigInterface otherConfig : otherConfigs) {
+            checkConfigDirName(otherConfig.getKey());
             try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + otherConfig.getKey())) {
                 writeConfigClassName(writer, otherConfig);
                 for (String description : otherConfig.getDescriptions()) {
@@ -127,6 +130,7 @@ public abstract class BaseConfigWriter {
         for (ElConfigInterface elConfig : elConfigs) {
             boolean elExample = JavaCG2ElUtil.checkElExample(elConfig);
             String fileName = elConfig.getKey();
+            checkConfigDirName(fileName);
             try (Writer writer = JavaCG2FileUtil.genBufferedWriter(rootDirPath + elConfig.getKey())) {
                 if (!elExample) {
                     writeConfigClassName(writer, elConfig);
@@ -341,8 +345,11 @@ public abstract class BaseConfigWriter {
     // 选择对应的EL表达式枚举
     protected abstract ElConfigInterface[] chooseElConfigEnums();
 
+    // 选择对应的配置目录枚举
+    protected abstract DirInterface[] chooseConfigDirEnums();
+
     // 选择使用的主要配置参数值
-    protected String chooseMainConfig(MainConfigInterface mainConfig) {
+    protected Object chooseMainConfig(MainConfigInterface mainConfig) {
         if (baseConfigureWrapper != null) {
             return baseConfigureWrapper.getMainConfig(mainConfig, false);
         }
@@ -376,6 +383,16 @@ public abstract class BaseConfigWriter {
                     elConfigInterface.getClass().getSimpleName() + JavaCG2Constants.FLAG_DOT + elConfigInterface.getEnumConstantName()));
         }
         return stringBuilder.toString();
+    }
+
+    private void checkConfigDirName(String configFileName) {
+        DirInterface[] dirs = chooseConfigDirEnums();
+        for (DirInterface dir : dirs) {
+            if (configFileName.startsWith(dir.getDirName() + "/")) {
+                return;
+            }
+        }
+        throw new JavaCG2RuntimeException("未使用合法的配置文件目录 " + configFileName);
     }
 
     public void setBaseConfigureWrapper(BaseConfigureWrapper baseConfigureWrapper) {

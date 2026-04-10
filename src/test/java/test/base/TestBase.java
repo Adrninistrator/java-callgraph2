@@ -30,6 +30,7 @@ public abstract class TestBase {
     public static final String JAR_OUTPUT_JAR = "build/jar_output.jar";
     public static final String JAR_OUTPUT_WAR = "build/jar_output.war";
     public static final String OUT_TEST_DIR = "out/test";
+    public static final String JAR_TEST_JAR = "build/test.jar";
 
     /**
      * 获取 java-all-call-graph 项目中的 test.jar 文件路径
@@ -79,7 +80,7 @@ public abstract class TestBase {
     private List<String> genJarList(boolean findInJacgDir, String... inputFiles) {
         List<String> inputFileList = new ArrayList<>();
         if (ArrayUtils.isEmpty(inputFiles)) {
-            inputFileList.add("/build/test.jar");
+            inputFileList.add(JAR_TEST_JAR);
         } else {
             inputFileList.addAll(Arrays.asList(inputFiles));
         }

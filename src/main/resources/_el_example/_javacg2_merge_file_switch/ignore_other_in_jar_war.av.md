@@ -20,7 +20,7 @@ JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNORE_OTHER_IN_JAR_WAR
 
 以下为支持的表达式变量示例
 
-# 2. file_path - 合并jar文件中的其他文件判断文件相对路径
+# 2. file_path
 
 - 表达式变量说明
 
@@ -29,6 +29,8 @@ jar/war文件中的文件相对路径
 相对根目录的路径
 
 以斜杠/为分隔符，不以分隔符开头
+
+## 2.1. 合并jar文件中的其他文件判断文件相对路径
 
 - 表达式示例说明
 
@@ -58,15 +60,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNOR
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInJarFPIJW
 
-# 3. file_path - 合并war文件中的其他文件判断文件相对路径
-
-- 表达式变量说明
-
-jar/war文件中的文件相对路径
-
-相对根目录的路径
-
-以斜杠/为分隔符，不以分隔符开头
+## 2.2. 合并war文件中的其他文件判断文件相对路径
 
 - 表达式示例说明
 
@@ -96,7 +90,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNOR
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInWarFPIJW
 
-# 4. file_dir_path - 合并jar文件中的其他文件判断文件所在目录相对路径
+# 3. file_dir_path
 
 - 表达式变量说明
 
@@ -105,6 +99,8 @@ jar/war文件中的文件所在目录相对路径
 相对根目录的路径
 
 以斜杠/为分隔符，不以分隔符开头或结尾
+
+## 3.1. 合并jar文件中的其他文件判断文件所在目录相对路径
 
 - 表达式示例说明
 
@@ -134,15 +130,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNOR
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInJarFDPIJW
 
-# 5. file_dir_path - 合并war文件中的其他文件判断文件所在目录相对路径
-
-- 表达式变量说明
-
-jar/war文件中的文件所在目录相对路径
-
-相对根目录的路径
-
-以斜杠/为分隔符，不以分隔符开头或结尾
+## 3.2. 合并war文件中的其他文件判断文件所在目录相对路径
 
 - 表达式示例说明
 
@@ -172,11 +160,13 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNOR
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInWarFDPIJW
 
-# 6. file_name - 合并jar文件中的其他文件判断文件名
+# 4. file_name
 
 - 表达式变量说明
 
 文件名称
+
+## 4.1. 合并jar文件中的其他文件判断文件名
 
 - 表达式示例说明
 
@@ -206,11 +196,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNOR
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInJarFN
 
-# 7. file_name - 合并war文件中的其他文件判断文件名
-
-- 表达式变量说明
-
-文件名称
+## 4.2. 合并war文件中的其他文件判断文件名
 
 - 表达式示例说明
 
@@ -240,13 +226,15 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNOR
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInWarFN
 
-# 8. file_ext - 合并jar文件中的其他文件判断文件后缀
+# 5. file_ext
 
 - 表达式变量说明
 
 非jar、war、class文件后缀
 
 以.开头
+
+## 5.1. 合并jar文件中的其他文件判断文件后缀
 
 - 表达式示例说明
 
@@ -276,13 +264,7 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_MERGE_FILE_IGNOR
 
 test.el.mergefile.TestElMergeFileIgnoreOtherInJarOFE
 
-# 9. file_ext - 合并war文件中的其他文件判断文件后缀
-
-- 表达式变量说明
-
-非jar、war、class文件后缀
-
-以.开头
+## 5.2. 合并war文件中的其他文件判断文件后缀
 
 - 表达式示例说明
 

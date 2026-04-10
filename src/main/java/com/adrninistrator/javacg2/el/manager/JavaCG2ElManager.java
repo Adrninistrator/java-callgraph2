@@ -351,12 +351,13 @@ public class JavaCG2ElManager extends CommonElManager {
 
     /**
      * 检查是否需要跳过处理XML文件中的Spring Bean
+     *
      * @param beanName
      * @param className
      * @param profile
      * @return
      */
-    public boolean checkIgnoreSpringBeanInXml(String beanName,String className,String profile) {
+    public boolean checkIgnoreSpringBeanInXml(String beanName, String className, String profile) {
         ElHandler elHandler = getElHandlerMap(JavaCG2ElConfigEnum.ECE_HANDLE_IGNORE_SPRING_BEAN_IN_XML);
         Map<String, Object> usedVariableMap = elHandler.genMap4ElExecute();
         if (usedVariableMap == null) {
@@ -369,7 +370,7 @@ public class JavaCG2ElManager extends CommonElManager {
         }
         displayMap.put(JavaCG2ElAllowedVariableEnum.EAVE_SPB_CLASS_NAME.getVariableName(), className);
         if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_SPB_CLASS_NAME)) {
-            usedVariableMap.put(JavaCG2ElAllowedVariableEnum.EAVE_SPB_CLASS_NAME.getVariableName(),className );
+            usedVariableMap.put(JavaCG2ElAllowedVariableEnum.EAVE_SPB_CLASS_NAME.getVariableName(), className);
         }
         displayMap.put(JavaCG2ElAllowedVariableEnum.EAVE_SPB_PROFILE.getVariableName(), profile);
         if (elHandler.checkVariableNameSpecified(JavaCG2ElAllowedVariableEnum.EAVE_SPB_PROFILE)) {

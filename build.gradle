@@ -6,7 +6,7 @@ apply plugin: 'idea'
 apply from: 'unittest.gradle'
 
 group 'com.github.adrninistrator'
-version = "4.0.4"
+version = "4.0.5"
 def projectName = "java-callgraph2"
 description = "${projectName}"
 sourceCompatibility = 1.8
@@ -175,6 +175,7 @@ idea {
         excludeDirs += file("${jar_output_dir}")
         excludeDirs += file('bat')
         excludeDirs += file('shell')
+        excludeDirs += file('prompt')
         excludeDirs += file('log_javacg2')
         excludeDirs += file('docs')
     }

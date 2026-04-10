@@ -20,11 +20,13 @@ JavaCG2ElConfigEnum.ECE_HANDLE_IGNORE_SPRING_BEAN_IN_XML
 
 以下为支持的表达式变量示例
 
-# 2. bean_name - XML中的Spring Bean判断Bean名称
+# 2. bean_name
 
 - 表达式变量说明
 
 Spring Bean名称
+
+## 2.1. XML中的Spring Bean判断Bean名称
 
 - 表达式示例说明
 
@@ -54,11 +56,13 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_HANDLE_IGNORE_SP
 
 test.el.handlespbinxml.TestElHandleIgnoreSPBInXmlBeanName
 
-# 3. class_name - XML中的Spring Bean判断类名
+# 3. class_name
 
 - 表达式变量说明
 
 Spring Bean类名
+
+## 3.1. XML中的Spring Bean判断类名
 
 - 表达式示例说明
 
@@ -88,13 +92,15 @@ javaCG2ConfigureWrapper.setElConfigText(JavaCG2ElConfigEnum.ECE_HANDLE_IGNORE_SP
 
 test.el.handlespbinxml.TestElHandleIgnoreSPBInXmlClassName
 
-# 4. profile - XML中的Spring Bean判断profile
+# 4. profile
 
 - 表达式变量说明
 
 Spring Bean profile
 
 可能为空字符串，可能包含一级或多级，使用半角逗号拼接
+
+## 4.1. XML中的Spring Bean判断profile
 
 - 表达式示例说明
 

@@ -6,6 +6,7 @@ import com.adrninistrator.javacg2.el.checker.AbstractElChecker;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.el.handler.ElHandler;
 import com.adrninistrator.javacg2.el.util.JavaCG2ElUtil;
+import com.adrninistrator.javacg2.exceptions.JavaCG2ElConfigRuntimeException;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.thread.ThreadFactory4TPE;
 import com.adrninistrator.javacg2.util.JavaCG2FileUtil;
@@ -39,39 +40,49 @@ public abstract class AbstractElManager implements Closeable {
          */
     private final Map<String, ElHandler> elHandlerMap = new HashMap<>();
 
-    // 用于写表达式忽略数据的文件输出流
-    private final Writer elIgnoreDataWriter;
-
-    // 用于写表达式忽略数据文件的线程池，在java-all-call-graph中可能在多线程中被调用
-    private final ThreadPoolExecutor writeFileTPE;
-
     // 是否调试模式
     private final boolean debugMode;
 
     private final BaseConfigureWrapper configureWrapper;
 
+    // 用于写表达式忽略数据的文件输出流
+    private Writer elIgnoreDataWriter;
+
+    // 用于写表达式忽略数据文件的线程池，在java-all-call-graph中可能在多线程中被调用
+    private ThreadPoolExecutor writeFileTPE;
+
     private boolean closed = false;
 
+    /**
+     *
+     * @param configureWrapper   配置参数包装类对象
+     * @param elConfigInterfaces 需要使用的表达式配置数组
+     * @param outputDirPath      输出目录路径，为null代表检查模式
+     */
     protected AbstractElManager(BaseConfigureWrapper configureWrapper, ElConfigInterface[] elConfigInterfaces, String outputDirPath) {
-        String elIgnoreDataFilePath = JavaCG2FileUtil.addSeparator4FilePath(outputDirPath) + JavaCG2Constants.EL_IGNORE_DATA_LOG_FILE_NAME;
-        logger.info("保存表达式忽略数据的文件路径 {}", elIgnoreDataFilePath);
-        try {
-            elIgnoreDataWriter = JavaCG2FileUtil.genBufferedWriter(elIgnoreDataFilePath);
-        } catch (FileNotFoundException e) {
-            logger.error("出现异常 ", e);
-            throw new JavaCG2RuntimeException();
-        }
-
-        ThreadFactory4TPE threadFactory4TPE = new ThreadFactory4TPE(JavaCG2Constants.THREAD_NAME_PREFIX_EL_WRITE_IGNORE_DATA, false);
-        writeFileTPE = new ThreadPoolExecutor(1, 1, 10L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), threadFactory4TPE);
-
-        // 在JVM关闭时检查是否有执行关闭操作
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if (!closed) {
-                logger.error("未执行关闭操作");
-                close();
+        if (outputDirPath != null) {
+            String elIgnoreDataFilePath = JavaCG2FileUtil.addSeparator4FilePath(outputDirPath) + JavaCG2Constants.EL_IGNORE_DATA_LOG_FILE_NAME;
+            logger.info("保存表达式忽略数据的文件路径 {}", elIgnoreDataFilePath);
+            try {
+                elIgnoreDataWriter = JavaCG2FileUtil.genBufferedWriter(elIgnoreDataFilePath);
+            } catch (FileNotFoundException e) {
+                logger.error("出现异常 ", e);
+                throw new JavaCG2RuntimeException();
             }
-        }));
+
+            ThreadFactory4TPE threadFactory4TPE = new ThreadFactory4TPE(JavaCG2Constants.THREAD_NAME_PREFIX_EL_WRITE_IGNORE_DATA, false);
+            writeFileTPE = new ThreadPoolExecutor(1, 1, 10L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), threadFactory4TPE);
+
+            // 在JVM关闭时检查是否有执行关闭操作
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                if (!closed) {
+                    logger.error("未执行关闭操作");
+                    close();
+                }
+            }));
+        } else {
+            logger.info("检查模式，不生成表达式忽略数据文件");
+        }
 
         // 生成ElHandler对象
         for (ElConfigInterface elConfig : elConfigInterfaces) {
@@ -80,18 +91,18 @@ public abstract class AbstractElManager implements Closeable {
                 continue;
             }
             String fileName = elConfig.getKey();
-            // 匹配配置文件中的表达式文本
-            String elText = configureWrapper.getElConfigText(elConfig);
-            ElHandler elHandler = new ElHandler(elText, elConfig, elIgnoreDataWriter, writeFileTPE);
-            elHandlerMap.put(fileName, elHandler);
-
             // 检查表达式
             try {
+                // 匹配配置文件中的表达式文本
+                String elText = configureWrapper.getElConfigText(elConfig);
+                ElHandler elHandler = new ElHandler(elText, elConfig, elIgnoreDataWriter, writeFileTPE);
+                elHandlerMap.put(fileName, elHandler);
+
                 AbstractElChecker elChecker = elCheckerClass.newInstance();
                 elChecker.check(this, elConfig);
             } catch (Exception e) {
-                logger.error("创建对象实例失败 {}", elCheckerClass.getName());
-                throw new JavaCG2RuntimeException("创建对象实例失败");
+                logger.error("EL表达式初始化失败 {} ", elCheckerClass.getName(), e);
+                throw new JavaCG2ElConfigRuntimeException(e.getMessage(), elConfig);
             }
         }
         // 选择是否为调试模式

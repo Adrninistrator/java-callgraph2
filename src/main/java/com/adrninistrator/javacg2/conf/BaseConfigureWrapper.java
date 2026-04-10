@@ -4,7 +4,6 @@ import com.adrninistrator.javacg2.common.JavaCG2ConfigPrintConstants;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2YesNoEnum;
 import com.adrninistrator.javacg2.comparator.Comparator4MainConfig;
-import com.adrninistrator.javacg2.conf.enums.interfaces.ConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.MainConfigInterface;
 import com.adrninistrator.javacg2.conf.enums.interfaces.OtherConfigInterface;
 import com.adrninistrator.javacg2.el.enums.ElStringAnyFunctionEnum;
@@ -44,6 +43,9 @@ import java.util.Set;
  */
 public abstract class BaseConfigureWrapper {
     private static final Logger logger = LoggerFactory.getLogger(BaseConfigureWrapper.class);
+
+    // 指定的配置文件根目录路径
+    private final String inputRootPath;
 
     // 记录使用过当前配置类的简单类名列表
     private final List<String> useThisSimpleClassNameList = new ArrayList<>();
@@ -111,19 +113,24 @@ public abstract class BaseConfigureWrapper {
      */
     private Map<String, String> elConfigMap = new HashMap<>();
 
+    // 使用的配置文件根路径
+    private String usedInputRootPath;
+
     /**
      * 默认构造函数，仅使用代码中指定的参数，忽略配置文件中的参数
      */
     public BaseConfigureWrapper() {
-        this(true);
+        this(true, null);
     }
 
     /**
      * 构造函数，指定使用代码中指定的参数，还是使用配置文件中的参数
      *
      * @param onlyUseConfigInJavaCode true: 仅使用代码中指定的参数，忽略配置文件中的参数 false: 使用配置文件中的参数
+     * @param inputRootPath           指定的配置文件根目录路径，可为空
      */
-    public BaseConfigureWrapper(boolean onlyUseConfigInJavaCode) {
+    public BaseConfigureWrapper(boolean onlyUseConfigInJavaCode, String inputRootPath) {
+        this.inputRootPath = inputRootPath;
         allowedConfigClassNameSet.addAll(Arrays.asList(chooseAllowedConfigClassNames()));
         if (onlyUseConfigInJavaCode) {
             logger.info("仅使用代码中指定的参数，忽略配置文件中的参数");
@@ -559,7 +566,7 @@ public abstract class BaseConfigureWrapper {
         String configFileName = mainConfig.getFileName();
         Properties properties = propertiesMap.get(configFileName);
         if (properties == null) {
-            try (BufferedReader reader = JavaCG2FileUtil.genBufferedReader(JavaCG2FileUtil.getFileInputStream(JavaCG2Util.getInputRootPath() + configFileName))) {
+            try (BufferedReader reader = JavaCG2FileUtil.genBufferedReader(JavaCG2FileUtil.getFileInputStream(chooseInputRootPath() + configFileName))) {
                 properties = new Properties();
                 properties.load(reader);
                 propertiesMap.put(configFileName, properties);
@@ -625,7 +632,7 @@ public abstract class BaseConfigureWrapper {
         }
 
         // 获取其他配置文件中的参数
-        configSet = JavaCG2FileUtil.readFile2Set(JavaCG2Util.getInputRootPath() + configFileName);
+        configSet = JavaCG2FileUtil.readFile2Set(chooseInputRootPath() + configFileName);
         // 将配置文件中的参数记录到内存中，用于后续使用
         otherConfigSetMap.put(configFileName, configSet);
         if (useConfig) {
@@ -668,7 +675,7 @@ public abstract class BaseConfigureWrapper {
         }
 
         // 获取其他配置文件中的参数
-        configList = JavaCG2FileUtil.readFile2List(JavaCG2Util.getInputRootPath() + configFileName);
+        configList = JavaCG2FileUtil.readFile2List(chooseInputRootPath() + configFileName);
         // 将配置文件中的参数记录到内存中，用于后续使用
         otherConfigListMap.put(configFileName, configList);
         if (useConfig) {
@@ -745,7 +752,7 @@ public abstract class BaseConfigureWrapper {
         }
 
         // 获取配置文件中的参数
-        List<String> list = JavaCG2FileUtil.readFile2List(JavaCG2Util.getInputRootPath() + configFileName, "##");
+        List<String> list = JavaCG2FileUtil.readFile2List(chooseInputRootPath() + configFileName, "##");
         elText = StringUtils.join(list, "");
         if (StringUtils.isBlank(elText)) {
             elText = "";
@@ -1214,6 +1221,28 @@ public abstract class BaseConfigureWrapper {
         // \r\n替换为<br>
         return StringUtils.join(array, MarkdownConstants.FLAG_HTML_NEW_LINE)
                 .replace(JavaCG2Constants.NEW_LINE_WINDOWS, MarkdownConstants.FLAG_HTML_NEW_LINE);
+    }
+
+    private String chooseInputRootPath() {
+        if (usedInputRootPath != null) {
+            return usedInputRootPath;
+        }
+
+        String tmpInputRootPath;
+        if (inputRootPath != null) {
+            logger.info("指定的配置文件根目录: {}", inputRootPath);
+            tmpInputRootPath = inputRootPath;
+        } else {
+            tmpInputRootPath = JavaCG2Util.getInputRootPath();
+        }
+        if ("".equals(tmpInputRootPath)) {
+            // 未指定输入路径目录路径时，使用空字符串
+            usedInputRootPath = "";
+        } else {
+            usedInputRootPath = JavaCG2FileUtil.addSeparator4FilePath(JavaCG2FileUtil.getCanonicalPath(tmpInputRootPath));
+        }
+        logger.info("使用的配置文件根目录: {}", usedInputRootPath);
+        return usedInputRootPath;
     }
 
     public Map<String, Set<MainConfigInterface>> getUsedMainConfigMap() {

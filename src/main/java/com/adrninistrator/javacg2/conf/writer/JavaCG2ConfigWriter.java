@@ -3,6 +3,7 @@ package com.adrninistrator.javacg2.conf.writer;
 import com.adrninistrator.javacg2.common.JavaCG2Constants;
 import com.adrninistrator.javacg2.common.enums.JavaCG2DirEnum;
 import com.adrninistrator.javacg2.conf.enums.JavaCG2ConfigKeyEnum;
+import com.adrninistrator.javacg2.conf.enums.interfaces.DirInterface;
 import com.adrninistrator.javacg2.el.enums.JavaCG2ElConfigEnum;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 
@@ -34,5 +35,10 @@ public class JavaCG2ConfigWriter extends BaseConfigWriter {
     @Override
     protected ElConfigInterface[] chooseElConfigEnums() {
         return JavaCG2ElConfigEnum.values();
+    }
+
+    @Override
+    protected DirInterface[] chooseConfigDirEnums() {
+        return JavaCG2DirEnum.values();
     }
 }

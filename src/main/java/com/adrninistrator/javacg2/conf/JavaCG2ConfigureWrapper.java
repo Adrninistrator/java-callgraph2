@@ -21,8 +21,12 @@ public class JavaCG2ConfigureWrapper extends BaseConfigureWrapper {
     public JavaCG2ConfigureWrapper() {
     }
 
+    public JavaCG2ConfigureWrapper(boolean onlyUseConfigInJavaCode, String inputRootPath) {
+        super(onlyUseConfigInJavaCode, inputRootPath);
+    }
+
     public JavaCG2ConfigureWrapper(boolean onlyUseConfigInJavaCode) {
-        super(onlyUseConfigInJavaCode);
+        super(onlyUseConfigInJavaCode, null);
     }
 
     @Override

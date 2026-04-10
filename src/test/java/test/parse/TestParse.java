@@ -22,7 +22,7 @@ public class TestParse extends TestBase {
     @Test
     public void testParseJavaCG2TestLib() {
         JavaCG2ConfigureWrapper javaCG2ConfigureWrapper = new JavaCG2ConfigureWrapper();
-        javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, "build/test.jar");
+        javaCG2ConfigureWrapper.setOtherConfigList(JavaCG2OtherConfigFileUseListEnum.OCFULE_JAR_DIR, JAR_TEST_JAR);
         JavaCG2Entry javaCG2Entry = new JavaCG2Entry(javaCG2ConfigureWrapper);
         Assert.assertTrue(javaCG2Entry.run());
     }
