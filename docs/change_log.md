@@ -883,3 +883,9 @@ JdbcTemplate.update(String sql, Object... args)
 ## 1.30. (4.0.5)
 
 使用配置文件指定配置参数时，支持通过代码指定配置文件根目录路径
+
+## 1.31. (4.0.6)
+
+### 1.31.1. 增加配置参数限制 EL 表达式忽略数据文件的最大行数
+
+在配置文件 _javacg2_config/config.properties 中增加配置参数 el.ignore.data.max.line.num，默认 10 万行

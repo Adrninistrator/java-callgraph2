@@ -75,6 +75,9 @@ public enum JavaCG2ConfigKeyEnum implements MainConfigInterface {
                     "默认为 8 ，代表 JDK8 及以下版本"
             },
             Integer.class, false, "8"),
+    CKE_EL_IGNORE_DATA_MAX_LINE_NUM("el.ignore.data.max.line.num",
+            new String[]{"EL表达式忽略数据文件的最大行数，默认10万行"},
+            Integer.class, false, "100000"),
     ;
 
     // 参数key

@@ -65,6 +65,12 @@ public class ElHandler {
     // 用于写表达式忽略数据文件的线程池
     private ThreadPoolExecutor writeFileTPE;
 
+    // EL表达式忽略数据文件的最大行数
+    private int elIgnoreDataMaxLineNum;
+
+    // 已写入忽略数据文件的行数
+    private int elIgnoreDataWrittenLineNum = 0;
+
     // 表达式是否用于忽略数据
     private boolean ignoreData;
 
@@ -78,12 +84,13 @@ public class ElHandler {
     private boolean debugMode = false;
 
     /**
-     * @param expressionText     表达式文本
-     * @param elConfig           表达式配置
-     * @param elIgnoreDataWriter 表达式配置
-     * @param writeFileTPE       表达式配置
+     * @param expressionText            表达式文本
+     * @param elConfig                  表达式配置
+     * @param elIgnoreDataWriter        表达式忽略数据文件输出流
+     * @param writeFileTPE              表达式配置
+     * @param elIgnoreDataMaxLineNum    EL表达式忽略数据文件的最大行数
      */
-    public ElHandler(String expressionText, ElConfigInterface elConfig, Writer elIgnoreDataWriter, ThreadPoolExecutor writeFileTPE) {
+    public ElHandler(String expressionText, ElConfigInterface elConfig, Writer elIgnoreDataWriter, ThreadPoolExecutor writeFileTPE, int elIgnoreDataMaxLineNum) {
         this.expressionText = expressionText;
         if (StringUtils.isBlank(expressionText)) {
             // 若表达式文本为空，则不创建 Expression 对象
@@ -112,6 +119,7 @@ public class ElHandler {
 
         this.elIgnoreDataWriter = elIgnoreDataWriter;
         this.writeFileTPE = writeFileTPE;
+        this.elIgnoreDataMaxLineNum = elIgnoreDataMaxLineNum;
     }
 
     // 创建 Aviator 实例
@@ -254,6 +262,11 @@ public class ElHandler {
         }
         boolean result = (boolean) executeResult;
         if (result && ignoreData && !JavaCG2ElUtil.checkRunInCheckerFlag()) {
+            // 检查是否超过最大行数限制
+            if (elIgnoreDataWrittenLineNum >= elIgnoreDataMaxLineNum) {
+                return true;
+            }
+            elIgnoreDataWrittenLineNum++;
             // 表达式执行结果为true，且当前表达式是需要忽略数据，且没有执行用于检测的表达式标志
             writeFileTPE.execute(() -> {
                 String mapValueStr = JavaCG2Util.getMapValueStr(displayMap);

@@ -51,7 +51,20 @@ public abstract class AbstractElManager implements Closeable {
     // 用于写表达式忽略数据文件的线程池，在java-all-call-graph中可能在多线程中被调用
     private ThreadPoolExecutor writeFileTPE;
 
+    // EL表达式忽略数据文件的最大行数
+    private int elIgnoreDataMaxLineNum;
+
     private boolean closed = false;
+
+    /**
+     * 选择EL表达式忽略数据文件的最大行数，由子类重载
+     *
+     * @param configureWrapper 配置参数包装类对象
+     * @return 最大行数
+     */
+    protected int chooseElIgnoreDataMaxLineNum(BaseConfigureWrapper configureWrapper) {
+        return 0;
+    }
 
     /**
      *
@@ -84,6 +97,10 @@ public abstract class AbstractElManager implements Closeable {
             logger.info("检查模式，不生成表达式忽略数据文件");
         }
 
+        // 选择EL表达式忽略数据文件的最大行数
+        elIgnoreDataMaxLineNum = chooseElIgnoreDataMaxLineNum(configureWrapper);
+        logger.info("EL表达式忽略数据文件的最大行数 {}", elIgnoreDataMaxLineNum);
+
         // 生成ElHandler对象
         for (ElConfigInterface elConfig : elConfigInterfaces) {
             Class<? extends AbstractElChecker> elCheckerClass = elConfig.getElCheckClass();
@@ -95,7 +112,7 @@ public abstract class AbstractElManager implements Closeable {
             try {
                 // 匹配配置文件中的表达式文本
                 String elText = configureWrapper.getElConfigText(elConfig);
-                ElHandler elHandler = new ElHandler(elText, elConfig, elIgnoreDataWriter, writeFileTPE);
+                ElHandler elHandler = new ElHandler(elText, elConfig, elIgnoreDataWriter, writeFileTPE, elIgnoreDataMaxLineNum);
                 elHandlerMap.put(fileName, elHandler);
 
                 AbstractElChecker elChecker = elCheckerClass.newInstance();

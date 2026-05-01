@@ -211,6 +211,8 @@ public abstract class BaseConfigWriter {
                 "配置文件中有说明允许使用的变量信息",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 查看表达式忽略的数据",
                 "若表达式用于忽略数据，则被忽略的数据会记录在日志文件中，保存在当前输出目录中，文件名为 " + JavaCG2Constants.EL_IGNORE_DATA_LOG_FILE_NAME,
+                JavaCG2Constants.NEW_LINE_WINDOWS + "# 限制表达式忽略的数据输出行数",
+                chooseElIgnoreDataMaxLineNumText() + "可以限制表达式忽略的数据输出行数",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 支持使用的表达式配置",
                 genElConfigInfoText(),
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式示例",
@@ -335,6 +337,9 @@ public abstract class BaseConfigWriter {
                 "（示例）string.startsWithAny(str1, 'abc', 'def', 'ghi')",
         };
     }
+
+    // 选择需要生成的限制表达式忽略的数据输出行数配置参数说明
+    protected abstract String chooseElIgnoreDataMaxLineNumText();
 
     // 选择需要生成的EL表达式示例文本
     protected abstract String chooseElExampleText();

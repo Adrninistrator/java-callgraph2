@@ -28,6 +28,11 @@ public class JavaCG2ElManager extends CommonElManager {
         return configureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_EL_DEBUG_MODE);
     }
 
+    @Override
+    protected int chooseElIgnoreDataMaxLineNum(BaseConfigureWrapper configureWrapper) {
+        return configureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_EL_IGNORE_DATA_MAX_LINE_NUM);
+    }
+
     /**
      * 检查是否需要跳过合并jar/war文件中的文件
      *

@@ -18,6 +18,11 @@ public class JavaCG2ConfigWriter extends BaseConfigWriter {
         super(rootDirPath);
     }
 
+    @Override
+    protected String chooseElIgnoreDataMaxLineNumText() {
+        return "通过配置文件 " + JavaCG2ConfigKeyEnum.CKE_EL_IGNORE_DATA_MAX_LINE_NUM.getFileName() + " 中的配置参数 " + JavaCG2ConfigKeyEnum.CKE_EL_IGNORE_DATA_MAX_LINE_NUM.getKey();
+    }
+
     // 增加自定义的el函数说明
     @Override
     protected String chooseElExampleText() {
