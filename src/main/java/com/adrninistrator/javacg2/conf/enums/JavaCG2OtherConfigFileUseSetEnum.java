@@ -16,7 +16,9 @@ public enum JavaCG2OtherConfigFileUseSetEnum implements OtherConfigInterface {
             new String[]{"(作用) 在分析dto的字段之间通过get/set方法的关联关系时使用，指定方法返回值与被调用对象或参数认为是等值转换的方法（每行代表一条记录，支持多行）",
                     "(内容) key指定对应的方法，包含{完整类名}:{方法名}",
                     "(内容) value指定与方法返回值等值的被调用对象（使用0表示）或方法参数（从1开始）序号",
-                    "(格式) {完整类名}:{方法名}={被调用对象或方法参数序号}"},
+                    "(格式) {完整类名}:{方法名}={被调用对象或方法参数序号}",
+                    "(示例) java.lang.Boolean:<init>=1",
+                    "(示例) java.lang.Boolean:valueOf=1"},
             JavaCG2Constants.FR_EQ_CONVERSION_METHODS
     ),
     ;

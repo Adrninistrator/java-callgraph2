@@ -13,3 +13,4 @@
 ## {method_name} {String} {方法名, 不包括括号及方法参数} {method1}
 ## {method_arg_num} {int} {方法参数数量} {0, 1}
 ## {full_method} {String} {完整方法} {a.b.Class1:f1(), a.b.Class1:f2(int,java.lang.String)}
+string.endsWithAny(full_method, 'hashCode()', 'equals(java.lang.Object)')

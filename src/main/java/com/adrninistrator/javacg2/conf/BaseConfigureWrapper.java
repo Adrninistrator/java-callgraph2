@@ -11,6 +11,7 @@ import com.adrninistrator.javacg2.el.enums.ElStringFunctionTwoArgsEnum;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElAllowedVariableInterface;
 import com.adrninistrator.javacg2.el.enums.interfaces.ElConfigInterface;
 import com.adrninistrator.javacg2.el.util.JavaCG2ElUtil;
+import com.adrninistrator.javacg2.exceptions.JavaCG2ConfigException;
 import com.adrninistrator.javacg2.exceptions.JavaCG2Error;
 import com.adrninistrator.javacg2.exceptions.JavaCG2RuntimeException;
 import com.adrninistrator.javacg2.markdown.MarkdownConstants;
@@ -241,26 +242,54 @@ public abstract class BaseConfigureWrapper {
      */
     public Object setMainConfig(MainConfigInterface mainConfig, String strValue, boolean useConfig) {
         checkAllowedConfigClassName(mainConfig);
+        String mainConfigInfo = mainConfig.getFileName() + " " + mainConfig.getConfigPrintInfo();
         if (strValue == null) {
-            throw new JavaCG2Error("配置参数不允许为null");
+            String errorMsg = "配置参数不允许为null " + mainConfigInfo;
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
+        if (StringUtils.isEmpty(strValue)) {
+            if (mainConfig.isNotBlank() && useConfig) {
+                String errorMsg = "配置参数不允许为空 " + mainConfigInfo;
+                logger.error(errorMsg);
+                throw new JavaCG2ConfigException(errorMsg);
+            }
+        } else {
+            if (Integer.class == mainConfig.getType() && !JavaCG2Util.isNumStr(strValue)) {
+                String errorMsg = "int类型参数值非法 " + mainConfigInfo + " " + strValue;
+                logger.error(errorMsg);
+                throw new JavaCG2ConfigException(errorMsg);
+            }
+            if (Boolean.class == mainConfig.getType() && !StringUtils.equalsAnyIgnoreCase(strValue, Boolean.FALSE.toString(), Boolean.TRUE.toString())) {
+                String errorMsg = "bool类型参数值非法 " + mainConfigInfo + " " + strValue;
+                logger.error(errorMsg);
+                throw new JavaCG2ConfigException(errorMsg);
+            }
+        }
+
         Object value;
         try {
             // 生成并检查主要配置参数值
             value = genMainConfigValue(mainConfig, strValue);
+        } catch (JavaCG2ConfigException e) {
+            // 配置参数检查异常直接抛出
+            throw e;
         } catch (Exception e) {
-            logger.error("处理参数出现异常 {} {} {} {}", mainConfig.getFileName(), mainConfig.getConfigPrintInfo(), mainConfig.getType().getName(), strValue);
-            throw new JavaCG2Error("处理参数出现异常");
+            String errorMsg = "处理参数出现异常 " + mainConfigInfo + " " + mainConfig.getType().getName() + " " + strValue;
+            logger.error(errorMsg, e);
+            throw new JavaCG2ConfigException(errorMsg, e);
         }
 
         if (value == null) {
-            logger.error("配置参数非法 {} {} {} {}", mainConfig.getFileName(), mainConfig.getConfigPrintInfo(), mainConfig.getType().getName(), strValue);
-            throw new JavaCG2Error("配置参数非法");
+            String errorMsg = "配置参数非法 " + mainConfigInfo + " " + mainConfig.getType().getName() + " " + strValue;
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
 
         if (!mainConfig.getType().isAssignableFrom(value.getClass())) {
-            logger.error("生成的参数值类型与预期的不一致 {} {} {} {}", mainConfig.getFileName(), mainConfig.getConfigPrintInfo(), value.getClass().getName(), mainConfig.getType().getName());
-            throw new JavaCG2Error("生成的参数值类型与预期的不一致");
+            String errorMsg = "生成的参数值类型与预期的不一致 " + mainConfigInfo + " " + value.getClass().getName() + " " + mainConfig.getType().getName();
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
         if (useConfig) {
             logger.info("设置主要配置的参数 {} {} {}", mainConfig.getFileName(), mainConfig.getConfigPrintInfo(), value);
@@ -288,11 +317,15 @@ public abstract class BaseConfigureWrapper {
      */
     public void setOtherConfigSet(OtherConfigInterface otherConfig, Set<String> configSet) {
         if (!otherConfig.isSetOrList()) {
-            throw new JavaCG2Error("仅支持Set类型的配置参数 " + otherConfig.getConfigPrintInfo());
+            String errorMsg = "仅支持Set类型的配置参数 " + otherConfig.getKey();
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
         checkAllowedConfigClassName(otherConfig);
         if (configSet == null) {
-            throw new JavaCG2Error("不允许传入null，只能传入内容为空的Set " + otherConfig.getConfigPrintInfo());
+            String errorMsg = "不允许传入null，只能传入内容为空的Set " + otherConfig.getKey();
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
         logger.info("设置不区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
         otherConfigSetMap.put(otherConfig.getKey(), configSet);
@@ -317,7 +350,9 @@ public abstract class BaseConfigureWrapper {
     public void addOtherConfigSet(OtherConfigInterface otherConfig, Set<String> configSet) {
         checkAllowedConfigClassName(otherConfig);
         if (configSet == null) {
-            throw new JavaCG2Error("不允许传入null，只能传入内容为空的Set " + otherConfig.getConfigPrintInfo());
+            String errorMsg = "不允许传入null，只能传入内容为空的Set " + otherConfig.getKey();
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
         logger.info("增加不区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
         Set<String> existedSet = otherConfigSetMap.get(otherConfig.getKey());
@@ -347,10 +382,14 @@ public abstract class BaseConfigureWrapper {
     public void setOtherConfigList(OtherConfigInterface otherConfig, List<String> configList) {
         checkAllowedConfigClassName(otherConfig);
         if (otherConfig.isSetOrList()) {
-            throw new JavaCG2Error("仅支持List类型的配置参数 " + otherConfig.getConfigPrintInfo());
+            String errorMsg = "仅支持List类型的配置参数 " + otherConfig.getKey();
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
         if (configList == null) {
-            throw new JavaCG2Error("不允许传入null，只能传入内容为空的List " + otherConfig.getConfigPrintInfo());
+            String errorMsg = "不允许传入null，只能传入内容为空的List " + otherConfig.getKey();
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
         logger.info("设置区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
         otherConfigListMap.put(otherConfig.getKey(), configList);
@@ -375,7 +414,9 @@ public abstract class BaseConfigureWrapper {
     public void addOtherConfigList(OtherConfigInterface otherConfig, List<String> configList) {
         checkAllowedConfigClassName(otherConfig);
         if (configList == null) {
-            throw new JavaCG2Error("不允许传入null，只能传入内容为空的List " + otherConfig.getConfigPrintInfo());
+            String errorMsg = "不允许传入null，只能传入内容为空的List " + otherConfig.getKey();
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
         logger.info("增加区分顺序配置的参数 {}", otherConfig.getConfigPrintInfo());
         List<String> existedList = otherConfigListMap.get(otherConfig.getKey());
@@ -422,7 +463,7 @@ public abstract class BaseConfigureWrapper {
     protected void clearElConfigText(ElConfigInterface[] elConfigs) {
         for (ElConfigInterface elConfig : elConfigs) {
             checkAllowedConfigClassName(elConfig);
-            elConfigMap.put(elConfig.getKey(), "");
+            elConfigMap.put(elConfig.getKey(), elConfig.getDefaultValue());
         }
     }
 
@@ -435,7 +476,9 @@ public abstract class BaseConfigureWrapper {
     public void setElConfigText(ElConfigInterface elConfig, String elText) {
         checkAllowedConfigClassName(elConfig);
         if (elText == null) {
-            throw new JavaCG2Error("不允许传入null，只能传入空字符串 " + elConfig.getConfigPrintInfo());
+            String errorMsg = "不允许传入null，只能传入空字符串 " + elConfig.getKey();
+            logger.error(errorMsg);
+            throw new JavaCG2ConfigException(errorMsg);
         }
         logger.info("设置表达式配置 {} [{}]", elConfig.getConfigPrintInfo(), elText);
         elConfigMap.put(elConfig.getKey(), elText);
@@ -686,7 +729,7 @@ public abstract class BaseConfigureWrapper {
     }
 
     // 生成并检查主要配置参数值
-    private Object genMainConfigValue(MainConfigInterface mainConfig, String strValue) {
+    private Object genMainConfigValue(MainConfigInterface mainConfig, String strValue) throws JavaCG2ConfigException {
         // 自定义生成并检查主要配置参数值
         Object object = customGenMainConfigValue(mainConfig, strValue);
         if (object != null) {
@@ -755,7 +798,8 @@ public abstract class BaseConfigureWrapper {
         List<String> list = JavaCG2FileUtil.readFile2List(chooseInputRootPath() + configFileName, "##");
         elText = StringUtils.join(list, "");
         if (StringUtils.isBlank(elText)) {
-            elText = "";
+            // 使用默认值
+            elText = elConfig.getDefaultValue();
         }
         // 将配置文件中的参数记录到内存中，用于后续使用
         elConfigMap.put(configFileName, elText);

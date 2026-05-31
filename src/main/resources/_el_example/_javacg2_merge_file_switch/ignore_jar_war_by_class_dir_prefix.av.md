@@ -16,7 +16,7 @@ _javacg2_merge_file_switch/ignore_jar_war_by_class_dir_prefix.av
 
 相当于通过jar、war文件中类的包名控制是否跳过合并当前jar、war文件
 
-以下参数为jar、war文件中的class文件对应指定层级的目录路径集合。在表达式中可通过“include”方法判断集合中是否包含指定元素
+以下参数为jar、war文件中的class文件对应指定层级的目录路径集合。在表达式中可通过"include"方法判断集合中是否包含指定元素
 
 集合中的元素类型为字符串，以/作为分隔符，不会以分隔符开头或结尾
 

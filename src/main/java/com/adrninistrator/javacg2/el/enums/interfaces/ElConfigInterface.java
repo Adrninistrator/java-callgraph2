@@ -18,4 +18,7 @@ public interface ElConfigInterface extends ConfigInterface {
 
     // 当前参数是否用于忽略数据
     boolean isIgnoreData();
+
+    // 默认值
+    String getDefaultValue();
 }

@@ -128,9 +128,6 @@ public class JavaCG2Entry {
         long startTime = System.currentTimeMillis();
 
         JavaCG2ConfInfo javaCG2ConfInfo = JavaCG2ConfManager.getConfInfo(javaCG2ConfigureWrapper);
-        if (javaCG2ConfInfo == null) {
-            return false;
-        }
 
         // 处理输出文件路径
         String outputDirPath = handleOutputDir();

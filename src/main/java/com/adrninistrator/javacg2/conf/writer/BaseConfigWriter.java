@@ -180,6 +180,9 @@ public abstract class BaseConfigWriter {
                 if (baseConfigureWrapper != null) {
                     String text = baseConfigureWrapper.getElConfigText(elConfig);
                     writeNewLine(writer, text);
+                } else if (!elExample && StringUtils.isNotBlank(elConfig.getDefaultValue())) {
+                    // 写入默认值，已经打印过配置参数值时，不再重复写入默认值
+                    writeNewLine(writer, elConfig.getDefaultValue());
                 }
             } catch (Exception e) {
                 logger.error("error ", e);
@@ -211,14 +214,8 @@ public abstract class BaseConfigWriter {
                 "配置文件中有说明允许使用的变量信息",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 查看表达式忽略的数据",
                 "若表达式用于忽略数据，则被忽略的数据会记录在日志文件中，保存在当前输出目录中，文件名为 " + JavaCG2Constants.EL_IGNORE_DATA_LOG_FILE_NAME,
-                JavaCG2Constants.NEW_LINE_WINDOWS + "# 限制表达式忽略的数据输出行数",
-                chooseElIgnoreDataMaxLineNumText() + "可以限制表达式忽略的数据输出行数",
-                JavaCG2Constants.NEW_LINE_WINDOWS + "# 支持使用的表达式配置",
-                genElConfigInfoText(),
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式示例",
                 chooseElExampleText(),
-                JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式调试方式",
-                chooseElDebugModeText(),
                 JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式语法 - aviator 默认支持",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "## aviator .av 文件中的注释格式",
                 "在aviator .av 文件中，需要注释某一行时，需要在行首指定两个井号“##”",
@@ -300,7 +297,7 @@ public abstract class BaseConfigWriter {
                 "（作用）判断集合中是否不包含指定的元素",
                 "（语法）!include({集合变量}, {字符串/整型等常量})",
                 "（示例）!include(set1, 'abc')",
-                JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式语法 - java-callgraph2 组件扩展支持",
+                JavaCG2Constants.NEW_LINE_WINDOWS + "# 表达式语法 - 当前项目扩展支持",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "## 比较字符串忽略大小写的方法",
                 JavaCG2Constants.NEW_LINE_WINDOWS + "### string.containsIC()",
                 "（作用）判断字符串类型的变量是否包含指定内容，忽略大小写",
