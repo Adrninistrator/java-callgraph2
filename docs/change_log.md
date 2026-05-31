@@ -889,3 +889,15 @@ JdbcTemplate.update(String sql, Object... args)
 ### 1.31.1. 增加配置参数限制 EL 表达式忽略数据文件的最大行数
 
 在配置文件 _javacg2_config/config.properties 中增加配置参数 el.ignore.data.max.line.num，默认 10 万行
+
+## 1.32. (4.0.7)
+
+### 1.32.1. 表达式配置参数增加默认值
+
+当前项目中，_javacg2_parse_class_method_switch/parse_ignore_method.av 配置文件默认会跳过解析 hashCode、equals 方法
+
+其他表达式配置参数默认值都是空
+
+### 1.32.2. 配置参数赋值优化
+
+当配置参数赋值为非法值时，优化错误提示
