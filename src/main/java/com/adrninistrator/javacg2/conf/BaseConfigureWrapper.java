@@ -1023,11 +1023,7 @@ public abstract class BaseConfigureWrapper {
         for (MainConfigInterface mainConfig : configs) {
             markdownWriter.addTitle(titleLevel, mainConfig.getKey());
             markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DESC);
-            markdownWriter.addCodeBlock();
-            for (String description : mainConfig.getDescriptions()) {
-                markdownWriter.addLine(description);
-            }
-            markdownWriter.addCodeBlock();
+            addConfDesc(markdownWriter, mainConfig.getDescriptions());
 
             markdownWriter.addTableHead("描述", "内容");
             markdownWriter.addTableBody(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_TYPE, mainConfig.getType().getSimpleName());
@@ -1135,10 +1131,10 @@ public abstract class BaseConfigureWrapper {
         markdownWriter.addTitle(titleLevel, currentConfig.getKey());
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_CONSTANT_NAME);
         markdownWriter.addLineWithNewLine(currentConfig.getClass().getSimpleName() + JavaCG2Constants.FLAG_DOT + currentConfig.getEnumConstantName());
+
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DESC);
-        for (String description : currentConfig.getDescriptions()) {
-            markdownWriter.addLineWithNewLine(description);
-        }
+        addConfDesc(markdownWriter, currentConfig.getDescriptions());
+
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE);
         markdownWriter.addCodeBlock();
         List<String> otherConfigList = getOtherConfigList(currentConfig, false);
@@ -1153,10 +1149,10 @@ public abstract class BaseConfigureWrapper {
         markdownWriter.addTitle(titleLevel, currentConfig.getKey());
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_FILE_ENUM_CLASS_CONSTANT_NAME);
         markdownWriter.addLineWithNewLine(currentConfig.getClass().getSimpleName() + JavaCG2Constants.FLAG_DOT + currentConfig.getEnumConstantName());
+
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DESC);
-        for (String description : currentConfig.getDescriptions()) {
-            markdownWriter.addLineWithNewLine(description);
-        }
+        addConfDesc(markdownWriter, currentConfig.getDescriptions());
+
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE);
         markdownWriter.addCodeBlock();
         Set<String> otherConfigSet = getOtherConfigSet(currentConfig, false);
@@ -1177,9 +1173,7 @@ public abstract class BaseConfigureWrapper {
         markdownWriter.addLineWithNewLine(elConfig.getClass().getSimpleName() + JavaCG2Constants.FLAG_DOT + elConfig.getEnumConstantName());
 
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_DESC);
-        for (String description : elConfig.getDescriptions()) {
-            markdownWriter.addLineWithNewLine(description);
-        }
+        addConfDesc(markdownWriter, elConfig.getDescriptions());
 
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_ALLOWED_VARIABLES);
         markdownWriter.addTableHead(JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_NAME, JavaCG2ConfigPrintConstants.CONFIG_FLAG_EL_VARIABLE_TYPE,
@@ -1193,7 +1187,27 @@ public abstract class BaseConfigureWrapper {
 
         markdownWriter.addListWithNewLine(JavaCG2ConfigPrintConstants.CONFIG_FLAG_CONF_VALUE);
         markdownWriter.addCodeBlock();
-        markdownWriter.addLine(getElConfigText(elConfig));
+        String elConfValue = getElConfigText(elConfig);
+        if (StringUtils.isNotBlank(elConfValue)) {
+            markdownWriter.addLine(elConfValue);
+        }
+        markdownWriter.addCodeBlock();
+    }
+
+    private void addConfDesc(MarkdownWriter markdownWriter, String[] descriptions) throws IOException {
+        if (ArrayUtils.isEmpty(descriptions)) {
+            return;
+        }
+
+        if (descriptions.length == 1) {
+            markdownWriter.addLineWithNewLine(descriptions[0]);
+            return;
+        }
+
+        markdownWriter.addCodeBlock();
+        for (String description : descriptions) {
+            markdownWriter.addLine(description);
+        }
         markdownWriter.addCodeBlock();
     }
 
