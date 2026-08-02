@@ -1,4 +1,4 @@
-apply plugin: 'java'
+apply plugin: 'java-library'
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
@@ -48,7 +48,8 @@ publishing {
             groupId project.group
             artifactId project.name
             version "${version}"
-            artifact jar
+            // from components.java 会将 api/implementation 依赖写入 POM 的 <dependencies> 中
+            from components.java
             artifact sourcesJar
             artifact javadocJar
 
