@@ -104,6 +104,10 @@ public class JavaCG2LocalVariables {
         }
 
         for (int i = 0; i < size; i++) {
+            // 跳过已在先前快照中 matched 的下标（Set 只增不删、compare 为纯函数，跳过不改变结果）
+            if (sameLocalsSeqSet.contains(i)) {
+                continue;
+            }
             LocalVariableElement existedLocalVariable = existed.localVariableElementList.get(i);
             LocalVariableElement addedLocalVariable = added.localVariableElementList.get(i);
 
@@ -157,7 +161,9 @@ public class JavaCG2LocalVariables {
             localVariableElement.setArrayValueMap(baseElement.getArrayValueMap());
         }
 
-        logger.debug("添加本地变量 ({}) {}", index, localVariableElement);
+        if (logger.isDebugEnabled()) {
+            logger.debug("添加本地变量 ({}) {}", index, localVariableElement);
+        }
 
         if (localVariableElementList.size() > index) {
             // 对应索引的本地变量已存在

@@ -93,6 +93,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer fieldInfoWriter;
     private Writer fieldRelationshipWriter;
     private Writer fieldUsageOtherWriter;
+    private Writer springDIFieldWriter;
     private Writer getMethodWriter;
     private Writer innerClassWriter;
     private Writer lambdaMethodInfoWriter;
@@ -104,6 +105,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
     private Writer methodCallMethodCallReturnWriter;
     private Writer methodCallStaticFieldWriter;
     private Writer methodCallNonStaticFieldWriter;
+    private Writer methodCallFieldActualTypeWriter;
     private Writer methodCallStaticFieldMCRWriter;
     private Writer methodCallWriter;
     private Writer methodCallRawCalleeWriter;
@@ -329,6 +331,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         classHandler.setFieldInfoWriter(fieldInfoWriter);
         classHandler.setFieldRelationshipWriter(fieldRelationshipWriter);
         classHandler.setFieldUsageOtherWriter(fieldUsageOtherWriter);
+        classHandler.setSpringDIFieldWriter(springDIFieldWriter);
         classHandler.setGetMethodWriter(getMethodWriter);
         classHandler.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
         classHandler.setLogMethodSpendTimeWriter(logMethodSpendTimeWriter);
@@ -340,6 +343,7 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         classHandler.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
         classHandler.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
         classHandler.setMethodCallNonStaticFieldWriter(methodCallNonStaticFieldWriter);
+        classHandler.setMethodCallFieldActualTypeWriter(methodCallFieldActualTypeWriter);
         classHandler.setMethodCallStaticFieldMCRWriter(methodCallStaticFieldMCRWriter);
         classHandler.setMethodCallWriter(methodCallWriter);
         classHandler.setMethodCallRawCalleeWriter(methodCallRawCalleeWriter);
@@ -613,6 +617,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
         this.fieldUsageOtherWriter = fieldUsageOtherWriter;
     }
 
+    public void setSpringDIFieldWriter(Writer springDIFieldWriter) {
+        this.springDIFieldWriter = springDIFieldWriter;
+    }
+
     public void setGetMethodWriter(Writer getMethodWriter) {
         this.getMethodWriter = getMethodWriter;
     }
@@ -655,6 +663,10 @@ public class JarEntryHandleParser extends AbstractJarEntryParser {
 
     public void setMethodCallNonStaticFieldWriter(Writer methodCallNonStaticFieldWriter) {
         this.methodCallNonStaticFieldWriter = methodCallNonStaticFieldWriter;
+    }
+
+    public void setMethodCallFieldActualTypeWriter(Writer methodCallFieldActualTypeWriter) {
+        this.methodCallFieldActualTypeWriter = methodCallFieldActualTypeWriter;
     }
 
     public void setMethodCallStaticFieldMCRWriter(Writer methodCallStaticFieldMCRWriter) {

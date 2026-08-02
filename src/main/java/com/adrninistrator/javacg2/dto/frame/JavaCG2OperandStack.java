@@ -51,7 +51,9 @@ public class JavaCG2OperandStack {
 
         elements[head++] = element;
 
-        logger.debug("入操作数栈后 size: {} {}", head, element);
+        if (logger.isDebugEnabled()) {
+            logger.debug("入操作数栈后 size: {} {}", head, element);
+        }
     }
 
     public BaseElement pop() {
@@ -62,7 +64,9 @@ public class JavaCG2OperandStack {
 
         BaseElement element = elements[--head];
 
-        logger.debug("出操作数栈后 size: {} {}", head, element);
+        if (logger.isDebugEnabled()) {
+            logger.debug("出操作数栈后 size: {} {}", head, element);
+        }
 
         elements[head] = null;
         return element;
@@ -123,6 +127,10 @@ public class JavaCG2OperandStack {
 
         // 比较栈中的每一个元素
         for (int i = 0; i < existed.head; i++) {
+            // 跳过已在先前快照中 matched 的下标（Set 只增不删、compare 为纯函数，跳过不改变结果）
+            if (sameStackSeqSet.contains(i)) {
+                continue;
+            }
             if (added.elements[i] == null ||
                     (existed.elements[i] != null && JavaCG2ElementUtil.compare(existed.elements[i], added.elements[i]))) {
                 sameStackSeqSet.add(i);

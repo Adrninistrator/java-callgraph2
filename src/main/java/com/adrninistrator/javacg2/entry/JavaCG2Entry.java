@@ -201,6 +201,8 @@ public class JavaCG2Entry {
              Writer methodCallStaticFieldWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_STATIC_FIELD));
              Writer methodCallNonStaticFieldWriter =
                      JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_NON_STATIC_FIELD));
+             Writer methodCallFieldActualTypeWriter =
+                     JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_FIELD_ACTUAL_TYPE));
              Writer methodCallStaticFieldMCRWriter =
                      JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_CALL_STATIC_FIELD_MCR));
              Writer methodReturnArgSeqWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_METHOD_RETURN_ARG_SEQ));
@@ -227,6 +229,7 @@ public class JavaCG2Entry {
              Writer springAopAspectWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_AOP_ASPECT_JAVA));
              Writer springAopPointcutWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_AOP_POINTCUT_JAVA));
              Writer springAopAdviceWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_AOP_ADVICE_JAVA));
+             Writer springDIFieldWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SPRING_DI_FIELD));
              Writer staticFinalFieldMethodCallIdWriter = JavaCG2FileUtil.genBufferedWriter(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_SF_FIELD_METHOD_CALL));
              WriterSupportSkip logMethodSpendTimeWriter = new WriterSupportSkip(javaCG2OutputInfo.getMainFilePath(JavaCG2OutPutFileTypeEnum.OPFTE_LOG_METHOD_SPEND_TIME), false)
         ) {
@@ -243,6 +246,7 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setFieldGenericsTypeWriter(fieldGenericsTypeWriter);
             jarEntryHandleParser.setFieldRelationshipWriter(fieldRelationshipWriter);
             jarEntryHandleParser.setFieldUsageOtherWriter(fieldUsageOtherWriter);
+            jarEntryHandleParser.setSpringDIFieldWriter(springDIFieldWriter);
             jarEntryHandleParser.setGetMethodWriter(getMethodWriter);
             jarEntryHandleParser.setInnerClassWriter(innerClassWriter);
             jarEntryHandleParser.setLambdaMethodInfoWriter(lambdaMethodInfoWriter);
@@ -254,6 +258,7 @@ public class JavaCG2Entry {
             jarEntryHandleParser.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
             jarEntryHandleParser.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
             jarEntryHandleParser.setMethodCallNonStaticFieldWriter(methodCallNonStaticFieldWriter);
+            jarEntryHandleParser.setMethodCallFieldActualTypeWriter(methodCallFieldActualTypeWriter);
             jarEntryHandleParser.setMethodCallStaticFieldMCRWriter(methodCallStaticFieldMCRWriter);
             jarEntryHandleParser.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
             jarEntryHandleParser.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
@@ -456,9 +461,8 @@ public class JavaCG2Entry {
         */
         Map<String, Map<MethodArgReturnTypes, Integer>> interfaceMethodWithArgTypesMap = new HashMap<>(JavaCG2Constants.SIZE_200);
 
-        if (Boolean.TRUE.equals(javaCG2ConfigureWrapper.getMainConfig(JavaCG2ConfigKeyEnum.CKE_PARSE_METHOD_CALL_TYPE_VALUE))) {
-            springDefineBeanHandler = new SpringDefineBeanHandler(javaCG2InputAndOutput, failCounter);
-        }
+        // Spring依赖注入字段解析不依赖符号执行，此处无条件创建相关handler，使spring_di_field等文件在任何开关状态下都能生成
+        springDefineBeanHandler = new SpringDefineBeanHandler(javaCG2InputAndOutput, failCounter);
         springDefineComponentScanHandler = new SpringDefineComponentScanHandler();
         springDefineAopHandler = new SpringDefineAopHandler();
         boolean onlyOneJar = jarPathNumMap.size() == 1;
@@ -509,14 +513,13 @@ public class JavaCG2Entry {
          */
         Map<String, List<String>> childrenInterfaceMap = new HashMap<>(JavaCG2Constants.SIZE_100);
 
-        if (javaCG2ConfInfo.isParseMethodCallTypeValue()) {
-            useSpringBeanByAnnotationHandler = new UseSpringBeanByAnnotationHandler(
-                    classExtendsInfoMap,
-                    classImplementsInfoMap,
-                    interfaceExtendsInfoMap,
-                    springDefineBeanHandler,
-                    extensionsManager.getSpringXmlBeanParser());
-        }
+        // Spring依赖注入字段解析不依赖符号执行，此处无条件创建相关handler
+        useSpringBeanByAnnotationHandler = new UseSpringBeanByAnnotationHandler(
+                classExtendsInfoMap,
+                classImplementsInfoMap,
+                interfaceExtendsInfoMap,
+                springDefineBeanHandler,
+                extensionsManager.getSpringXmlBeanParser());
         jarEntryPreHandle2Parser = new JarEntryPreHandle2Parser(javaCG2InputAndOutput, onlyOneJar, useSpringBeanByAnnotationHandler);
         jarEntryPreHandle2Parser.setClassExtendsImplMethodWithArgTypesMap(classExtendsImplMethodWithArgTypesMap);
         jarEntryPreHandle2Parser.setInterfaceMethodWithArgTypesMap(interfaceMethodWithArgTypesMap);

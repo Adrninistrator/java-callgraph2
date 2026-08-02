@@ -40,7 +40,6 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
 
     private static final Logger logger = LoggerFactory.getLogger(JarEntryPreHandle1Parser.class);
 
-    private final boolean parseMethodCallTypeValue;
     private final boolean parseJarCompatibilityMode;
     private final boolean parseOnlyClassMode;
 
@@ -73,7 +72,6 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
     public JarEntryPreHandle1Parser(JavaCG2InputAndOutput javaCG2InputAndOutput, boolean onlyOneJar) {
         super(javaCG2InputAndOutput, onlyOneJar);
         JavaCG2ConfInfo javaCG2ConfInfo = javaCG2InputAndOutput.getJavaCG2ConfInfo();
-        parseMethodCallTypeValue = javaCG2ConfInfo.isParseMethodCallTypeValue();
         parseJarCompatibilityMode = javaCG2ConfInfo.isParseJarCompatibilityMode();
         parseOnlyClassMode = javaCG2ConfInfo.isParseOnlyClassMode();
     }
@@ -149,11 +147,9 @@ public class JarEntryPreHandle1Parser extends AbstractJarEntryParser {
         // 对一个类进行预处理
         preHandle1Class(javaClass);
 
-        if (parseMethodCallTypeValue) {
-            // 处理通过注解定义的Spring Bean信息
-            if (!springDefineBeanHandler.recordSpringInfo(javaClass)) {
-                return false;
-            }
+        // 处理通过注解定义的Spring Bean信息（Spring依赖注入字段解析不依赖符号执行，始终执行）
+        if (!springDefineBeanHandler.recordSpringInfo(javaClass)) {
+            return false;
         }
         // 处理通过注解定义的Spring包扫描路径
         springDefineComponentScanHandler.recordSpringInfo(javaClass);

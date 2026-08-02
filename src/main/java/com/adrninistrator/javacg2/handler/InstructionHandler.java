@@ -159,8 +159,8 @@ public class InstructionHandler {
 
     public BaseInstructionParseResult parse(InstructionHandle ih) {
         instructionPosition = ih.getPosition();
-        sourceLineNumber = JavaCG2ByteCodeUtil.getSourceLine(instructionPosition, mg.getLineNumberTable(cpg));
         if (logger.isDebugEnabled()) {
+            sourceLineNumber = JavaCG2ByteCodeUtil.getSourceLine(instructionPosition, mg.getLineNumberTable(cpg));
             logger.debug("当前解析的方法 {} {} 指令位置 {} 代码行号 {}", callerFullMethod, callerMethodReturnType, instructionPosition, sourceLineNumber);
         }
 
@@ -1133,7 +1133,7 @@ public class InstructionHandler {
         }
 
         if (maybeSetMethod || enumInitMethodFlag) {
-            return new PutFieldParseResult(fieldName, putfield.getFieldType(cpg).toString(), value, object);
+            return new PutFieldParseResult(fieldName, rawFieldType, value, object);
         }
         return null;
     }
@@ -1157,7 +1157,7 @@ public class InstructionHandler {
 
         // 处理返回值
         Type returnType = invokeInstruction.getReturnType(cpg);
-        String returnTypeStr = invokeInstruction.getReturnType(cpg).toString();
+        String returnTypeStr = returnType.toString();
         String calleeClassName = invokeInstruction.getReferenceType(cpg).toString();
         String calleeMethodName = invokeInstruction.getMethodName(cpg);
         if (Type.VOID != returnType) {

@@ -140,6 +140,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
     private Writer methodCallMethodCallReturnWriter;
     private Writer methodCallStaticFieldWriter;
     private Writer methodCallNonStaticFieldWriter;
+    private Writer methodCallFieldActualTypeWriter;
     private Writer methodCallStaticFieldMCRWriter;
     private Writer methodReturnArgSeqWriter;
     private Writer methodReturnCallIdWriter;
@@ -165,6 +166,9 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         value   当前类的static、final字段类型
      */
     private Map<String, Type> staticFinalFieldNameTypeMap;
+
+    // 方法级去重：记录已写入的"行号\t字段声明类型\t字段名称\t实际类型"，避免同一方法内重复写入
+    private Set<String> methodCallFieldActualTypeRecordedSet;
 
     public MethodHandler4Invoke(Method method,
                                 MethodGen mg,
@@ -197,6 +201,7 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
             methodReturnArgSeqEQCList = new ArrayList<>(1);
             methodReturnPositionEQCList = new ArrayList<>(1);
             getSetFieldRelationshipList = new ArrayList<>();
+            methodCallFieldActualTypeRecordedSet = new HashSet<>();
         }
     }
 
@@ -824,7 +829,9 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     // 处理方法调用指令
     private void handleInvokeInstruction(MethodCallPossibleInfo methodCallPossibleInfo) throws IOException {
-        logger.debug("处理方法调用指令 {} ({})", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih), getSourceLine());
+        if (logger.isDebugEnabled()) {
+            logger.debug("处理方法调用指令 {} ({})", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih), getSourceLine());
+        }
 
         Instruction invokeInstruction = ih.getInstruction();
         JavaCG2MethodInfo calleeMethodInfo = JavaCG2InstructionUtil.getCalleeMethodInfo((InvokeInstruction) invokeInstruction, cpg);
@@ -1120,6 +1127,8 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
         boolean addCalleeActualTypeBySpringBean = false;
         MethodCall addedReplacedMethodCall = null;
         MethodCallPossibleList methodCallPossibleList4Object = methodCallPossibleInfo.getPossibleInfo4Object();
+        // 记录方法调用被调用对象为非静态字段时的实际类型（运行时多态），仅当字段声明类型与实际类型不同时写入
+        recordMethodCallFieldActualType(methodCallPossibleList4Object);
         // 处理实际的被调用对象类型
         if (methodCallPossibleList4Object != null) {
             // 处理Spring Bean相关的被调用对象类型
@@ -1156,6 +1165,84 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
                 calleeArrayDimensions, methodCallPossibleInfo);
         if (addedMethodCall != null && addedReplacedMethodCall != null) {
             addedMethodCall.setDescription(addedReplacedMethodCall.getCallId() + " 是当前方法调用被调用对象被替换为实际类型后的记录");
+        }
+    }
+
+    /**
+     * 记录方法调用被调用对象为非静态字段时的实际类型（运行时多态）
+     * 仅当字段声明类型与实际类型不同时写入，每个实际类型生成一行
+     * 列：调用方完整方法、代码行号、被调用方字段声明类型、被调用方字段名称、被调用方字段实际类型
+     *
+     * @param methodCallPossibleList4Object 被调用对象可能的信息
+     */
+    private void recordMethodCallFieldActualType(MethodCallPossibleList methodCallPossibleList4Object) throws IOException {
+        if (methodCallFieldActualTypeWriter == null || methodCallPossibleList4Object == null || methodCallFieldActualTypeRecordedSet == null) {
+            return;
+        }
+        List<MethodCallPossibleEntry> entryList = methodCallPossibleList4Object.getMethodCallPossibleEntryList();
+        if (JavaCG2Util.isCollectionEmpty(entryList)) {
+            return;
+        }
+
+        String callerFullMethodStr = callerFullMethod;
+        String lineNumberStr = String.valueOf(getSourceLine());
+
+        for (MethodCallPossibleEntry entry : entryList) {
+            ClassFieldTypeAndName nonStaticField = entry.getNonStaticField();
+            if (nonStaticField == null) {
+                // 被调用对象不是非静态字段（如直接 new、方法返回值等），不处理
+                continue;
+            }
+
+            String declaredType = nonStaticField.getFieldType();
+            String fieldName = nonStaticField.getFieldName();
+
+            // 1) Spring Bean 注入：一个字段可能匹配多个 Bean 类型，仅保留与声明类型不同的
+            List<String> actualTypeList = null;
+            if (useSpringBeanByAnnotationHandler.hasUseSpringBean()) {
+                List<String> springBeanTypeList = useSpringBeanByAnnotationHandler.getSpringBeanTypeList(callerClassName, fieldName);
+                if (!JavaCG2Util.isCollectionEmpty(springBeanTypeList)) {
+                    List<String> differentTypeList = new ArrayList<>(springBeanTypeList.size());
+                    for (String springBeanType : springBeanTypeList) {
+                        if (!declaredType.equals(springBeanType)) {
+                            differentTypeList.add(springBeanType);
+                        }
+                    }
+                    if (!differentTypeList.isEmpty()) {
+                        actualTypeList = differentTypeList;
+                    }
+                }
+            }
+
+            // 2) 构造函数 / new 解析出的实际类型（仅当与声明类型不同时才算多态）
+            if (actualTypeList == null) {
+                String type = entry.getType();
+                if (type != null && !type.equals(declaredType)) {
+                    actualTypeList = Collections.singletonList(type);
+                }
+            }
+
+            if (actualTypeList == null) {
+                // 字段声明类型与实际类型相同（或未解析出实际类型），不写入
+                continue;
+            }
+
+            for (String actualType : actualTypeList) {
+                if (JavaCG2ByteCodeUtil.isNullType(actualType)) {
+                    continue;
+                }
+                // 方法级去重
+                String key = lineNumberStr + "\t" + declaredType + "\t" + fieldName + "\t" + actualType;
+                if (!methodCallFieldActualTypeRecordedSet.add(key)) {
+                    continue;
+                }
+                JavaCG2FileUtil.write2FileWithTab(methodCallFieldActualTypeWriter,
+                        callerFullMethodStr,   // 调用方完整方法
+                        lineNumberStr,          // 代码行号
+                        declaredType,           // 被调用方字段声明类型
+                        fieldName,              // 被调用方字段名称
+                        actualType);            // 被调用方字段实际类型（多个值每个一行）
+            }
         }
     }
 
@@ -1938,6 +2025,10 @@ public class MethodHandler4Invoke extends AbstractMethodHandler {
 
     public void setMethodCallNonStaticFieldWriter(Writer methodCallNonStaticFieldWriter) {
         this.methodCallNonStaticFieldWriter = methodCallNonStaticFieldWriter;
+    }
+
+    public void setMethodCallFieldActualTypeWriter(Writer methodCallFieldActualTypeWriter) {
+        this.methodCallFieldActualTypeWriter = methodCallFieldActualTypeWriter;
     }
 
     public void setMethodCallStaticFieldMCRWriter(Writer methodCallStaticFieldMCRWriter) {

@@ -113,6 +113,7 @@ public class ClassHandler {
     private Writer fieldInfoWriter;
     private Writer fieldRelationshipWriter;
     private Writer fieldUsageOtherWriter;
+    private Writer springDIFieldWriter;
     private Writer getMethodWriter;
     private Writer lambdaMethodInfoWriter;
     private Writer methodAnnotationWriter;
@@ -123,6 +124,7 @@ public class ClassHandler {
     private Writer methodCallMethodCallReturnWriter;
     private Writer methodCallStaticFieldWriter;
     private Writer methodCallNonStaticFieldWriter;
+    private Writer methodCallFieldActualTypeWriter;
     private Writer methodCallStaticFieldMCRWriter;
     private Writer methodCallWriter;
     private Writer methodCallRawCalleeWriter;
@@ -450,10 +452,15 @@ public class ClassHandler {
                 }
             }
 
-            if (javaCG2ConfInfo.isParseMethodCallTypeValue()) {
-                // 获取属于Spring Bean的字段类型
-                List<String> springBeanTypeList = useSpringBeanByAnnotationHandler.getSpringBeanTypeList(className, fieldName);
-                // todo
+            // 获取属于Spring Bean的字段类型（Spring依赖注入字段解析不依赖符号执行，始终执行）
+            List<String> springBeanTypeList = useSpringBeanByAnnotationHandler.getSpringBeanTypeList(className, fieldName);
+            // 仅当只能找到一个对应的Bean时才记录Spring依赖注入字段信息
+            if (springBeanTypeList.size() == 1) {
+                JavaCG2FileUtil.write2FileWithTab(springDIFieldWriter,
+                        className,
+                        javaCG2Type.getType(),
+                        fieldName,
+                        springBeanTypeList.get(0));
             }
         }
 
@@ -593,6 +600,7 @@ public class ClassHandler {
             methodHandler4Invoke.setMethodCallMethodCallReturnWriter(methodCallMethodCallReturnWriter);
             methodHandler4Invoke.setMethodCallStaticFieldWriter(methodCallStaticFieldWriter);
             methodHandler4Invoke.setMethodCallNonStaticFieldWriter(methodCallNonStaticFieldWriter);
+            methodHandler4Invoke.setMethodCallFieldActualTypeWriter(methodCallFieldActualTypeWriter);
             methodHandler4Invoke.setMethodCallStaticFieldMCRWriter(methodCallStaticFieldMCRWriter);
             methodHandler4Invoke.setMethodReturnArgSeqWriter(methodReturnArgSeqWriter);
             methodHandler4Invoke.setMethodReturnCallIdWriter(methodReturnCallIdWriter);
@@ -865,6 +873,10 @@ public class ClassHandler {
         this.fieldUsageOtherWriter = fieldUsageOtherWriter;
     }
 
+    public void setSpringDIFieldWriter(Writer springDIFieldWriter) {
+        this.springDIFieldWriter = springDIFieldWriter;
+    }
+
     public void setGetMethodWriter(Writer getMethodWriter) {
         this.getMethodWriter = getMethodWriter;
     }
@@ -903,6 +915,10 @@ public class ClassHandler {
 
     public void setMethodCallNonStaticFieldWriter(Writer methodCallNonStaticFieldWriter) {
         this.methodCallNonStaticFieldWriter = methodCallNonStaticFieldWriter;
+    }
+
+    public void setMethodCallFieldActualTypeWriter(Writer methodCallFieldActualTypeWriter) {
+        this.methodCallFieldActualTypeWriter = methodCallFieldActualTypeWriter;
     }
 
     public void setMethodCallStaticFieldMCRWriter(Writer methodCallStaticFieldMCRWriter) {

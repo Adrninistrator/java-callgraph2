@@ -66,6 +66,10 @@ public class FieldInformationMap {
     public static void compareLooseMode(FieldInformationMap existed, FieldInformationMap added, Set<String> sameFieldInfoNameSet) {
         for (Map.Entry<String, FieldElement> entry : added.map.entrySet()) {
             String addedFieldName = entry.getKey();
+            // 跳过已在先前快照中 matched 的字段名（Set 只增不删、compare 为纯函数，跳过不改变结果）
+            if (sameFieldInfoNameSet.contains(addedFieldName)) {
+                continue;
+            }
             FieldElement addedFieldElement = entry.getValue();
             FieldElement existedFieldElement = existed.get(addedFieldName);
 

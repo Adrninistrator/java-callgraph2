@@ -40,6 +40,7 @@ public enum JavaCG2OutPutFileTypeEnum {
     OPFTE_METHOD_CALL_METHOD_CALL_RETURN("method_call_method_call_return", "方法调用使用方法调用返回值"),
     OPFTE_METHOD_CALL_STATIC_FIELD("method_call_static_field", "方法调用使用静态字段信息"),
     OPFTE_METHOD_CALL_NON_STATIC_FIELD("method_call_non_static_field", "方法调用使用非静态字段信息"),
+    OPFTE_METHOD_CALL_FIELD_ACTUAL_TYPE("method_call_field_actual_type", "方法调用被调用对象为非静态字段时的实际类型（运行时多态）"),
     OPFTE_METHOD_CALL_STATIC_FIELD_MCR("method_call_static_field_mcr", "方法调用使用静态字段方法调用返回值"),
     OPFTE_METHOD_CATCH("method_catch", "方法的catch信息"),
     OPFTE_METHOD_FINALLY("method_finally", "方法的finally信息"),
@@ -59,6 +60,7 @@ public enum JavaCG2OutPutFileTypeEnum {
     OPFTE_SPRING_AOP_ASPECT_JAVA("spring_aop_aspect_java", "Java代码中定义的Spring AOP Aspect"),
     OPFTE_SPRING_AOP_POINTCUT_JAVA("spring_aop_pointcut_java", "Java代码中定义的Spring AOP Pointcut"),
     OPFTE_SPRING_AOP_ADVICE_JAVA("spring_aop_advice_java", "Java代码中定义的Spring AOP Advice"),
+    OPFTE_SPRING_DI_FIELD("spring_di_field", "Spring依赖注入字段信息"),
     OPFTE_ILLEGAL("illegal", "非法值"),
     ;
 

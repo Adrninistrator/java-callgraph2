@@ -36,7 +36,6 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
 
     private final UseSpringBeanByAnnotationHandler useSpringBeanByAnnotationHandler;
 
-    private final boolean parseMethodCallTypeValue;
     private final boolean parseJarCompatibilityMode;
     private final boolean parseOnlyClassMode;
 
@@ -54,7 +53,6 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
         super(javaCG2InputAndOutput, onlyOneJar);
         this.useSpringBeanByAnnotationHandler = useSpringBeanByAnnotationHandler;
         JavaCG2ConfInfo javaCG2ConfInfo = javaCG2InputAndOutput.getJavaCG2ConfInfo();
-        parseMethodCallTypeValue = javaCG2ConfInfo.isParseMethodCallTypeValue();
         parseJarCompatibilityMode = javaCG2ConfInfo.isParseJarCompatibilityMode();
         parseOnlyClassMode = javaCG2ConfInfo.isParseOnlyClassMode();
     }
@@ -100,10 +98,8 @@ public class JarEntryPreHandle2Parser extends AbstractJarEntryParser {
             // 查找涉及继承的类的信息，需要提前执行，使后续处理方法调用时，classExtendsMethodInfoMap的数据是完整的
             findClassExtendsInfo(javaClass);
 
-            if (parseMethodCallTypeValue) {
-                // 记录类中带有Spring相关注解的字段信息
-                useSpringBeanByAnnotationHandler.recordClassFieldsWithSpringAnnotation(javaClass);
-            }
+            // 记录类中带有Spring相关注解的字段信息（Spring依赖注入字段解析不依赖符号执行，始终执行）
+            useSpringBeanByAnnotationHandler.recordClassFieldsWithSpringAnnotation(javaClass);
             return true;
         }
 

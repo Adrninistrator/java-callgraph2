@@ -40,6 +40,12 @@ public class FrameSnapshotsOfIhs {
     // 栈桢快照信息数量是否超过允许的最大值
     private boolean exceedFrameSnapshotNum = false;
 
+    // checkExistSnapshotLooseMode 复用的累积 Set（单线程串行调用，clear() 复用避免每次分配 4 个 HashSet）
+    private final Set<Integer> sameStackSeqSet = new HashSet<>();
+    private final Set<Integer> sameLocalsSeqSet = new HashSet<>();
+    private final Set<String> sameNonStaticFieldInfoNameSet = new HashSet<>();
+    private final Set<String> sameStaticFieldInfoNameSet = new HashSet<>();
+
     public FrameSnapshotsOfIhs(String fullMethod, String usage, Set<String> frameSnapshotNumExceedMethodSet) {
         this.fullMethod = fullMethod;
         this.usage = usage;
@@ -135,10 +141,11 @@ public class FrameSnapshotsOfIhs {
         int addedNonStaticFieldInfoSize = addedNonStaticFieldInfoMap.size();
         int addedStaticFieldInfoSize = addedStaticFieldInfoMap.size();
 
-        Set<Integer> sameStackSeqSet = new HashSet<>(addedStackSize);
-        Set<Integer> sameLocalsSeqSet = new HashSet<>(addedLocalsSize);
-        Set<String> sameNonStaticFieldInfoNameSet = new HashSet<>(addedNonStaticFieldInfoSize);
-        Set<String> sameStaticFieldInfoNameSet = new HashSet<>(addedStaticFieldInfoSize);
+        // 复用实例字段，clear() 后累积（避免每次调用分配 4 个 HashSet）
+        sameStackSeqSet.clear();
+        sameLocalsSeqSet.clear();
+        sameNonStaticFieldInfoNameSet.clear();
+        sameStaticFieldInfoNameSet.clear();
 
         for (FrameSnapshotEntry frameSnapshotEntry : frameSnapshotEntryList) {
             /*

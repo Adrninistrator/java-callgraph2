@@ -386,7 +386,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
     private void handleAllInstruction() throws IOException {
         while (true) {
             int position = ih.getPosition();
-            logger.debug("处理指令 {} ({})", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih), getSourceLine());
+            if (logger.isDebugEnabled()) {
+                logger.debug("处理指令 {} ({})", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih), getSourceLine());
+            }
 
             // 判断跳转目标指令是否跳过处理
             if (skipJumpTargetInstructionHandle()) {
@@ -396,7 +398,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
                     break;
                 }
                 // 分支未处理完毕
-                logger.debug("分支未处理完毕 {} ({})", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih), getSourceLine());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("分支未处理完毕 {} ({})", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih), getSourceLine());
+                }
                 continue;
             }
 
@@ -408,7 +412,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
             // 判断当前处理的指令是否为Exception table的结束指令
             if (checkExceptionEnd(position)) {
                 // 当前指令有对应的异常处理，添加栈桢信息快照
-                logger.debug("异常处理，添加栈桢信息快照 {}", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("异常处理，添加栈桢信息快照 {}", JavaCG2InstructionUtil.getInstructionHandlePrintInfo(ih));
+                }
                 frameSnapshotsOfIhs4Exceptions.addSnapshot(position, stack, locals, nonStaticFieldInfoMap, staticFieldInfoMap);
             }
 
@@ -583,7 +589,9 @@ public class MethodHandler4TypeAndValue extends AbstractMethodHandler {
 
     private void setIh2Next(InstructionHandle nextIh, String type) {
         ih = nextIh;
-        logger.debug("{} 下一条处理的指令 {}", type, ih.getPosition());
+        if (logger.isDebugEnabled()) {
+            logger.debug("{} 下一条处理的指令 {}", type, ih.getPosition());
+        }
     }
 
     /**

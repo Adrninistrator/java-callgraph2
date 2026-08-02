@@ -905,3 +905,15 @@ JdbcTemplate.update(String sql, Object... args)
 ## 1.33. (4.0.8)
 
 执行各类操作时生成的配置文件格式优化
+
+## 1.34. (4.0.9)
+
+### 1.34.1. 增加输出文件
+
+- method_call_field_actual_type
+
+方法调用被调用对象为非静态字段时的实际类型（运行时多态）
+
+- spring_di_field
+
+Spring 依赖注入字段信息
